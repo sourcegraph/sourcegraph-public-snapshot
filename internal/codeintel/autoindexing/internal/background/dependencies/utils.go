@@ -29,7 +29,7 @@ var IndexWorkerStoreOptions = dbworkerstore.Options[uploadsshared.Index]{
 	ViewName:          "lsif_indexes_with_repository_name u",
 	ColumnExpressions: indexColumnsWithNullRank,
 	Scan:              dbworkerstore.BuildWorkerScan(scanIndex),
-	OrderByExpression: sqlf.Sprintf("u.queued_at, u.id"),
+	OrderByExpression: sqlf.Sprintf("(u.enqueuer_user_id > 0) DESC, u.queued_at, u.id"),
 	StalledMaxAge:     stalledIndexMaxAge,
 	MaxNumResets:      indexMaxNumResets,
 }
@@ -58,6 +58,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`(SELECT MAX(id) FROM lsif_uploads WHERE associated_index_id = u.id) AS associated_upload_id`),
 	sqlf.Sprintf(`u.should_reindex`),
 	sqlf.Sprintf(`u.requested_envvars`),
+	sqlf.Sprintf(`u.enqueuer_user_id`),
 }
 
 func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
@@ -86,6 +87,7 @@ func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
 		&index.AssociatedUploadID,
 		&index.ShouldReindex,
 		pq.Array(&index.RequestedEnvVars),
+		&index.EnqueuerUserID,
 	); err != nil {
 		return index, err
 	}

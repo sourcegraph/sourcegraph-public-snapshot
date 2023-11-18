@@ -26,7 +26,19 @@ module.exports = {
             {
                 svelte: 'always',
                 svg: 'always',
+                cjs: 'always',
             },
         ],
+
+        // These rules were newly introduced in @sourcegraph/eslint-config@0.35.0 and have not yet been
+        // fixed in our existing code.
+        'import/no-default-export': 'warn',
+        'no-sparse-arrays': 'warn',
+        '@typescript-eslint/explicit-function-return-type': 'warn',
+        '@typescript-eslint/require-await': 'warn',
+        'no-console': 'warn',
+        '@typescript-eslint/ban-ts-comment': 'warn',
+        '@typescript-eslint/no-floating-promises': 'warn',
+        '@typescript-eslint/explicit-member-accessibility': 'warn',
     },
 }

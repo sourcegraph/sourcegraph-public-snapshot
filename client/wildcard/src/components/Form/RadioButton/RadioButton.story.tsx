@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { H1, H2 } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
@@ -68,7 +68,7 @@ const BaseRadio = ({ name, ...props }: Pick<RadioButtonProps, 'name' | 'isValid'
     )
 }
 
-export const RadioExamples: Story = () => (
+export const RadioExamples: StoryFn = () => (
     <>
         <H1>Radio</H1>
         <Grid columnCount={4}>

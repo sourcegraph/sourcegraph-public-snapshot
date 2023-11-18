@@ -1,7 +1,7 @@
 {
     "5.0.0": [
         {
-            "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+            "path": "cmd/frontend/internal/batches/resolvers",
             "prefix": "TestRepositoryPermissions",
             "reason": "Test was having incomplete data, fails now that constraints are in place"
         },

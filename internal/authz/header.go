@@ -54,7 +54,7 @@ func ParseAuthorizationHeader(headerValue string) (token, sudoUser string, err e
 		}
 	}
 
-	if envvar.SourcegraphDotComMode() {
+	if envvar.SourcegraphDotComMode() && scheme == SchemeTokenSudo {
 		return "", "", errors.New("use of access tokens with sudo scope is disabled")
 	}
 

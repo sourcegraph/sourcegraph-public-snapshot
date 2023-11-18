@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import { of } from 'rxjs'
+import { describe, it } from 'vitest'
 
 import { asObservable } from './asObservable'
 

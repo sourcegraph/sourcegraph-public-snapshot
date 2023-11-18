@@ -28,7 +28,6 @@ ts_project(
         "temporarySettingsContext.ts",
         "utils.ts",
     ],
-    module = "commonjs",
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@codemirror/view",
@@ -84,7 +83,6 @@ ts_project(
         "sign-in.test.ts",
     ],
     tsconfig = ":tsconfig",
-    use_preset_env = False,
     deps = [
         ":integration",
         "//:node_modules/@types/lodash",
@@ -112,9 +110,9 @@ mocha_test(
         "--parallel",
         "--jobs 16",
     ],
-    data = ["//client/web:app-enterprise"],
+    data = ["//client/web:app"],
     env = {
-        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app-enterprise)",
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
     },
     flaky = True,
     is_percy_enabled = True,

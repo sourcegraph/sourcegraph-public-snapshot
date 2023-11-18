@@ -1,3 +1,5 @@
+import { parseURL } from 'whatwg-url'
+
 import {
     addLineRangeQueryParameter,
     encodeURIPathComponent,
@@ -174,18 +176,25 @@ const parsePosition = (string: string): Position => {
  * These URIs were used when communicating with language servers over LSP and with extensions. They are being
  * phased out in favor of URLs to resources in the Sourcegraph raw API, which do not require out-of-band
  * information to fetch the contents of.
- *
  * @deprecated Migrate to using URLs to the Sourcegraph raw API (or other concrete URLs) instead.
  */
 export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
-    const parsed = new URL(uri)
-    const repoName = parsed.hostname + decodeURIComponent(parsed.pathname)
-    const revision = decodeURIComponent(parsed.search.slice('?'.length)) || undefined
+    // We are not using the environments URL constructor because Chrome and Firefox do
+    // not correctly parse out the hostname for URLs . We have a polyfill for the main web app
+    // (see client/shared/src/polyfills/configure-core-js.ts) but that might not be used in all apps.
+    const parsed = parseURL(uri)
+    if (!parsed?.host) {
+        throw new Error('Unable to parse repo URI: ' + uri)
+    }
+    const pathname =
+        typeof parsed.path === 'string' ? parsed.path : parsed.path.length === 0 ? '' : '/' + parsed.path.join('/')
+    const repoName = String(parsed.host) + decodeURIComponent(pathname)
+    const revision = parsed.query ? decodeURIComponent(parsed.query) : undefined
     let commitID: string | undefined
     if (revision?.match(/[\dA-f]{40}/)) {
         commitID = revision
     }
-    const fragmentSplit = parsed.hash.slice('#'.length).split(':').map(decodeURIComponent)
+    const fragmentSplit = parsed.fragment ? parsed.fragment.split(':').map(decodeURIComponent) : []
     let filePath: string | undefined
     let position: UIPosition | undefined
     let range: UIRange | undefined
@@ -208,7 +217,7 @@ export function parseRepoURI(uri: RepoURI): ParsedRepoURI {
         }
     }
     if (fragmentSplit.length > 2) {
-        throw new Error('unexpected fragment: ' + parsed.hash)
+        throw new Error('unexpected fragment: ' + parsed.fragment)
     }
 
     return { repoName, revision, commitID, filePath: filePath || undefined, position, range }
@@ -253,7 +262,6 @@ export interface AbsoluteRepoFilePosition
 
 /**
  * Tells if the given fragment component is a legacy blob hash component or not.
- *
  * @param hash The URL fragment.
  */
 export function isLegacyFragment(hash: string): boolean {
@@ -274,7 +282,6 @@ export function isLegacyFragment(hash: string): boolean {
 /**
  * Parses the URL search (query) portion and looks for a parameter which matches a line, position, or range in the file. If not found, it
  * falls back to parsing the hash for backwards compatibility.
- *
  * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseQueryAndHash<V extends string>(
@@ -294,7 +301,6 @@ export function parseQueryAndHash<V extends string>(
  * optional "viewState" parameter (that encodes other view state, such as for the panel).
  *
  * For example, in the URL fragment "#L17:19-21:23$foo:bar", the "viewState" is "foo:bar".
- *
  * @template V The type that describes the view state (typically a union of string constants). There is no runtime check that the return value satisfies V.
  */
 export function parseHash<V extends string>(hash: string): LineOrPositionOrRange & { viewState?: V } {
@@ -356,11 +362,11 @@ function parseLineOrPositionOrRange(lineChar: string): LineOrPositionOrRange {
         }
     }
     let lpr = { line, character, endLine, endCharacter } as LineOrPositionOrRange
-    if (typeof line === 'undefined' || (typeof endLine !== 'undefined' && typeof character !== typeof endCharacter)) {
+    if (line === undefined || (endLine !== undefined && typeof character !== typeof endCharacter)) {
         lpr = {}
-    } else if (typeof character === 'undefined') {
-        lpr = typeof endLine === 'undefined' ? { line } : { line, endLine }
-    } else if (typeof endLine === 'undefined' || typeof endCharacter === 'undefined') {
+    } else if (character === undefined) {
+        lpr = endLine === undefined ? { line } : { line, endLine }
+    } else if (endLine === undefined || endCharacter === undefined) {
         lpr = { line, character }
     } else {
         lpr = { line, character, endLine, endCharacter }
@@ -381,7 +387,6 @@ function addRenderModeQueryParameter(
 /**
  * Finds the URL search parameter which has a key like "L1-2:3" without any
  * value.
- *
  * @param searchParameters The URLSearchParams to look for the line in.
  */
 function findLineInSearchParameters(searchParameters: URLSearchParams): LineOrPositionOrRange | undefined {
@@ -406,7 +411,7 @@ function parseLineOrPosition(
     }
     line = typeof line === 'number' && isNaN(line) ? undefined : line
     character = typeof character === 'number' && isNaN(character) ? undefined : character
-    if (typeof line === 'undefined') {
+    if (line === undefined) {
         return { line: undefined, character: undefined }
     }
     return { line, character }
@@ -510,11 +515,9 @@ export function withWorkspaceRootInputRevision(
 
 /**
  * Builds a URL query for the given query (without leading `?`).
- *
  * @param query the search query
  * @param patternType the pattern type this query should be interpreted in.
  * Having a `patternType:` filter in the query overrides this argument.
- *
  */
 export function buildSearchURLQuery(
     query: string,
@@ -556,11 +559,11 @@ export function buildSearchURLQuery(
 
     searchParameters.set('sm', (searchMode || SearchMode.Precise).toString())
 
-    return searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':')
+    return searchParameters.toString().replaceAll('%2F', '/').replaceAll('%3A', ':')
 }
 
 /**
- * Takes an input URL and adds Sourcegraph App specific query parameters to it. This includes the UTM parameters and app_os.
+ * Takes an input URL and adds Cody App specific query parameters to it. This includes the UTM parameters and app_os.
  * @param url Original URL
  * @param campaign Optional utm_campaign value to add to the query params.
  * @returns URL string with appended query parameters

@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	opsgeniealert "github.com/opsgenie/opsgenie-go-sdk-v2/alert"
@@ -16,7 +17,7 @@ var pageCommand = &cli.Command{
 	UsageText: "sg page --opsgenie.token [TOKEN] --message \"something is broken\" [my-schedule-on-ops-genie]",
 	ArgsUsage: "[opsgenie-schedule]",
 	Usage:     "Page engineers at Sourcegraph - mostly used within scripts to automate paging alerts",
-	Category:  CategoryCompany,
+	Category:  category.Company,
 	Action:    pageExec,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
@@ -55,7 +56,7 @@ var pageCommand = &cli.Command{
 }
 
 func pageExec(cmd *cli.Context) error {
-	logger := log.Scoped("pager", "paging client for SG")
+	logger := log.Scoped("pager")
 
 	priority, err := parseOpsGeniePriority(cmd.String("priority"))
 	if err != nil {

@@ -38,7 +38,20 @@ import {
     type UseShowMorePaginationResult,
 } from '../FilteredConnection/hooks/useShowMorePagination'
 
+const RATE_LIMITER_STATE_FRAGMENT = gql`
+    fragment RateLimiterStateFields on RateLimiterState {
+        __typename
+        currentCapacity
+        burst
+        limit
+        interval
+        lastReplenishment
+        infinite
+    }
+`
+
 export const externalServiceFragment = gql`
+    ${RATE_LIMITER_STATE_FRAGMENT}
     fragment ExternalServiceFields on ExternalService {
         id
         kind
@@ -46,6 +59,9 @@ export const externalServiceFragment = gql`
         config
         warning
         lastSyncError
+        rateLimiterState {
+            ...RateLimiterStateFields
+        }
         repoCount
         lastSyncAt
         nextSyncAt
@@ -53,6 +69,7 @@ export const externalServiceFragment = gql`
         createdAt
         webhookURL
         hasConnectionCheck
+        unrestricted
     }
 `
 
@@ -186,10 +203,14 @@ export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
 
 export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
     ${EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT}
+    ${RATE_LIMITER_STATE_FRAGMENT}
     fragment ListExternalServiceFields on ExternalService {
         id
         kind
         displayName
+        rateLimiterState {
+            ...RateLimiterStateFields
+        }
         config
         warning
         lastSyncError
@@ -203,6 +224,7 @@ export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
         syncJobs(first: 1) {
             ...ExternalServiceSyncJobConnectionFields
         }
+        unrestricted
     }
 `
 
@@ -356,3 +378,5 @@ export interface ExternalServiceFieldsWithConfig extends ExternalServiceFields {
         url: string
     }
 }
+
+export type RateLimiterState = NonNullable<ExternalServiceFields['rateLimiterState']>

@@ -2,12 +2,15 @@
 package gerrit
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -67,7 +70,7 @@ func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient h
 	return &client{
 		httpClient: httpClient,
 		URL:        url,
-		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		rateLimit:  ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GerritClient"), urn)),
 		auther:     auther,
 	}, nil
 }
@@ -113,11 +116,9 @@ func (c *client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, err
 }
 
 func (c *client) GetGroup(ctx context.Context, groupName string) (Group, error) {
-
 	urlGroup := url.URL{Path: fmt.Sprintf("a/groups/%s", groupName)}
 
 	reqAllAccounts, err := http.NewRequest("GET", urlGroup.String(), nil)
-
 	if err != nil {
 		return Group{}, err
 	}
@@ -144,31 +145,19 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	}
 
 	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
 
+	var bs []byte
+	bs, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
-
-	var bs []byte
-	if resp.StatusCode != http.StatusNoContent {
-		bs, err = io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		// The first 4 characters of the Gerrit API responses need to be stripped, see: https://gerrit-review.googlesource.com/Documentation/rest-api.html#output .
-		if len(bs) < 4 {
-			return nil, &httpError{
-				URL:        req.URL,
-				StatusCode: resp.StatusCode,
-				Body:       bs,
-			}
-		}
-
-		bs = bs[4:]
-	}
+	// Gerrit attaches this prefix to most of its responses, so if it exists, we cut it, so we can parse it as a json properly.
+	bs, _ = bytes.CutPrefix(bs, []byte(")]}'"))
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		return nil, &httpError{

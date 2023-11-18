@@ -3,7 +3,6 @@ package env
 import (
 	"expvar"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,7 +12,6 @@ import (
 	"time"
 
 	"github.com/dustin/go-humanize"
-	"github.com/inconshreveable/log15"
 )
 
 type envflag struct {
@@ -36,19 +34,6 @@ var (
 	LogFormat          = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed, json)")
 	LogSourceLink, _   = strconv.ParseBool(Get("SRC_LOG_SOURCE_LINK", "false", "Print an iTerm link to the file:line in VS Code"))
 	InsecureDev, _     = strconv.ParseBool(Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
-)
-
-var (
-	// DebugOut is os.Stderr if LogLevel includes dbug
-	DebugOut io.Writer
-	// InfoOut is os.Stderr if LogLevel includes info
-	InfoOut io.Writer
-	// WarnOut is os.Stderr if LogLevel includes warn
-	WarnOut io.Writer
-	// ErrorOut is os.Stderr if LogLevel includes error
-	ErrorOut io.Writer
-	// CritOut is os.Stderr if LogLevel includes crit
-	CritOut io.Writer
 )
 
 // findName returns the name of the current process, that being the
@@ -77,22 +62,6 @@ func Ensure(name, defaultValue, description string) string {
 	}
 
 	return value
-}
-
-func init() {
-	lvl, _ := log15.LvlFromString(LogLevel)
-	lvlFilterStderr := func(maxLvl log15.Lvl) io.Writer {
-		// Note that log15 values look like e.g. LvlCrit == 0, LvlDebug == 4
-		if lvl > maxLvl {
-			return io.Discard
-		}
-		return os.Stderr
-	}
-	DebugOut = lvlFilterStderr(log15.LvlDebug)
-	InfoOut = lvlFilterStderr(log15.LvlInfo)
-	WarnOut = lvlFilterStderr(log15.LvlWarn)
-	ErrorOut = lvlFilterStderr(log15.LvlError)
-	CritOut = lvlFilterStderr(log15.LvlCrit)
 }
 
 // Get returns the value of the given environment variable. It also registers the description for

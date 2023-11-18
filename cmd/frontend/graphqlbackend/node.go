@@ -377,6 +377,11 @@ func (r *NodeResolver) ToCodeHost() (*codeHostResolver, bool) {
 	return n, ok
 }
 
+func (r *NodeResolver) ToGitserverInstance() (*gitserverResolver, bool) {
+	n, ok := r.Node.(*gitserverResolver)
+	return n, ok
+}
+
 func (r *NodeResolver) ToSearchJob() (SearchJobResolver, bool) {
 	n, ok := r.Node.(SearchJobResolver)
 	return n, ok

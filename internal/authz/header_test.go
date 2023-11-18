@@ -58,6 +58,18 @@ func TestParseAuthorizationHeader(t *testing.T) {
 			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
+
+	t.Run("empty token does not raise sudo error on dotcom", func(t *testing.T) {
+		envvar.MockSourcegraphDotComMode(true)
+		defer envvar.MockSourcegraphDotComMode(false)
+
+		_, _, err := ParseAuthorizationHeader(`token`)
+		got := fmt.Sprintf("%v", err)
+		want := "no token value in the HTTP Authorization request header"
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 func TestParseHTTPCredentials(t *testing.T) {

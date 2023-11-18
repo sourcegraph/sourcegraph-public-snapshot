@@ -56,7 +56,7 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 		sqlf.Sprintf("next_sync_at"),
 	}
 
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("repo.sync.workerstore.Store", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("repo.sync.workerstore.Store"), observationCtx)
 
 	store := dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*SyncJob]{
 		Name:              "repo_sync_worker_store",
@@ -79,7 +79,7 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 		Metrics:           newWorkerMetrics(observationCtx),
 	})
 
-	resetter := dbworker.NewResetter(observationCtx.Logger.Scoped("repo.sync.worker.Resetter", ""), store, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(observationCtx.Logger.Scoped("repo.sync.worker.Resetter"), store, dbworker.ResetterOptions{
 		Name:     "repo_sync_worker_resetter",
 		Interval: 5 * time.Minute,
 		Metrics:  newResetterMetrics(observationCtx),
@@ -96,7 +96,7 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 }
 
 func newWorkerMetrics(observationCtx *observation.Context) workerutil.WorkerObservability {
-	observationCtx = observation.ContextWithLogger(log.Scoped("sync_worker", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(log.Scoped("sync_worker"), observationCtx)
 
 	return workerutil.NewMetrics(observationCtx, "repo_updater_external_service_syncer")
 }
@@ -123,7 +123,7 @@ DELETE FROM external_service_sync_jobs
 WHERE
 	finished_at < NOW() - INTERVAL '1 day'
   	AND
-  	state IN ('completed', 'failed')
+  	state IN ('completed', 'failed', 'canceled')
 `
 
 func newJobCleanerRoutine(ctx context.Context, handle basestore.TransactableHandle, interval time.Duration) goroutine.BackgroundRoutine {

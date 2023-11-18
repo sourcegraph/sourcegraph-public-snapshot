@@ -38,7 +38,7 @@ var frontendInternal = func() *url.URL {
 var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
 
 func defaultFrontendInternal() string {
-	if deploy.IsApp() {
+	if deploy.IsSingleBinary() {
 		return "localhost:3090"
 	}
 	return "sourcegraph-frontend-internal"
@@ -54,7 +54,7 @@ type internalClient struct {
 var Client = &internalClient{
 	URL: frontendInternal.String(),
 	getConfClient: syncx.OnceValues(func() (proto.ConfigServiceClient, error) {
-		logger := log.Scoped("internalapi", "")
+		logger := log.Scoped("internalapi")
 		conn, err := defaults.Dial(frontendInternal.Host, logger)
 		if err != nil {
 			return nil, err

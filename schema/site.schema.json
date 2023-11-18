@@ -38,13 +38,37 @@
     },
     "defaultRateLimit": {
       "description": "The rate limit (in requests per hour) for the default rate limiter in the rate limiters registry. By default this is disabled and the default rate limit is infinity.",
-      "type": "number",
+      "type": "integer",
+      "!go": {
+        "pointer": true
+      },
       "default": -1
     },
     "RedirectUnsupportedBrowser": {
       "description": "Prompts user to install new browser for non es5",
       "type": "boolean",
       "default": false
+    },
+    "rateLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "graphQLMaxDepth": {
+          "description": "Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.",
+          "type": "integer",
+          "default": 30
+        },
+        "graphQLMaxAliases": {
+          "description": "Maximum number of aliases allowed in a GraphQL query",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxFieldCount": {
+          "description": "Maximum number of estimated fields allowed in a GraphQL response",
+          "type": "integer",
+          "default": 500000
+        }
+      }
     },
     "exportUsageTelemetry": {
       "type": "object",
@@ -125,6 +149,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "searchJobs": {
+          "description": "Enables search jobs (long-running exhaustive) search feature and its UI",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -383,9 +415,9 @@
         "enableGRPC": {
           "description": "Enables gRPC for communication between internal services",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
-            "pointer": false
+            "pointer": true
           }
         },
         "enablePermissionsWebhooks": {
@@ -418,7 +450,7 @@
               }
             },
             "maxReorderQueueSize": {
-              "description": "The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.",
+              "description": "DEPRECATED: This setting has no effect.",
               "default": 24,
               "type": "integer",
               "group": "Search",
@@ -427,7 +459,7 @@
               }
             },
             "maxQueueMatchCount": {
-              "description": "The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.",
+              "description": "DEPRECATED: This setting has no effect.",
               "default": -1,
               "type": "integer",
               "group": "Search",
@@ -445,7 +477,7 @@
               }
             },
             "maxReorderDurationMS": {
-              "description": "The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.",
+              "description": "DEPRECATED: This setting has no effect.",
               "type": "integer",
               "default": 0,
               "group": "Search"
@@ -866,7 +898,7 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "languages", "symbols"],
+      "required": ["engine", "languages"],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
@@ -980,8 +1012,8 @@
       "group": "External services",
       "additionalProperties": false,
       "default": {
-        "interval": 15,
-        "deletedTTL": 60
+        "intervalMinutes": 15,
+        "deletedTTLMinutes": 60
       },
       "properties": {
         "intervalMinutes": {
@@ -1024,7 +1056,7 @@
       "additionalProperties": false,
       "properties": {
         "maxTimeoutSeconds": {
-          "description": "The maximum value for \"timeout:\" that search will respect. \"timeout:\" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.",
+          "description": "The maximum value for \"timeout:\" that search will respect. \"timeout:\" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Note: Experimental search jobs do not respect this limit. Defaults to 1 minute.",
           "type": "integer",
           "default": "60",
           "minimum": 1
@@ -1107,12 +1139,6 @@
       "description": "Time interval (in seconds) of how often each component picks up authorization changes in external services.",
       "type": "integer",
       "default": 5
-    },
-    "externalService.userMode": {
-      "description": "Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.",
-      "type": "string",
-      "enum": ["public", "disabled", "all"],
-      "default": "disabled"
     },
     "permissions.userMapping": {
       "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.",
@@ -1936,6 +1962,14 @@
         }
       ]
     },
+    "gitserver.diskUsageWarningThreshold": {
+      "description": "Disk usage threshold at which to display warning notification. Value is a percentage.",
+      "type": "integer",
+      "default": 90,
+      "!go": {
+        "pointer": true
+      }
+    },
     "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",
       "type": "object",
@@ -1963,12 +1997,12 @@
                 "minLength": 1
               },
               "version.min": {
-                "description": "If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.",
+                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
                 "type": "string",
                 "minLength": 1
               },
               "version.max": {
-                "description": "If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.",
+                "description": "If present, this message will only be shown to Cody App instances in this inclusive version range.",
                 "type": "string",
                 "minLength": 1
               }
@@ -2558,6 +2592,116 @@
             "pointer": true
           },
           "default": true
+        },
+        "qdrant": {
+          "description": "Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.",
+          "type": "object",
+          "$comment": "Skipped fields from HnswConfigDiff: MaxIndexingThreads",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "hnsw": {
+              "description": "Overrides for the HNSW index config.",
+              "type": "object",
+              "properties": {
+                "m": {
+                  "description": "Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 8
+                },
+                "efConstruct": {
+                  "description": "Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 100
+                },
+                "fullScanThreshold": {
+                  "description": "Minimal size (in KiloBytes) of vectors for additional payload-based indexing.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 1000
+                },
+                "onDisk": {
+                  "description": "Store HNSW index on disk.",
+                  "type": "boolean",
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": true
+                },
+                "payloadM": {
+                  "description": "Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 8
+                }
+              }
+            },
+            "quantization": {
+              "description": "Overrides for quantization config.",
+              "type": "object",
+              "$comment": "Skipped fields from ScalarQuantization: AlwaysRam",
+              "properties": {
+                "enabled": {
+                  "description": "Whether to enable int8 scalar quantization",
+                  "type": "boolean",
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": true
+                },
+                "quantile": {
+                  "description": "Any values that lie outside the quantile range will be truncated",
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 0.98
+                }
+              }
+            },
+            "optimizers": {
+              "type": "object",
+              "$comment": "Skipped fields from OptimizersConfigDiff: DeletedThreshold, VacuumMinVectorNumber, DefaultSegmentNumber, MaxSegmentSize, FlushIntervalSec, MaxOptimizationThreads",
+              "properties": {
+                "indexingThreshold": {
+                  "description": "Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 0
+                },
+                "memmapThreshold": {
+                  "description": "Maximum size (in kilobytes) of vectors to store in-memory per segment.",
+                  "type": "integer",
+                  "minimum": 0,
+                  "!go": {
+                    "pointer": true
+                  },
+                  "default": 100
+                }
+              }
+            }
+          }
         }
       },
       "examples": [
@@ -2618,8 +2762,8 @@
         "provider": {
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
-          "default": "anthropic",
-          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai"]
+          "default": "sourcegraph",
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock", "fireworks"]
         },
         "endpoint": {
           "type": "string",
@@ -3029,6 +3173,14 @@
           "description": "Time in minutes before token expiry when we should attempt to refresh it",
           "default": 10,
           "type": "integer"
+        },
+        "syncInternalRepoPermissions": {
+          "description": "Whether to sync permissions for internal repositories on GitLab. Setting this to false can be useful when internal repositories are configured to be public on Sourcegraph.",
+          "default": true,
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },

@@ -19,6 +19,7 @@ go_library(
         "//cmd/cody-gateway/internal/limiter",
         "//cmd/cody-gateway/internal/notify",
         "//cmd/cody-gateway/internal/response",
+        "//internal/authbearer",
         "//internal/httpcli",
         "//internal/instrumentation",
         "//internal/redispool",

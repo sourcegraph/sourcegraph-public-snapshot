@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "guardrails",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/internal/guardrails/attribution",
+        "//cmd/frontend/internal/guardrails/dotcom",
+        "//cmd/frontend/internal/guardrails/resolvers",
+        "//internal/codeintel",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/httpcli",
+        "//internal/observation",
+        "//internal/search/client",
+        "//lib/errors",
+    ],
+)

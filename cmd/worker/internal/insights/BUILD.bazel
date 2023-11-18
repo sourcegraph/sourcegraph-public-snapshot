@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "insights",
+    srcs = [
+        "data_retention_job.go",
+        "job.go",
+        "query_runner_job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/insights",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/codeinsights",
+        "//cmd/worker/shared/init/db",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/insights",
+        "//internal/insights/background",
+        "//internal/observation",
+    ],
+)

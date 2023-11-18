@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -23,6 +22,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestSnapshot(t *testing.T) {
+	t.Run("fails with transaction", func(t *testing.T) {
+		ctx := context.Background()
+		logger := logtest.Scoped(t)
+		db := database.NewDB(logger, dbtest.NewDB(t))
+		err := db.WithTransact(ctx, func(tx database.DB) error {
+			_, err := Snapshot(ctx, logtest.Scoped(t), tx, "type:commit")
+			return err
+		})
+		require.Error(t, err)
+	})
+}
 
 func TestAddCodeMonitorHook(t *testing.T) {
 	t.Parallel()
@@ -121,7 +133,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		return testFixtures{User: u, Monitor: m, Repo: r}
 	}
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	fixtures := populateFixtures(db)
 	ctx := context.Background()
 
@@ -139,7 +151,7 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err := hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 
 	// The next time, doSearch should receive the new resolved hashes plus the
@@ -156,16 +168,14 @@ func TestCodeMonitorHook(t *testing.T) {
 		}})
 		return nil
 	}
-	err = hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+	err = hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
 	require.NoError(t, err)
 
-	t.Run("deadline exceeded is not propagated", func(t *testing.T) {
-		logger, getLogs := logtest.Captured(t)
+	t.Run("deadline exceeded is propagated", func(t *testing.T) {
 		doSearch = func(args *gitprotocol.SearchRequest) error {
 			return context.DeadlineExceeded
 		}
-		err := hookWithID(ctx, db, logger, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
-		require.NoError(t, err)
-		require.Equal(t, getLogs()[0].Level, log.LevelWarn)
+		err := hookWithID(ctx, db, gs, fixtures.Monitor.ID, fixtures.Repo.ID, &gitprotocol.SearchRequest{}, doSearch)
+		require.ErrorContains(t, err, "some commits may be skipped")
 	})
 }

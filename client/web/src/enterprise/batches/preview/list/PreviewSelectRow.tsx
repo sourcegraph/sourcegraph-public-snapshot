@@ -41,13 +41,16 @@ const ACTIONS: Action[] = [
 // Returns the desired `PublishedValue` for the given action.
 const getPublicationStateFromAction = (action: Action): Scalars['PublishedValue'] => {
     switch (action.type) {
-        case 'publish':
+        case 'publish': {
             return true
-        case 'publish-draft':
+        }
+        case 'publish-draft': {
             return 'draft'
+        }
         case 'unpublish':
-        default:
+        default: {
             return false
+        }
     }
 }
 

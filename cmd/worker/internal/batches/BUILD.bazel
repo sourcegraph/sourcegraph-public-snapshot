@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "batches",
+    srcs = [
+        "bulk_operation_processor_job.go",
+        "dbstore.go",
+        "janitor_config.go",
+        "janitor_job.go",
+        "reconciler_job.go",
+        "scheduler_job.go",
+        "workspace_resolver_job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/batches",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/internal/batches/janitor",
+        "//cmd/worker/internal/batches/workers",
+        "//cmd/worker/internal/executorqueue",
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/actor",
+        "//internal/batches/scheduler",
+        "//internal/batches/sources",
+        "//internal/batches/store",
+        "//internal/batches/types",
+        "//internal/encryption/keyring",
+        "//internal/env",
+        "//internal/gitserver",
+        "//internal/goroutine",
+        "//internal/httpcli",
+        "//internal/memo",
+        "//internal/observation",
+        "//internal/workerutil/dbworker/store",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

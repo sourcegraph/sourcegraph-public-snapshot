@@ -4,7 +4,6 @@ go_library(
     name = "enqueuer",
     srcs = [
         "enqueuer.go",
-        "iface.go",
         "observability.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/enqueuer",
@@ -21,7 +20,6 @@ go_library(
         "//internal/gitserver",
         "//internal/metrics",
         "//internal/observation",
-        "//internal/repoupdater/protocol",
         "//lib/errors",
         "@io_opentelemetry_go_otel//attribute",
     ],

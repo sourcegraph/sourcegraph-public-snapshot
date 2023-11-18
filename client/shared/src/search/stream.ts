@@ -339,35 +339,40 @@ export const switchAggregateSearchResults: OperatorFunction<SearchEvent, Aggrega
             switch (newEvent.kind) {
                 case 'N': {
                     switch (newEvent.value?.type) {
-                        case 'matches':
+                        case 'matches': {
                             return {
                                 ...results,
                                 // Matches are additive
                                 results: results.results.concat(newEvent.value.data),
                             }
+                        }
 
-                        case 'progress':
+                        case 'progress': {
                             return {
                                 ...results,
                                 // Progress updates replace
                                 progress: newEvent.value.data,
                             }
+                        }
 
-                        case 'filters':
+                        case 'filters': {
                             return {
                                 ...results,
                                 // New filter results replace all previous ones
                                 filters: newEvent.value.data,
                             }
+                        }
 
-                        case 'alert':
+                        case 'alert': {
                             return {
                                 ...results,
                                 alert: newEvent.value.data,
                             }
+                        }
 
-                        default:
+                        default: {
                             return results
+                        }
                     }
                 }
                 case 'E': {
@@ -389,13 +394,15 @@ export const switchAggregateSearchResults: OperatorFunction<SearchEvent, Aggrega
                         state: 'error',
                     }
                 }
-                case 'C':
+                case 'C': {
                     return {
                         ...results,
                         state: 'complete',
                     }
-                default:
+                }
+                default: {
                     return results
+                }
             }
         },
         emptyAggregateResults
@@ -483,6 +490,7 @@ export interface StreamSearchOptions {
     displayLimit?: number
     chunkMatches?: boolean
     enableRepositoryMetadata?: boolean
+    zoektSearchOptions?: string
 }
 
 function initiateSearchStream(
@@ -492,6 +500,7 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
+        zoektSearchOptions,
         featureOverrides,
         searchMode = SearchMode.Precise,
         displayLimit = 1500,
@@ -516,6 +525,10 @@ function initiateSearchStream(
         }
         for (const value of featureOverrides || []) {
             parameters.push(['feat', value])
+        }
+
+        if (zoektSearchOptions) {
+            parameters.push(['zoekt-search-opts', zoektSearchOptions])
         }
         const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 
@@ -627,15 +640,19 @@ export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
         case 'content':
-        case 'symbol':
+        case 'symbol': {
             return getFileMatchUrl(match)
-        case 'commit':
+        }
+        case 'commit': {
             return getCommitMatchUrl(match)
-        case 'repo':
+        }
+        case 'repo': {
             return getRepoMatchUrl(match)
+        }
         case 'person':
-        case 'team':
+        case 'team': {
             return getOwnerMatchUrl(match)
+        }
     }
 }
 

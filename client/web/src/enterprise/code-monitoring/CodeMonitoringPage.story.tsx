@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { NEVER, of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -64,7 +64,7 @@ const additionalProps = {
     } as AuthenticatedUser,
     toggleCodeMonitorEnabled: sinon.fake(),
     settingsCascade: EMPTY_SETTINGS_CASCADE,
-    isSourcegraphApp: false,
+    isCodyApp: false,
 }
 
 const additionalPropsShortList = {
@@ -86,7 +86,7 @@ const siteAdminProps = {
     authenticatedUser: { ...additionalProps.authenticatedUser, siteAdmin: true },
 }
 
-export const LessThan10Results: Story = () => (
+export const LessThan10Results: StoryFn = () => (
     <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsShortList} />}</WebStory>
 )
 
@@ -98,7 +98,7 @@ LessThan10Results.parameters = {
     },
 }
 
-export const MoreThan10Results: Story = () => (
+export const MoreThan10Results: StoryFn = () => (
     <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsLongList} />}</WebStory>
 )
 
@@ -110,7 +110,7 @@ MoreThan10Results.parameters = {
     },
 }
 
-export const PageLoading: Story = () => (
+export const PageLoading: StoryFn = () => (
     <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsAlwaysLoading} />}</WebStory>
 )
 
@@ -122,7 +122,7 @@ PageLoading.parameters = {
     },
 }
 
-export const ListPageEmptyShowGettingStarted: Story = () => (
+export const ListPageEmptyShowGettingStarted: StoryFn = () => (
     <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsEmptyList} />}</WebStory>
 )
 
@@ -134,7 +134,7 @@ ListPageEmptyShowGettingStarted.parameters = {
     },
 }
 
-export const ListPageUnauthenticatedShowGettingStarted: Story = () => (
+export const ListPageUnauthenticatedShowGettingStarted: StoryFn = () => (
     <WebStory initialEntries={['/code-monitoring']}>
         {props => <CodeMonitoringPage {...props} {...additionalProps} authenticatedUser={null} />}
     </WebStory>
@@ -143,7 +143,7 @@ export const ListPageUnauthenticatedShowGettingStarted: Story = () => (
 ListPageUnauthenticatedShowGettingStarted.storyName =
     'Code monitoring list page - unauthenticated, show getting started'
 
-export const EmptyListPage: Story = () => (
+export const EmptyListPage: StoryFn = () => (
     <WebStory initialEntries={['/code-monitoring/getting-started']}>
         {props => <CodeMonitoringPage {...props} {...additionalPropsEmptyList} testForceTab="list" />}
     </WebStory>
@@ -157,7 +157,7 @@ EmptyListPage.parameters = {
     },
 }
 
-export const EmptyListPageUnauthenticated: Story = () => (
+export const EmptyListPageUnauthenticated: StoryFn = () => (
     <WebStory initialEntries={['/code-monitoring/getting-started']}>
         {props => (
             <CodeMonitoringPage {...props} {...additionalPropsEmptyList} authenticatedUser={null} testForceTab="list" />
@@ -173,7 +173,7 @@ EmptyListPageUnauthenticated.parameters = {
     },
 }
 
-export const SiteAdminUser: Story = () => (
+export const SiteAdminUser: StoryFn = () => (
     <WebStory initialEntries={['/code-monitoring']}>
         {props => <CodeMonitoringPage {...props} {...siteAdminProps} testForceTab="list" />}
     </WebStory>

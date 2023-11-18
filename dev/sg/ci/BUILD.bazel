@@ -1,0 +1,34 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "ci",
+    srcs = [
+        "buildkite.go",
+        "command.go",
+        "subcommands.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/sg/ci",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/ci/runtype",
+        "//dev/sg/internal/bk",
+        "//dev/sg/internal/category",
+        "//dev/sg/internal/loki",
+        "//dev/sg/internal/open",
+        "//dev/sg/internal/repo",
+        "//dev/sg/internal/run",
+        "//dev/sg/internal/std",
+        "//dev/sg/internal/usershell",
+        "//dev/sg/root",
+        "//lib/cliutil/completions",
+        "//lib/cliutil/exit",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_buildkite_go_buildkite_v3//buildkite",
+        "@com_github_gen2brain_beeep//:beeep",
+        "@com_github_google_uuid//:uuid",
+        "@com_github_grafana_regexp//:regexp",
+        "@com_github_sourcegraph_run//:run",
+        "@com_github_urfave_cli_v2//:cli",
+    ],
+)

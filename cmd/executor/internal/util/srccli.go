@@ -8,8 +8,8 @@ import (
 )
 
 // LatestSrcCLIVersion returns the latest src-cli version.
-func LatestSrcCLIVersion(ctx context.Context, client *apiclient.BaseClient, options apiclient.EndpointOptions) (string, error) {
-	req, err := apiclient.NewRequest(http.MethodGet, options.URL, ".api/src-cli/version", nil)
+func LatestSrcCLIVersion(ctx context.Context, client *apiclient.BaseClient) (string, error) {
+	req, err := client.NewJSONRequest(http.MethodGet, ".api/src-cli/version", nil)
 	if err != nil {
 		return "", err
 	}

@@ -23,8 +23,8 @@ In the [CI pipeline generator](../background-information/ci/development.md), whe
 > NOTE: You don't need to provide `buildkite.SlackStepNotifyConfigPayload.SlackTokenEnvVarName`, a default value will be injected. 
 
 ```diff
---- a/enterprise/dev/ci/internal/ci/operations.go
-+++ b/enterprise/dev/ci/internal/ci/operations.go
+--- a/dev/ci/internal/ci/operations.go
++++ b/dev/ci/internal/ci/operations.go
 pipeline.AddStep(":camel: Crossing the desert",
 + bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
 +   Message:              "Camel are thursty :water_wave: cc <@teamate>", // Can also reference a Slack user group

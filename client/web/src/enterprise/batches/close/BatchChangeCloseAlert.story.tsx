@@ -1,11 +1,11 @@
 import { useState } from '@storybook/addons'
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { BatchChangeCloseAlert } from './BatchChangeCloseAlert'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/close/BatchChangeCloseAlert',
@@ -18,14 +18,16 @@ const config: Meta = {
     argTypes: {
         viewerCanAdminister: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        viewerCanAdminister: true,
     },
 }
 
 export default config
 
-export const HasOpenChangesets: Story = args => {
+export const HasOpenChangesets: StoryFn = args => {
     const [closeChangesets, setCloseChangesets] = useState(false)
     return (
         <WebStory>
@@ -47,13 +49,15 @@ export const HasOpenChangesets: Story = args => {
 HasOpenChangesets.argTypes = {
     totalCount: {
         control: { type: 'number' },
-        defaultValue: 10,
     },
+}
+HasOpenChangesets.args = {
+    totalCount: 10,
 }
 
 HasOpenChangesets.storyName = 'Has open changesets'
 
-export const NoOpenChangesets: Story = args => {
+export const NoOpenChangesets: StoryFn = args => {
     const [closeChangesets, setCloseChangesets] = useState(false)
     return (
         <WebStory>

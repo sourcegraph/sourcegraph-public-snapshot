@@ -9,19 +9,20 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
+	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -41,11 +42,12 @@ type updateManifestFlag struct {
 	noUpload         bool
 }
 
-var manifestFlags updateManifestFlag
-var appCommand = &cli.Command{
-	Name:  "app",
-	Usage: "Manage releases and update manifests used to let Cody App clients know that a new update is available",
-	UsageText: `
+var (
+	manifestFlags updateManifestFlag
+	appCommand    = &cli.Command{
+		Name:  "app",
+		Usage: "Manage releases and update manifests used to let Cody App clients know that a new update is available",
+		UsageText: `
 # Update the updater manifest
 sg app update-manifest
 
@@ -64,65 +66,66 @@ sg app reset
 # Prints the locations to be removed without deleting
 sg app reset --dry-run
 `,
-	Description: `
+		Description: `
 Various commands to handle management of releases, and processes around Cody App.
 
 `,
-	ArgsUsage: "",
-	Category:  CategoryDev,
-	Subcommands: []*cli.Command{
-		{
-			Name:  "update-manifest",
-			Usage: "update the manifest used by the updater endpoint on dotCom",
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:        "bucket",
-					HasBeenSet:  true,
-					Value:       "sourcegraph-app",
-					Destination: &manifestFlags.bucket,
-					Usage:       "Bucket where the updated manifest should be uploaded to once updated.",
+		ArgsUsage: "",
+		Category:  category.Dev,
+		Subcommands: []*cli.Command{
+			{
+				Name:  "update-manifest",
+				Usage: "update the manifest used by the updater endpoint on dotCom",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:        "bucket",
+						HasBeenSet:  true,
+						Value:       "sourcegraph-app",
+						Destination: &manifestFlags.bucket,
+						Usage:       "Bucket where the updated manifest should be uploaded to once updated.",
+					},
+					&cli.IntFlag{
+						Name:        "build",
+						Value:       -1,
+						Destination: &manifestFlags.build,
+						Usage:       "Build number to retrieve the update-manifest from. If no build number is given, the latest build will be used",
+						DefaultText: "latest",
+					},
+					&cli.StringFlag{
+						Name:        "release-tag",
+						Value:       "latest",
+						Destination: &manifestFlags.tag,
+						Usage:       "GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used",
+						DefaultText: "latest",
+					},
+					&cli.BoolFlag{
+						Name:        "update-signatures",
+						Destination: &manifestFlags.updateSignatures,
+						Usage:       "update the signatures in the update manifest by retrieving the signature content from the GitHub release",
+					},
+					&cli.BoolFlag{
+						Name:        "no-upload",
+						Destination: &manifestFlags.noUpload,
+						Usage:       "do everything except upload the final manifest",
+					},
 				},
-				&cli.IntFlag{
-					Name:        "build",
-					Value:       -1,
-					Destination: &manifestFlags.build,
-					Usage:       "Build number to retrieve the update-manifest from. If no build number is given, the latest build will be used",
-					DefaultText: "latest",
-				},
-				&cli.StringFlag{
-					Name:        "release-tag",
-					Value:       "latest",
-					Destination: &manifestFlags.tag,
-					Usage:       "GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used",
-					DefaultText: "latest",
-				},
-				&cli.BoolFlag{
-					Name:        "update-signatures",
-					Destination: &manifestFlags.updateSignatures,
-					Usage:       "update the signatures in the update manifest by retrieving the signature content from the GitHub release",
-				},
-				&cli.BoolFlag{
-					Name:        "no-upload",
-					Destination: &manifestFlags.noUpload,
-					Usage:       "do everything except upload the final manifest",
-				},
+				Action: UpdateCodyAppManifest,
 			},
-			Action: UpdateCodyAppManifest,
-		},
-		{
-			Name:  "reset",
-			Usage: "Resets the dev app's db and web cache",
-			Flags: []cli.Flag{
-				&cli.BoolFlag{
-					Name:        "dry-run",
-					Destination: &resetFlags.dryRun,
-					Usage:       "write out paths to be removed",
+			{
+				Name:  "reset",
+				Usage: "Resets the dev app's db and web cache",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "dry-run",
+						Destination: &resetFlags.dryRun,
+						Usage:       "write out paths to be removed",
+					},
 				},
+				Action: ResetApp,
 			},
-			Action: ResetApp,
 		},
-	},
-}
+	}
+)
 
 // appUpdateManifest is copied from cmd/frontend/internal/app/updatecheck/app_update_checker
 type appUpdateManifest struct {
@@ -278,7 +281,6 @@ func updateManifestFromRelease(manifest appUpdateManifest, release *github.Repos
 					platformAssets[platform][0] = asset
 				}
 			}
-
 		}
 	}
 
@@ -289,7 +291,7 @@ func updateManifestFromRelease(manifest appUpdateManifest, release *github.Repos
 		if u == "" {
 			return manifest, errors.Newf("failed to get download url for asset: %q", assets[0].GetName())
 		}
-		var sig = appPlatform.Signature
+		sig := appPlatform.Signature
 
 		if updateSignatures {
 			b, err := downloadSignatureContent(assets[1].GetBrowserDownloadURL())
@@ -327,7 +329,6 @@ func downloadSignatureContent(url string) ([]byte, error) {
 }
 
 func getAppGitHubRelease(ctx context.Context, client *github.Client, tag string) (*github.RepositoryRelease, error) {
-
 	releases, _, err := client.Repositories.ListReleases(ctx, "sourcegraph", "sourcegraph", &github.ListOptions{})
 	if err != nil {
 		return nil, err

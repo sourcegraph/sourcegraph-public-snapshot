@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -24,13 +25,15 @@ func NewRunnerWithSchemas(
 	if err != nil {
 		return nil, err
 	}
+	var verbose = env.LogLevel == "dbug"
 
 	var dsnsStrings []string
 	for schema, dsn := range dsns {
 		dsnsStrings = append(dsnsStrings, schema+" => "+dsn)
 	}
-
-	out.WriteLine(output.Linef(output.EmojiInfo, output.StyleGrey, "Connection DSNs used: %s", strings.Join(dsnsStrings, ", ")))
+	if verbose {
+		out.WriteLine(output.Linef(output.EmojiInfo, output.StyleGrey, " Connection DSNs used: %s", strings.Join(dsnsStrings, ", ")))
+	}
 
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))

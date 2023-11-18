@@ -425,9 +425,10 @@ func TestPathMatches(t *testing.T) {
 
 // githubStore fetches from github and caches across test runs.
 var githubStore = &Store{
-	GitserverClient: gitserver.NewClient(),
+	GitserverClient: gitserver.NewClient("test"),
 	FetchTar:        fetchTarFromGithub,
 	Path:            "/tmp/search_test/store",
+	Log:             observation.TestContext.Logger,
 	ObservationCtx:  &observation.TestContext,
 }
 

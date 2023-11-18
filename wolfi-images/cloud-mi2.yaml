@@ -7,17 +7,21 @@ contents:
     - mailcap
 
     ## mi2 packages
-    - terraform=1.3.9-r2
+    - terraform@sourcegraph
     - helm=3.11.3-r1
     - kustomize=4.5.7-r0
-    - nodejs-18=18.17.1-r1
+    - nodejs-20=20.9.0
+    - kubectl-1.24=1.24.17-r1
+    - kubectl-1.24-default=1.24.17-r1
+    - gke-gcloud-auth-plugin@sourcegraph
 
+    ## mi2 packages that we don't care about pinning version
+    - git
+    - git-lfs
+
+# this image is used on Cloud Run Job, and
+# it does not support running container with non-root user.
 accounts:
-  run-as: sourcegraph
-  groups:
-    - groupname: sourcegraph
-      gid: 101
-  users:
-    - username: sourcegraph
-      uid: 100
-      gid: 101
+  run-as: root
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

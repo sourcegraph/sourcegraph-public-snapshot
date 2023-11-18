@@ -4,7 +4,8 @@ export {
     basicSyntaxColumns,
     exampleQueryColumns,
 } from '@sourcegraph/branded/src/search-ui/components/QueryExamples.constants'
-export { createDefaultSuggestions, singleLine } from '@sourcegraph/branded/src/search-ui/input/codemirror'
+export { createDefaultSuggestions } from '@sourcegraph/branded/src/search-ui/input/codemirror'
+export { multiline } from '@sourcegraph/branded/src/search-ui/input/codemirror/multiline'
 export { parseInputAsQuery } from '@sourcegraph/branded/src/search-ui/input/codemirror/parsedQuery'
 export { querySyntaxHighlighting } from '@sourcegraph/branded/src/search-ui/input/codemirror/syntax-highlighting'
 export { decorateQuery } from '@sourcegraph/branded/src/search-ui/util/query'

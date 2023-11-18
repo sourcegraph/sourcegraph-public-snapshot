@@ -1,6 +1,8 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`PostSignUpPage renders post signup page - with cody survey 1`] = `
+exports[`PostSignUpPage > renders customized redirect when user has completed post signup flow 1`] = `<DocumentFragment />`;
+
+exports[`PostSignUpPage > renders post signup page - with cody survey 1`] = `
 <DocumentFragment>
   <div
     class="pageWrapper"
@@ -18,7 +20,7 @@ exports[`PostSignUpPage renders post signup page - with cody survey 1`] = `
 </DocumentFragment>
 `;
 
-exports[`PostSignUpPage renders post signup page - with email verification 1`] = `
+exports[`PostSignUpPage > renders post signup page - with email verification 1`] = `
 <DocumentFragment>
   <div
     class="pageWrapper"
@@ -36,4 +38,4 @@ exports[`PostSignUpPage renders post signup page - with email verification 1`] =
 </DocumentFragment>
 `;
 
-exports[`PostSignUpPage renders redirect when user has completed post signup flow 1`] = `<DocumentFragment />`;
+exports[`PostSignUpPage > renders redirect when user has completed post signup flow 1`] = `<DocumentFragment />`;

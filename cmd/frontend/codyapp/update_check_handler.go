@@ -15,19 +15,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 )
 
-// RouteAppUpdateCheck is the name of the route that the Sourcegraph App will use to check if there are updates
+// RouteAppUpdateCheck is the name of the route that the Cody App will use to check if there are updates
 const RouteAppUpdateCheck = "app.update.check"
 
-// ManifestBucket the name of the bucket where the Sourcegraph App update manifest is stored
+// ManifestBucket the name of the bucket where the Cody App update manifest is stored
 const ManifestBucket = "sourcegraph-app"
 
-// ManifestBucketDev the name of the bucket where the Sourcegraph App update manifest is stored for dev instances
+// ManifestBucketDev the name of the bucket where the Cody App update manifest is stored for dev instances
 const ManifestBucketDev = "sourcegraph-app-dev"
 
 // ManifestName is the name of the manifest object that is in the ManifestBucket
 const ManifestName = "app.update.prod.manifest.json"
 
-// noUpdateConstraint clients on or prior to this version are using the "Sourcegraph App" version, which is the version prior to the
+// noUpdateConstraint clients on or prior to this version are using the "Cody App" version, which is the version prior to the
 // "Cody App" version which does not have search. Therefore, clients that match this constraint should be told that there is NOT a
 // new version for them to update to with the Tauri updater. Instead we will notify them with a banner in the app - which is not
 // part of the Tauri updater.
@@ -50,7 +50,7 @@ type AppNoopUpdateChecker struct{}
 
 func NewAppUpdateChecker(logger log.Logger, resolver UpdateManifestResolver) *AppUpdateChecker {
 	return &AppUpdateChecker{
-		logger:           logger.Scoped("app.update.checker", "Handler that handles sourcegraph app requests that check for updates"),
+		logger:           logger.Scoped("app.update.checker"),
 		manifestResolver: resolver,
 	}
 }
@@ -180,7 +180,7 @@ func (checker *AppNoopUpdateChecker) Handler() http.HandlerFunc {
 }
 
 func AppUpdateHandler(logger log.Logger) http.HandlerFunc {
-	// We store the Sourcegraph App manifest in a different GCS bucket, since buckets are globally unique we use different names
+	// We store the Cody App manifest in a different GCS bucket, since buckets are globally unique we use different names
 	var bucket = ManifestBucket
 	if deploy.IsDev(deploy.Type()) {
 		bucket = ManifestBucketDev

@@ -62,7 +62,7 @@ func lintLoggingLibraries() *linter {
 		},
 		AllowedFiles: []string{
 			// Let everything in dev use whatever they want
-			"dev", "enterprise/dev",
+			"dev",
 			// Banned imports will match on the linter here
 			"dev/sg/linters",
 			// We allow one usage of a direct zap import here
@@ -71,6 +71,8 @@ func lintLoggingLibraries() *linter {
 			"internal/logging/main.go",
 			// Dependencies require direct usage of zap
 			"cmd/frontend/internal/app/otlpadapter",
+			// Legacy and special case handling of panics in background routines
+			"lib/background/goroutine.go",
 		},
 		ErrorFunc: func(bannedImport string) error {
 			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,

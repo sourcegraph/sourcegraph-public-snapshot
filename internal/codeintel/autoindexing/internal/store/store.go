@@ -63,7 +63,7 @@ type store struct {
 func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
 		db:         basestore.NewWithHandle(db.Handle()),
-		logger:     logger.Scoped("autoindexing.store", ""),
+		logger:     logger.Scoped("autoindexing.store"),
 		operations: newOperations(observationCtx),
 	}
 }

@@ -41,12 +41,6 @@ type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-type MockDoer func(*http.Request) (*http.Response, error)
-
-func (m MockDoer) Do(req *http.Request) (*http.Response, error) {
-	return m(req)
-}
-
 // DoerFunc is function adapter that implements the http.RoundTripper
 // interface by calling itself.
 type DoerFunc func(*http.Request) (*http.Response, error)
@@ -166,8 +160,13 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 // convenience for existing uses of http.DefaultClient.
 // WARN: This client caches entire responses for etag matching. Do not use it for
 // one-off requests if possible, and definitely not for larger payloads, like
-// downloading arbitrarily sized files! See UncachedExternalClient instead.
+// downloading arbitrarily sized files! See UncachedExternalDoer instead.
 var ExternalDoer, _ = ExternalClientFactory.Doer()
+
+// UncachedExternalDoer is a shared client for external communication. This is a
+// convenience for existing uses of http.DefaultClient.
+// This client does not cache responses. To cache responses see ExternalDoer instead.
+var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
 
 // ExternalClient returns a shared client for external communication. This is
 // a convenience for existing uses of http.DefaultClient.
@@ -175,6 +174,11 @@ var ExternalDoer, _ = ExternalClientFactory.Doer()
 // one-off requests if possible, and definitely not for larger payloads, like
 // downloading arbitrarily sized files! See UncachedExternalClient instead.
 var ExternalClient, _ = ExternalClientFactory.Client()
+
+// UncachedExternalClient returns a shared client for external communication. This is
+// a convenience for existing uses of http.DefaultClient.
+// WARN: This client does not cache responses. To cache responses see ExternalClient instead.
+var UncachedExternalClient, _ = UncachedExternalClientFactory.Client()
 
 // InternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services.
@@ -301,18 +305,6 @@ func ContextErrorMiddleware(cli Doer) Doer {
 	})
 }
 
-// GitHubProxyRedirectMiddleware rewrites requests to the "github-proxy" host
-// to "https://api.github.com".
-func GitHubProxyRedirectMiddleware(cli Doer) Doer {
-	return DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "github-proxy" {
-			req.URL.Host = "api.github.com"
-			req.URL.Scheme = "https"
-		}
-		return cli.Do(req)
-	})
-}
-
 // requestContextKey is used to denote keys to fields that should be logged by the logging
 // middleware. They should be set to the request context associated with a response.
 type requestContextKey int
@@ -332,7 +324,7 @@ const (
 //
 // It also logs metadata set by request context by other middleware, such as NewRetryPolicy.
 func NewLoggingMiddleware(logger log.Logger) Middleware {
-	logger = logger.Scoped("httpcli", "http client")
+	logger = logger.Scoped("httpcli")
 
 	return func(d Doer) Doer {
 		return DoerFunc(func(r *http.Request) (*http.Response, error) {

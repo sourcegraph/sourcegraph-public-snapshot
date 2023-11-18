@@ -1,0 +1,47 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "webhooks",
+    srcs = ["github.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz/webhooks",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/webhooks",
+        "//internal/api",
+        "//internal/authz/permssync",
+        "//internal/database",
+        "//internal/extsvc",
+        "//lib/errors",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "webhooks_test",
+    timeout = "short",
+    srcs = ["github_test.go"],
+    embed = [":webhooks"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//cmd/frontend/webhooks",
+        "//internal/api",
+        "//internal/authz/permssync",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/encryption/keyring",
+        "//internal/extsvc",
+        "//internal/repos",
+        "//internal/types",
+        "//schema",
+        "@com_github_google_go_github_v55//github",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)

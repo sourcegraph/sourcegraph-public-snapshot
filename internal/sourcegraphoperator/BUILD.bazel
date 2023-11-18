@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "sourcegraphoperator",
+    srcs = [
+        "account.go",
+        "associate.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/auth",
+        "//internal/auth/providers",
+        "//internal/database",
+        "//internal/encryption",
+        "//internal/extsvc",
+        "//lib/errors",
+    ],
+)

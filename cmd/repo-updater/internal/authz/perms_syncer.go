@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -105,7 +106,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 		}
 	}
 
-	logger := s.logger.Scoped("syncRepoPerms", "processes permissions syncing request in a repo-centric way").With(
+	logger := s.logger.Scoped("syncRepoPerms").With(
 		log.Object("repo",
 			log.Int32("ID", int32(repo.ID)),
 			log.String("name", string(repo.Name)),
@@ -264,11 +265,12 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		return nil, nil, errors.Wrap(err, "get user")
 	}
 
-	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(
+	logger := s.logger.Scoped("syncUserPerms").With(
 		log.Object("user",
 			log.Int32("ID", userID),
 			log.String("name", user.Username)),
 	)
+	ctx = featureflag.WithFlags(ctx, s.db.FeatureFlags())
 
 	results, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
 	providerStates := results.providerStates
@@ -430,7 +432,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 
 	byServiceID := s.providersByServiceID()
 	accounts := s.db.UserExternalAccounts()
-	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts", "sync permissions using external accounts (logging connections)").With(log.Int32("userID", user.ID))
+	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts").With(log.Int32("userID", user.ID))
 
 	// Check if the user has an external account for every authz provider respectively,
 	// and try to fetch the account when not.
@@ -456,7 +458,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 		}
 		providerLogger.Debug("account found for provider", log.String("provider_urn", provider.URN()), log.Int32("user_id", user.ID), log.Int32("account_id", acct.ID))
 
-		err = accounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
+		acct, err = accounts.Upsert(ctx, acct)
 		if err != nil {
 			providerLogger.Error("could not associate external account to user", log.Error(err))
 			continue
@@ -684,7 +686,7 @@ func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs
 }
 
 func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32, acctID int32, repoIDs []int32) (*database.SetPermissionsResult, error) {
-	logger := s.logger.Scoped("saveUserPermsForAccount", "saves permissions per external account").With(
+	logger := s.logger.Scoped("saveUserPermsForAccount").With(
 		log.Object("user",
 			log.Int32("ID", userID),
 			log.Int32("ExternalAccountID", acctID)),
@@ -699,7 +701,6 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 		UserID:            userID,
 		ExternalAccountID: acctID,
 	}, repoIDs, authz.SourceUserSync)
-
 	if err != nil {
 		logger.Warn("saving perms to DB", log.Error(err))
 		return nil, err

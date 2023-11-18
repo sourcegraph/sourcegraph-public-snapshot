@@ -11,6 +11,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -65,11 +67,12 @@ func NewHTTPClient(urn string, registryURL string, credentials string, httpfacto
 	if err != nil {
 		return nil, err
 	}
+
 	return &HTTPClient{
 		registryURL:    registryURL,
 		uncachedClient: uncached,
 		cachedClient:   cached,
-		limiter:        ratelimit.DefaultRegistry.Get(urn),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("NPMClient"), urn)),
 		credentials:    credentials,
 	}, nil
 }

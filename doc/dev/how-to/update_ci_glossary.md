@@ -22,7 +22,7 @@ Why? This description covers both general context as well as Sourcegraph specifi
 ## Steps to update 
 
 1. Check out a new branch.
-1. Edit `./enterprise/dev/ci/glossary.md`.
+1. Edit `./dev/ci/glossary.md`.
 1. Sort the entries by alphabetical order.
 1. Commit and push. The CI build will show the newly edited annotation. 
 1. Submit the PR as usual. Set the DevX team as reviewers. 

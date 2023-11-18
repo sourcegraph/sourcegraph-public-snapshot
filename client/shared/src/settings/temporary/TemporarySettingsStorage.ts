@@ -1,13 +1,18 @@
 import { type ApolloClient, gql } from '@apollo/client'
 import { isEqual } from 'lodash'
-import { Observable, of, type Subscription, from, ReplaySubject, type Subscriber } from 'rxjs'
-import { distinctUntilChanged, map } from 'rxjs/operators'
+import { Observable, of, type Subscription, from, ReplaySubject, type Subscriber, fromEvent } from 'rxjs'
+import { distinctUntilChanged, map, mapTo, mergeAll, startWith, switchMap } from 'rxjs/operators'
 
 import { logger } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import type { GetTemporarySettingsResult } from '../../graphql-operations'
 
+import {
+    getTemporarySettingOverride,
+    setTemporarySettingOverride,
+    temporarySettingsOverrideUpdate,
+} from './localOverride'
 import type { TemporarySettings } from './TemporarySettings'
 
 export class TemporarySettingsStorage {
@@ -24,16 +29,27 @@ export class TemporarySettingsStorage {
         this.saveSubscription?.unsubscribe()
     }
 
-    constructor(private apolloClient: ApolloClient<object> | null, isAuthenticatedUser: boolean) {
+    constructor(
+        private apolloClient: ApolloClient<object> | null,
+        isAuthenticatedUser: boolean,
+        enableLocalOverrides: boolean = false
+    ) {
+        let backend: SettingsBackend
         if (isAuthenticatedUser) {
             if (!this.apolloClient) {
                 throw new Error('Apollo-Client should be initialized for authenticated user')
             }
 
-            this.setSettingsBackend(new ServersideSettingsBackend(this.apolloClient))
+            backend = new ServersideSettingsBackend(this.apolloClient)
         } else {
-            this.setSettingsBackend(new LocalStorageSettingsBackend())
+            backend = new LocalStorageSettingsBackend()
         }
+
+        if (enableLocalOverrides) {
+            backend = new LocalOverrideBackend(backend)
+        }
+
+        this.setSettingsBackend(backend)
     }
 
     // This is public for testing purposes only so mocks can be provided.
@@ -232,6 +248,56 @@ export class InMemoryMockSettingsBackend implements SettingsBackend {
         if (this.onSettingsChanged) {
             this.onSettingsChanged(this.settings)
         }
+        return of()
+    }
+}
+
+/**
+ * This is a dev-only backend for intercepting overridden values.
+ */
+class LocalOverrideBackend implements SettingsBackend {
+    constructor(private backend: SettingsBackend) {}
+
+    public load(): Observable<TemporarySettings> {
+        return this.backend.load().pipe(
+            switchMap(settings =>
+                of(temporarySettingsOverrideUpdate, fromEvent(window, 'storage')).pipe(
+                    mergeAll(),
+                    startWith(settings),
+                    mapTo(settings)
+                )
+            ),
+            map(settings => {
+                const overriddenSettings: any = { ...settings }
+
+                for (const key of Object.keys(settings)) {
+                    const overrideValue = getTemporarySettingOverride(key as keyof TemporarySettings)
+                    if (overrideValue) {
+                        overriddenSettings[key] = overrideValue.value
+                    }
+                }
+                return overriddenSettings
+            })
+        )
+    }
+
+    public edit(newSettings: TemporarySettings): Observable<void> {
+        try {
+            const newSettingsCopy: any = { ...newSettings }
+            for (const [key, value] of Object.entries(newSettingsCopy)) {
+                const overrideValue = getTemporarySettingOverride(key as keyof TemporarySettings)
+                if (overrideValue) {
+                    setTemporarySettingOverride(key as keyof TemporarySettings, { value: value as any })
+                    delete newSettingsCopy[key]
+                }
+            }
+            if (Object.keys(newSettingsCopy).length > 0) {
+                return this.backend.edit(newSettingsCopy)
+            }
+        } catch (error: unknown) {
+            logger.error(error)
+        }
+
         return of()
     }
 }

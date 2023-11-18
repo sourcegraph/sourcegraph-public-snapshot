@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -23,6 +24,8 @@ import (
 )
 
 func TestBitbucketCloudSource_ListRepos(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	assertAllReposListed := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
@@ -85,11 +88,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindBitbucketCloud,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
-			}
-
+			svc := typestest.MakeExternalService(t, extsvc.VariantBitbucketCloud, tc.conf)
 			bbcSrc, err := newBitbucketCloudSource(logtest.Scoped(t), svc, tc.conf, cf)
 			if err != nil {
 				t.Fatal(err)

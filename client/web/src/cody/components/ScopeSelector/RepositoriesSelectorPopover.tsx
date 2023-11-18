@@ -14,7 +14,9 @@ import {
 } from '@mdi/js'
 import classNames from 'classnames'
 
+import type { TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
 import { useLazyQuery } from '@sourcegraph/http-client'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
     Icon,
@@ -38,6 +40,7 @@ import { ExternalRepositoryIcon } from '../../../site-admin/components/ExternalR
 
 import { ReposSelectorSearchQuery } from './backend'
 import { Callout } from './Callout'
+import { useRepoSuggestions } from './useRepoSuggestions'
 
 import styles from './ScopeSelector.module.scss'
 
@@ -73,6 +76,8 @@ export const RepositoriesSelectorPopover: React.FC<{
     // Whether to encourage the popover to overlap its trigger if necessary, rather than
     // collapsing or flipping position.
     encourageOverlap?: boolean
+    transcriptHistory: TranscriptJSON[]
+    authenticatedUser: AuthenticatedUser | null
 }> = React.memo(function RepositoriesSelectorPopoverContent({
     inferredRepository,
     inferredFilePath,
@@ -85,6 +90,8 @@ export const RepositoriesSelectorPopover: React.FC<{
     toggleIncludeInferredRepository,
     toggleIncludeInferredFile,
     encourageOverlap = false,
+    transcriptHistory,
+    authenticatedUser,
 }) {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const [searchText, setSearchText] = useState('')
@@ -94,6 +101,10 @@ export const RepositoriesSelectorPopover: React.FC<{
         ReposSelectorSearchResult,
         ReposSelectorSearchVariables
     >(ReposSelectorSearchQuery, {})
+
+    const suggestions = useRepoSuggestions(transcriptHistory, authenticatedUser, {
+        omitSuggestions: additionalRepositories,
+    })
 
     const searchResults = useMemo(() => searchResultsData?.repositories.nodes || [], [searchResultsData])
 
@@ -113,12 +124,12 @@ export const RepositoriesSelectorPopover: React.FC<{
         if (searchTextDebounced) {
             /* eslint-disable no-console */
             searchRepositories({
-                variables: { query: searchTextDebounced, includeJobs: !!window.context.currentUser?.siteAdmin },
+                variables: { query: searchTextDebounced, includeJobs: !!authenticatedUser?.siteAdmin },
                 pollInterval: 5000,
             }).catch(console.error)
             /* eslint-enable no-console */
         }
-    }, [searchTextDebounced, searchRepositories])
+    }, [searchTextDebounced, searchRepositories, authenticatedUser?.siteAdmin])
 
     const [isCalloutDismissed = true, setIsCalloutDismissed] = useTemporarySetting(
         'cody.contextCallout.dismissed',
@@ -207,42 +218,76 @@ export const RepositoriesSelectorPopover: React.FC<{
                             styles.repositorySelectorContent
                         )}
                     >
-                        {!searchText && (
-                            <>
-                                <div className="d-flex justify-content-between p-2 border-bottom mb-1">
-                                    <Text className={classNames('m-0', styles.header)}>Chat Context</Text>
-                                    {resetScope && scopeChanged && (
-                                        <Button
-                                            onClick={resetScope}
-                                            variant="icon"
-                                            aria-label="Reset scope"
-                                            title="Reset scope"
-                                            className={styles.header}
-                                        >
-                                            Reset
-                                        </Button>
-                                    )}
-                                </div>
-                                <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
-                                    {inferredRepository && (
-                                        <div className="d-flex flex-column">
-                                            {inferredFilePath && (
+                        <>
+                            {!searchText && (
+                                <>
+                                    <div className="d-flex justify-content-between p-2 border-bottom">
+                                        <Text className={classNames('m-0', styles.header)}>Chat Context</Text>
+                                        {resetScope && scopeChanged && (
+                                            <Button
+                                                onClick={resetScope}
+                                                variant="icon"
+                                                aria-label="Reset scope"
+                                                title="Reset scope"
+                                                className={styles.header}
+                                            >
+                                                Reset
+                                            </Button>
+                                        )}
+                                    </div>
+                                    <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
+                                        {inferredRepository && (
+                                            <div className="d-flex flex-column py-1">
+                                                {inferredFilePath && (
+                                                    <button
+                                                        type="button"
+                                                        className={classNames(
+                                                            'd-flex justify-content-between flex-row text-truncate pl-2 pr-3 py-1',
+                                                            styles.repositoryListItem,
+                                                            {
+                                                                [styles.notIncludedInContext]: !includeInferredFile,
+                                                            }
+                                                        )}
+                                                        onClick={toggleIncludeInferredFile}
+                                                    >
+                                                        <div className="d-flex align-items-center text-truncate">
+                                                            <Icon
+                                                                aria-hidden={true}
+                                                                className={classNames('mr-1 text-muted', {
+                                                                    [styles.visibilityHidden]: !includeInferredFile,
+                                                                })}
+                                                                svgPath={mdiCheck}
+                                                            />
+                                                            <ExternalRepositoryIcon
+                                                                externalRepo={inferredRepository.externalRepository}
+                                                                className={styles.repoIcon}
+                                                            />
+                                                            <span className="text-truncate">
+                                                                {getFileName(inferredFilePath)}
+                                                            </span>
+                                                        </div>
+                                                        <EmbeddingExistsIcon
+                                                            repo={inferredRepository}
+                                                            authenticatedUser={authenticatedUser}
+                                                        />
+                                                    </button>
+                                                )}
                                                 <button
                                                     type="button"
                                                     className={classNames(
-                                                        'd-flex justify-content-between flex-row text-truncate px-2 py-1 mt-1',
+                                                        'd-flex justify-content-between flex-row text-truncate pl-2 pr-3 py-1',
                                                         styles.repositoryListItem,
                                                         {
-                                                            [styles.notIncludedInContext]: !includeInferredFile,
+                                                            [styles.notIncludedInContext]: !includeInferredRepository,
                                                         }
                                                     )}
-                                                    onClick={toggleIncludeInferredFile}
+                                                    onClick={toggleIncludeInferredRepository}
                                                 >
                                                     <div className="d-flex align-items-center text-truncate">
                                                         <Icon
                                                             aria-hidden={true}
                                                             className={classNames('mr-1 text-muted', {
-                                                                [styles.visibilityHidden]: !includeInferredFile,
+                                                                [styles.visibilityHidden]: !includeInferredRepository,
                                                             })}
                                                             svgPath={mdiCheck}
                                                         />
@@ -251,110 +296,117 @@ export const RepositoriesSelectorPopover: React.FC<{
                                                             className={styles.repoIcon}
                                                         />
                                                         <span className="text-truncate">
-                                                            {getFileName(inferredFilePath)}
+                                                            {getRepoName(inferredRepository.name)}
                                                         </span>
                                                     </div>
-                                                    <EmbeddingExistsIcon repo={inferredRepository} />
+                                                    <EmbeddingExistsIcon
+                                                        repo={inferredRepository}
+                                                        authenticatedUser={authenticatedUser}
+                                                    />
                                                 </button>
-                                            )}
-                                            <button
-                                                type="button"
-                                                className={classNames(
-                                                    'd-flex justify-content-between flex-row text-truncate px-2 py-1',
-                                                    styles.repositoryListItem,
-                                                    {
-                                                        [styles.notIncludedInContext]: !includeInferredRepository,
-                                                    }
-                                                )}
-                                                onClick={toggleIncludeInferredRepository}
-                                            >
-                                                <div className="d-flex align-items-center text-truncate">
-                                                    <Icon
-                                                        aria-hidden={true}
-                                                        className={classNames('mr-1 text-muted', {
-                                                            [styles.visibilityHidden]: !includeInferredRepository,
-                                                        })}
-                                                        svgPath={mdiCheck}
-                                                    />
-                                                    <ExternalRepositoryIcon
-                                                        externalRepo={inferredRepository.externalRepository}
-                                                        className={styles.repoIcon}
-                                                    />
-                                                    <span className="text-truncate">
-                                                        {getRepoName(inferredRepository.name)}
+                                            </div>
+                                        )}
+                                        {!!additionalRepositories.length && (
+                                            <div className="d-flex flex-column mb-1">
+                                                <Text
+                                                    className={classNames(
+                                                        'm-0 pl-2 pr-3 pb-1 pt-2 text-muted d-flex justify-content-between',
+                                                        styles.subHeader
+                                                    )}
+                                                >
+                                                    <span className="small">
+                                                        {inferredRepository
+                                                            ? 'Additional repositories'
+                                                            : 'Repositories'}
                                                     </span>
-                                                </div>
-                                                <EmbeddingExistsIcon repo={inferredRepository} />
-                                            </button>
-                                        </div>
-                                    )}
-                                    {!!additionalRepositories.length && (
-                                        <div className="d-flex flex-column">
-                                            <Text
-                                                className={classNames(
-                                                    'mb-0 px-2 py-1 text-muted d-flex justify-content-between',
-                                                    styles.subHeader,
-                                                    {
-                                                        'mt-1': inferredRepository || inferredFilePath,
-                                                    }
-                                                )}
-                                            >
-                                                <span className="small">
-                                                    {inferredRepository ? 'Additional repositories' : 'Repositories'}
-                                                </span>
-                                                <span className="small">{additionalRepositories.length}/10</span>
+                                                    <span className="small">
+                                                        {additionalRepositories.length}/{MAX_ADDITIONAL_REPOSITORIES}
+                                                    </span>
+                                                </Text>
+                                                {additionalRepositories.map(repository => (
+                                                    <AdditionalRepositoriesListItem
+                                                        key={repository.id}
+                                                        repository={repository}
+                                                        removeRepository={removeRepository}
+                                                        authenticatedUser={authenticatedUser}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {!inferredRepository && !inferredFilePath && !additionalRepositories.length && (
+                                            <Text size="small" className="m-0 px-4 py-2 my-1 text-center text-muted">
+                                                Add up to {MAX_ADDITIONAL_REPOSITORIES} repositories for Cody to
+                                                reference when providing answers.
                                             </Text>
-                                            {additionalRepositories.map(repository => (
-                                                <AdditionalRepositoriesListItem
+                                        )}
+
+                                        {!!suggestions.length && (
+                                            <div className="d-flex flex-column">
+                                                <Text
+                                                    className={classNames(
+                                                        'mb-0 pl-2 pr-3 pb-1 pt-2 text-muted d-flex justify-content-between border-top',
+                                                        styles.subHeader
+                                                    )}
+                                                >
+                                                    <span className="small">Suggestions</span>
+                                                </Text>
+                                                <div
+                                                    className={classNames(
+                                                        'd-flex flex-column',
+                                                        styles.contextItemsContainer
+                                                    )}
+                                                >
+                                                    {suggestions.map(repository => (
+                                                        <SearchResultsListItem
+                                                            additionalRepositories={[]}
+                                                            key={repository.id}
+                                                            repository={repository}
+                                                            searchText=""
+                                                            addRepository={addRepository}
+                                                            removeRepository={removeRepository}
+                                                            authenticatedUser={authenticatedUser}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </>
+                            )}
+                            {searchText && (
+                                <>
+                                    <div className="d-flex justify-content-between p-2 border-bottom mb-1">
+                                        <Text className={classNames('m-0', styles.header)}>
+                                            {additionalRepositoriesLeft
+                                                ? `Add up to ${additionalRepositoriesLeft} additional repositories`
+                                                : 'Maximum additional repositories added'}
+                                        </Text>
+                                    </div>
+                                    <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
+                                        {searchResults.length ? (
+                                            searchResults.map(repository => (
+                                                <SearchResultsListItem
+                                                    additionalRepositories={additionalRepositories}
                                                     key={repository.id}
                                                     repository={repository}
+                                                    searchText={searchText}
+                                                    addRepository={addRepository}
                                                     removeRepository={removeRepository}
+                                                    authenticatedUser={authenticatedUser}
                                                 />
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {!inferredRepository && !inferredFilePath && !additionalRepositories.length && (
-                                        <div className="d-flex align-items-center justify-content-center flex-column p-4 mt-4">
-                                            <Text size="small" className="m-0 text-center text-muted">
-                                                Add up to 10 repositories for Cody to reference when providing answers.
-                                            </Text>
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                        )}
-                        {searchText && (
-                            <>
-                                <div className="d-flex justify-content-between p-2 border-bottom mb-1">
-                                    <Text className={classNames('m-0', styles.header)}>
-                                        {additionalRepositoriesLeft
-                                            ? `Add up to ${additionalRepositoriesLeft} additional repositories`
-                                            : 'Maximum additional repositories added'}
-                                    </Text>
-                                </div>
-                                <div className={classNames('d-flex flex-column', styles.contextItemsContainer)}>
-                                    {searchResults.length ? (
-                                        searchResults.map(repository => (
-                                            <SearchResultsListItem
-                                                additionalRepositories={additionalRepositories}
-                                                key={repository.id}
-                                                repository={repository}
-                                                searchText={searchText}
-                                                addRepository={addRepository}
-                                                removeRepository={removeRepository}
-                                            />
-                                        ))
-                                    ) : !loadingSearchResults ? (
-                                        <div className="d-flex align-items-center justify-content-center flex-column p-4 mt-4">
-                                            <Text size="small" className="m-0 d-flex text-center">
-                                                No matching repositories found
-                                            </Text>
-                                        </div>
-                                    ) : null}
-                                </div>
-                            </>
-                        )}
+                                            ))
+                                        ) : !loadingSearchResults ? (
+                                            <div className="d-flex align-items-center justify-content-center flex-column p-4 mt-4">
+                                                <Text size="small" className="m-0 d-flex text-center">
+                                                    No matching repositories found
+                                                </Text>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                </>
+                            )}
+                        </>
                         <div className={classNames('relative p-2 border-top mt-auto', styles.inputContainer)}>
                             <Input
                                 role="combobox"
@@ -398,7 +450,8 @@ export const RepositoriesSelectorPopover: React.FC<{
 const AdditionalRepositoriesListItem: React.FC<{
     repository: IRepo
     removeRepository: (repoName: string) => void
-}> = React.memo(function RepositoryListItemContent({ repository, removeRepository }) {
+    authenticatedUser: AuthenticatedUser | null
+}> = React.memo(function RepositoryListItemContent({ repository, removeRepository, authenticatedUser }) {
     const onClick = useCallback(() => {
         removeRepository(repository.name)
     }, [repository, removeRepository])
@@ -407,7 +460,7 @@ const AdditionalRepositoriesListItem: React.FC<{
         <button
             type="button"
             className={classNames(
-                'd-flex justify-content-between flex-row text-truncate px-2 py-1 mb-1',
+                'd-flex justify-content-between flex-row text-truncate pl-2 pr-3 py-1 mb-1',
                 styles.repositoryListItem
             )}
             onClick={onClick}
@@ -421,7 +474,7 @@ const AdditionalRepositoriesListItem: React.FC<{
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
                 <span className="text-truncate">{getRepoName(repository.name)}</span>
             </div>
-            <EmbeddingExistsIcon repo={repository} />
+            <EmbeddingExistsIcon repo={repository} authenticatedUser={authenticatedUser} />
         </button>
     )
 })
@@ -432,12 +485,14 @@ const SearchResultsListItem: React.FC<{
     searchText: string
     addRepository: (repoName: string) => void
     removeRepository: (repoName: string) => void
+    authenticatedUser: AuthenticatedUser | null
 }> = React.memo(function RepositoryListItemContent({
     additionalRepositories,
     repository,
     searchText,
     addRepository,
     removeRepository,
+    authenticatedUser,
 }) {
     const selected = useMemo(
         () => !!additionalRepositories.find(({ name }) => name === repository.name),
@@ -458,7 +513,7 @@ const SearchResultsListItem: React.FC<{
         <button
             type="button"
             className={classNames(
-                'd-flex justify-content-between flex-row text-truncate px-2 py-1 mb-1',
+                'd-flex justify-content-between flex-row text-truncate pl-2 pr-3 py-1 mb-1',
                 styles.repositoryListItem,
                 { [styles.disabledSearchResult]: disabled }
             )}
@@ -474,7 +529,7 @@ const SearchResultsListItem: React.FC<{
                 <ExternalRepositoryIcon externalRepo={repository.externalRepository} className={styles.repoIcon} />
                 {getTintedText(getRepoName(repository.name), searchText)}
             </div>
-            <EmbeddingExistsIcon repo={repository} />
+            <EmbeddingExistsIcon repo={repository} authenticatedUser={authenticatedUser} />
         </button>
     )
 })
@@ -505,7 +560,7 @@ const getTintedText = (item: string, searchText: string): React.ReactNode => {
 
 export const getFileName = (path: string): string => {
     const parts = path.split('/')
-    return parts[parts.length - 1]
+    return parts.at(-1)!
 }
 
 export const getRepoName = (path: string): string => {
@@ -545,48 +600,54 @@ const getEmbeddingStatus = ({
 
     const job = embeddingJobs.nodes[0]
     switch (job.state) {
-        case 'QUEUED':
+        case 'QUEUED': {
             return {
                 status: RepoEmbeddingStatus.QUEUED,
                 tooltip: 'Repository is queued for indexing',
                 icon: mdiDatabaseClockOutline,
                 className: 'text-warning',
             }
-        case 'PROCESSING':
+        }
+        case 'PROCESSING': {
             return {
                 status: RepoEmbeddingStatus.INDEXING,
                 tooltip: 'Repository is being indexed',
                 icon: mdiDatabaseRefreshOutline,
                 className: 'text-warning',
             }
-        case 'COMPLETED':
+        }
+        case 'COMPLETED': {
             return {
                 status: RepoEmbeddingStatus.INDEXED,
                 tooltip: 'Repository is indexed',
                 icon: mdiDatabaseCheckOutline,
                 className: 'text-success',
             }
-        case 'ERRORED':
+        }
+        case 'ERRORED': {
             return {
                 status: RepoEmbeddingStatus.FAILED,
                 tooltip: `Repository indexing failed: ${job.failureMessage || 'unknown error'}`,
                 icon: mdiDatabaseRemoveOutline,
                 className: 'text-danger',
             }
-        case 'FAILED':
+        }
+        case 'FAILED': {
             return {
                 status: RepoEmbeddingStatus.FAILED,
                 tooltip: `Repository indexing failed: ${job.failureMessage || 'unknown error'}`,
                 icon: mdiDatabaseRemoveOutline,
                 className: 'text-danger',
             }
-        default:
+        }
+        default: {
             return {
                 status: RepoEmbeddingStatus.NOT_INDEXED,
                 tooltip: 'Repository is not indexed',
                 icon: mdiDatabaseRemoveOutline,
                 className: 'text-warning',
             }
+        }
     }
 }
 
@@ -594,12 +655,13 @@ export const isRepoIndexed = (repo: IRepo): boolean => getEmbeddingStatus(repo).
 
 const EmbeddingExistsIcon: React.FC<{
     repo: IRepo
-}> = React.memo(function EmbeddingExistsIconContent({ repo }) {
+    authenticatedUser: AuthenticatedUser | null
+}> = React.memo(function EmbeddingExistsIconContent({ repo, authenticatedUser }) {
     const { tooltip, icon, className } = getEmbeddingStatus(repo)
 
     return (
         <Tooltip content={tooltip}>
-            {window.context.currentUser?.siteAdmin ? (
+            {authenticatedUser?.siteAdmin ? (
                 <Link to="/site-admin/embeddings" className="text-body" onClick={event => event.stopPropagation()}>
                     <Icon aria-hidden={true} className={classNames(styles.icon, className)} svgPath={icon} />
                 </Link>

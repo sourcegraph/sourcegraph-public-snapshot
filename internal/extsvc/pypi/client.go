@@ -35,6 +35,8 @@ import (
 
 	"golang.org/x/net/html"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -65,11 +67,12 @@ func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) (*Client
 	if err != nil {
 		return nil, err
 	}
+
 	return &Client{
 		urls:           urls,
 		uncachedClient: uncached,
 		cachedClient:   cached,
-		limiter:        ratelimit.DefaultRegistry.Get(urn),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("PyPiClient"), urn)),
 	}, nil
 }
 

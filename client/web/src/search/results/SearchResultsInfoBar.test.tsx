@@ -1,5 +1,6 @@
 import { noop } from 'lodash'
 import { NEVER } from 'rxjs'
+import { describe, expect, test } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'

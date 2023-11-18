@@ -574,6 +574,25 @@ loop:
 	return string(result), count, nil
 }
 
+// Delimit inverts the process of ScanDelimiter, escaping any special
+// characters or delimiters in s.
+//
+// NOTE: this does not provide a clean roundtrip with ScanDelimited because
+// ScanDelimited is lossy. We cannot know whether a backslash was passed
+// through because it was escaped or because its successor rune was not
+// escapable.
+func Delimit(s string, delimiter rune) string {
+	ds := string(delimiter)
+	delimitReplacer := strings.NewReplacer(
+		"\n", "\\n",
+		"\r", "\\r",
+		"\t", "\\t",
+		"\\", "\\\\",
+		ds, "\\"+ds,
+	)
+	return ds + delimitReplacer.Replace(s) + ds
+}
+
 // ScanField scans an optional '-' at the beginning of a string, and then scans
 // one or more alphabetic characters until it encounters a ':'. The prefix
 // string is checked against valid fields. If it is valid, the function returns
@@ -1075,7 +1094,7 @@ func (p *parser) parseAnd() ([]Node, error) {
 		left, err = p.parseLeaves(Regexp)
 	case SearchTypeLiteral, SearchTypeStructural:
 		left, err = p.parseLeaves(Literal)
-	case SearchTypeStandard, SearchTypeLucky:
+	case SearchTypeStandard, SearchTypeLucky, SearchTypeNewStandardRC1:
 		left, err = p.parseLeaves(Literal | Standard)
 	default:
 		left, err = p.parseLeaves(Literal | Standard)
@@ -1171,7 +1190,7 @@ func Parse(in string, searchType SearchType) ([]Node, error) {
 			nodes = hoistedNodes
 		}
 	}
-	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard {
+	if searchType == SearchTypeLiteral || searchType == SearchTypeStandard || searchType == SearchTypeNewStandardRC1 {
 		err = validatePureLiteralPattern(nodes, parser.balanced == 0)
 		if err != nil {
 			return nil, err

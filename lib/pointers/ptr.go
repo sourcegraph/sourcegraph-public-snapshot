@@ -15,7 +15,7 @@ func NonZeroPtr[T comparable](val T) *T {
 	return Ptr(val)
 }
 
-// Deref safely dereferences a pointer. If pointer is nil, returns zero value,
+// Deref safely dereferences a pointer. If pointer is nil, returns default value,
 // otherwise returns dereferenced value.
 func Deref[T any](v *T, defaultValue T) T {
 	if v != nil {
@@ -23,4 +23,26 @@ func Deref[T any](v *T, defaultValue T) T {
 	}
 
 	return defaultValue
+}
+
+// Deref safely dereferences a pointer. If pointer is nil, it returns a zero value,
+// otherwise returns dereferenced value.
+func DerefZero[T any](v *T) T {
+	if v != nil {
+		return *v
+	}
+
+	var defaultValue T
+	return defaultValue
+}
+
+type numberType interface {
+	~float32 | ~float64 |
+		~int | ~int8 | ~int16 | ~int32 | ~int64 |
+		~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~uintptr
+}
+
+// Float64 returns a pointer to the provided numeric value as a float64.
+func Float64[T numberType](v T) *float64 {
+	return Ptr(float64(v))
 }

@@ -67,7 +67,7 @@ type endpoints struct {
 // Note: this function does not take a logger because discovery is done in the
 // in the background and does not connect to higher order functions.
 func New(urlspec string) *Map {
-	logger := log.Scoped("newmap", "A new map for the endpoing URL")
+	logger := log.Scoped("newmap")
 	if !strings.HasPrefix(urlspec, "k8s+") {
 		return Static(strings.Fields(urlspec)...)
 	}
@@ -203,7 +203,7 @@ func (m *Map) discover() {
 }
 
 func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
-	logger := log.Scoped("endpoint", "A kubernetes endpoint that represents a service")
+	logger := log.Scoped("endpoint")
 	for eps := range ch {
 
 		logger.Info(

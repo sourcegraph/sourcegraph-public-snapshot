@@ -5,6 +5,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, Routes } from 'react-router-dom'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -30,7 +31,7 @@ import styles from './UserSettingsArea.module.scss'
 
 export interface UserSettingsAreaRoute extends RouteV6Descriptor<UserSettingsAreaRouteContext> {}
 
-export interface UserSettingsAreaProps extends UserAreaRouteContext, TelemetryProps {
+export interface UserSettingsAreaProps extends UserAreaRouteContext, TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser
     sideBarItems: UserSettingsSidebarItems
     routes: readonly UserSettingsAreaRoute[]

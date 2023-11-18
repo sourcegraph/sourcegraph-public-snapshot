@@ -1,0 +1,87 @@
+diff --git a/migrations/codeinsights/BUILD.bazel b/migrations/codeinsights/BUILD.bazel
+index bd061fb60b..1fe7f3043d 100644
+--- a/migrations/codeinsights/BUILD.bazel
++++ b/migrations/codeinsights/BUILD.bazel
+@@ -1,24 +1,5 @@
+-load("@aspect_bazel_lib//lib:output_files.bzl", "output_files")
+-load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+-
+ filegroup(
+     name = "sql",
+     srcs = glob(["**/*"]),
+     visibility = ["//visibility:public"],
+ )
+-
+-output_files(
+-    name = "squashed",
+-    output_group = "codeinsights_squash",
+-    paths = ["internal/database/_codeinsights_squashed.sql"],
+-    target = "//internal/database:generate_schemas",
+-)
+-
+-write_source_files(
+-    name = "write_squashed",
+-    files = {
+-        "squashed.sql": ":squashed",
+-    },
+-    suggested_update_target = "//dev:write_all_generated",
+-    visibility = ["//visibility:public"],
+-)
+diff --git a/migrations/codeintel/BUILD.bazel b/migrations/codeintel/BUILD.bazel
+index f369388a73..1fe7f3043d 100644
+--- a/migrations/codeintel/BUILD.bazel
++++ b/migrations/codeintel/BUILD.bazel
+@@ -1,24 +1,5 @@
+-load("@aspect_bazel_lib//lib:output_files.bzl", "output_files")
+-load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+-
+ filegroup(
+     name = "sql",
+     srcs = glob(["**/*"]),
+     visibility = ["//visibility:public"],
+ )
+-
+-output_files(
+-    name = "squashed",
+-    output_group = "codeintel_squash",
+-    paths = ["internal/database/_codeintel_squashed.sql"],
+-    target = "//internal/database:generate_schemas",
+-)
+-
+-write_source_files(
+-    name = "write_squashed",
+-    files = {
+-        "squashed.sql": ":squashed",
+-    },
+-    suggested_update_target = "//dev:write_all_generated",
+-    visibility = ["//visibility:public"],
+-)
+diff --git a/migrations/frontend/BUILD.bazel b/migrations/frontend/BUILD.bazel
+index a089860ea3..1fe7f3043d 100644
+--- a/migrations/frontend/BUILD.bazel
++++ b/migrations/frontend/BUILD.bazel
+@@ -1,24 +1,5 @@
+-load("@aspect_bazel_lib//lib:output_files.bzl", "output_files")
+-load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+-
+ filegroup(
+     name = "sql",
+     srcs = glob(["**/*"]),
+     visibility = ["//visibility:public"],
+ )
+-
+-output_files(
+-    name = "squashed",
+-    output_group = "frontend_squash",
+-    paths = ["internal/database/_frontend_squashed.sql"],
+-    target = "//internal/database:generate_schemas",
+-)
+-
+-write_source_files(
+-    name = "write_squashed",
+-    files = {
+-        "squashed.sql": ":squashed",
+-    },
+-    suggested_update_target = "//dev:write_all_generated",
+-    visibility = ["//visibility:public"],
+-)

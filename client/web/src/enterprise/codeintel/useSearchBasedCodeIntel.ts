@@ -9,7 +9,6 @@ import type { Range as ExtensionRange, Position as ExtensionPosition } from '@so
 import { getDocumentNode } from '@sourcegraph/http-client'
 import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { Position as ScipPosition } from '@sourcegraph/shared/src/codeintel/scip'
-import { searchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
@@ -315,7 +314,6 @@ export async function searchBasedDefinitions({
  * Perform a search query for definitions. Returns results converted to locations,
  * filtered by the language's definition filter, and sorted by proximity to the
  * current text document path.
- *
  * @param api The GraphQL API instance.
  * @param args Parameter bag.
  */
@@ -363,11 +361,6 @@ async function searchAndFilterReferences({
 }
 
 async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
-    const context = searchContext()
-    if (context) {
-        terms.push(`context:${context}`)
-    }
-
     interface Response {
         search: {
             results: {
@@ -400,7 +393,7 @@ const findSymbol = async (
         return
     }
 
-    for (const symbol of payload.symbols) {
+    for (const symbol of payload.symbols ?? []) {
         if (isInRange(repositoryCommitPathPosition, symbol.def)) {
             return symbol
         }
@@ -455,7 +448,7 @@ const fetchLocalCodeIntelPayload = cache(
             return undefined
         }
 
-        for (const symbol of payload.symbols) {
+        for (const symbol of payload.symbols ?? []) {
             if (symbol.refs) {
                 symbol.refs = sortBy(symbol.refs, reference => reference.row)
             }
@@ -475,7 +468,7 @@ interface RepositoryCommitPath {
 type RepositoryCommitPathPosition = RepositoryCommitPath & Position
 
 type LocalCodeIntelPayload = {
-    symbols: LocalSymbol[]
+    symbols: LocalSymbol[] | null
 } | null
 
 interface LocalSymbol {

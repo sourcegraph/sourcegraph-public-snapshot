@@ -3,3 +3,11 @@ package(default_visibility = ["//visibility:public"])
 exports_files([
     "reindex.sh",
 ])
+
+filegroup(
+    name = "files",
+    srcs = glob(
+        ["**"],
+        ["*.bazel"],
+    ),
+)

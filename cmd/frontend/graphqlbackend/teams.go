@@ -958,10 +958,7 @@ func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemb
 				continue
 			}
 			if m.ExternalAccountLogin != nil {
-				if ea.PublicAccountData.Login == nil {
-					continue
-				}
-				if *ea.PublicAccountData.Login == *m.ExternalAccountAccountID {
+				if ea.PublicAccountData.Login == *m.ExternalAccountAccountID {
 					u, err := db.Users().GetByID(ctx, ea.UserID)
 					if err != nil {
 						return false, err

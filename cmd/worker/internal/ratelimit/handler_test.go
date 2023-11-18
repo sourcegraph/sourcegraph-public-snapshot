@@ -2,13 +2,15 @@ package ratelimit
 
 import (
 	"context"
-	"fmt"
-	"math"
 	"testing"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -16,17 +18,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestHandler_Handle(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	prefix := "__test__" + t.Name()
-	url := "https://github.com/"
 	redisHost := "127.0.0.1:6379"
 
 	pool := &redis.Pool{
@@ -49,78 +50,51 @@ func TestHandler_Handle(t *testing.T) {
 		c.Close()
 	})
 
-	assertValFromRedis := func(kv redispool.KeyValue, key string, expectedVal int32) {
-		val, err := kv.Get(key).Int()
-		assert.NoError(t, err)
-		assert.Equal(t, expectedVal, int32(val))
-	}
-
-	kv := redispool.NewKeyValue(redisHost, &redis.Pool{
-		MaxIdle:     3,
-		IdleTimeout: 240 * time.Second,
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			GitMaxCodehostRequestsPerSecond: pointers.Ptr(1),
+		},
 	})
-	rateLimiter, err := redispool.NewTestRateLimiterWithPoolAndPrefix(pool, prefix)
-	require.NoError(t, err)
-
-	rateLimitConfigValues := int32(10)
-	codeHost := &types.CodeHost{
-		Kind:                        extsvc.KindGitHub,
-		URL:                         url,
-		APIRateLimitQuota:           &rateLimitConfigValues,
-		APIRateLimitIntervalSeconds: &rateLimitConfigValues,
-		GitRateLimitQuota:           &rateLimitConfigValues,
-		GitRateLimitIntervalSeconds: &rateLimitConfigValues,
-	}
-	err = db.CodeHosts().Create(ctx, codeHost)
-	require.NoError(t, err)
+	defer conf.Mock(nil)
 
 	// Create the external service so that the first code host appears when the handler calls GetByURL.
 	confGet := func() *conf.Unified { return &conf.Unified{} }
-	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "abc"}`)
-	err = db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
-		CodeHostID: &codeHost.ID,
-		Kind:       codeHost.Kind,
-		Config:     extsvcConfig,
-	})
+	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "token":"abc", "repositoryQuery": ["none"], "rateLimit": {"enabled": true, "requestsPerHour": 150}}`)
+	svc := &types.ExternalService{
+		Kind:   extsvc.KindGitHub,
+		Config: extsvcConfig,
+	}
+	err := db.ExternalServices().Create(ctx, confGet, svc)
 	require.NoError(t, err)
 
 	// Create the handler to start the test
 	h := handler{
-		codeHostStore: db.CodeHosts(),
-		rateLimiter:   ratelimit.NewCodeHostRateLimiter(rateLimiter),
-		logger:        logger,
+		externalServiceStore: db.ExternalServices(),
+		newRateLimiterFunc: func(bucketName string) ratelimit.GlobalLimiter {
+			return ratelimit.NewTestGlobalRateLimiter(pool, prefix, bucketName)
+		},
+		logger: logger,
 	}
 	err = h.Handle(ctx)
 	assert.NoError(t, err)
-	apiCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_capacity", prefix, url, "api_tokens")
-	apiReplenishmentKey := fmt.Sprintf("%s:%s:%s:config:bucket_replenishment_interval_seconds", prefix, url, "api_tokens")
-	gitCapKey := fmt.Sprintf("%s:%s:%s:config:bucket_capacity", prefix, url, "git_tokens")
-	gitReplenishmentKey := fmt.Sprintf("%s:%s:%s:config:bucket_replenishment_interval_seconds", prefix, url, "git_tokens")
-	assertValFromRedis(kv, apiCapKey, rateLimitConfigValues)
-	assertValFromRedis(kv, apiReplenishmentKey, rateLimitConfigValues)
-	assertValFromRedis(kv, gitCapKey, rateLimitConfigValues)
-	assertValFromRedis(kv, gitReplenishmentKey, rateLimitConfigValues)
 
-	// Update the rate limit config in Postgres to use defaults/maxes
-	maxRateLimitQuota := int32(math.MaxInt32)
+	info, err := ratelimit.GetGlobalLimiterStateFromPool(ctx, pool, prefix)
+	require.NoError(t, err)
 
-	// This should default to max int32
-	codeHost.APIRateLimitQuota = nil
-	// This should default to  3600
-	codeHost.APIRateLimitIntervalSeconds = nil
-	codeHost.GitRateLimitQuota = &maxRateLimitQuota
-	// This should default to 1
-	codeHost.GitRateLimitIntervalSeconds = nil
-	err = db.CodeHosts().Update(ctx, codeHost)
-	assert.NoError(t, err)
-	err = h.Handle(ctx)
-	assert.NoError(t, err)
-
-	// Check updated values are in Redis
-	defaultAPIRateLimitReplenishmentInterval := int32(3600)
-	defaultGitRateLimitReplenishmentInterval := int32(1)
-	assertValFromRedis(kv, apiCapKey, maxRateLimitQuota)
-	assertValFromRedis(kv, apiReplenishmentKey, defaultAPIRateLimitReplenishmentInterval)
-	assertValFromRedis(kv, gitCapKey, maxRateLimitQuota)
-	assertValFromRedis(kv, gitReplenishmentKey, defaultGitRateLimitReplenishmentInterval)
+	if diff := cmp.Diff(map[string]ratelimit.GlobalLimiterInfo{
+		svc.URN(): {
+			Burst:             10,
+			Limit:             150,
+			Interval:          time.Hour,
+			LastReplenishment: time.Unix(0, 0),
+		},
+		ratelimit.GitRPSLimiterBucketName: {
+			Burst:             10,
+			Limit:             1,
+			Interval:          time.Second,
+			LastReplenishment: time.Unix(0, 0),
+		},
+	}, info); diff != "" {
+		t.Fatal(diff)
+	}
 }

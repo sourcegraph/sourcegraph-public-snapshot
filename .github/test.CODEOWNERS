@@ -17,13 +17,11 @@
 
 /client/shared/src/search/query/**/* @fkling
 
-/client/web/src/enterprise/batches/**/* @eseliger @courier-new @BolajiOlajide
+/client/web/src/enterprise/batches/**/* @eseliger @BolajiOlajide
 
-/client/web/src/enterprise/codeintel/**/* @efritz
+/client/web/src/enterprise/executors/**/* @eseliger
 
-/client/web/src/enterprise/executors/**/* @efritz @eseliger
-
-/client/web/src/integration/batches* @eseliger @courier-new @BolajiOlajide
+/client/web/src/integration/batches* @eseliger @BolajiOlajide
 
 /client/web/src/search/**/* @fkling
 
@@ -33,10 +31,8 @@
 /cmd/frontend/graphqlbackend/site_monitoring.go @bobheadxi
 /cmd/frontend/graphqlbackend/*search*.go @keegancsmith
 /cmd/frontend/graphqlbackend/*zoekt*.go @keegancsmith
-/cmd/frontend/graphqlbackend/batches.go @eseliger @courier-new
+/cmd/frontend/graphqlbackend/batches.go @eseliger
 /cmd/frontend/graphqlbackend/insights.go @sourcegraph/code-insights-backend
-/cmd/frontend/graphqlbackend/codeintel.go @efritz
-/cmd/frontend/graphqlbackend/oobmigrations.go @efritz
 
 /cmd/frontend/internal/search/** @keegancsmith
 /cmd/frontend/internal/search/**/* @camdencheek
@@ -50,87 +46,58 @@
 
 /cmd/symbols/** @keegancsmith
 
-/cmd/worker/**/* @efritz
-
 /dev/authtest/**/* @unknwon
-
-/dev/codeintel-qa/**/* @efritz
-
-/dev/depgraph/**/* @efritz
 
 /dev/gqltest/**/* @unknwon
 
-/doc/**/admin/** @sourcegraph/delivery
 /doc/dev/background-information/adding_ping_data.md @ebrodymoore @dadlerj
 
-/doc/batch_changes/**/* @eseliger @courier-new
-
-/doc/code_navigation/**/* @efritz
+/doc/batch_changes/**/* @eseliger
 
 /doc/code_search/**/* @rvantonder
 
 /doc/dev/adr/**/* @unknwon
 
-/doc/dev/background-information/codeintel/**/* @efritz
-
 /docker-images/cadvisor/**/* @bobheadxi
 
 /docker-images/grafana/**/* @bobheadxi
 
-/docker-images/postgres-12-alpine/**/* @sourcegraph/delivery
-
 /docker-images/prometheus/**/* @bobheadxi
 
-/cmd/executor/**/* @efritz
+/cmd/frontend/internal/auth/**/* @unknwon
 
-/enterprise/cmd/frontend/internal/auth/**/* @unknwon
+/cmd/frontend/internal/authz/**/* @unknwon
 
-/enterprise/cmd/frontend/internal/authz/**/* @unknwon
+/cmd/frontend/internal/executorqueue/**/* @eseliger
 
-/enterprise/cmd/frontend/internal/codeintel/**/* @efritz
-
-/enterprise/cmd/frontend/internal/executorqueue/**/* @efritz @eseliger
-
-/enterprise/cmd/frontend/internal/licensing/**/* @unknwon
-
-/enterprise/cmd/migrator/**/* @efritz
-
-/cmd/precise-code-intel-worker/**/* @efritz
+/cmd/frontend/internal/licensing/**/* @unknwon
 
 /cmd/repo-updater/internal/authz/**/* @unknwon
 
-/enterprise/cmd/worker/**/* @efritz
+/cmd/worker/internal/batches/**/* @eseliger
 
-/enterprise/cmd/worker/internal/batches/**/* @eseliger
+/cmd/worker/internal/executorqueue/**/* @eseliger
 
-/enterprise/cmd/worker/internal/executorqueue/**/* @efritz @eseliger
-
-/enterprise/cmd/worker/internal/executors/**/* @efritz
-
-/enterprise/dev/ci/**/* @bobheadxi
-
-/enterprise/internal/authz/**/* @unknwon
-
-/internal/batches/**/* @eseliger
-
-/enterprise/internal/cloud/**/* @unknwon @michaellzc
-
-/internal/codeintel/**/* @efritz @Strum355
-
-/enterprise/internal/database/external_services* @unknwon
-/enterprise/internal/database/perms_store* @unknwon
-
-/enterprise/internal/executor/**/* @efritz
-
-/enterprise/internal/insights/**/* @sourcegraph/code-insights-backend
-
-/enterprise/internal/license/**/* @unknwon
-
-/enterprise/internal/licensing/**/* @unknwon
+/dev/ci/**/* @bobheadxi
 
 /internal/authz/**/* @unknwon
 
-/internal/codeintel/**/* @efritz
+/internal/batches/**/* @eseliger
+
+/internal/cloud/**/* @unknwon @michaellzc
+
+/internal/codeintel/**/* @Strum355
+
+/internal/database/external_services* @unknwon
+/internal/database/perms_store* @unknwon
+
+/internal/insights/**/* @sourcegraph/code-insights-backend
+
+/internal/license/**/* @unknwon
+
+/internal/licensing/**/* @unknwon
+
+/internal/authz/**/* @unknwon
 
 /internal/codeintel/dependencies/**/* @mrnugget
 
@@ -142,37 +109,15 @@
 /internal/database/roles* @BolajiOlajide
 /internal/database/role_permissions* @BolajiOlajide
 
-/internal/database/basestore/**/* @efritz
-
-/internal/database/batch/**/* @efritz
-
-/internal/database/connections/**/* @efritz
-
-/internal/database/dbconn/**/* @efritz
-
-/internal/database/dbtest/**/* @efritz
-
-/internal/database/dbutil/**/* @efritz
-
-/internal/database/locker/**/* @efritz
-
-/internal/database/migration/**/* @efritz
-
-/internal/database/postgresdsn/**/* @efritz
-
 /internal/debugserver/** @keegancsmith
 
 /internal/diskcache/** @keegancsmith
 
 /internal/endpoint/** @keegancsmith
 
-/internal/env/baseconfig.go @efritz
-
 /internal/extsvc/**/* @eseliger
 
 /internal/extsvc/auth/**/* @unknwon
-
-/internal/goroutine/**/* @efritz
 
 /internal/gqltestutil/**/* @unknwon
 
@@ -182,13 +127,9 @@
 
 /internal/lazyregexp/** @keegancsmith
 
-/internal/luasandbox/**/* @efritz
-
 /internal/mutablelimiter/** @keegancsmith
 
 /internal/observation/**/* @sourcegraph/dev-experience
-
-/internal/oobmigration/**/* @efritz
 
 /internal/rcache/** @keegancsmith
 
@@ -196,7 +137,7 @@
 
 /internal/search/**/* @keegancsmith @camdencheek
 
-/internal/src-cli/**/* @eseliger @BolajiOlajide @courier-new
+/internal/src-cli/**/* @eseliger @BolajiOlajide
 
 /internal/symbols/** @keegancsmith
 
@@ -210,25 +151,19 @@
 
 /internal/usagestats/batches.go @eseliger
 /internal/usagestats/batches_test.go @eseliger
-/internal/usagestats/*codeintel*.go @efritz
 
 /internal/vcs/** @keegancsmith
-
-/internal/workerutil/**/* @efritz
-
-/lib/codeintel/**/* @efritz
 
 /lib/errors/**/* @sourcegraph/dev-experience
 
 /lib/servicecatalog/**/* @sourcegraph/cloud @sourcegraph/security
 
-/monitoring/**/* @bobheadxi @slimsag @sourcegraph/delivery
-/monitoring/frontend.go @efritz
-/monitoring/precise_code_intel_* @efritz @sourcegraph/code-intelligence
+/monitoring/**/* @bobheadxi @slimsag
+/monitoring/precise_code_intel_* @sourcegraph/code-intelligence
 
-/enterprise/internal/own/ @sourcegraph/own
-/enterprise/internal/database/codeowners* @sourcegraph/own
-/enterprise/cmd/frontend/internal/own/ @sourcegraph/own
+/internal/own/ @sourcegraph/own
+/internal/database/codeowners* @sourcegraph/own
+/cmd/frontend/internal/own/ @sourcegraph/own
 /client/web/src/**/own/ @sourcegraph/own
 /cmd/frontend/graphqlbackend/own* @sourcegraph/own
 /internal/usagestats/own* @sourcegraph/own

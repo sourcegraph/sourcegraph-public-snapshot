@@ -7,8 +7,11 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/dependencies"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -16,7 +19,7 @@ import (
 var setupCommand = &cli.Command{
 	Name:     "setup",
 	Usage:    "Validate and set up your local dev environment!",
-	Category: CategoryEnv,
+	Category: category.Env,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:    "check",
@@ -29,10 +32,17 @@ var setupCommand = &cli.Command{
 			Usage:   "Fix all checks",
 		},
 		&cli.BoolFlag{
-			Name:  "oss",
-			Usage: "Omit Sourcegraph-teammate-specific setup",
+			Name:  "skip-pre-commit",
+			Usage: "Skip overwriting pre-commit.com installation",
 		},
 	},
+	Subcommands: []*cli.Command{{
+		Name:  "disable-pre-commit",
+		Usage: "Disable pre-commit hooks",
+		Action: func(cmd *cli.Context) error {
+			return root.Run(run.Bash(cmd.Context, "rm .git/hooks/pre-commit || echo \"no pre-commit hook was found.\"")).Stream(os.Stdout)
+		},
+	}},
 	Action: func(cmd *cli.Context) error {
 		if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
@@ -53,10 +63,10 @@ var setupCommand = &cli.Command{
 		setup.RunPostFixChecks = true
 
 		args := dependencies.CheckArgs{
-			Teammate:            !cmd.Bool("oss"),
 			ConfigFile:          configFile,
 			ConfigOverwriteFile: configOverwriteFile,
 			DisableOverwrite:    disableOverwrite,
+			DisablePreCommits:   cmd.Bool("skip-pre-commit"),
 		}
 
 		switch {
@@ -71,15 +81,6 @@ var setupCommand = &cli.Command{
 			return setup.Fix(cmd.Context, args)
 
 		default:
-			// Prompt for details if flags are not set
-			if !cmd.IsSet("oss") {
-				std.Out.Promptf("Are you a Sourcegraph teammate? (y/n)")
-				var s string
-				if _, err := fmt.Scan(&s); err != nil {
-					return err
-				}
-				args.Teammate = s == "y"
-			}
 			return setup.Interactive(cmd.Context, args)
 		}
 	},

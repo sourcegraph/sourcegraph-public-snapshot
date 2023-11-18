@@ -43,14 +43,15 @@ func (c *Client) baseContactURL(email string) *url.URL {
 
 // ContactProperties represent HubSpot user properties
 type ContactProperties struct {
-	UserID          string `json:"user_id"`
-	IsServerAdmin   bool   `json:"is_server_admin"`
-	LatestPing      int64  `json:"latest_ping"`
-	AnonymousUserID string `json:"anonymous_user_id"`
-	FirstSourceURL  string `json:"first_source_url"`
-	LastSourceURL   string `json:"last_source_url"`
-	DatabaseID      int32  `json:"database_id"`
-	HasAgreedToToS  bool   `json:"has_agreed_to_tos_and_pp"`
+	UserID                       string `json:"user_id"`
+	IsServerAdmin                bool   `json:"is_server_admin"`
+	LatestPing                   int64  `json:"latest_ping"`
+	AnonymousUserID              string `json:"anonymous_user_id"`
+	FirstSourceURL               string `json:"first_source_url"`
+	LastSourceURL                string `json:"last_source_url"`
+	DatabaseID                   int32  `json:"database_id"`
+	HasAgreedToToS               bool   `json:"has_agreed_to_tos_and_pp"`
+	VSCodyInstalledEmailsEnabled bool   `json:"vs_cody_installed_emails_enabled"`
 }
 
 // ContactResponse represents HubSpot user properties returned

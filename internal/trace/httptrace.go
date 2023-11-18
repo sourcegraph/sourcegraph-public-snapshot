@@ -109,7 +109,7 @@ var (
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
 func HTTPMiddleware(l log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
-	l = l.Scoped("http", "http tracing middleware")
+	l = l.Scoped("http")
 	return loggingRecoverer(l, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -296,7 +296,8 @@ func User(ctx context.Context, userID int32) {
 
 // SetRequestErrorCause will set the error for the request to err. This is
 // used in the reporting layer to inspect the error for richer reporting to
-// Sentry.
+// Sentry. The error gets logged by internal/trace.HTTPMiddleware, so there
+// is no need to log this error independently.
 func SetRequestErrorCause(ctx context.Context, err error) {
 	if p, ok := ctx.Value(requestErrorCauseKey).(*error); ok {
 		*p = err

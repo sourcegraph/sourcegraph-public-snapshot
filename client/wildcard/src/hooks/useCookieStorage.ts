@@ -16,7 +16,7 @@ const removeCookie = (key: string, opts: Cookies.CookieAttributes): void => {
 
 const getCookie = <T extends string | object | boolean>(key: string): T | undefined => {
     const cookie = Cookies.get(key)
-    if (typeof cookie === 'undefined') {
+    if (cookie === undefined) {
         return
     }
     try {
@@ -47,7 +47,7 @@ export const useCookieStorage = <T extends string | object | boolean>(
 
     useEffect(() => {
         setValue(value)
-        if (typeof value === 'undefined') {
+        if (value === undefined) {
             removeCookie(key, opts)
             return
         }

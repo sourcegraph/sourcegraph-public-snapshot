@@ -1,8 +1,9 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("macro.bzl", "container_dependencies", "dependencies_tars")
+load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
     name = "server_lib",
@@ -10,9 +11,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/server",
     visibility = ["//visibility:private"],
     deps = [
+        "//client/web/dist",
         "//cmd/server/shared",
         "//internal/sanitycheck",
-        "//ui/assets/oss",
     ],
 )
 
@@ -37,6 +38,30 @@ pkg_tar(
 )
 
 exports_files(["postgres_exporter.yaml"])
+
+genrule(
+    name = "nginx_tmp_folder",
+    outs = [".keep_tmp"],
+    cmd = "echo keep > $@",
+)
+
+genrule(
+    name = "nginx_run_folder",
+    outs = [".keep_run"],
+    cmd = "echo keep > $@",
+)
+
+pkg_tar(
+    name = "static_config_tar",
+    srcs = [
+        ":nginx_run_folder",
+        ":nginx_tmp_folder",
+    ],
+    remap_paths = {
+        "/.keep_tmp": "/var/lib/nginx/tmp/.keep",
+        "/.keep_run": "/var/run/.keep",
+    },
+)
 
 pkg_tar(
     name = "tar_postgres_exporter_config",
@@ -65,12 +90,13 @@ pkg_tar(
 )
 
 DEPS = [
+    "//cmd/precise-code-intel-worker",
+    "//cmd/searcher",
+    "//cmd/embeddings",
     "//cmd/frontend",
-    "//cmd/github-proxy",
     "//cmd/gitserver",
     "//cmd/migrator",
     "//cmd/repo-updater",
-    "//cmd/searcher",
     "//cmd/symbols",
     "//cmd/worker",
 ]
@@ -82,7 +108,7 @@ ZOEKT_DEPS = [
     "@com_github_sourcegraph_zoekt//cmd/zoekt-webserver",
 ]
 
-# Declares rules for building go_cross_binary + pkg_tar for each dep in DEPS
+# Declares rules for pkg_tar for each dep in DEPS
 container_dependencies(DEPS)
 
 container_dependencies(ZOEKT_DEPS)
@@ -125,6 +151,12 @@ pkg_tar(
     package_dir = "/bin",
 )
 
+pkg_tar(
+    name = "tar_image_test_scripts",
+    srcs = ["//cmd/server/image_tests:scripts"],
+    package_dir = "/opt/image_tests",
+)
+
 # Tip: to view exactly what gets built here, you can run:
 #   bazel cquery '//cmd/server:image' --output build
 oci_image(
@@ -143,6 +175,7 @@ oci_image(
     },
     tars = [
         ":tar_server",
+        ":static_config_tar",
         ":tar_postgres_exporter_config",
         ":tar_monitoring_config",
         ":tar_syntax-highlighter",
@@ -151,6 +184,8 @@ oci_image(
         ":tar_postgres_reindex",
         ":tar_prom-wrapper",
         "//cmd/gitserver:tar_p4_fusion_wrappers",
+        "//monitoring:generate_grafana_config_tar",
+        "tar_image_test_scripts",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
 )
@@ -159,16 +194,23 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["server:candidate"],
+    visibility = ["//testing:__pkg__"],
 )
 
 container_structure_test(
     name = "image_test",
+    timeout = "short",
     configs = ["image_test.yaml"],
     driver = "docker",
-    image = ":image_tarball",
+    image = ":image",
     tags = [
         "exclusive",
-        "manual",  # this test is broken, an init function is checking for the config before reaching the main func.
         "requires-network",
     ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("server"),
 )

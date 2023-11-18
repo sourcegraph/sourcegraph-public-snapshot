@@ -80,8 +80,13 @@ func (s *gcsStore) Init(ctx context.Context) error {
 // Equals the default of S3's ListObjectsV2Input.MaxKeys
 const maxKeys = 1_000
 
-func (s *gcsStore) List(ctx context.Context) (*sgiterator.Iterator[string], error) {
-	query := storage.Query{}
+func (s *gcsStore) List(ctx context.Context, prefix string) (_ *sgiterator.Iterator[string], err error) {
+	ctx, _, endObservation := s.operations.List.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("prefix", prefix),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	query := storage.Query{Prefix: prefix}
 
 	// Performance optimization
 	query.SetAttrSelection([]string{"Name"})

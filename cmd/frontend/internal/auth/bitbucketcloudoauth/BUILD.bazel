@@ -1,0 +1,75 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bitbucketcloudoauth",
+    srcs = [
+        "config.go",
+        "middleware.go",
+        "provider.go",
+        "session.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/bitbucketcloudoauth",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/hubspot",
+        "//cmd/frontend/hubspot/hubspotutil",
+        "//cmd/frontend/internal/auth/oauth",
+        "//internal/actor",
+        "//internal/auth/providers",
+        "//internal/collections",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/bitbucketcloud",
+        "//internal/lazyregexp",
+        "//internal/licensing",
+        "//lib/errors",
+        "//schema",
+        "@com_github_dghubble_gologin_v2//:gologin",
+        "@com_github_dghubble_gologin_v2//bitbucket",
+        "@com_github_dghubble_gologin_v2//oauth2",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)
+
+go_test(
+    name = "bitbucketcloudoauth_test",
+    timeout = "short",
+    srcs = [
+        "config_test.go",
+        "middleware_test.go",
+        "provider_test.go",
+        "session_test.go",
+    ],
+    embed = [":bitbucketcloudoauth"],
+    tags = [
+        # allows network requests to localhost (database)
+        "requires-network",
+    ],
+    deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/external/session",
+        "//cmd/frontend/internal/auth/oauth",
+        "//internal/actor",
+        "//internal/auth/providers",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/database/dbtest",
+        "//internal/extsvc",
+        "//internal/extsvc/bitbucketcloud",
+        "//internal/ratelimit",
+        "//lib/errors",
+        "//schema",
+        "@com_github_dghubble_gologin_v2//bitbucket",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

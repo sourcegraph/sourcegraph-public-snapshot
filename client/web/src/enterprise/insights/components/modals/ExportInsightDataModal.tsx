@@ -4,7 +4,7 @@ import { escapeRegExp } from 'lodash'
 
 import { Modal, Text, H2, Link } from '@sourcegraph/wildcard'
 
-import { DownloadFileButton } from '../DownloadFileButton'
+import { DownloadFileButton } from '../../../../components/DownloadFileButton'
 
 interface ExportInsightDataModalProps {
     insightId: string

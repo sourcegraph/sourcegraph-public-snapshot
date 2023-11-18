@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -71,7 +71,7 @@ type GitCommitResolver struct {
 func NewGitCommitResolver(db database.DB, gsClient gitserver.Client, repo *RepositoryResolver, id api.CommitID, commit *gitdomain.Commit) *GitCommitResolver {
 	repoName := repo.RepoName()
 	return &GitCommitResolver{
-		logger: log.Scoped("gitCommitResolver", "resolve a specific commit").With(
+		logger: log.Scoped("gitCommitResolver").With(
 			log.String("repo", string(repoName)),
 			log.String("commitID", string(id)),
 		),
@@ -92,7 +92,7 @@ func (r *GitCommitResolver) resolveCommit(ctx context.Context) (*gitdomain.Commi
 		}
 
 		opts := gitserver.ResolveRevisionOptions{}
-		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), opts)
+		r.commit, r.commitErr = r.gitserverClient.GetCommit(ctx, r.gitRepo, api.CommitID(r.oid), opts)
 	})
 	return r.commit, r.commitErr
 }
@@ -129,12 +129,7 @@ func (r *GitCommitResolver) AbbreviatedOID() string {
 }
 
 func (r *GitCommitResolver) PerforceChangelist(ctx context.Context) (*PerforceChangelistResolver, error) {
-	commit, err := r.resolveCommit(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return toPerforceChangelistResolver(ctx, r.repoResolver, commit)
+	return toPerforceChangelistResolver(ctx, r)
 }
 
 func (r *GitCommitResolver) Author(ctx context.Context) (*signatureResolver, error) {
@@ -202,11 +197,7 @@ func (r *GitCommitResolver) Parents(ctx context.Context) ([]*GitCommitResolver, 
 	// TODO(tsenart): We can get the parent commits in batch from gitserver instead of doing
 	// N roundtrips. We already have a git.Commits method. Maybe we can use that.
 	for i, parent := range commit.Parents {
-		var err error
-		resolvers[i], err = r.repoResolver.Commit(ctx, &RepositoryCommitArgs{Rev: string(parent)})
-		if err != nil {
-			return nil, err
-		}
+		resolvers[i] = NewGitCommitResolver(r.db, r.gitserverClient, r.repoResolver, parent, nil)
 	}
 	return resolvers, nil
 }
@@ -232,10 +223,11 @@ func (r *GitCommitResolver) ExternalURLs(ctx context.Context) ([]*externallink.R
 	return externallink.Commit(ctx, r.db, repo, api.CommitID(r.oid))
 }
 
-func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
-	Path      string
-	Recursive bool
-}) (*GitTreeEntryResolver, error) {
+type TreeArgs struct {
+	Path string
+}
+
+func (r *GitCommitResolver) Tree(ctx context.Context, args *TreeArgs) (*GitTreeEntryResolver, error) {
 	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
 		if !stat.Mode().IsDir() {
 			return errors.Errorf("not a directory: %q", args.Path)
@@ -247,10 +239,6 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	// Note: args.Recursive is deprecated
-	if treeEntry != nil {
-		treeEntry.isRecursive = args.Recursive
-	}
 	return treeEntry, nil
 }
 
@@ -279,10 +267,20 @@ func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (_ *GitTreeEntryResolver, err error) {
+	if path == "" {
+		// This is referring to the root tree, will always exist, and will always be a directory,
+		// so we can skip the gitserver call to resolve the tree object. This is a common operation,
+		// so it's worth optimizing for.
+		return NewGitTreeEntryResolver(r.db, r.gitserverClient, GitTreeEntryResolverOpts{
+			Commit: r,
+			Stat:   &rootTreeFileInfo{},
+		}), nil
+	}
+
 	tr, ctx := trace.New(ctx, "GitCommitResolver.path", attribute.String("path", path))
 	defer tr.EndWithErr(&err)
 
-	stat, err := r.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid), path)
+	stat, err := r.gitserverClient.Stat(ctx, r.gitRepo, api.CommitID(r.oid), path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, nil
@@ -299,8 +297,22 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
 
+// rootTreeFileInfo implements the  FileInfo interface for the
+// root tree of a commit, which is guaranteed to be a directory
+// and is guaranteed to exist.
+type rootTreeFileInfo struct{}
+
+var _ os.FileInfo = (*rootTreeFileInfo)(nil)
+
+func (*rootTreeFileInfo) IsDir() bool        { return true }
+func (*rootTreeFileInfo) ModTime() time.Time { return time.Time{} }
+func (*rootTreeFileInfo) Mode() fs.FileMode  { return fs.ModeDir }
+func (*rootTreeFileInfo) Name() string       { return "" }
+func (*rootTreeFileInfo) Size() int64        { return 0 }
+func (*rootTreeFileInfo) Sys() any           { return nil }
+
 func (r *GitCommitResolver) FileNames(ctx context.Context) ([]string, error) {
-	return r.gitserverClient.LsFiles(ctx, authz.DefaultSubRepoPermsChecker, r.gitRepo, api.CommitID(r.oid))
+	return r.gitserverClient.LsFiles(ctx, r.gitRepo, api.CommitID(r.oid))
 }
 
 func (r *GitCommitResolver) Languages(ctx context.Context) ([]string, error) {
@@ -350,7 +362,7 @@ type AncestorsArgs struct {
 	Before      *string
 }
 
-func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) (*gitCommitConnectionResolver, error) {
+func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) *gitCommitConnectionResolver {
 	return &gitCommitConnectionResolver{
 		db:              r.db,
 		gitserverClient: r.gitserverClient,
@@ -363,7 +375,7 @@ func (r *GitCommitResolver) Ancestors(ctx context.Context, args *AncestorsArgs) 
 		afterCursor:     args.AfterCursor,
 		before:          args.Before,
 		repo:            r.repoResolver,
-	}, nil
+	}
 }
 
 func (r *GitCommitResolver) Diff(ctx context.Context, args *struct {

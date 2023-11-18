@@ -1,0 +1,9 @@
+- steps: []
+  local_steps: []
+  root: ""
+  indexer: sourcegraph/scip-rust@sha256:adf0047fc3050ba4f7be71302b42c74b49901f38fb40916d94ac5fc9181ac078
+  indexer_args:
+    - scip-rust
+    - index
+  outfile: index.scip
+  requestedEnvVars: []

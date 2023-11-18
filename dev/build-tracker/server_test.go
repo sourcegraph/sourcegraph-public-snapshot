@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
 	"github.com/sourcegraph/sourcegraph/dev/build-tracker/config"
+	"github.com/sourcegraph/sourcegraph/dev/build-tracker/notify"
 )
 
 func TestGetBuild(t *testing.T) {
@@ -21,7 +22,6 @@ func TestGetBuild(t *testing.T) {
 
 	req, _ := http.NewRequest(http.MethodGet, "/-/debug/1234", nil)
 	req = mux.SetURLVars(req, map[string]string{"buildNumber": "1234"})
-
 	t.Run("401 Unauthorized when in production mode and incorrect credentials", func(t *testing.T) {
 		server := NewServer(logger, config.Config{Production: true, DebugPassword: "this is a test"})
 		rec := httptest.NewRecorder()
@@ -171,4 +171,136 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		}
 	})
 
+}
+
+type MockNotificationClient struct {
+	sendCalled            int
+	getNotificationCalled int
+	GetNotificationFunc   func(int) *notify.SlackNotification
+	SendFunc              func(*notify.BuildNotification) error
+}
+
+func (m *MockNotificationClient) Reset() {
+	m.sendCalled = 0
+	m.getNotificationCalled = 0
+}
+
+// GetNotification implements notify.NotificationClient.
+func (m *MockNotificationClient) GetNotification(buildNumber int) *notify.SlackNotification {
+	m.getNotificationCalled++
+	if m.GetNotificationFunc != nil {
+		return m.GetNotificationFunc(buildNumber)
+	}
+	return &notify.SlackNotification{}
+}
+
+// Send implements notify.NotificationClient.
+func (m *MockNotificationClient) Send(info *notify.BuildNotification) error {
+	m.sendCalled++
+	if m.SendFunc != nil {
+		return m.SendFunc(info)
+	}
+	return nil
+}
+
+var _ notify.NotificationClient = (*MockNotificationClient)(nil)
+
+func TestProcessEvent(t *testing.T) {
+	logger := logtest.Scoped(t)
+	newJobEvent := func(name string, buildNumber int, jobExitCode int) *build.Event {
+		state := "done"
+		pipelineID := "pipeline"
+		pipeline := &buildkite.Pipeline{
+			ID:   &pipelineID,
+			Name: &pipelineID,
+		}
+		jobState := build.JobFinishedState
+		job := buildkite.Job{Name: &name, ExitStatus: &jobExitCode, State: &jobState}
+		return &build.Event{Name: build.EventJobFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job}
+	}
+	newBuildEvent := func(name string, buildNumber int, state string, jobExitCode int) *build.Event {
+		job := newJobEvent(name, buildNumber, jobExitCode)
+		pipelineID := "pipeline"
+		pipeline := &buildkite.Pipeline{
+			ID:   &pipelineID,
+			Name: &pipelineID,
+		}
+		return &build.Event{Name: build.EventBuildFinished, Build: buildkite.Build{State: &state, Number: &buildNumber, Pipeline: pipeline}, Job: job.Job}
+	}
+	t.Run("no send notification on unfinished builds", func(t *testing.T) {
+		server := NewServer(logger, config.Config{})
+		mockNotifyClient := &MockNotificationClient{}
+		server.notifyClient = mockNotifyClient
+		buildNumber := 1234
+		buildStartedEvent := newBuildEvent("test 2", buildNumber, "failed", 1)
+		buildStartedEvent.Name = "build.started"
+		server.processEvent(buildStartedEvent)
+		require.Equal(t, 0, mockNotifyClient.sendCalled)
+		server.processEvent(newJobEvent("test", buildNumber, 0))
+		// build is not finished so we should send nothing
+		require.Equal(t, 0, mockNotifyClient.sendCalled)
+
+		builds := server.store.FinishedBuilds()
+		require.Equal(t, 1, len(builds))
+	})
+
+	t.Run("failed build sends notification", func(t *testing.T) {
+		server := NewServer(logger, config.Config{})
+		mockNotifyClient := &MockNotificationClient{}
+		server.notifyClient = mockNotifyClient
+		buildNumber := 1234
+		server.processEvent(newJobEvent("test", buildNumber, 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", 1))
+
+		require.Equal(t, 1, mockNotifyClient.sendCalled)
+
+		builds := server.store.FinishedBuilds()
+		require.Equal(t, 1, len(builds))
+		require.Equal(t, 1234, *builds[0].Number)
+		require.Equal(t, "failed", *builds[0].State)
+	})
+
+	t.Run("passed build sends notification", func(t *testing.T) {
+		server := NewServer(logger, config.Config{})
+		mockNotifyClient := &MockNotificationClient{}
+		server.notifyClient = mockNotifyClient
+		buildNumber := 1234
+		server.processEvent(newJobEvent("test", buildNumber, 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", 0))
+
+		require.Equal(t, 0, mockNotifyClient.sendCalled)
+
+		builds := server.store.FinishedBuilds()
+		require.Equal(t, 1, len(builds))
+		require.Equal(t, 1234, *builds[0].Number)
+		require.Equal(t, "passed", *builds[0].State)
+	})
+
+	t.Run("failed build, then passed build sends fixed notification", func(t *testing.T) {
+		server := NewServer(logger, config.Config{})
+		mockNotifyClient := &MockNotificationClient{}
+		server.notifyClient = mockNotifyClient
+		buildNumber := 1234
+
+		server.processEvent(newJobEvent("test 1", buildNumber, 1))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "failed", 1))
+
+		require.Equal(t, 1, mockNotifyClient.sendCalled)
+
+		builds := server.store.FinishedBuilds()
+		require.Equal(t, 1, len(builds))
+		require.Equal(t, 1234, *builds[0].Number)
+		require.Equal(t, "failed", *builds[0].State)
+
+		server.processEvent(newJobEvent("test 1", buildNumber, 0))
+		server.processEvent(newBuildEvent("test 2", buildNumber, "passed", 0))
+
+		builds = server.store.FinishedBuilds()
+		require.Equal(t, 1, len(builds))
+		require.Equal(t, 1234, *builds[0].Number)
+		require.Equal(t, "passed", *builds[0].State)
+
+		// fixed notification
+		require.Equal(t, 2, mockNotifyClient.sendCalled)
+	})
 }

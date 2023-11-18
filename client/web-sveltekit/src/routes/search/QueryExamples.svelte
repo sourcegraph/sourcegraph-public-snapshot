@@ -48,7 +48,7 @@
 {/if}
 
 <style lang="scss">
-    @import 'wildcard/src/global-styles/breakpoints';
+    @import '$lib/breakpoints';
     div {
         display: flex;
         gap: 4rem;

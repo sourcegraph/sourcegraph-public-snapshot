@@ -12,7 +12,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import type { AuthenticatedUser } from '../auth'
 import type { OwnConfigProps } from '../own/OwnConfigProps'
-import { EnterprisePageRoutes } from '../routes.constants'
+import { PageRoutes } from '../routes.constants'
 import type { SearchStreamingProps } from '../search'
 
 import type { NotebookProps } from '.'
@@ -31,7 +31,7 @@ export interface GlobalNotebooksAreaProps
         OwnConfigProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
 }
 /**
@@ -49,7 +49,7 @@ export const GlobalNotebooksArea: FC<React.PropsWithChildren<GlobalNotebooksArea
                 authenticatedUser ? (
                     <CreateNotebookPage authenticatedUser={authenticatedUser} {...outerProps} />
                 ) : (
-                    <Navigate to={EnterprisePageRoutes.Notebooks} replace={true} />
+                    <Navigate to={PageRoutes.Notebooks} replace={true} />
                 )
             }
         />

@@ -1,0 +1,76 @@
+# this is a fork of
+# https://github.com/wolfi-dev/os/blob/613e945205007f5e0182868f07946c6a3f5403eb/terraform.yaml
+# chainguard no longer maintains terraform images or wolfi packages
+# https://www.chainguard.dev/unchained/chainguard-images-users-on-hashicorp-license-changes
+#
+# terraform is now licensed under BSL, which is no longer an open source license.
+# Per FAQ 17, 19, 25 from https://www.hashicorp.com/license-faq#implications-of-change-for-users,
+# as long as Sourcegraph is not competing with Hashicorp, it is acceptable to use,
+# build, and redistribute Terraform for our own use.
+#
+# update instruction:
+# - bump version or epoch
+# - update `.pipeline[0].with.expected-commit` to the coresponding commit sha
+#   you can find it from https://github.com/hashicorp/terraform/releases
+#
+# changelog
+# - 2023-09-07: bump to 1.5.6
+
+package:
+  name: terraform
+  version: 1.5.6
+  epoch: 0
+  copyright:
+    - license: BUSL-1.1
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  environment:
+    CGO_ENABLED: 0
+
+pipeline:
+  - uses: git-checkout
+    with:
+      repository: https://github.com/hashicorp/terraform
+      tag: v${{package.version}}
+      expected-commit: 04cc88e5717c4cc6cc77d09c3ca4bbaebed4203b
+
+  - uses: go/build
+    with:
+      packages: .
+      output: terraform
+      ldflags: -s -w
+
+  - uses: strip
+
+subpackages:
+  - name: terraform-compat
+    description: Compat package for terraform
+    pipeline:
+      - runs: |
+          mkdir -p "${{targets.subpkgdir}}"/usr/local/bin
+          ln -s /usr/bin/terraform "${{targets.subpkgdir}}"/usr/local/bin
+
+  - name: terraform-local-provider-config
+    description: Configure Terraform to use local providers
+    pipeline:
+      - runs: |
+          mkdir -p "${{targets.subpkgdir}}"/terraform/provider-mirror
+          cat > "${{targets.subpkgdir}}"/terraform/.terraformrc <<EOF
+          provider_installation {
+            filesystem_mirror {
+              path    = "/terraform/provider-mirror"
+              include = ["*/*"]
+            }
+            direct {
+              exclude = ["*/*"]
+            }
+          }
+          EOF
+
+update:
+  enabled: false

@@ -14,6 +14,9 @@ popd > /dev/null || exit
 # Build the JavaScript artifacts
 pnpm build
 
+# Ensure the plugin fulfills compatibility requirements
+./gradlew runPluginVerifier
+
 ./gradlew -PforceAgentBuild=true clean buildPluginAndAssertAgentBinariesExist
 # Build the release candidate and publish it onto the registry
 ./gradlew -PforceAgentBuild=true publishPlugin

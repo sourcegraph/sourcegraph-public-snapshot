@@ -10,13 +10,14 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/jackc/pgx/v4"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -65,7 +66,7 @@ sg db add-user -username=foo
 # Create an access token for the user created above.
 sg db add-access-token -username=foo
 `,
-		Category: CategoryDev,
+		Category: category.Dev,
 		Subcommands: []*cli.Command{
 			{
 				Name:   "delete-test-dbs",
@@ -185,7 +186,7 @@ sg db add-access-token -username=foo
 
 func dbAddUserAction(cmd *cli.Context) error {
 	ctx := cmd.Context
-	logger := log.Scoped("dbAddUserAction", "")
+	logger := log.Scoped("dbAddUserAction")
 
 	// Read the configuration.
 	conf, _ := getConfig()
@@ -240,7 +241,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 
 func dbAddAccessTokenAction(cmd *cli.Context) error {
 	ctx := cmd.Context
-	logger := log.Scoped("dbAddAccessTokenAction", "")
+	logger := log.Scoped("dbAddAccessTokenAction")
 
 	// Read the configuration.
 	conf, _ := getConfig()
@@ -284,7 +285,7 @@ func dbAddAccessTokenAction(cmd *cli.Context) error {
 }
 
 func dbUpdateUserExternalAccount(cmd *cli.Context) error {
-	logger := log.Scoped("dbUpdateUserExternalAccount", "")
+	logger := log.Scoped("dbUpdateUserExternalAccount")
 	ctx := cmd.Context
 	username := cmd.String("sg.username")
 	serviceName := cmd.String("extsvc.display-name")
@@ -363,18 +364,20 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 
 	logger.Info("Writing external account to the DB")
 
-	err = db.UserExternalAccounts().AssociateUserAndSave(
+	_, err = db.UserExternalAccounts().Upsert(
 		ctx,
-		user.ID,
-		extsvc.AccountSpec{
-			ServiceType: strings.ToLower(service.Kind),
-			ServiceID:   serviceID,
-			ClientID:    clientID,
-			AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
-		},
-		extsvc.AccountData{
-			AuthData: authData,
-			Data:     nil,
+		&extsvc.Account{
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: strings.ToLower(service.Kind),
+				ServiceID:   serviceID,
+				ClientID:    clientID,
+				AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: authData,
+				Data:     nil,
+			},
 		},
 	)
 	return err
@@ -410,7 +413,7 @@ func githubClient(ctx context.Context, baseurl string, token string) (*github.Cl
 	}
 	baseURL.Path = "/api/v3"
 
-	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+	gh, err := github.NewClient(tc).WithEnterpriseURLs(baseURL.String(), baseURL.String())
 	if err != nil {
 		return nil, err
 	}
@@ -447,7 +450,7 @@ func deleteTestDBsExec(ctx *cli.Context) error {
 	}
 	dsn := config.String()
 
-	db, err := dbconn.ConnectInternal(log.Scoped("sg", ""), dsn, "", "")
+	db, err := dbconn.ConnectInternal(log.Scoped("sg"), dsn, "", "")
 	if err != nil {
 		return err
 	}
@@ -534,7 +537,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
-	r, err := connections.RunnerFromDSNs(std.Out.Output, log.Scoped("migrations.runner", ""), dsnMap, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(std.Out.Output, log.Scoped("migrations.runner"), dsnMap, "sg", storeFactory)
 	if err != nil {
 		return err
 	}

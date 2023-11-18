@@ -13,7 +13,6 @@ import type { OrgSettingsAreaRoute } from './org/settings/OrgSettingsArea'
 import type { OrgSettingsSidebarItems } from './org/settings/OrgSettingsSidebar'
 import type { OwnConfigProps } from './own/OwnConfigProps'
 import type { RepoContainerRoute } from './repo/RepoContainer'
-import type { RepoHeaderActionButton } from './repo/RepoHeader'
 import type { RepoRevisionContainerRoute } from './repo/RepoRevisionContainer'
 import type { RepoSettingsAreaRoute } from './repo/settings/RepoSettingsArea'
 import type { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
@@ -59,7 +58,6 @@ export interface StaticInjectedAppConfig extends Pick<CodeIntelligenceProps, 'br
     orgAreaRoutes: readonly OrgAreaRoute[]
     repoContainerRoutes: readonly RepoContainerRoute[]
     repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[]
-    repoHeaderActionButtons: readonly RepoHeaderActionButton[]
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
     routes: RouteObject[]
@@ -73,7 +71,7 @@ export interface StaticInjectedAppConfig extends Pick<CodeIntelligenceProps, 'br
  */
 export interface StaticWindowContextComputedAppConfig extends Pick<BatchChangesProps, 'batchChangesEnabled'> {
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     needsRepositoryConfiguration: boolean
     batchChangesWebhookLogsEnabled: boolean
 }
@@ -84,7 +82,7 @@ export interface StaticWindowContextComputedAppConfig extends Pick<BatchChangesP
  */
 export const windowContextConfig = {
     isSourcegraphDotCom: window.context.sourcegraphDotComMode,
-    isSourcegraphApp: window.context.sourcegraphAppMode,
+    isCodyApp: window.context.codyAppMode,
     needsRepositoryConfiguration: window.context.needsRepositoryConfiguration,
     batchChangesWebhookLogsEnabled: window.context.batchChangesWebhookLogsEnabled,
     batchChangesEnabled: window.context.batchChangesEnabled,

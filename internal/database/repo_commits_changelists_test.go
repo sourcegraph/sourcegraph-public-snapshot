@@ -9,18 +9,20 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRepoCommitsChangelists(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	repos := db.Repos()
 	err := repos.Create(ctx, &types.Repo{ID: 1, Name: "foo"})
@@ -149,10 +151,16 @@ func TestRepoCommitsChangelists(t *testing.T) {
 		})
 
 		t.Run("non existing row", func(t *testing.T) {
-			gotRow, err := s.GetRepoCommitChangelist(ctx, 2, 999)
+			_, err := s.GetRepoCommitChangelist(ctx, 2, 999)
 			require.Error(t, err)
-			require.True(t, errors.Is(err, sql.ErrNoRows))
-			require.Nil(t, gotRow)
+
+			var notFoundError *perforce.ChangelistNotFoundError
+			if errors.As(err, &notFoundError) {
+				require.Equal(t, api.RepoID(2), notFoundError.RepoID)
+				require.Equal(t, int64(999), notFoundError.ID)
+			} else {
+				t.Fatalf("wrong error type, want ChangelistNotFoundError, got %T", err)
+			}
 		})
 	})
 }

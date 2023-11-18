@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	internalproductsubscription "github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -153,7 +154,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			return gqlerror.List{
 				{
 					Message:    "access denied",
-					Extensions: map[string]any{"code": codygateway.GQLErrCodeProductSubscriptionNotFound},
+					Extensions: map[string]any{"code": internalproductsubscription.GQLErrCodeProductSubscriptionNotFound},
 				},
 			}
 		})

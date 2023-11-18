@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 
 import { mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
+import { useLocation } from 'react-router-dom'
 
 import { asError, type ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
@@ -9,6 +10,7 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 import { Checkbox, Form, H3, Modal, Text, Button, Icon, AnchorLink } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
+import { getReturnTo } from '../../auth/SignInSignUpCommon'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
 import { LoaderButton } from '../../components/LoaderButton'
 import type {
@@ -22,7 +24,7 @@ import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
 
 import styles from './CodySurveyToast.module.scss'
 
-const SUBMIT_CODY_SURVEY = gql`
+export const SUBMIT_CODY_SURVEY = gql`
     mutation SubmitCodySurvey($isForWork: Boolean!, $isForPersonal: Boolean!) {
         submitCodySurvey(isForWork: $isForWork, isForPersonal: $isForPersonal) {
             alwaysNil
@@ -240,9 +242,12 @@ export const CodySurveyToast: React.FC<
 > = ({ authenticatedUser, telemetryService }) => {
     const [showVerifyEmail, setShowVerifyEmail] = useState(!authenticatedUser.hasVerifiedEmail)
 
+    const location = useLocation()
+
     const handleSubmitEnd = (): void => {
-        // Redirects to /get-cody page, once user submits the post-sign-up form
-        window.location.replace(PageRoutes.GetCody)
+        // Redirects once user submits the post-sign-up form
+        const returnTo = getReturnTo(location, PageRoutes.GetCody)
+        window.location.replace(returnTo)
     }
 
     const dismissVerifyEmail = useCallback(() => {

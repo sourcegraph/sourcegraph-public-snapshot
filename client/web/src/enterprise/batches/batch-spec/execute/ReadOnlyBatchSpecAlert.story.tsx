@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { Button } from '@sourcegraph/wildcard'
 
@@ -6,7 +6,7 @@ import { WebStory } from '../../../../components/WebStory'
 
 import { ReadOnlyBatchSpecAlert } from './ReadOnlyBatchSpecAlert'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/execute',
@@ -15,7 +15,7 @@ const config: Meta = {
 
 export default config
 
-export const ReadOnlyBatchSpecAlertStory: Story = () => (
+export const ReadOnlyBatchSpecAlertStory: StoryFn = () => (
     <WebStory>
         {props => (
             <ReadOnlyBatchSpecAlert

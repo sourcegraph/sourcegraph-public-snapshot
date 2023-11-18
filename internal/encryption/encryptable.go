@@ -15,7 +15,7 @@ import (
 type Encryptable struct {
 	mutex     sync.Mutex
 	decrypted *decryptedValue
-	encrypted *EncryptedValue
+	encrypted *encryptedValue
 	key       Key
 }
 
@@ -24,9 +24,9 @@ type decryptedValue struct {
 	err   error
 }
 
-// EncryptedValue wraps an encrypted value and serialized metadata about that key that
+// encryptedValue wraps an encrypted value and serialized metadata about that key that
 // encrypted it.
-type EncryptedValue struct {
+type encryptedValue struct {
 	Cipher string
 	KeyID  string
 }
@@ -41,7 +41,7 @@ func NewUnencrypted(value string) *Encryptable {
 // NewEncrypted creates a new encryptable from an encrypted value and a relevant encryption key.
 func NewEncrypted(cipher, keyID string, key Key) *Encryptable {
 	return &Encryptable{
-		encrypted: &EncryptedValue{cipher, keyID},
+		encrypted: &encryptedValue{cipher, keyID},
 		key:       key,
 	}
 }
@@ -92,7 +92,7 @@ func (e *Encryptable) Encrypt(ctx context.Context, key Key) (string, string, err
 		return "", "", err
 	}
 
-	e.encrypted = &EncryptedValue{cipher, keyID}
+	e.encrypted = &encryptedValue{cipher, keyID}
 	return cipher, keyID, err
 }
 

@@ -7,7 +7,6 @@ import (
 	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -36,9 +35,9 @@ type Store interface {
 	ReindexUploadByID(ctx context.Context, id int) error
 
 	// Index records
-	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]uploadsshared.Index, int, error)
-	GetIndexByID(ctx context.Context, id int) (uploadsshared.Index, bool, error)
-	GetIndexesByIDs(ctx context.Context, ids ...int) ([]uploadsshared.Index, error)
+	GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) ([]shared.Index, int, error)
+	GetIndexByID(ctx context.Context, id int) (shared.Index, bool, error)
+	GetIndexesByIDs(ctx context.Context, ids ...int) ([]shared.Index, error)
 	DeleteIndexByID(ctx context.Context, id int) (bool, error)
 	DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) error
 	ReindexIndexByID(ctx context.Context, id int) error
@@ -60,8 +59,8 @@ type Store interface {
 	// Summary
 	GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) ([]string, error)
 	GetRecentUploadsSummary(ctx context.Context, repositoryID int) ([]shared.UploadsWithRepositoryNamespace, error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error)
-	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]uploadsshared.RepositoryWithCount, int, error)
+	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]shared.IndexesWithRepositoryNamespace, error)
+	RepositoryIDsWithErrors(ctx context.Context, offset, limit int) ([]shared.RepositoryWithCount, int, error)
 	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int, error)
 
 	// Commit graph
@@ -117,7 +116,7 @@ type store struct {
 
 func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
-		logger:     logger.Scoped("uploads.store", ""),
+		logger:     logger.Scoped("uploads.store"),
 		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationCtx),
 	}

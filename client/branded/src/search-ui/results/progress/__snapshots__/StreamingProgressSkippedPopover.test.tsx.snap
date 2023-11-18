@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
+exports[`StreamingProgressSkippedPopover > should render correctly 1`] = `
 <DocumentFragment>
   <p
     class="mx-3 mt-3"
@@ -322,7 +322,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     />
   </div>
   <form
-    class="pb-3 px-3"
+    class="px-3 pb-3"
     data-testid="popover-form"
   >
     <div

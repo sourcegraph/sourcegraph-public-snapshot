@@ -358,7 +358,64 @@
 /cody/quickstart#ask-cody-to-pull-reference-documentation /cody/quickstart#3-ask-cody-to-pull-reference-documentation 308
 /cody/quickstart#ask-cody-to-write-context-aware-code /cody/quickstart#working-with-the-cody-extension 308
 
+# Cody JetBrains extension install redirects
+
+/cody/overview/install-jetbrains#introduction /cody/overview/install-jetbrains 308
+/cody/overview/install-jetbrains#requirements /cody/overview/install-jetbrains#prerequisites 308
+/cody/overview/install-jetbrains#optional-enable-code-graph-context-for-context-aware-answers /cody/overview/install-jetbrains#enable-code-graph-context-for-context-aware-answers-optional 308
+/cody/overview/install-jetbrains#get-started-with-cody /cody/overview/install-jetbrains 308
+
 # Cody VS Code installation guide redirects
 /cody/overview/install-vscode#introduction /cody/overview/install-vscode 308
 /cody/overview/install-vscode#requirements /cody/overview/install-vscode#prerequisites 308
 /cody/overview/install-vscode#optional-enable-code-graph-context-for-context-aware-answers /cody/overview/install-vscode#enable-code-graph-context-for-context-aware-answers-optional 308
+
+# Cody for Enterprise redirects
+/cody/overview/enable-cody-enterprise#using-a-third-party-llm-provider-directly /cody/overview/enable-cody-enterprise#using-a-third-party-llm-provider 308
+/cody/overview/enable-cody-enterprise#turning-cody-on-only-for-some-users /cody/overview/enable-cody-enterprise#enable-cody-only-for-some-users 308
+/cody/overview/enable-cody-enterprise#turning-cody-off /cody/overview/enable-cody-enterprise#disable-cody 308
+
+# Cody Explanations redirects
+/cody/explanations /cody/core-concepts 308
+/cody/explanations/code_graph_context#embeddings /cody/core-concepts/embeddings#embeddings 308
+/cody/explanations/code_graph_context#configuring-embeddings /cody/core-concepts/embeddings/configure-embeddings 308
+/cody/explanations/code_graph_context#filtering-files-from-embeddings /cody/core-concepts/embeddings/manage-embeddings#filter-files-from-embeddings 308
+/cody/explanations/code_graph_context#storing-embedding-indexes /cody/core-concepts/embeddings/manage-embeddings#store-embedding-indexes 308
+/cody/explanations/code_graph_context#using-s3 /cody/core-concepts/embeddings/manage-embeddings#using-s3 308
+/cody/explanations/code_graph_context#using-gcs /cody/core-concepts/embeddings/manage-embeddings#using-gcs 308
+/cody/explanations/code_graph_context#provisioning-buckets /cody/core-concepts/embeddings/manage-embeddings#provisioning-buckets 308
+/cody/explanations/code_graph_context#environment-variables-for-the-embeddings-service cody/core-concepts/embeddings/manage-embeddings#environment-variables-for-the-embeddings-service 308
+/cody/explanations/code_graph_context#incremental-embeddings /cody/core-concepts/embeddings#incremental-embeddings 308
+/cody/explanations/code_graph_context#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings /cody/core-concepts/embeddings#minimum-time-interval-between-automatically-scheduled-embeddings 308
+/cody/explanations/code_graph_context#using-a-third-party-embeddings-provider-directly /cody/core-concepts/embeddings#third-party-embeddings-provider 308
+/cody/explanations/code_graph_context#openai /cody/core-concepts/embeddings#openai 308
+/cody/explanations/code_graph_context#azure-openai-span-class-badge-badge-experimental-experimental-span /cody/core-concepts/embeddings#azure-openai 308
+/cody/explanations/code_graph_context#disabling-embeddings /cody/core-concepts/embeddings#disable-embeddings 308
+/cody/explanations/code_graph_context#configuring-the-global-policy-match-limit /cody/core-concepts/embeddings/usage-and-limits#configure-global-policy-match-limit 308
+/cody/explanations/code_graph_context#limitting-the-number-of-embeddings-that-can-be-generated /cody/core-concepts/embeddings/usage-and-limits#limit-the-number-of-embeddings-that-can-be-generated 308
+/cody/explanations/indexing /cody/core-concepts/embeddings/embedding-index 308
+/cody/explanations/indexing#generate-embeddings-index /cody/core-concepts/embeddings/embedding-index#generate-embeddings-index 308
+/cody/explanations/indexing#sourcegraph-enterprise /cody/core-concepts/embeddings/embedding-index#sourcegraph-enterprise 308
+/cody/explanations/indexing#sourcegraph-com /cody/core-concepts/embeddings/embedding-index#sourcegraph-com 308
+/cody/explanations/indexing#enable-codebase-aware-answers /cody/core-concepts/embeddings/embedding-index#enable-codebase-aware-answers 308
+/cody/explanations/indexing#extension-settings /cody/core-concepts/embeddings/embedding-index#cody-vs-code-extension-settings 308
+/cody/explanations/indexing#manual-configuration /cody/core-concepts/embeddings/embedding-index#manual-configuration 308
+/cody/explanations/indexing#settings-json /cody/core-concepts/embeddings/embedding-index#settings-json 308
+/cody/explanations/policies /cody/core-concepts/embeddings/configure-embeddings#policies 308
+/cody/explanations/policies#how-to-create-an-embeddings-policy /cody/core-concepts/embeddings/configure-embeddings#create-an-embeddings-policy 308
+/cody/explanations/policies#example-1 /cody/core-concepts/embeddings/configure-embeddings#how-pattern-matching-works 308
+/cody/explanations/policies#example-2 /cody/core-concepts/embeddings/configure-embeddings#how-pattern-matching-works 308
+/cody/explanations/policies#example-3 /cody/core-concepts/embeddings/configure-embeddings#how-pattern-matching-works 308
+/cody/explanations/policies#lifecycle-of-an-embeddings-policy /cody/core-concepts/embeddings/configure-embeddings#lifecycle-of-an-embeddings-policy 308
+/cody/explanations/schedule_one_off_embeddings_jobs /cody/core-concepts/embeddings/configure-embeddings#schedule-embeddings-jobs 308
+/cody/explanations/code_graph_context /cody/core-concepts/code_graph_context 308
+/cody/explanations/cody_gateway /cody/core-concepts/cody_gateway 308
+/cody/explanations/code_graph_context /cody/core-concepts/code-graph 308
+/cody/core-concepts/cody_clients /cody/overview#getting-started 308
+
+# Cody Gateway redirects
+/cody/core-concepts/cody_gateway /cody/core-concepts/cody-gateway 308
+/cody/core-concepts/cody_gateway#using-cody-gateway-in-sourcegraph-enterprise /cody/core-concepts/cody-gateway#using-cody-gateway-in-sourcegraph-enterprise 308
+/cody/core-concepts/cody_gateway#configuring-custom-models /cody/core-concepts/cody-gateway#configuring-custom-models 308
+/cody/core-concepts/cody_gateway#rate-limits-and-quotas /cody/core-concepts/cody-gateway#rate-limits-and-quotas 308
+/cody/core-concepts/cody_gateway#privacy-and-security /cody/core-concepts/cody-gateway#privacy-and-security 308

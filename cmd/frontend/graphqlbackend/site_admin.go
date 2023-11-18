@@ -102,7 +102,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 		ids[index] = id
 	}
 
-	logger := r.logger.Scoped("DeleteUsers", "delete users mutation").
+	logger := r.logger.Scoped("DeleteUsers").
 		With(log.Int32s("users", ids))
 
 	// Collect username, verified email addresses, and external accounts to be used

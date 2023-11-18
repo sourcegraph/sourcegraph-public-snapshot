@@ -2,12 +2,16 @@ package dependencies
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 const (
@@ -115,6 +119,12 @@ var Mac = []category{
 					).Wait()
 				},
 			},
+			{
+				Name:    "p4 CLI (Perforce)",
+				Check:   checkAction(check.InPath("p4")),
+				Enabled: disableInCI(), // giving a SHA256 mismatch error in CI
+				Fix:     cmdFix(`brew install --cask p4`),
+			},
 		},
 	},
 	{
@@ -208,6 +218,70 @@ If you're not sure: use the recommended commands to install PostgreSQL.`,
 					`createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
 				),
 			},
+			{
+				Name:        "Path to pg utilities (createdb, etc ...)",
+				Enabled:     disableInCI(), // will never pass in CI.
+				Check:       checkPGUtilsPath,
+				Description: `Bazel need to know where the createdb, pg_dump binaries are located, we need to ensure they are accessible\nand possibly indicate where they are located if non default.`,
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					_, err := root.RepositoryRoot()
+					if err != nil {
+						return errors.Wrap(err, "This check requires sg setup to be run inside sourcegraph/sourcegraph the repository.")
+					}
+
+					// Check if we need to create a user.bazelrc or not
+					_, err = os.Stat(userBazelRcPath)
+					if err != nil {
+						if os.IsNotExist(err) {
+							// It doesn't exist, so we create a new one.
+							f, err := os.Create(".aspect/bazelrc/user.bazelrc")
+							if err != nil {
+								return errors.Wrap(err, "cannot create user.bazelrc to inject PG_UTILS_PATH")
+							}
+							defer f.Close()
+
+							// Try guessing the path to the createdb postgres utilities.
+							err, pgUtilsPath := guessPgUtilsPath(ctx)
+							if err != nil {
+								return err
+							}
+							_, err = fmt.Fprintf(f, "build --action_env=PG_UTILS_PATH=%s\n", pgUtilsPath)
+
+							// Inform the user of what happened, so it's not dark magic.
+							cio.Write(fmt.Sprintf("Guessed PATH for pg utils (createdb,...) to be %q\nCreated %s.", pgUtilsPath, userBazelRcPath))
+							return err
+						}
+
+						// File exists, but we got a different error. Can't continue, bubble up the error.
+						return errors.Wrapf(err, "unexpected error with %s", userBazelRcPath)
+					}
+
+					// If we didn't create it, open the existing one.
+					f, err := os.Open(userBazelRcPath)
+					if err != nil {
+						return errors.Wrapf(err, "cannot open existing %s", userBazelRcPath)
+					}
+					defer f.Close()
+
+					// Parse the path it contains.
+					err, pgUtilsPath := parsePgUtilsPathInUserBazelrc(f)
+					if err != nil {
+						return err
+					}
+
+					// Ensure that path is correct, if not tell the user about it.
+					err = checkPgUtilsPathIncludesBinaries(pgUtilsPath)
+					if err != nil {
+						cio.WriteLine(output.Styled(output.StyleWarning, "--- Manual action needed ---"))
+						cio.WriteLine(output.Styled(output.StyleYellow, fmt.Sprintf("➡️  PG_UTILS_PATH=%q defined in %s doesn't include createdb. Please correct the file manually.", pgUtilsPath, userBazelRcPath)))
+						cio.WriteLine(output.Styled(output.StyleWarning, "Please make sure that this file contains:"))
+						cio.WriteLine(output.Styled(output.StyleWarning, "`build --action_env=PG_UTILS_PATH=[PATH TO PARENT FOLDER OF WHERE createdb IS LOCATED`"))
+						cio.WriteLine(output.Styled(output.StyleWarning, "--- Manual action needed ---"))
+						return err
+					}
+					return nil
+				},
+			},
 		},
 	},
 	{
@@ -257,7 +331,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	{
 		Name:      "Cloud services",
 		DependsOn: []string{depsHomebrew},
-		Enabled:   enableForTeammatesOnly(),
+		Enabled:   disableInCI(),
 		Checks: []*dependency{
 			dependencyGcloud(),
 		},

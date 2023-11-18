@@ -56,7 +56,6 @@ export type IconProps = HiddenIconProps | ScreenReaderIconProps
  * Note: In order to be accessible, we enforce that either an `aria-label` OR an `aria-hidden` prop is provided.
  * If the icon is not decorative, and adds value to the users journey, we should use a descriptive `aria-label`.
  */
-// eslint-disable-next-line react/display-name
 export const Icon = React.memo(
     React.forwardRef(function Icon(
         { children, className, size, role = 'img', inline = true, svgPath, ...props },

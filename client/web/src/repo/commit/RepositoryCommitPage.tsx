@@ -53,6 +53,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
             repo: props.repo.id,
             revspec: params.revspec,
         },
+        errorPolicy: 'all',
     })
 
     const commit = useMemo(
@@ -87,6 +88,7 @@ export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitP
                 repo: props.repo.id,
                 changelistID: params.changelistID,
             },
+            errorPolicy: 'all',
         }
     )
 
@@ -163,43 +165,44 @@ const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesPr
     return (
         <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
             <PageTitle title={pageTitle} />
+            {error && <ErrorAlert className="mt-2" error={error ?? new Error(pageError)} />}
             {loading ? (
                 <LoadingSpinner className="mt-2" />
-            ) : error || !commit ? (
-                <ErrorAlert className="mt-2" error={error ?? new Error(pageError)} />
             ) : (
-                <>
-                    <div className="border-bottom pb-2">
-                        <div>
-                            <GitCommitNode
-                                node={commit}
-                                expandCommitMessageBody={true}
-                                showSHAAndParentsRow={true}
-                                diffMode={diffMode}
-                                onHandleDiffMode={setDiffMode}
-                                className={styles.gitCommitNode}
-                            />
+                commit && (
+                    <>
+                        <div className="border-bottom pb-2">
+                            <div>
+                                <GitCommitNode
+                                    node={commit}
+                                    expandCommitMessageBody={true}
+                                    showSHAAndParentsRow={true}
+                                    diffMode={diffMode}
+                                    onHandleDiffMode={setDiffMode}
+                                    className={styles.gitCommitNode}
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
-                        listClassName="list-group list-group-flush"
-                        noun="changed file"
-                        pluralNoun="changed files"
-                        queryConnection={queryDiffs}
-                        nodeComponent={FileDiffNode}
-                        nodeComponentProps={{
-                            ...props,
-                            lineNumbers: true,
-                            diffMode,
-                        }}
-                        updateOnChange={`${repo.id}:${commit.oid}`}
-                        defaultFirst={15}
-                        hideSearch={true}
-                        noSummaryIfAllNodesVisible={true}
-                        withCenteredSummary={true}
-                        cursorPaging={true}
-                    />
-                </>
+                        <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
+                            listClassName="list-group list-group-flush"
+                            noun="changed file"
+                            pluralNoun="changed files"
+                            queryConnection={queryDiffs}
+                            nodeComponent={FileDiffNode}
+                            nodeComponentProps={{
+                                ...props,
+                                lineNumbers: true,
+                                diffMode,
+                            }}
+                            updateOnChange={`${repo.id}:${commit.oid}`}
+                            defaultFirst={15}
+                            hideSearch={true}
+                            noSummaryIfAllNodesVisible={true}
+                            withCenteredSummary={true}
+                            cursorPaging={true}
+                        />
+                    </>
+                )
             )}
         </div>
     )

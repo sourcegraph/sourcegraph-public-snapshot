@@ -58,3 +58,15 @@ type User struct {
 type EmptyResponse struct {
 	AlwaysNil string
 }
+
+type GitserverInstance struct {
+	Address             string
+	FreeDiskSpaceBytes  string
+	TotalDiskSpaceBytes string
+}
+
+type GitserverInstanceConnection struct {
+	Nodes      []GitserverInstance
+	TotalCount int
+	PageInfo   PageInfo
+}

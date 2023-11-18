@@ -2,7 +2,7 @@
 
 This is the quickstart guide for [developing Sourcegraph](../index.md).
 
-> NOTE: If you run into any troubles, you can alternatively consult the [deprecated quickstart instructions without `sg`](deprecated_quickstart.md) or reach out on Slack:
+> NOTE: If you run into any troubles, reach out on Slack:
 >
 > - [As an open source contributor](https://sourcegraph-community.slack.com/archives/C02BG0M0ZJ7)
 > - [As a Sourcegraph employee](https://sourcegraph.slack.com/archives/C01N83PS4TU)
@@ -93,7 +93,6 @@ sg start monitoring
 
 Here are some additional resources to help you go further:
 
-- [Full `sg` reference](../background-information/sg/reference.md)
 - [Troubleshooting local development](troubleshooting.md)
 - [Continuous integration](../background-information/ci/index.md)
 - [Background information](../index.md#background-information) for more context on various topics.

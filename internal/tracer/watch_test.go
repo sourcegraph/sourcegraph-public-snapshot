@@ -32,7 +32,7 @@ func TestConfigWatcher(t *testing.T) {
 		noopProcessor = oteltracesdk.NewBatchSpanProcessor(tracetest.NewNoopExporter())
 	)
 
-	otelTracerProvider := newTracer(logger, provider, debugMode)
+	otelTracerProvider := newLoggedOtelTracerProvider(logger, provider, debugMode)
 	// otelTracer represents a tracer a caller might hold. All tracers should be updated
 	// by updating the underlying provider.
 	otelTracer := otelTracerProvider.Tracer(t.Name())
@@ -177,7 +177,7 @@ func TestConfigWatcher(t *testing.T) {
 		}
 
 		// should have debug set
-		assert.True(t, otelTracerProvider.(*loggedOtelTracerProvider).debug.Load())
+		assert.True(t, otelTracerProvider.debug.Load())
 
 		// should set global policy
 		assert.Equal(t, policy.TraceAll, policy.GetTracePolicy())

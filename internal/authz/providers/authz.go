@@ -38,7 +38,6 @@ import (
 func ProvidersFromConfig(
 	ctx context.Context,
 	cfg conftypes.SiteConfigQuerier,
-	store database.ExternalServiceStore,
 	db database.DB,
 ) (
 	allowAccessByDefault bool,
@@ -47,7 +46,7 @@ func ProvidersFromConfig(
 	warnings []string,
 	invalidConnections []string,
 ) {
-	logger := log.Scoped("authz", " parse provider from config")
+	logger := log.Scoped("authz")
 
 	allowAccessByDefault = true
 	defer func() {
@@ -59,13 +58,13 @@ func ProvidersFromConfig(
 
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{
-			extsvc.KindAzureDevOps,
-			extsvc.KindBitbucketCloud,
-			extsvc.KindBitbucketServer,
-			extsvc.KindGerrit,
-			extsvc.KindGitHub,
-			extsvc.KindGitLab,
-			extsvc.KindPerforce,
+			extsvc.VariantAzureDevOps.AsKind(),
+			extsvc.VariantBitbucketCloud.AsKind(),
+			extsvc.VariantBitbucketServer.AsKind(),
+			extsvc.VariantGerrit.AsKind(),
+			extsvc.VariantGitHub.AsKind(),
+			extsvc.VariantGitLab.AsKind(),
+			extsvc.VariantPerforce.AsKind(),
 		},
 		LimitOffset: &database.LimitOffset{
 			Limit: 500, // The number is randomly chosen
@@ -82,7 +81,7 @@ func ProvidersFromConfig(
 		azuredevopsConns     []*types.AzureDevOpsConnection
 	)
 	for {
-		svcs, err := store.List(ctx, opt)
+		svcs, err := db.ExternalServices().List(ctx, opt)
 		if err != nil {
 			seriousProblems = append(seriousProblems, fmt.Sprintf("Could not list external services: %v", err))
 			break

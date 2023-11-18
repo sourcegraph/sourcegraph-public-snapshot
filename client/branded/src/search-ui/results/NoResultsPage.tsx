@@ -114,7 +114,6 @@ export const NoResultsPage: React.FunctionComponent<React.PropsWithChildren<NoRe
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
-                            setQueryState={setQueryState}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     </div>

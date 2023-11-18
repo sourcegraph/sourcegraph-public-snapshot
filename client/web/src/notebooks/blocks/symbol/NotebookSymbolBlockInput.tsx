@@ -40,9 +40,6 @@ const editorAttributes = [
 export const NotebookSymbolBlockInput: React.FunctionComponent<
     React.PropsWithChildren<NotebookSymbolBlockInputProps>
 > = ({ onSymbolSelected, isSourcegraphDotCom, ...inputProps }) => {
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-
     const fetchSymbolSuggestions = useCallback(
         (query: string) =>
             fetchSuggestions(
@@ -70,10 +67,9 @@ export const NotebookSymbolBlockInput: React.FunctionComponent<
             createDefaultSuggestions({
                 isSourcegraphDotCom,
                 fetchSuggestions: fetchStreamSuggestions,
-                applyOnEnter: applySuggestionsOnEnter,
                 disableSymbolCompletion: true,
             }),
-        [isSourcegraphDotCom, applySuggestionsOnEnter]
+        [isSourcegraphDotCom]
     )
 
     return (

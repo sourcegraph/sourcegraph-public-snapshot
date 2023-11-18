@@ -1,12 +1,13 @@
-import React, { useCallback, useState, FC, useMemo } from 'react'
+import React, { useCallback, useState, type FC, useMemo, useEffect } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
-import type { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Progress } from '@sourcegraph/shared/src/search/stream'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import { useMutation, gql } from '@sourcegraph/http-client'
+import type { Skipped, Progress } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Collapse,
@@ -21,6 +22,8 @@ import {
     Form,
     ProductStatusBadge,
     Alert,
+    ErrorAlert,
+    LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from '../../components'
@@ -96,16 +99,16 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
     )
 }
 
-interface StreamingProgressSkippedPopoverProps {
+interface StreamingProgressSkippedPopoverProps extends TelemetryProps {
     query: string
     progress: Progress
+    isSearchJobsEnabled?: boolean
     onSearchAgain: (additionalFilters: string[]) => void
 }
 
 export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopoverProps> = props => {
-    const { query, progress, onSearchAgain } = props
+    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService } = props
 
-    const exhaustiveSearch = useExperimentalFeatures(settings => settings.searchJobs)
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
 
     const submitHandler = useCallback(
@@ -133,7 +136,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
 
     return (
         <>
-            <Text className={classNames('mx-3 mt-3', exhaustiveSearch && 'mb-0')}>
+            <Text className={classNames('mx-3 mt-3', isSearchJobsEnabled && 'mb-0')}>
                 Found {limitHit(progress) ? 'more than ' : ''}
                 {progress.matchCount} {pluralize('result', progress.matchCount)}
                 {progress.repositoriesCount !== undefined
@@ -146,7 +149,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
                 .
             </Text>
 
-            {exhaustiveSearch ? (
+            {isSearchJobsEnabled ? (
                 <SlimSkippedReasons items={sortedSkippedItems} />
             ) : (
                 <SkippedReasons items={sortedSkippedItems} />
@@ -154,7 +157,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
 
             {sortedSkippedItems.some(skipped => skipped.suggested) && (
                 <SkippedItemsSearch
-                    slim={exhaustiveSearch ?? false}
+                    slim={isSearchJobsEnabled ?? false}
                     items={sortedSkippedItems}
                     disabled={selectedSuggestedSearches.size === 0}
                     onSearchSettingsChange={checkboxHandler}
@@ -162,10 +165,10 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
                 />
             )}
 
-            {exhaustiveSearch && (
+            {isSearchJobsEnabled && (
                 <>
-                    <hr className="mx-3" />
-                    <ExhaustiveSearchMessage query={query} />
+                    <hr className="mx-3 mt-3" />
+                    <ExhaustiveSearchMessage query={query} telemetryService={telemetryService} />
                 </>
             )}
         </>
@@ -196,6 +199,10 @@ const SkippedReasons: FC<SkippedReasonsProps> = props => {
 
 const SlimSkippedReasons: FC<SkippedReasonsProps> = props => {
     const { items } = props
+
+    if (items.length === 0) {
+        return null
+    }
 
     return (
         <div className={styles.streamingSkippedItem}>
@@ -256,7 +263,7 @@ const SkippedItemsSearch: FC<SkippedItemsSearchProps> = props => {
     const { slim, items, disabled, onSearchSettingsChange, onSubmit } = props
 
     return (
-        <Form className="pb-3 px-3" onSubmit={onSubmit} data-testid="popover-form">
+        <Form className={classNames('px-3', { 'pb-3': !slim })} onSubmit={onSubmit} data-testid="popover-form">
             <div className="mb-2 mt-3">Search again:</div>
             <div className="form-check">
                 {items.map(
@@ -295,14 +302,60 @@ const SkippedItemsSearch: FC<SkippedItemsSearchProps> = props => {
     )
 }
 
-interface ExhaustiveSearchMessageProps {
+const CREATE_SEARCH_JOB = gql`
+    mutation CreateSearchJob($query: String!) {
+        createSearchJob(query: $query) {
+            id
+            query
+            state
+            URL
+            startedAt
+            finishedAt
+            repoStats {
+                total
+                completed
+                failed
+                inProgress
+            }
+            creator {
+                id
+                displayName
+                username
+                avatarURL
+            }
+        }
+    }
+`
+
+interface ExhaustiveSearchMessageProps extends TelemetryProps {
     query: string
 }
 
 export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props => {
-    const { query } = props
+    const { query, telemetryService } = props
+    const navigate = useNavigate()
+    const [createSearchJob, { loading, error }] = useMutation(CREATE_SEARCH_JOB)
 
     const validationErrors = useMemo(() => validateQueryForExhaustiveSearch(query), [query])
+
+    useEffect(() => {
+        const validState = validationErrors.length > 0 ? 'invalid' : 'valid'
+
+        telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
+
+        if (validationErrors.length > 0) {
+            const errorTypes = validationErrors.map(error => error.type)
+
+            telemetryService.log('SearchJobsValidationErrors', { errors: errorTypes }, { errors: errorTypes })
+        }
+    }, [telemetryService, validationErrors])
+
+    const handleCreateSearchJobClick = async (): Promise<void> => {
+        await createSearchJob({ variables: { query } })
+
+        telemetryService.log('SearchJobsCreateClick', {}, {})
+        navigate('/search-jobs')
+    }
 
     return (
         <section className={styles.exhaustiveSearch}>
@@ -312,7 +365,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
             </header>
 
             {validationErrors.length > 0 && (
-                <Alert variant="warning">
+                <Alert variant="secondary" withIcon={false}>
                     <ul className={styles.exhaustiveSearchWarningList}>
                         {validationErrors.map(validationError => (
                             <li key={validationError.reason}>{validationError.reason}</li>
@@ -324,9 +377,25 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
             <Text className={classNames(validationErrors.length > 0 && 'text-muted', styles.exhaustiveSearchText)}>
                 Search jobs exhaustively return all matches of a query. Results can be downloaded via CSV.
             </Text>
-            <Button variant="secondary" size="sm" disabled={validationErrors.length > 0} className="mt-2">
-                <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
-                Create a search job
+
+            {error && <ErrorAlert error={error} className="mt-3" />}
+            <Button
+                variant="secondary"
+                size="sm"
+                disabled={validationErrors.length > 0 || loading}
+                className={styles.exhaustiveSearchSubmit}
+                onClick={handleCreateSearchJobClick}
+            >
+                {loading ? (
+                    <>
+                        <LoadingSpinner /> Starting search job
+                    </>
+                ) : (
+                    <>
+                        <Icon aria-hidden={true} svgPath={mdiMagnify} />
+                        Create a search job
+                    </>
+                )}
             </Button>
         </section>
     )

@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,6 +34,8 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 }
 
 func TestOAuthProvider_FetchUserPerms(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	t.Run("nil account", func(t *testing.T) {
 		p := newOAuthProvider(OAuthProviderOp{
 			BaseURL: mustURL(t, "https://gitlab.com"),
@@ -73,9 +76,10 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 
 		p := newOAuthProvider(
 			OAuthProviderOp{
-				BaseURL: mustURL(t, "https://gitlab.com"),
-				Token:   "admin_token",
-				DB:      dbmocks.NewMockDB(),
+				BaseURL:                     mustURL(t, "https://gitlab.com"),
+				Token:                       "admin_token",
+				DB:                          dbmocks.NewMockDB(),
+				SyncInternalRepoPermissions: true,
 			},
 			&mockDoer{
 				do: func(r *http.Request) (*http.Response, error) {
@@ -202,23 +206,39 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 		defer func() { gitlab.MockGetOAuthContext = nil }()
 
 		authData := json.RawMessage(`{"access_token": "my_access_token"}`)
-		repoIDs, err := p.FetchUserPerms(ctx,
-			&extsvc.Account{
-				AccountSpec: extsvc.AccountSpec{
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.com/",
-				},
-				AccountData: extsvc.AccountData{
-					AuthData: extsvc.NewUnencryptedData(authData),
-				},
+		acct := &extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: extsvc.TypeGitLab,
+				ServiceID:   "https://gitlab.com/",
 			},
+			AccountData: extsvc.AccountData{
+				AuthData: extsvc.NewUnencryptedData(authData),
+			},
+		}
+		repoIDs, err := p.FetchUserPerms(ctx,
+			acct,
 			authz.FetchPermsOptions{},
 		)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
+		expRepoIDs := []extsvc.RepoID{"1", "2"}
+		if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
+			t.Fatal(diff)
+		}
+
+		// Now fetch internal repos as well
+		p.syncInternalRepoPermissions = true
+		repoIDs, err = p.FetchUserPerms(ctx,
+			acct,
+			authz.FetchPermsOptions{},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expRepoIDs = []extsvc.RepoID{"1", "2", "3"}
 		if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
 			t.Fatal(diff)
 		}

@@ -58,7 +58,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContextBySpec(spec!, platformContext).pipe(
+                fetchSearchContextBySpec(spec, platformContext).pipe(
                     switchMap(searchContext => {
                         if (!searchContext.viewerCanManage) {
                             return throwError(new Error('You do not have sufficient permissions to edit this context.'))

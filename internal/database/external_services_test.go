@@ -126,7 +126,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	envvar.MockSourcegraphDotComMode(true)
@@ -280,7 +280,7 @@ func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	confGet := func() *conf.Unified { return &conf.Unified{} }
@@ -304,7 +304,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	now := timeutil.Now()
@@ -632,7 +632,7 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	envvar.MockSourcegraphDotComMode(true)
@@ -702,7 +702,7 @@ func TestCountRepoCount(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a new external service
@@ -753,7 +753,7 @@ func TestExternalServicesStore_Delete(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a new external service
@@ -848,7 +848,7 @@ func TestExternalServiceStore_Delete_WithSyncJobs(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
@@ -935,7 +935,7 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Create a new external service
@@ -1069,7 +1069,7 @@ func TestExternalServicesStore_GetByID(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1113,7 +1113,7 @@ func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1171,7 +1171,7 @@ func TestGetLatestSyncErrors(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	createService := func(name string) *types.ExternalService {
@@ -1261,7 +1261,7 @@ func TestGetLastSyncError(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1337,7 +1337,7 @@ func TestExternalServiceStore_HasRunningSyncJobs(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
@@ -1384,7 +1384,7 @@ func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.ExternalServices()
 	ctx := context.Background()
 
@@ -1484,7 +1484,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create new external services
@@ -1667,7 +1667,7 @@ func TestExternalServicesStore_DistinctKinds(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	t.Run("no external service won't blow up", func(t *testing.T) {
@@ -1736,7 +1736,7 @@ func TestExternalServicesStore_Count(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create a new external service
@@ -1774,14 +1774,14 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
 
 	t.Run("no external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		if err := db.ExternalServices().Upsert(ctx); err != nil {
 			t.Fatalf("Upsert error: %s", err)
 		}
 	})
 
 	t.Run("validation", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		store := db.ExternalServices()
 
 		t.Run("config can't be empty", func(t *testing.T) {
@@ -1805,7 +1805,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("one external service", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		store := db.ExternalServices()
 
 		svc := typestest.MakeGitLabExternalService()
@@ -1832,7 +1832,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("many external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		store := db.ExternalServices()
 
 		svcs := typestest.MakeExternalServices()
@@ -1904,7 +1904,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("with encryption key", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		store := db.ExternalServices().WithEncryptionKey(et.TestKey{})
 
 		svcs := typestest.MakeExternalServices()
@@ -1987,7 +1987,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 
 	t.Run("check code hosts created with many external services", func(t *testing.T) {
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 		store := db.ExternalServices()
 
 		svcs := typestest.MakeExternalServices()
@@ -2036,7 +2036,7 @@ func TestExternalServiceStore_GetSyncJobs(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create a new external service
@@ -2082,7 +2082,7 @@ func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create a new external service
@@ -2123,7 +2123,7 @@ func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create a new external service
@@ -2184,7 +2184,7 @@ func TestExternalServiceStore_UpdateSyncJobCounters(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create a new external service
@@ -2260,7 +2260,7 @@ func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -2306,7 +2306,7 @@ func TestExternalServiceStore_SyncDue(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -2493,7 +2493,7 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create a new external service
@@ -2510,38 +2510,16 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// create new user
-	user, err := db.Users().Create(ctx,
-		NewUser{
-			Email:           "alice@example.com",
-			Username:        "alice",
-			Password:        "password",
-			EmailIsVerified: true,
-		},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// create new org
-	displayName := "Acme org"
-	org, err := db.Orgs().Create(ctx, "acme", &displayName)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	const repoId = 1
 	err = db.Repos().Create(ctx, &types.Repo{ID: repoId, Name: "test1"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, user_id, org_id) VALUES ($1, $2, $3, $4, $5)",
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_repos (external_service_id, repo_id, clone_url) VALUES ($1, $2, $3)",
 		es.ID,
 		repoId,
 		"cloneUrl",
-		user.ID,
-		org.ID,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -2562,8 +2540,6 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 	require.Exactly(t, es.ID, have.ExternalServiceID, "externalServiceID is incorrect")
 	require.Exactly(t, api.RepoID(repoId), have.RepoID, "repoID is incorrect")
 	require.Exactly(t, "cloneUrl", have.CloneURL, "cloneURL is incorrect")
-	require.Exactly(t, user.ID, have.UserID, "userID is incorrect")
-	require.Exactly(t, org.ID, have.OrgID, "orgID is incorrect")
 
 	// check that repos are found with given externalServiceID
 	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 1}})
@@ -2584,4 +2560,21 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 	if len(haveRepos) != 0 {
 		t.Fatalf("Expected 0 external service repos, got %d", len(haveRepos))
 	}
+}
+
+func Test_validateOtherExternalServiceConnection(t *testing.T) {
+	conn := &schema.OtherExternalServiceConnection{
+		MakeReposPublicOnDotCom: true,
+	}
+	// When not on DotCom, validation of a connection with "makeReposPublicOnDotCom" set to true should fail
+	err := validateOtherExternalServiceConnection(conn)
+	require.Error(t, err)
+
+	// On DotCom, no error should be returned
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
+
+	err = validateOtherExternalServiceConnection(conn)
+	require.NoError(t, err)
 }

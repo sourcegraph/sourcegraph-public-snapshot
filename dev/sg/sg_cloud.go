@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -26,7 +27,7 @@ var cloudCommand = &cli.Command{
 - Product: https://docs.sourcegraph.com/cloud
 - Handbook: https://handbook.sourcegraph.com/departments/cloud/
 `,
-	Category: CategoryCompany,
+	Category: category.Company,
 	Subcommands: []*cli.Command{
 		{
 			Name:        "install",

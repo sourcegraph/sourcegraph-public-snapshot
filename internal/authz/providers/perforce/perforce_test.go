@@ -3,14 +3,11 @@ package perforce
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -19,7 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	p4types "github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestProvider_FetchAccount(t *testing.T) {
@@ -30,16 +30,14 @@ func TestProvider_FetchAccount(t *testing.T) {
 		Username: "alice",
 	}
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		data := `
-alice <alice@example.com> (Alice) accessed 2020/12/04
-cindy <cindy@example.com> (Cindy) accessed 2020/12/04
-`
-		return io.NopCloser(strings.NewReader(data)), nil, nil
-	})
+	gitserverClient := gitserver.NewStrictMockClient()
+	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*p4types.User{
+		{Username: "alice", Email: "alice@example.com"},
+		{Username: "cindy", Email: "cindy@example.com"},
+	}, nil)
 
 	t.Run("no matching account", func(t *testing.T) {
-		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		got, err := p.FetchAccount(ctx, user, nil, []string{"bob@example.com"})
 		if err != nil {
 			t.Fatal(err)
@@ -51,7 +49,7 @@ cindy <cindy@example.com> (Cindy) accessed 2020/12/04
 	})
 
 	t.Run("found matching account", func(t *testing.T) {
-		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		got, err := p.FetchAccount(ctx, user, nil, []string{"alice@example.com"})
 		if err != nil {
 			t.Fatal(err)
@@ -89,7 +87,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("nil account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", nil)
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -100,7 +98,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("not the code host of the account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -119,7 +117,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("no user found in account data", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchUserPerms(ctx,
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -149,12 +147,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		response  string
+		protects  []*p4types.Protect
 		wantPerms *authz.ExternalUserPermissions
 	}{
 		{
 			name: "include only",
-			response: `
+			protects: testParseP4ProtectsRaw(t, strings.NewReader(`
 list user alice * //Sourcegraph/Security/... ## "list" can't grant read access
 read user alice * //Sourcegraph/Engineering/...
 owner user alice * //Sourcegraph/Engineering/Backend/...
@@ -162,7 +160,7 @@ open user alice * //Sourcegraph/Engineering/Frontend/...
 review user alice * //Sourcegraph/Handbook/...
 review user alice * //Sourcegraph/*/Handbook/...
 review user alice * //Sourcegraph/.../Handbook/...
-`,
+`)),
 			wantPerms: &authz.ExternalUserPermissions{
 				IncludeContains: []extsvc.RepoID{
 					"//Sourcegraph/Engineering/%",
@@ -176,7 +174,7 @@ review user alice * //Sourcegraph/.../Handbook/...
 		},
 		{
 			name: "exclude only",
-			response: `
+			protects: testParseP4ProtectsRaw(t, strings.NewReader(`
 list user alice * -//Sourcegraph/Security/...
 read user alice * -//Sourcegraph/Engineering/...
 owner user alice * -//Sourcegraph/Engineering/Backend/...
@@ -184,8 +182,7 @@ open user alice * -//Sourcegraph/Engineering/Frontend/...
 review user alice * -//Sourcegraph/Handbook/...
 review user alice * -//Sourcegraph/*/Handbook/...
 review user alice * -//Sourcegraph/.../Handbook/...
-`,
-			wantPerms: &authz.ExternalUserPermissions{
+`)), wantPerms: &authz.ExternalUserPermissions{
 				ExcludeContains: []extsvc.RepoID{
 					"//Sourcegraph/[^/]+/Handbook/%",
 					"//Sourcegraph/%/Handbook/%",
@@ -194,7 +191,7 @@ review user alice * -//Sourcegraph/.../Handbook/...
 		},
 		{
 			name: "include and exclude",
-			response: `
+			protects: testParseP4ProtectsRaw(t, strings.NewReader(`
 read user alice * //Sourcegraph/Security/...
 read user alice * //Sourcegraph/Engineering/...
 owner user alice * //Sourcegraph/Engineering/Backend/...
@@ -208,7 +205,7 @@ list user alice * -//Sourcegraph/Security/...                        ## "list" c
 open user alice * -//Sourcegraph/Engineering/Backend/Credentials/... ## sub-match of a previous include
 open user alice * -//Sourcegraph/Engineering/*/Frontend/Folder/...   ## sub-match of a previous include
 open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-match of wildcard A include
-`,
+`)),
 			wantPerms: &authz.ExternalUserPermissions{
 				IncludeContains: []extsvc.RepoID{
 					"//Sourcegraph/Engineering/%",
@@ -228,7 +225,7 @@ open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-matc
 		},
 		{
 			name: "include and exclude, then include again",
-			response: `
+			protects: testParseP4ProtectsRaw(t, strings.NewReader(`
 read user alice * //Sourcegraph/Security/...
 read user alice * //Sourcegraph/Engineering/...
 owner user alice * //Sourcegraph/Engineering/Backend/...
@@ -244,7 +241,7 @@ open user alice * -//Sourcegraph/Engineering/*/Frontend/Folder/...   ## sub-matc
 open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-match of wildcard A include
 
 read user alice * //Sourcegraph/Security/... 						 ## give access to alice again after revoking
-`,
+`)),
 			wantPerms: &authz.ExternalUserPermissions{
 				IncludeContains: []extsvc.RepoID{
 					"//Sourcegraph/Engineering/%",
@@ -267,11 +264,10 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			logger := logtest.Scoped(t)
-			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-				return io.NopCloser(strings.NewReader(test.response)), nil, nil
-			})
+			gc := gitserver.NewStrictMockClient()
+			gc.PerforceProtectsForUserFunc.SetDefaultReturn(test.protects, nil)
 
-			p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+			p := NewProvider(logger, gc, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 			got, err := p.FetchUserPerms(ctx,
 				&extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
@@ -297,13 +293,16 @@ read user alice * //Sourcegraph/Security/... 						 ## give access to alice agai
 	// Specific behaviour is tested in TestScanFullRepoPermissions
 	t.Run("SubRepoPermissions", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-			return io.NopCloser(strings.NewReader(`
-read user alice * //Sourcegraph/Engineering/...
-read user alice * -//Sourcegraph/Security/...
-`)), nil, nil
-		})
-		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+
+		gitserverClient := gitserver.NewStrictMockClient()
+		ps := []*p4types.Protect{
+			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Engineering/..."},
+			{Level: "read", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/Security/...", IsExclusion: true},
+		}
+		gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn(ps, nil)
+		gitserverClient.PerforceProtectsForUserFunc.SetDefaultReturn(ps, nil)
+
+		p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		p.depots = append(p.depots, "//Sourcegraph/")
 
 		got, err := p.FetchUserPerms(ctx,
@@ -343,7 +342,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("nil repository", func(t *testing.T) {
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchRepoPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -353,7 +352,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
+		p := NewProvider(logger, gitserver.NewTestClient(t), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 		_, err := p.FetchRepoPerms(ctx,
 			&extsvc.Repository{
 				URI: "gitlab.com/user/repo",
@@ -370,54 +369,36 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			t.Fatalf("err: want %q but got %q", want, got)
 		}
 	})
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		var data string
 
-		switch args[0] {
-
-		case "protects":
-			data = `
-## The actual depot prefix does not matter, the "-" sign does
-list user * * -//...
-write user alice * //Sourcegraph/...
-write user bob * //Sourcegraph/...
-admin group Backend * //Sourcegraph/...   ## includes "alice" and "cindy"
-
-admin group Frontend * -//Sourcegraph/... ## excludes "bob", "david" and "frank"
-read user cindy * -//Sourcegraph/...
-
-list user david * //Sourcegraph/...       ## "list" can't grant read access
-`
-		case "users":
-			data = `
-alice <alice@example.com> (Alice) accessed 2020/12/04
-bob <bob@example.com> (Bob) accessed 2020/12/04
-cindy <cindy@example.com> (Cindy) accessed 2020/12/04
-david <david@example.com> (David) accessed 2020/12/04
-frank <frank@example.com> (Frank) accessed 2020/12/04
-`
-		case "group":
-			switch args[2] {
-			case "Backend":
-				data = `
-Users:
-	alice
-	cindy
-`
-			case "Frontend":
-				data = `
-Users:
-	bob
-	david
-	frank
-`
-			}
+	gitserverClient := gitserver.NewStrictMockClient()
+	gitserverClient.PerforceUsersFunc.SetDefaultReturn([]*p4types.User{
+		{Username: "alice", Email: "alice@example.com"},
+		{Username: "bob", Email: "bob@example.com"},
+		{Username: "cindy", Email: "cindy@example.com"},
+		{Username: "david", Email: "david@example.com"},
+		{Username: "frank", Email: "frank@example.com"},
+	}, nil)
+	gitserverClient.PerforceGroupMembersFunc.SetDefaultHook(func(ctx context.Context, conn protocol.PerforceConnectionDetails, group string) ([]string, error) {
+		switch group {
+		case "Backend":
+			return []string{"alice", "cindy"}, nil
+		case "Frontend":
+			return []string{"bob", "david", "frank"}, nil
+		default:
+			return nil, errors.New("invalid group")
 		}
-
-		return io.NopCloser(strings.NewReader(data)), nil, nil
 	})
+	gitserverClient.PerforceProtectsForDepotFunc.SetDefaultReturn([]*p4types.Protect{
+		{Level: "list", EntityType: "user", EntityName: "*", Host: "*", Match: "//...", IsExclusion: true},
+		{Level: "write", EntityType: "user", EntityName: "alice", Host: "*", Match: "//Sourcegraph/..."},
+		{Level: "write", EntityType: "user", EntityName: "bob", Host: "*", Match: "//Sourcegraph/..."},
+		{Level: "admin", EntityType: "group", EntityName: "Backend", Host: "*", Match: "//Sourcegraph/..."},                     // includes "alice" and "cindy"
+		{Level: "admin", EntityType: "group", EntityName: "Frontend", Host: "*", Match: "//Sourcegraph/...", IsExclusion: true}, // excludes "bob", "david" and "frank"
+		{Level: "read", EntityType: "user", EntityName: "cindy", Host: "*", Match: "//Sourcegraph/...", IsExclusion: true},
+		{Level: "list", EntityType: "user", EntityName: "david", Host: "*", Match: "//Sourcegraph/..."}, // "list" can't grant read access
+	}, nil)
 
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewProvider(logger, gitserverClient, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
 	got, err := p.FetchRepoPerms(ctx,
 		&extsvc.Repository{
 			URI: "gitlab.com/user/repo",
@@ -436,16 +417,4 @@ Users:
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Fatalf("Mismatch (-want +got):\n%s", diff)
 	}
-}
-
-func NewTestProvider(logger log.Logger, urn, host, user, password string, execer p4Execer) *Provider {
-	p := NewProvider(logger, gitserver.NewClient(), urn, host, user, password, []extsvc.RepoID{})
-	p.p4Execer = execer
-	return p
-}
-
-type p4ExecFunc func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
-
-func (p p4ExecFunc) P4Exec(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-	return p(ctx, host, user, password, args...)
 }

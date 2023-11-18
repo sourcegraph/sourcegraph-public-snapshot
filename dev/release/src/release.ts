@@ -83,6 +83,7 @@ import {
     verifyWithInput,
     type ReleaseTag,
     updateMigratorBazelOuts,
+    getContainerRegistryCredential,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -216,7 +217,6 @@ const steps: Step[] = [
             ]
 
             if (next.patches) {
-                // eslint-disable-next-line id-length
                 for (let i = 0; i < next.patches.length; i++) {
                     events.push({
                         title: `Scheduled Patch #${i + 1} Sourcegraph ${name}`,
@@ -688,6 +688,10 @@ cc @${release.captainGitHubUsername}
                 }
             }
 
+            const { username: dockerUsername, password: dockerPassword } = await getContainerRegistryCredential(
+                'index.docker.io'
+            )
+
             // Render changes
             const createdChanges = await createChangesets({
                 requiredCommands: ['comby', sed, 'find', 'go', 'src', 'sg'],
@@ -724,10 +728,9 @@ cc @${release.captainGitHubUsername}
 
                             // Support current release as the "previous release" going forward
                             notPatchRelease
-                                ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' enterprise/dev/ci/internal/ci/*.go`
+                                ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
-                            `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] v${release.version.version})' cmd/migrator/generate.sh`,
                             updateMigratorBazelOuts(release.version.version),
                         ],
                         ...prBodyAndDraftState(
@@ -776,9 +779,9 @@ cc @${release.captainGitHubUsername}
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `sg ops update-images -pin-tag ${release.version.version} base/`,
-                            `sg ops update-images -pin-tag ${release.version.version} components/executors/`,
-                            `sg ops update-images -pin-tag ${release.version.version} components/utils/migrator`,
+                            `sg ops update-images -cr-username ${dockerUsername} -cr-password ${dockerPassword} -pin-tag ${release.version.version} base/`,
+                            `sg ops update-images -cr-username ${dockerUsername} -cr-password ${dockerPassword} -pin-tag ${release.version.version} components/executors/`,
+                            `sg ops update-images -cr-username ${dockerUsername} -cr-password ${dockerPassword} -pin-tag ${release.version.version} components/utils/migrator`,
                         ],
                         ...prBodyAndDraftState([]),
                     },
@@ -834,7 +837,7 @@ cc @${release.captainGitHubUsername}
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `for i in charts/{sourcegraph,sourcegraph-executor/{dind,k8s},sourcegraph-migrator}; do sg ops update-images -kind helm -pin-tag ${release.version.version} $i/.; done`,
+                            `for i in charts/{sourcegraph,sourcegraph-executor/{dind,k8s},sourcegraph-migrator}; do sg ops update-images -cr-username ${dockerUsername} -cr-password ${dockerPassword} -kind helm -pin-tag ${release.version.version} $i/.; done`,
                             `find charts -name Chart.yaml | xargs ${sed} -i 's/appVersion:.*/appVersion: "${release.version.version}"/g'`,
                             `find charts -name Chart.yaml | xargs ${sed} -i 's/version:.*/version: "${release.version.version}"/g'`,
                             './scripts/helm-docs.sh',

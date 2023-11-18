@@ -11,7 +11,7 @@ import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/
 import { Container, Icon, Link, H2, H3, Text, useReducedMotion } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../components/CallToActionBanner'
-import { EnterprisePageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 import { eventLogger } from '../../tracking/eventLogger'
 
 import styles from './NotebooksGettingStartedTab.module.scss'
@@ -60,7 +60,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
 
     const [, setHasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
     const isSourcegraphDotCom: boolean = window.context?.sourcegraphDotComMode || false
-    const isSourcegraphApp: boolean = window.context?.sourcegraphAppMode || false
+    const isCodyApp: boolean = window.context?.codyAppMode || false
 
     useEffect(() => {
         setHasSeenGettingStartedTab(true)
@@ -72,7 +72,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
     const isLightTheme = useIsLightTheme()
 
     const wrapOutboundLink = (url: string): string => {
-        if (isSourcegraphApp) {
+        if (isCodyApp) {
             return addSourcegraphAppOutboundUrlParameters(url)
         }
         return url
@@ -174,34 +174,6 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </Container>
                 </div>
             </div>
-            <H3>Powerful creation features</H3>
-            <Container className="mb-4">
-                <div className={classNames(styles.row, 'row', 'mb-4')}>
-                    <div className="col-12 col-md-6">
-                        <strong>Enable the notepad for frictionless knowledge sharing</strong>
-                        <Text className="mt-1">
-                            With the notepad, create notebooks while you browse. Add searches, files, and file ranges
-                            without leaving the page you're on, then create a notebook of it all with one click.
-                        </Text>
-                        <strong>Compose rich documentation with multiple block types</strong>
-                        <Text className="mt-1">
-                            Create text content with Markdown blocks, track symbols within files with symbol blocks, and
-                            add whole files or line ranges with file blocks.
-                        </Text>
-                    </div>
-                    <div className="col-12 col-md-6">
-                        <video
-                            className="w-100 h-auto shadow percy-hide"
-                            muted={true}
-                            playsInline={true}
-                            controls={true}
-                            src={`https://storage.googleapis.com/sourcegraph-assets/notebooks/notepad_overview_${
-                                isLightTheme ? 'light' : 'dark'
-                            }.mp4`}
-                        />
-                    </div>
-                </div>
-            </Container>
             <H3>Functionality</H3>
             <div className={classNames(styles.row, 'row', 'mb-4')}>
                 {functionalityPanels.map(panel => (
@@ -228,7 +200,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     <div className="mb-2">
                         Notebooks can be used for onboarding, documentation, incident response, and more.
                     </div>
-                    <Link to={EnterprisePageRoutes.NotebookCreate}>Create a notebook</Link>
+                    <Link to={PageRoutes.NotebookCreate}>Create a notebook</Link>
                 </div>
                 <div className="col-12 col-md-6">
                     <div className="mb-2">

@@ -6,8 +6,7 @@ import { createRoot } from 'react-dom/client'
 
 import { Icon } from '@sourcegraph/wildcard/src'
 
-import { rangeToCmSelection } from './occurrence-utils'
-import { getCodeIntelTooltipState } from './token-selection/code-intel-tooltips'
+import { getSelectedToken } from './codeintel/token-selection'
 
 enum CharCode {
     /**
@@ -62,12 +61,12 @@ function computeFoldableRanges(state: EditorState): Map<number, number> {
             continue
         }
 
-        let previous = previousRanges[previousRanges.length - 1]
+        let previous = previousRanges.at(-1)!
         if (previous.indent > indent) {
             // remove ranges with larger indent
             do {
                 previousRanges.pop()
-                previous = previousRanges[previousRanges.length - 1]
+                previous = previousRanges.at(-1)!
             } while (previous.indent > indent)
 
             // new folding range
@@ -162,9 +161,8 @@ export function codeFoldingExtension(): Extension {
                 for (const transaction of update.transactions) {
                     for (const effect of transaction.effects) {
                         if (effect.is(foldEffect)) {
-                            const focusedOccurrence = getCodeIntelTooltipState(view, 'focus')?.occurrence
-                            if (focusedOccurrence) {
-                                const range = rangeToCmSelection(view.state, focusedOccurrence.range)
+                            const range = getSelectedToken(view.state)
+                            if (range) {
                                 if (range.from >= effect.value.from && range.to <= effect.value.to) {
                                     // Occurrence is inside the folded range.
                                     // It will be removed from DOM triggering editor's blur.

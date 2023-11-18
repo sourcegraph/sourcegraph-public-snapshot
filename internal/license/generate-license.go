@@ -47,6 +47,7 @@ func main() {
 	info := license.Info{
 		Tags:      license.ParseTagsInput(*tags),
 		UserCount: *users,
+		CreatedAt: time.Now(),
 		ExpiresAt: time.Now().UTC().Round(time.Second).Add(*expires),
 	}
 	b, err := json.MarshalIndent(info, "", "  ")

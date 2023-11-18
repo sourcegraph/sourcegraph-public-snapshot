@@ -45,7 +45,6 @@ var DefaultEnv = map[string]string{
 	"SRC_HTTP_ADDR":         ":8080",
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
-	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
 	"GRAFANA_SERVER_URL":          "http://127.0.0.1:3370",
 	"PROMETHEUS_URL":              "http://127.0.0.1:9090",
@@ -85,7 +84,7 @@ func Main() {
 	})
 	defer liblog.Sync()
 
-	logger := sglog.Scoped("server", "Sourcegraph server")
+	logger := sglog.Scoped("server")
 
 	// Ensure CONFIG_DIR and DATA_DIR
 
@@ -162,9 +161,9 @@ func Main() {
 		gitserverLine,
 		`symbols: symbols`,
 		`searcher: searcher`,
-		`github-proxy: github-proxy`,
 		`worker: worker`,
 		`repo-updater: repo-updater`,
+		`precise-code-intel-worker: precise-code-intel-worker`,
 		`syntax_highlighter: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntax_highlighter | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
 		postgresExporterLine,
 	}

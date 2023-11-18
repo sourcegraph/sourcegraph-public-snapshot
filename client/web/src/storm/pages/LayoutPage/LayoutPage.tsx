@@ -24,14 +24,15 @@ import { useHandleSubmitFeedback } from '../../../hooks'
 import type { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
 import { CodySurveyToast, SurveyToast } from '../../../marketing/toast'
 import { GlobalNavbar } from '../../../nav/GlobalNavbar'
-import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
+import { PageRoutes } from '../../../routes.constants'
 import { parseSearchURLQuery } from '../../../search'
-import { NotepadContainer } from '../../../search/Notepad'
 import { SearchQueryStateObserver } from '../../../SearchQueryStateObserver'
+import { isSourcegraphDev, useDeveloperSettings } from '../../../stores'
 
 import styles from './LayoutPage.module.scss'
 
 const LazySetupWizard = lazyComponent(() => import('../../../setup-wizard/SetupWizard'), 'SetupWizard')
+const LazyDeveloperDialog = lazyComponent(() => import('../../../devsettings/DeveloperDialog'), 'DeveloperDialog')
 
 export interface LegacyLayoutProps extends LegacyLayoutRouteContext {
     children?: never
@@ -69,13 +70,8 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
         (isRepositoryRelatedPage || routeMatches.some(routeMatch => routeMatch.pathname.startsWith('/search'))) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith('/search/console'))
-    const isSearchNotebooksPage = routeMatches.some(routeMatch =>
-        routeMatch.pathname.startsWith(EnterprisePageRoutes.Notebooks)
-    )
-    const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
-    const isCodySearchPage = routeMatches.some(routeMatch =>
-        routeMatch.pathname.startsWith(EnterprisePageRoutes.CodySearch)
-    )
+    const isSearchNotebooksPage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith(PageRoutes.Notebooks))
+    const isCodySearchPage = routeMatches.some(routeMatch => routeMatch.pathname.startsWith(PageRoutes.CodySearch))
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
@@ -85,8 +81,11 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     }))
     const isSetupWizardPage = location.pathname.startsWith(PageRoutes.SetupWizard)
 
+    const showDeveloperDialog =
+        useDeveloperSettings(state => state.showDialog) &&
+        (process.env.NODE_ENV === 'development' || isSourcegraphDev(props.authenticatedUser))
     const [isFuzzyFinderVisible, setFuzzyFinderVisible] = useState(false)
-    const userHistory = useUserHistory(isRepositoryRelatedPage)
+    const userHistory = useUserHistory(props.authenticatedUser?.id, isRepositoryRelatedPage)
 
     const communitySearchContextPaths = communitySearchContextsRoutes.map(route => route.path)
     const isCommunitySearchContextPage = communitySearchContextPaths.includes(location.pathname)
@@ -112,8 +111,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
-        routeMatch:
-            routeMatches && routeMatches.length > 0 ? routeMatches[routeMatches.length - 1].pathname : undefined,
+        routeMatch: routeMatches && routeMatches.length > 0 ? routeMatches.at(-1)!.pathname : undefined,
     })
 
     useLayoutEffect(() => {
@@ -192,7 +190,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphApp={props.isSourcegraphApp} />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} isCodyApp={props.isCodyApp} />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
@@ -220,7 +218,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     showFeedbackModal={showFeedbackModal}
                 />
             )}
-            {props.isSourcegraphApp && <StartupUpdateChecker />}
+            {props.isCodyApp && <StartupUpdateChecker />}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <ErrorBoundary location={location}>
                 <Suspense
@@ -245,12 +243,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     <div id="references-panel-react-portal" />
                 </Suspense>
             </ErrorBoundary>
-            {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer
-                    userId={props.authenticatedUser?.id}
-                    isRepositoryRelatedPage={isRepositoryRelatedPage}
-                />
-            )}
             {fuzzyFinder && (
                 <LazyFuzzyFinder
                     isVisible={isFuzzyFinderVisible}
@@ -262,6 +254,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     userHistory={userHistory}
                 />
             )}
+            {showDeveloperDialog && <LazyDeveloperDialog />}
             <SearchQueryStateObserver
                 platformContext={props.platformContext}
                 searchContextsEnabled={props.searchAggregationEnabled}

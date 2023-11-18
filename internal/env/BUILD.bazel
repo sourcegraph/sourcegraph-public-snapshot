@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//lib/errors",
         "@com_github_dustin_go_humanize//:go-humanize",
-        "@com_github_inconshreveable_log15//:log15",
     ],
 )
 

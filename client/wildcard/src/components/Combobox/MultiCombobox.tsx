@@ -29,7 +29,7 @@ import { useMeasure } from '../../hooks'
 import { Button } from '../Button'
 import { Input, type InputStatus } from '../Form'
 import { Icon } from '../Icon'
-import { PopoverContent, Position, type TetherInstanceAPI } from '../Popover'
+import { createRectangle, PopoverContent, Position, type TetherInstanceAPI } from '../Popover'
 
 import {
     Combobox,
@@ -59,7 +59,7 @@ interface MultiComboboxContextData<T> {
 
     // Public api props shared via context
     selectedItems: T[]
-    getItemName: (item: T) => string
+    getItemName: (item: T) => ReactNode
     getItemKey: (item: T) => string | number
     getItemIsPermanent: (item: T) => boolean
     onSelectedItemsChange: (selectedItems: T[]) => void
@@ -85,7 +85,7 @@ const MultiComboboxContext = createContext<MultiComboboxContextData<any>>({
 
 export interface MultiComboboxProps<T> extends Omit<ComboboxProps, 'onSelect'> {
     selectedItems: T[]
-    getItemName: (item: T) => string
+    getItemName: (item: T) => ReactNode
     getItemKey: (item: T) => string | number
     /**
      * Permanent items can never be unselected. They will appear first in the
@@ -189,6 +189,7 @@ export function MultiCombobox<T>(props: MultiComboboxProps<T>): ReactElement {
 
 interface MultiComboboxInputProps extends InputHTMLAttributes<HTMLInputElement> {
     status?: InputStatus | `${InputStatus}`
+    getPillContent?: (item: any) => ReactNode
 }
 
 export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInputProps>(function MultiComboboxInput(
@@ -213,12 +214,13 @@ export const MultiComboboxInput = forwardRef<HTMLInputElement, MultiComboboxInpu
 interface MultiValueInputProps extends InputHTMLAttributes<HTMLInputElement> {
     status?: InputStatus | `${InputStatus}`
     byPassValue: string
+    getPillContent?: (item: any) => ReactNode
 }
 
 // Forward ref doesn't support function components with generic,
 // so we have to cast a proper FC types with generic props
 const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInputProps, ref: Ref<HTMLInputElement>) {
-    const { onKeyDown, onFocus, onBlur, byPassValue, value, className, ...attributes } = props
+    const { getPillContent, onKeyDown, onFocus, onBlur, byPassValue, value, className, ...attributes } = props
 
     const {
         setInputElement,
@@ -245,7 +247,7 @@ const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInp
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
         if (byPassValue === '' && event.key === Key.Backspace) {
             // If the next item is permanent, stop removing items.
-            const nextItem = orderedSelectedItems[orderedSelectedItems.length - 1]
+            const nextItem = orderedSelectedItems.at(-1)
             if (getItemIsPermanent(nextItem)) {
                 return
             }
@@ -299,7 +301,12 @@ const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInp
         <ul ref={listRef} className={styles.root}>
             {orderedSelectedItems.map((item, index) => (
                 <li key={getItemKey(item)} data-multibox-pill={true} className={styles.pill}>
-                    <span className={styles.pillText}>{getItemName(item)}</span>
+                    {getPillContent ? (
+                        getPillContent(item)
+                    ) : (
+                        <span className={styles.pillText}>{getItemName(item)}</span>
+                    )}
+
                     {getItemIsPermanent(item) ? null : (
                         <Button
                             type="button"
@@ -327,8 +334,14 @@ const MultiValueInput = forwardRef(function MultiValueInput(props: MultiValueInp
     )
 })
 
-export function MultiComboboxPopover(props: PropsWithChildren<HTMLAttributes<HTMLDivElement>>): ReactElement {
-    const { className, style, ...attributes } = props
+const POPOVER_TARGET_PADDING = createRectangle(0, 0, 2, 2)
+
+interface MultiComboboxPopoverProps extends HTMLAttributes<HTMLDivElement> {
+    syncWidth?: boolean
+}
+
+export function MultiComboboxPopover(props: PropsWithChildren<MultiComboboxPopoverProps>): ReactElement {
+    const { syncWidth = true, className, style, ...attributes } = props
     const { inputElement, isPopoverOpen, tether, setTether } = useContext(MultiComboboxContext)
 
     const [, { width: inputWidth }] = useMeasure(inputElement, 'boundingRect')
@@ -345,7 +358,8 @@ export function MultiComboboxPopover(props: PropsWithChildren<HTMLAttributes<HTM
             position={Position.bottomStart}
             focusLocked={false}
             returnTargetFocus={false}
-            style={{ minWidth: inputWidth, ...style }}
+            targetPadding={POPOVER_TARGET_PADDING}
+            style={{ minWidth: syncWidth ? inputWidth : undefined, ...style }}
             className={classNames(styles.popover, className)}
             onTetherCreate={setTether}
         />

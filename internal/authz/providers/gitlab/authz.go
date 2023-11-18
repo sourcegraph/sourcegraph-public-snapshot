@@ -32,7 +32,7 @@ func NewAuthzProviders(
 	initResults := &atypes.ProviderInitResult{}
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		p, err := newAuthzProvider(db, c.URN, c.Authorization, c.Url, c.Token, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
+		p, err := newAuthzProvider(db, c, cfg.AuthProviders)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeGitLab)
 			initResults.Problems = append(initResults.Problems, err.Error())
@@ -44,8 +44,8 @@ func NewAuthzProviders(
 	return initResults
 }
 
-func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization, instanceURL, token string, tokenType gitlab.TokenType, ps []schema.AuthProviders) (authz.Provider, error) {
-	if a == nil {
+func newAuthzProvider(db database.DB, c *types.GitLabConnection, ps []schema.AuthProviders) (authz.Provider, error) {
+	if c.Authorization == nil {
 		return nil, nil
 	}
 
@@ -53,15 +53,16 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 		return nil, errLicense
 	}
 
-	glURL, err := url.Parse(instanceURL)
+	glURL, err := url.Parse(c.Url)
 	if err != nil {
-		return nil, errors.Errorf("Could not parse URL for GitLab instance %q: %s", instanceURL, err)
+		return nil, errors.Errorf("Could not parse URL for GitLab instance %q: %s", c.Url, err)
 	}
 
-	switch idp := a.IdentityProvider; {
+	switch idp := c.Authorization.IdentityProvider; {
 	case idp.Oauth != nil:
 		// Check that there is a GitLab authn provider corresponding to this GitLab instance
 		foundAuthProvider := false
+		syncInternalRepoPermissions := true
 		for _, authnProvider := range ps {
 			if authnProvider.Gitlab == nil {
 				continue
@@ -77,26 +78,30 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 			}
 			if authProviderURL.Hostname() == glURL.Hostname() {
 				foundAuthProvider = true
+				sirp := authnProvider.Gitlab.SyncInternalRepoPermissions
+				syncInternalRepoPermissions = sirp == nil || *sirp
 				break
 			}
 		}
 		if !foundAuthProvider {
-			return nil, errors.Errorf("Did not find authentication provider matching %q. Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %s.", instanceURL, instanceURL)
+			return nil, errors.Errorf("Did not find authentication provider matching %q. Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for %s.", c.Url, c.Url)
 		}
 
 		return NewOAuthProvider(OAuthProviderOp{
-			URN:       urn,
-			BaseURL:   glURL,
-			Token:     token,
-			TokenType: tokenType,
-			DB:        db,
+			URN:                         c.URN,
+			BaseURL:                     glURL,
+			Token:                       c.Token,
+			TokenType:                   gitlab.TokenType(c.TokenType),
+			DB:                          db,
+			SyncInternalRepoPermissions: syncInternalRepoPermissions,
 		}), nil
 	case idp.Username != nil:
 		return NewSudoProvider(SudoProviderOp{
-			URN:               urn,
-			BaseURL:           glURL,
-			SudoToken:         token,
-			UseNativeUsername: true,
+			URN:                         c.URN,
+			BaseURL:                     glURL,
+			SudoToken:                   c.Token,
+			UseNativeUsername:           true,
+			SyncInternalRepoPermissions: !c.MarkInternalReposAsPublic,
 		}), nil
 	case idp.External != nil:
 		ext := idp.External
@@ -107,15 +112,16 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 			foundMatchingOIDC := oidc != nil && oidc.ConfigID == ext.AuthProviderID && ext.AuthProviderType == oidc.Type
 			if foundMatchingSAML || foundMatchingOIDC {
 				return NewSudoProvider(SudoProviderOp{
-					URN:     urn,
+					URN:     c.URN,
 					BaseURL: glURL,
 					AuthnConfigID: providers.ConfigID{
 						Type: ext.AuthProviderType,
 						ID:   ext.AuthProviderID,
 					},
-					GitLabProvider:    ext.GitlabProvider,
-					SudoToken:         token,
-					UseNativeUsername: false,
+					GitLabProvider:              ext.GitlabProvider,
+					SudoToken:                   c.Token,
+					UseNativeUsername:           false,
+					SyncInternalRepoPermissions: !c.MarkInternalReposAsPublic,
 				}), nil
 			}
 		}
@@ -127,7 +133,7 @@ func newAuthzProvider(db database.DB, urn string, a *schema.GitLabAuthorization,
 
 // NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
 var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
-	return newOAuthProvider(op, nil)
+	return newOAuthProvider(op, op.CLI)
 }
 
 // NewSudoProvider is a mockable constructor for new SudoProvider instances.
@@ -138,6 +144,6 @@ var NewSudoProvider = func(op SudoProviderOp) authz.Provider {
 // ValidateAuthz validates the authorization fields of the given GitLab external
 // service config.
 func ValidateAuthz(cfg *schema.GitLabConnection, ps []schema.AuthProviders) error {
-	_, err := newAuthzProvider(nil, "", cfg.Authorization, cfg.Url, cfg.Token, gitlab.TokenType(cfg.TokenType), ps)
+	_, err := newAuthzProvider(nil, &types.GitLabConnection{GitLabConnection: cfg}, ps)
 	return err
 }

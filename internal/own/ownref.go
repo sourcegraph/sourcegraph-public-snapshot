@@ -453,8 +453,8 @@ func fetchCodeHostHandles(ctx context.Context, accounts []*extsvc.Account) ([]st
 		if err != nil || data == nil {
 			return nil, errors.Wrap(err, "ExternalAccountInfo")
 		}
-		if data.Login != nil && len(*data.Login) > 0 {
-			codeHostHandles = append(codeHostHandles, *data.Login)
+		if data.Login != "" {
+			codeHostHandles = append(codeHostHandles, data.Login)
 		}
 	}
 	return codeHostHandles, nil

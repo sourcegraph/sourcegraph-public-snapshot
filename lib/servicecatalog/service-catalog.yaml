@@ -31,7 +31,6 @@ protected_services:
     consumers:
       - blobstore
       - frontend
-      - github-proxy
       - gitserver
       - migrator
       - repo-updater

@@ -10,20 +10,23 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
 )
 
-func newObservedClient(inner types.CompletionsClient) *observedClient {
-	observationCtx := observation.NewContext(log.Scoped("completions", "completions client"))
+func newObservedClient(logger log.Logger, events *telemetry.EventRecorder, inner types.CompletionsClient) *observedClient {
+	observationCtx := observation.NewContext(logger.Scoped("completions"))
 	ops := newOperations(observationCtx)
 	return &observedClient{
-		inner: inner,
-		ops:   ops,
+		inner:  inner,
+		ops:    ops,
+		events: telemetry.NewBestEffortEventRecorder(logger.Scoped("events"), events),
 	}
 }
 
 type observedClient struct {
-	inner types.CompletionsClient
-	ops   *operations
+	inner  types.CompletionsClient
+	ops    *operations
+	events *telemetry.BestEffortEventRecorder
 }
 
 var _ types.CompletionsClient = (*observedClient)(nil)
@@ -38,9 +41,19 @@ func (o *observedClient) Stream(ctx context.Context, feature types.CompletionsFe
 	tracedSend := func(event types.CompletionResponse) error {
 		if event.StopReason != "" {
 			tr.AddEvent("stopped", attribute.String("reason", event.StopReason))
+
+			o.events.Record(ctx, "cody.completions", "stream", &telemetry.EventParameters{
+				Metadata: telemetry.EventMetadata{
+					"feature": int64(feature.ID()),
+				},
+				PrivateMetadata: map[string]any{
+					"stop_reason": event.StopReason,
+				},
+			})
 		} else {
 			tr.AddEvent("completion", attribute.Int("len", len(event.Completion)))
 		}
+
 		return send(event)
 	}
 
@@ -53,6 +66,12 @@ func (o *observedClient) Complete(ctx context.Context, feature types.Completions
 		MetricLabelValues: []string{params.Model},
 	})
 	defer endObservation(1, observation.Args{})
+
+	defer o.events.Record(ctx, "cody.completions", "complete", &telemetry.EventParameters{
+		Metadata: telemetry.EventMetadata{
+			"feature": int64(feature.ID()),
+		},
+	})
 
 	return o.inner.Complete(ctx, feature, params)
 }

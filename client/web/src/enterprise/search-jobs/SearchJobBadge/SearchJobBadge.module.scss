@@ -1,0 +1,24 @@
+.progress {
+    height: 1.25rem;
+    width: 100%;
+    background-color: var(--body-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    position: relative;
+    overflow: hidden;
+
+    @media (--sm-breakpoint-down) {
+        // Make it full width in the current row.
+        flex-basis: 10rem;
+        flex-grow: 0;
+        flex-shrink: 1;
+    }
+
+    &-bar {
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background-color: var(--primary);
+    }
+}

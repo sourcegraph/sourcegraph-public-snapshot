@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "awsbedrock",
+    srcs = ["bedrock.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/awsbedrock",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/completions/client/anthropic",
+        "//internal/completions/types",
+        "//internal/httpcli",
+        "//lib/errors",
+        "@com_github_aws_aws_sdk_go_v2//aws/signer/v4:signer",
+        "@com_github_aws_aws_sdk_go_v2_aws_protocol_eventstream//:eventstream",
+        "@com_github_aws_aws_sdk_go_v2_config//:config",
+        "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",
+    ],
+)

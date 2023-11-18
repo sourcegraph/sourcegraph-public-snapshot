@@ -3,7 +3,7 @@
 package:
   name: p4-fusion
   version: 1.12
-  epoch: 4
+  epoch: 7
   description: "A fast Perforce to Git conversion tool"
   target-architecture:
     - x86_64

@@ -1,7 +1,31 @@
 // @ts-check
 
+// Use faster experimental way of doing multi-project TypeScript linting. See
+// https://github.com/typescript-eslint/typescript-eslint/pull/6754.
+process.env.TYPESCRIPT_ESLINT_EXPERIMENTAL_TSSERVER = 'true'
+
 const config = {
-  extends: '@sourcegraph/eslint-config',
+  root: true,
+  ignorePatterns: [
+    '**/graphql-operations.ts',
+    '**/node_modules/**',
+    'out/',
+    'dist/',
+    'src/schema/*',
+    'graphql-operations.ts',
+    'GH2SG.bookmarklet.js',
+    '**/vendor/*.js',
+    'svelte.config.js',
+    'vite.config.ts',
+    'playwright.config.ts',
+    '.vscode-test',
+    '**/*.json',
+    '**/*.d.ts',
+    'eslint-relative-formatter.js',
+    'typedoc.js',
+    'bundlesize.config.js',
+  ],
+  extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
     browser: true,
     node: true,
@@ -13,8 +37,8 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
-    EXPERIMENTAL_useSourceOfProjectReferenceRedirect: true,
-    project: __dirname + '/tsconfig.eslint.json',
+    EXPERIMENTAL_projectService: true,
+    project: __dirname + '/tsconfig.all.json',
   },
   settings: {
     react: {
@@ -31,7 +55,7 @@ const config = {
       },
     ],
   },
-  plugins: ['@sourcegraph/sourcegraph', 'monorepo', '@sourcegraph/wildcard'],
+  plugins: ['@sourcegraph/sourcegraph', 'monorepo', '@sourcegraph/wildcard', 'storybook'],
   rules: {
     // Rules that are specific to this repo
     // All other rules should go into https://github.com/sourcegraph/eslint-config
@@ -41,6 +65,8 @@ const config = {
     // This rule doesn't understand type imports and we already have
     // import/no-duplicates enabled as well, which does understand type imports
     'no-duplicate-imports': 'off',
+    'id-length': 'off',
+    'no-void': 'off',
     '@typescript-eslint/consistent-type-exports': 'warn',
     '@typescript-eslint/consistent-type-imports': [
       'warn',
@@ -51,6 +77,15 @@ const config = {
     ],
     // This converts 'import {type foo} from ...' to 'import type {foo} from ...'
     '@typescript-eslint/no-import-type-side-effects': ['warn'],
+
+    // These rules are very slow on-save.
+    '@typescript-eslint/no-unsafe-assignment': 'off',
+    '@typescript-eslint/unbound-method': 'off',
+    '@typescript-eslint/no-misused-promises': 'off',
+    '@typescript-eslint/no-unnecessary-qualifier': 'off',
+    '@typescript-eslint/no-unused-vars': 'off', // also duplicated by tsconfig noUnused{Locals,Parameters}
+    'etc/no-deprecated': 'off',
+
     'no-restricted-imports': [
       'error',
       {
@@ -75,12 +110,6 @@ const config = {
         ],
         patterns: [
           {
-            group: ['**/enterprise/*'],
-            message: `The OSS product may not pull in any code from the enterprise codebase, to stay a 100% open-source program.
-
-See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
-          },
-          {
             group: ['@sourcegraph/branded/src/search-ui/experimental'],
             message:
               'The experimental search input is not available for general use. If you have questions about it reach out to the search product team.',
@@ -98,6 +127,9 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
               '!@sourcegraph/branded/src/search-ui/experimental',
               '!@sourcegraph/*/src/testing',
               '!@sourcegraph/*/src/stories',
+              '!@sourcegraph/build-config/src/esbuild/*',
+              '!@sourcegraph/build-config/src/*',
+              '!@sourcegraph/testing/src/jestDomMatchers',
             ],
             message:
               'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
@@ -106,6 +138,11 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
             group: ['**/out/*'],
             message:
               "Please don't import stuff from the 'out' directory. It’s generated code. Remove the 'out/' part and you should be good go to.",
+          },
+          {
+            group: ['!@sourcegraph/cody-shared/*', '!@sourcegraph/cody-ui/*'],
+            message:
+              "Allowed imports from @sourcegraph/cody-* packages while those packages' APIs are being stabilized.",
           },
         ],
       },
@@ -237,9 +274,30 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
         css: 'always',
         yaml: 'always',
         svg: 'always',
+        cjs: 'always',
       },
     ],
     'import/order': 'off',
+    'unicorn/expiring-todo-comments': 'off',
+
+    // These rules were newly introduced in @sourcegraph/eslint-config@0.35.0 and have not yet been
+    // fixed in our existing code.
+    'unicorn/prefer-top-level-await': 'warn',
+    'unicorn/prefer-logical-operator-over-ternary': 'warn',
+    'unicorn/prefer-blob-reading-methods': 'warn',
+    'unicorn/prefer-event-target': 'warn',
+    'etc/throw-error': 'warn',
+    'rxjs/throw-error': 'warn',
+    'prefer-promise-reject-errors': 'warn',
+    '@typescript-eslint/no-redundant-type-constituents': 'warn',
+    '@typescript-eslint/no-unsafe-enum-comparison': 'warn',
+    '@typescript-eslint/prefer-optional-chain': 'warn',
+    '@typescript-eslint/no-duplicate-enum-values': 'warn',
+    '@typescript-eslint/no-floating-promises': 'warn',
+
+    'jsdoc/check-alignment': 'off',
+
+    'unicorn/no-negated-condition': 'off', // this one reduces code readability, should remove it from @sourcegraph/eslint-config too
   },
   overrides: [
     {
@@ -256,10 +314,23 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     },
     {
-      files: ['**/gulpfile.js', '**/story/**.tsx', '**/story/**.ts', '*.story.tsx'],
+      files: ['**/dev/**/*.ts', '**/story/**.tsx', '**/story/**.ts', '*.story.tsx', 'client/build-config/**'],
+      rules: {
+        'no-console': 'off',
+        'no-sync': 'off',
+      },
+    },
+    {
+      files: ['client/browser/**', 'client/jetbrains/**'],
       rules: {
         'no-console': 'off',
       },
+    },
+
+    // client/web
+    {
+      files: ['client/web/src/stores/**.ts', 'client/web/src/__mocks__/zustand.ts'],
+      rules: { 'no-restricted-imports': 'off' },
     },
   ],
 }

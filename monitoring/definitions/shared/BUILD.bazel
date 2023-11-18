@@ -28,6 +28,7 @@ go_library(
         "provisioning.go",
         "queues.go",
         "shared.go",
+        "site_configuration.go",
         "standard.go",
         "usage_data_pipeline.go",
         "workerutil.go",
@@ -38,6 +39,7 @@ go_library(
     deps = [
         "//monitoring/monitoring",
         "@com_github_grafana_tools_sdk//:sdk",
+        "@com_github_iancoleman_strcase//:strcase",
         "@com_github_prometheus_common//model",
         "@org_golang_x_text//cases",
         "@org_golang_x_text//language",

@@ -1,15 +1,63 @@
+schemaVersion: "2.0.0"
+
 commandTests:
-  - name: "sanity check"
+  - name: "server binary is runnable"
     command: "/server"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+
+  # Sourcegraph binaries, run as a single test case to keep test case count short.
+  - name: "sourcegraph binaries are runnable"
+    command: "/opt/image_tests/test_services.sh"
+
+
+  # Base packages
+  - name: "packages binaries are runnable"
+    command: "/opt/image_tests/test_packages.sh"
+
   - name: "scip-ctags is runnable"
     command: "/usr/local/bin/scip-ctags"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
 
+  # Git
+  - name: "git p4 is runnable"
+    command: "git"
+    args:
+      - p4
+    expectedOutput: ["valid commands: submit"]
+    exitCode: 2
+
+  # P4-fusion
+  - name: "p4-fusion is runnable"
+    command: "p4-fusion-binary"
+    args:
+    expectedOutput: [ "--noBaseCommit" ]
+    exitCode: 1
+
+  # Zoekt binaries
+  - name: "zoket binaries are runnable"
+    command: "/opt/image_tests/test_zoekt.sh"
+
+  # SSH
+  - name: "ssh is runnable"
+    command: "ssh"
+    exitCode: 255
+
+  # Correct users and groups
+  - name: "correct users exist"
+    command: "cat"
+    args:
+      - '/etc/passwd'
+    expectedOutput: [
+      "sourcegraph:x:100:101",
+      "postgres:x:70:70",
+      "nginx:x:101:102",
+      "redis:x:102:103",
+      "grafana:x:103:104",
+    ]
 
   # TODO(security): This container should not be running as root
   # - name: "not running as root"
@@ -18,3 +66,59 @@ commandTests:
   #     - -u
   #   excludedOutput: ["^0"]
   #   exitCode: 0
+
+
+fileExistenceTests:
+# Prometheus
+- name: '/prometheus.sh'
+  path: '/prometheus.sh'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+- name: '/alertmanager.sh'
+  path: '/alertmanager.sh'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+# Grafana
+# - name: 'Dashboard config'
+#   path: '/sg_config_grafana/provisioning/dashboards/sourcegraph/gitserver.json'
+#   shouldExist: true
+#   uid: 0
+#   gid: 0
+#   permissions: '-r-xr-xr-x'
+# p4-fusion wrappers
+- name: '/usr/local/bin/p4-fusion'
+  path: '/usr/local/bin/p4-fusion'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+- name: '/usr/local/bin/process-stats-watcher.sh'
+  path: '/usr/local/bin/process-stats-watcher.sh'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+# /sg_config_prometheus configuration
+- name: '/sg_config_prometheus/prometheus.yml'
+  path: '/sg_config_prometheus/prometheus.yml'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-rwxrwxrwx'
+- name: '/sg_config_prometheus/alertmanager.yml'
+  path: '/sg_config_prometheus/alertmanager.yml'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-rwxrwxrwx'
+
+metadataTest:
+  envVars:
+    - key: GO111MODULES
+      value: 'on'
+    - key: LANG
+      value: 'en_US.utf8'

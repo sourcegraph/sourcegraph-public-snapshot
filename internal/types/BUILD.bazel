@@ -38,9 +38,13 @@ go_library(
 go_test(
     name = "types_test",
     timeout = "short",
-    srcs = ["secret_test.go"],
+    srcs = [
+        "secret_test.go",
+        "types_test.go",
+    ],
     embed = [":types"],
     deps = [
+        "//internal/api",
         "//internal/extsvc",
         "//schema",
         "@com_github_stretchr_testify//assert",

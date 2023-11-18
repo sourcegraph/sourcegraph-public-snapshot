@@ -1,0 +1,39 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "server",
+    srcs = [
+        "metrics.go",
+        "publish_events.go",
+        "server.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/server",
+    visibility = ["//cmd/telemetry-gateway:__subpackages__"],
+    deps = [
+        "//cmd/telemetry-gateway/internal/events",
+        "//internal/licensing",
+        "//internal/pubsub",
+        "//internal/telemetrygateway/v1:telemetrygateway",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_metric//:metric",
+        "@io_opentelemetry_go_otel_trace//:trace",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+go_test(
+    name = "server_test",
+    srcs = ["publish_events_test.go"],
+    embed = [":server"],
+    deps = [
+        "//cmd/telemetry-gateway/internal/events",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

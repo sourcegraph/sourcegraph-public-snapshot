@@ -26,7 +26,7 @@ type ComputeExecutor struct {
 
 func NewComputeExecutor(postgres database.DB, clock func() time.Time) *ComputeExecutor {
 	executor := ComputeExecutor{
-		logger: log.Scoped("ComputeExecutor", "a logger scoped to query.ComputeExecutor"),
+		logger: log.Scoped("ComputeExecutor"),
 		previewExecutor: previewExecutor{
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
@@ -63,7 +63,7 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		repoIds[repository] = repo.ID
 	}
 
-	gitserverClient := gitserver.NewClient()
+	gitserverClient := gitserver.NewClient("insights.computeexecutor")
 
 	groupedValues := make(map[string]int)
 	for _, repository := range repositories {

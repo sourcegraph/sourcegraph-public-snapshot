@@ -78,7 +78,7 @@ func TestOrganization(t *testing.T) {
 		{
 			name: "invite user to organization",
 			run: func() error {
-				_, err := userClient.InviteUserToOrganization(orgID, testUsername, "")
+				_, err := userClient.InviteUserToOrganization(orgID, testUsername)
 				return err
 			},
 			wantErr: "current user is not an org member",

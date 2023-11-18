@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/exp/slices"
 )
 
@@ -29,12 +30,28 @@ func GetLanguage(path, contents string) (lang string, found bool) {
 	}
 
 	// Lastly, fall back to whatever enry decides is a useful algorithm for calculating.
-	lang = enry.GetLanguage(path, []byte(contents))
-	if lang != "" {
+
+	c := contents
+	// classifier is faster on small files without losing much accuracy
+	if len(c) > 2048 {
+		c = c[:2048]
+	}
+
+	lang, err := firstLanguage(enry.GetLanguages(path, []byte(c)))
+	if err == nil {
 		return NormalizeLanguage(lang), true
 	}
 
 	return NormalizeLanguage(lang), false
+}
+
+func firstLanguage(languages []string) (string, error) {
+	for _, l := range languages {
+		if l != "" {
+			return l, nil
+		}
+	}
+	return "", errors.New("UnrecognizedLanguage")
 }
 
 // overrideViaShebang handles explicitly using the shebang whenever possible.

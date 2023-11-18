@@ -6,6 +6,7 @@ import (
 
 	"github.com/coreos/go-semver/semver"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -31,6 +32,9 @@ type Notification struct {
 }
 
 func getNotifications(clientVersionString string) []Notification {
+	if !envvar.SourcegraphDotComMode() {
+		return []Notification{}
+	}
 	return calcNotifications(clientVersionString, conf.Get().Dotcom.AppNotifications)
 }
 

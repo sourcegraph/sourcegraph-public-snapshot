@@ -42,7 +42,6 @@ func ParseConfig(data conftypes.RawUnified) (*Unified, error) {
 // via e.g. "experimentalFeatures::myFeatureFlag".
 var requireRestart = []string{
 	"auth.providers",
-	"externalURL",
 	"insights.query.worker.concurrency",
 	"insights.commit.indexer.interval",
 	"permissions.syncUsersMaxConcurrency",

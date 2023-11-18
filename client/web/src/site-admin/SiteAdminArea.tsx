@@ -52,7 +52,7 @@ export interface SiteAdminAreaRouteContext
     site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
@@ -70,7 +70,7 @@ interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps,
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     codeInsightsEnabled: boolean
 }
 
@@ -129,7 +129,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         platformContext: props.platformContext,
         settingsCascade: props.settingsCascade,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
-        isSourcegraphApp: props.isSourcegraphApp,
+        isCodyApp: props.isCodyApp,
         batchChangesEnabled: props.batchChangesEnabled,
         batchChangesExecutionEnabled: props.batchChangesExecutionEnabled,
         batchChangesWebhookLogsEnabled: props.batchChangesWebhookLogsEnabled,
@@ -144,9 +144,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         <Page>
             <PageHeader>
                 <PageHeader.Heading as="h2" styleAs="h1">
-                    <PageHeader.Breadcrumb>
-                        {props.isSourcegraphApp ? 'Advanced Settings' : 'Admin'}
-                    </PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb>{props.isCodyApp ? 'Advanced Settings' : 'Admin'}</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
             <div className="d-flex my-3 flex-column flex-sm-row" ref={reference}>
@@ -154,7 +152,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={adminSideBarGroups}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
-                    isSourcegraphApp={props.isSourcegraphApp}
+                    isCodyApp={props.isCodyApp}
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}

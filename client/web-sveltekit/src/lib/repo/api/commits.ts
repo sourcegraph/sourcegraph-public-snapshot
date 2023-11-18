@@ -204,7 +204,7 @@ export async function fetchRepoCommits({
 }
 
 export async function fetchRepoCommit(repoId: string, revision: string): Promise<RepositoryCommitResult> {
-    return await query<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
+    return query<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
         repo: repoId,
         revspec: revision,
     })

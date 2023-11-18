@@ -2,21 +2,27 @@ package awskms
 
 import (
 	"context"
-	"crypto/aes"
-	"crypto/cipher"
-	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"io"
+	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/kms"
-	"github.com/aws/aws-sdk-go-v2/service/kms/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/aeshelper"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/envelope"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/wrapper"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+)
+
+const (
+	// mechanismEncrypt is the mechanism used prior to the introduction of the envelope helper.
+	mechanismEncrypt = "encrypt"
+	// mechanismEnvelope is the default for all new encrypted values, which uses the envelope helper.
+	mechanismEnvelope = "envelope"
 )
 
 func NewKey(ctx context.Context, keyConfig schema.AWSKMSEncryptionKey) (encryption.Key, error) {
@@ -27,7 +33,7 @@ func NewKey(ctx context.Context, keyConfig schema.AWSKMSEncryptionKey) (encrypti
 	return newKey(ctx, keyConfig, defaultConfig)
 }
 
-func newKey(ctx context.Context, keyConfig schema.AWSKMSEncryptionKey, config aws.Config) (encryption.Key, error) {
+func newKey(ctx context.Context, keyConfig schema.AWSKMSEncryptionKey, config aws.Config) (*Key, error) {
 	k := &Key{
 		keyID:  keyConfig.KeyId,
 		client: kms.NewFromConfig(config),
@@ -70,89 +76,103 @@ func (k *Key) Version(ctx context.Context) (encryption.KeyVersion, error) {
 // Decrypt a secret, it must have been encrypted with the same Key.
 // Encrypted secrets are a base64 encoded string containing the original content.
 func (k *Key) Decrypt(ctx context.Context, cipherText []byte) (*encryption.Secret, error) {
-	buf, err := base64.StdEncoding.DecodeString(string(cipherText))
-	if err != nil {
-		return nil, err
-	}
-	ev := encryptedValue{}
-	err = json.Unmarshal(buf, &ev)
+	wr, err := wrapper.FromCiphertext(cipherText)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := k.client.Decrypt(ctx, &kms.DecryptInput{CiphertextBlob: ev.Key, KeyId: &k.keyID})
-	if err != nil {
-		return nil, err
+	if wr.Mechanism == "" {
+		wr.Mechanism = mechanismEncrypt
 	}
 
-	// Decrypt ciphertext.
-	decBuf, err := aesDecrypt(ev.Ciphertext, res.Plaintext, ev.Nonce)
-	if err != nil {
-		return nil, err
-	}
+	switch wr.Mechanism {
+	case mechanismEncrypt:
+		buf, err := base64.StdEncoding.DecodeString(string(cipherText))
+		if err != nil {
+			return nil, err
+		}
+		ev := encryptedValue{}
+		err = json.Unmarshal(buf, &ev)
+		if err != nil {
+			return nil, err
+		}
 
-	s := encryption.NewSecret(string(decBuf))
-	return &s, nil
+		res, err := k.client.Decrypt(ctx, &kms.DecryptInput{
+			CiphertextBlob: ev.Key,
+			KeyId:          &k.keyID,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Decrypt ciphertext.
+		decBuf, err := aeshelper.Decrypt(res.Plaintext, ev.Ciphertext, ev.Nonce)
+		if err != nil {
+			return nil, err
+		}
+
+		s := encryption.NewSecret(string(decBuf))
+		return &s, nil
+	case mechanismEnvelope:
+		if !strings.HasSuffix(wr.KeyName, k.keyID) {
+			return nil, errors.New("invalid key name, are you trying to decrypt something with the wrong key?")
+		}
+
+		// First, use KMS to decrypt the envelope key.
+		res, err := k.client.Decrypt(ctx, &kms.DecryptInput{
+			CiphertextBlob: wr.WrappedKey,
+			KeyId:          &k.keyID,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// Next, decrypt the envelope.
+		plaintext, err := envelope.Decrypt(&envelope.Envelope{
+			Key:        res.Plaintext,
+			Nonce:      wr.Nonce,
+			Ciphertext: wr.Ciphertext,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		s := encryption.NewSecret(string(plaintext))
+		return &s, nil
+	default:
+		return nil, errors.Newf("invalid mechanism %q", wr.Mechanism)
+	}
 }
 
 // Encrypt a secret, storing it as a base64 encoded string.
 func (k *Key) Encrypt(ctx context.Context, plaintext []byte) ([]byte, error) {
-	// Encrypt plaintext.
-	res, err := k.client.GenerateDataKey(ctx, &kms.GenerateDataKeyInput{
-		KeyId:   &k.keyID,
-		KeySpec: types.DataKeySpecAes256,
+	ev, err := envelope.Encrypt(plaintext)
+	if err != nil {
+		return nil, errors.Wrap(err, "envelope encrypting payload")
+	}
+
+	// Encrypt the key of the envelope.
+	res, err := k.client.Encrypt(ctx, &kms.EncryptInput{
+		KeyId:     &k.keyID,
+		Plaintext: ev.Key,
 	})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "encrypting envelope key")
 	}
 
-	ev := encryptedValue{
-		Key: res.CiphertextBlob,
-	}
-	ev.Ciphertext, ev.Nonce, err = aesEncrypt(plaintext, res.Plaintext)
-	if err != nil {
-		return nil, err
+	ek := wrapper.StorableEncryptedKey{
+		Mechanism:  mechanismEnvelope,
+		KeyName:    *res.KeyId,
+		WrappedKey: res.CiphertextBlob,
+		Ciphertext: ev.Ciphertext,
+		Nonce:      ev.Nonce,
 	}
 
-	jsonKey, err := json.Marshal(ev)
-	if err != nil {
-		return nil, err
-	}
-	buf := base64.StdEncoding.EncodeToString(jsonKey)
-	return []byte(buf), err
+	return ek.Serialize()
 }
 
 type encryptedValue struct {
 	Key        []byte
 	Nonce      []byte
 	Ciphertext []byte
-}
-
-func aesEncrypt(plaintext, key []byte) ([]byte, []byte, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, nil, err
-	}
-	aesGCM, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, nil, err
-	}
-	nonce := make([]byte, aesGCM.NonceSize())
-	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
-		return nil, nil, err
-	}
-	ciphertext := aesGCM.Seal(nil, nonce, plaintext, nil)
-	return ciphertext, nonce, nil
-}
-
-func aesDecrypt(ciphertext, key, nonce []byte) ([]byte, error) {
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	aesGCM, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-	return aesGCM.Open(nil, nonce, ciphertext, nil)
 }

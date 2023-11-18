@@ -9,7 +9,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -321,8 +320,7 @@ func (r *updateQueueResolver) Total() int32 {
 }
 
 func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, args *struct {
-	Repository *graphql.ID
-	Name       *string
+	Repository graphql.ID
 }) (*checkMirrorRepositoryConnectionResult, error) {
 	// 🚨 SECURITY: This is an expensive operation and the errors may contain secrets,
 	// so only site admins may run it.
@@ -330,24 +328,13 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		return nil, err
 	}
 
-	if (args.Repository != nil && args.Name != nil) || (args.Repository == nil && args.Name == nil) {
-		return nil, errors.New("exactly one of the repository and name arguments must be set")
+	repoID, err := UnmarshalRepositoryID(args.Repository)
+	if err != nil {
+		return nil, err
 	}
-
-	var repo *types.Repo
-	switch {
-	case args.Repository != nil:
-		repoID, err := UnmarshalRepositoryID(*args.Repository)
-		if err != nil {
-			return nil, err
-		}
-		repo, err = backend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, repoID)
-		if err != nil {
-			return nil, err
-		}
-	case args.Name != nil:
-		// Use just the name to look up the repository from gitserver.
-		repo = &types.Repo{Name: api.RepoName(*args.Name)}
+	repo, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, repoID)
+	if err != nil {
+		return nil, err
 	}
 
 	var result checkMirrorRepositoryConnectionResult

@@ -70,8 +70,6 @@ func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repos
 	panic("should never be called")
 }
 
-var errPermissionsUserMappingConflict = errors.New("The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when bitbucketServer authorization provider is in use. Blocking access to all repositories until the conflict is resolved.")
-
 func TestAuthzProvidersFromConfig(t *testing.T) {
 	t.Cleanup(licensing.TestingSkipFeatureChecks())
 	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
@@ -126,9 +124,10 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -226,16 +225,18 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.com"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.com"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -301,9 +302,10 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 							Type: "saml",
 							ID:   "okta",
 						},
-						GitLabProvider:    "my-external",
-						SudoToken:         "asdf",
-						UseNativeUsername: false,
+						GitLabProvider:              "my-external",
+						SudoToken:                   "asdf",
+						UseNativeUsername:           false,
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -328,10 +330,11 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					SudoOp: gitlab.SudoProviderOp{
-						URN:               "extsvc:gitlab:0",
-						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
-						SudoToken:         "asdf",
-						UseNativeUsername: true,
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						SudoToken:                   "asdf",
+						UseNativeUsername:           true,
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -439,9 +442,10 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			expAuthzProviders: providersEqual(
 				gitlabAuthzProviderParams{
 					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+						URN:                         "extsvc:gitlab:0",
+						BaseURL:                     mustURLParse(t, "https://gitlab.mine"),
+						Token:                       "asdf",
+						SyncInternalRepoPermissions: true,
 					},
 				},
 			),
@@ -450,7 +454,9 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
+			db := dbmocks.NewMockDB()
 			externalServices := dbmocks.NewMockExternalServiceStore()
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				mustMarshalJSONString := func(v any) string {
 					str, err := jsoniter.MarshalToString(v)
@@ -485,8 +491,7 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 			allowAccessByDefault, authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
-				externalServices,
-				dbmocks.NewMockDB(),
+				db,
 			)
 			assert.Equal(t, test.expAuthzAllowAccessByDefault, allowAccessByDefault)
 			if test.expAuthzProviders != nil {
@@ -662,7 +667,9 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
+			db := dbmocks.NewMockDB()
 			externalServices := dbmocks.NewMockExternalServiceStore()
+			db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 				mustMarshalJSONString := func(v any) string {
 					str, err := jsoniter.MarshalToString(v)
@@ -730,8 +737,7 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 			_, _, seriousProblems, _, invalidConnections := ProvidersFromConfig(
 				context.Background(),
 				staticConfig(test.cfg.SiteConfiguration),
-				externalServices,
-				dbmocks.NewMockDB(),
+				db,
 			)
 
 			assert.Equal(t, test.expSeriousProblems, seriousProblems)
@@ -842,8 +848,6 @@ func TestPermissionSyncingDisabled(t *testing.T) {
 	})
 }
 
-// This test lives in cmd/enterprise because it tests a proprietary
-// super-set of the validation performed by the OSS version.
 func TestValidateExternalServiceConfig(t *testing.T) {
 	t.Parallel()
 	t.Cleanup(licensing.TestingSkipFeatureChecks())

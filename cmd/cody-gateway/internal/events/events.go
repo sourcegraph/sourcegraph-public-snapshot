@@ -3,14 +3,17 @@ package events
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/sourcegraph/log"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -96,22 +99,27 @@ func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err err
 		return nil
 	}
 
-	var metadata json.RawMessage
-	if event.Metadata != nil {
-		var err error
-		metadata, err = json.Marshal(event.Metadata)
-		if err != nil {
-			return errors.Wrap(err, "marshaling metadata")
-		}
+	// Always have metadata
+	if event.Metadata == nil {
+		event.Metadata = map[string]any{}
 	}
 
+	// HACK: Inject Sourcegraph actor that is held in the span context
+	event.Metadata["sg.actor"] = sgactor.FromContext(spanCtx)
+
+	metadata, err := json.Marshal(event.Metadata)
+	if err != nil {
+		return errors.Wrap(err, "marshaling metadata")
+	}
 	if err := l.tableInserter.Put(
-		backgroundContextWithSpan(spanCtx),
+		// Create a cancel-free context to avoid interrupting the log when
+		// the parent context is cancelled.
+		xcontext.Detach(spanCtx),
 		bigQueryEvent{
 			Name:       string(event.Name),
 			Source:     event.Source,
 			Identifier: event.Identifier,
-			Metadata:   metadata,
+			Metadata:   json.RawMessage(metadata),
 			CreatedAt:  time.Now(),
 		},
 	); err != nil {
@@ -130,7 +138,7 @@ func NewStdoutLogger(logger log.Logger) Logger {
 	// demo tracing in dev.
 	return &instrumentedLogger{
 		Scope:  "stdoutLogger",
-		Logger: &stdoutLogger{logger: logger.Scoped("events", "event logger")},
+		Logger: &stdoutLogger{logger: logger.Scoped("events")},
 	}
 }
 
@@ -140,6 +148,7 @@ func (l *stdoutLogger) LogEvent(spanCtx context.Context, event Event) error {
 			log.String("name", string(event.Name)),
 			log.String("source", event.Source),
 			log.String("identifier", event.Identifier),
+			log.String("metadata", fmt.Sprint(event.Metadata)),
 		),
 	)
 	return nil

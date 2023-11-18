@@ -9,8 +9,7 @@
 }
 
 .page-wrapper {
-    background: radial-gradient(133.61% 44.45% at 41.22% 0%, rgba(161, 18, 255, 0.24) 0%, rgba(15, 17, 26, 0) 100%),
-        radial-gradient(50% 23.6% at 100% -0%, rgba(161, 18, 255, 0.14) 0%, rgba(15, 17, 26, 0) 100%), #0f111a;
+    background: radial-gradient(116.98% 45.27% at 100% 0%, #6112a3 0.41%, rgba(39, 7, 65, 0) 71.05%), #1e0632;
     height: fit-content;
     width: 100%;
     position: relative;
@@ -44,11 +43,8 @@
     flex-direction: column;
 
     @media (--md-breakpoint-up) {
-        margin-top: 3rem;
-        margin-left: 1.5rem;
-        padding-top: 3rem;
-        padding-bottom: 7.5rem;
-        padding-left: 4.75rem;
+        margin-top: 12rem;
+        margin-bottom: 12rem;
         gap: 6rem;
     }
 
@@ -61,45 +57,28 @@
 
     .card {
         padding: 3rem 3.5rem;
-        max-width: 1171px;
-        background: radial-gradient(
-            63.3% 72.11% at 95.66% -10.78%,
-            rgba(255, 255, 255, 0.13) 0%,
-            rgba(255, 255, 255, 0) 100%
-        );
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        max-width: 1280px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 0.5rem;
 
-        &:hover {
-            background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
-                radial-gradient(
-                    63.3% 72.11% at 95.66% -10.78%,
-                    rgba(255, 255, 255, 0.13) 0%,
-                    rgba(255, 255, 255, 0) 100%
-                ),
-                radial-gradient(92.93% 92.93% at 50% 50%, rgba(161, 18, 255, 0.25) 0%, rgba(161, 18, 255, 0) 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 0 40px -12px rgba(161, 18, 255, 0.3);
-            border-radius: 0.5rem;
+        @media (--md-breakpoint-down) {
+            padding: 3rem;
         }
     }
-}
-
-.dashed-line {
-    margin-left: -4.875rem;
-    position: absolute;
 }
 
 .card-title {
     font-size: 2.25rem;
     line-height: 2.6875rem;
     color: var(--gray-04);
+    max-width: 1005px;
 }
 
 .card-description {
     font-size: 1.25rem;
     line-height: 120%;
     color: var(--gray-04);
+    max-width: 1005px;
 }
 
 .get-started-with-cody {
@@ -162,21 +141,14 @@
         gap: 0.5rem;
     }
 
-    .button-icon {
-        margin-right: 0.065rem !important;
-    }
-
-    .auth-button,
-    .email-auth-button {
+    .auth-button {
         text-align: center;
         border: none;
-        padding: 1.0625rem 1.5rem;
+        padding: 0.9375rem 1.5rem;
         border-radius: 0.188rem;
         margin-top: 0;
         margin-bottom: 0;
-    }
-
-    .auth-button {
+        font-size: 1.125rem;
         background-color: var(--white) !important;
         color: var(--violet-07) !important;
 
@@ -195,37 +167,6 @@
                     rgba(161, 18, 255, 0) 68.23%
                 ),
                 var(--white);
-        }
-    }
-
-    .email-auth-button {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 0.1875rem;
-        color: var(--white);
-        width: 14.3125rem;
-
-        @media (--md-breakpoint-down) {
-            width: 24rem;
-        }
-
-        @media (--xs-breakpoint-down) {
-            width: auto;
-        }
-
-        svg {
-            color: var(--email-icon-color);
-            height: 1.125rem;
-        }
-
-        &:hover {
-            background: radial-gradient(
-                    101.36% 319.74% at 56.46% 72.22%,
-                    rgba(161, 18, 255, 0.2) 0%,
-                    rgba(161, 18, 255, 0.2) 36.46%,
-                    rgba(161, 18, 255, 0) 68.23%
-                ),
-                rgba(255, 255, 255, 0.1);
         }
     }
 }
@@ -268,16 +209,9 @@
     line-height: 1.5rem;
     margin-top: 4rem;
     width: fit-content;
-
-    .badge {
-        background: #dbdbff;
-        color: #3826cc;
-        border-radius: 0.375rem;
-    }
 }
 
 .download-for-windows-description {
-    margin-top: 1rem;
     color: var(--gray-04);
     font-size: 1rem;
     line-height: 120%;
@@ -288,8 +222,9 @@
     }
 }
 
-.download-for-vscode {
+.download-for-ide {
     display: flex;
+    gap: 1.5rem;
     align-items: center;
     background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
         radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%);
@@ -297,9 +232,10 @@
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     border-radius: 0.5rem;
     padding: 1.5rem 2.5rem;
-    margin-top: 5rem;
-    margin-bottom: 1rem;
     width: fit-content;
+    @media (--xs-breakpoint-down) {
+        flex-wrap: wrap;
+    }
 
     &:hover {
         background: radial-gradient(
@@ -312,24 +248,25 @@
             radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%);
     }
 
-    .download-for-vscode-text {
+    .download-for-ide-text {
         color: var(--white);
         font-size: 1.5rem;
         line-height: 120%;
     }
 
-    .vscode-icon {
+    .ide-icon {
         height: 2.75rem;
         width: 2.75rem;
-        margin-right: 1.625rem;
     }
 }
 
 .vscode-marketplace {
+    display: block;
     font-weight: 600;
     font-size: 1rem;
     line-height: 1.5rem;
     color: var(--white);
+    margin-top: 1rem;
 }
 
 .start-coding-with-me-img-wrapper {
@@ -379,6 +316,7 @@
         background: var(--white);
         border-radius: 0.3125rem;
         color: var(--violet-05);
+        font-size: 1rem;
         width: fit-content;
     }
 
@@ -391,6 +329,7 @@
         border: 1px solid var(--white);
         border-radius: 0.3125rem;
         color: var(--white);
+        font-size: 1rem;
         width: fit-content;
     }
 
@@ -408,9 +347,9 @@
 .join-waitlist-button-wrapper {
     display: flex;
     flex-direction: row;
+    gap: 1rem;
     @media (--md-breakpoint-down) {
         flex-direction: column;
-        gap: 1rem;
     }
 
     .join-waitlist-button {
@@ -419,7 +358,6 @@
         border: 1px dashed rgba(255, 255, 255, 0.15);
         border-radius: 0.5rem;
         padding: 1rem 1.5rem;
-        margin-right: 2rem;
         width: fit-content;
         align-items: center;
 
@@ -487,20 +425,10 @@
     }
 }
 
-.background-image {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    @media (--md-breakpoint-down) {
-        display: none;
-    }
-}
-
 .footer {
     display: flex;
     flex-direction: row;
     gap: 1.25rem;
-    margin-top: 2rem;
 
     @media (--md-breakpoint-down) {
         margin-top: 3rem;
@@ -510,36 +438,6 @@
         font-size: 0.875rem;
         line-height: 1.3125rem;
         color: var(--gray-04);
-    }
-}
-
-.light-wrapper {
-    width: 19.25rem;
-    height: 19.25rem;
-    text-align: center;
-    margin-left: -14.375rem;
-    margin-top: 1.875rem;
-    position: fixed;
-    background: radial-gradient(52.85% 41.07% at 50% 50%, rgba(161, 18, 255, 0.34) 0%, rgba(15, 17, 26, 0) 100%);
-    @media (--sm-breakpoint-down) {
-        display: none;
-    }
-
-    .light {
-        margin-top: 5.5rem;
-    }
-}
-
-.light-line {
-    position: absolute;
-    margin-left: -4.875rem;
-    margin-top: -6.25rem;
-    width: 0.125rem;
-    height: 15.1875rem;
-    background: linear-gradient(270deg, rgba(161, 18, 255, 0.64) 0%, #a112ff 77.36%, rgba(161, 18, 255, 0) 100%);
-
-    @media (--sm-breakpoint-down) {
-        display: none;
     }
 }
 
@@ -569,26 +467,23 @@
 
 .focus-background {
     @media (--md-breakpoint-up) {
-        background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
-            radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%),
-            radial-gradient(92.93% 92.93% at 50% 50%, rgba(161, 18, 255, 0.25) 0%, rgba(161, 18, 255, 0) 100%) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        box-shadow: 0 0 40px -12px rgba(161, 18, 255, 0.3) !important;
+        background: #612590 !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
         border-radius: 0.5rem !important;
         animation: fadeIn 1s ease-in-out;
     }
 }
 
 .download-btn-wrapper {
-    @media (--md-breakpoint-up) {
-        display: flex;
-    }
-
-    @media (--xs-breakpoint-down) {
-        display: block;
-    }
+    margin-top: 3rem;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 2rem;
 }
 
-.download-btn {
-    margin-right: 2rem;
+.badge {
+    background: #dbdbff;
+    color: #3826cc;
+    border-radius: 0.375rem;
 }

@@ -80,7 +80,7 @@ mutation {
 	return errors.Wrap(err, "deleting repo from disk")
 }
 
-// WaitForReposToBeIndexed waits (up to 30 seconds) for all repositories
+// WaitForReposToBeIndexed waits (up to 180 seconds) for all repositories
 // in the list to be indexed.
 //
 // This method requires the authenticated user to be a site admin.
@@ -90,6 +90,7 @@ func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
 	defer cancel()
 
 	var missing collections.Set[string]
+	var err error
 	for {
 		select {
 		case <-ctx.Done():
@@ -97,6 +98,7 @@ func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
 		default:
 		}
 
+		// Only fetched indexed repositories
 		const query = `
 query Repositories {
 	repositories(first: 1000, notIndexed: false, notCloned: false) {
@@ -106,7 +108,7 @@ query Repositories {
 	}
 }
 `
-		var err error
+		// Compare list of repos returned by query to expected list of indexed repos
 		missing, err = c.waitForReposByQuery(query, repos...)
 		if err != nil {
 			return errors.Wrap(err, "wait for repos to be indexed")
@@ -120,6 +122,39 @@ query Repositories {
 	return nil
 }
 
+// WaitForRepoToBeIndexed performs a regexp search for `.` with index:only,
+// repo:repoName, and type:file set until a result is returned.
+func (c *Client) WaitForRepoToBeIndexed(repoName string) error {
+	timeout := 180 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	var results *SearchFileResults
+	var err error
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("wait for repo to be indexed timed out in %s", timeout)
+		default:
+		}
+
+		results, err = c.SearchFiles(fmt.Sprintf("repo:%s . type:file index:only patterntype:regexp", repoName))
+		if err != nil {
+			return err
+		}
+		if len(results.Results) > 0 {
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+	return nil
+}
+
+// waitForReposByQuery executes the GraphQL query and compares the repo list returned
+// with the list of repos passed in.
+//
+// Any repos in the list that are not returned by the GraphQL are returned as "missing".
 func (c *Client) waitForReposByQuery(query string, repos ...string) (collections.Set[string], error) {
 	var resp struct {
 		Data struct {

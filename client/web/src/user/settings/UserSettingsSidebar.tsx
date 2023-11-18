@@ -20,7 +20,7 @@ export interface UserSettingsSidebarItemConditionContext extends BatchChangesPro
     user: UserSettingsAreaUserFields
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 type UserSettingsSidebarItem = NavItemDescriptor<UserSettingsSidebarItemConditionContext> & {
@@ -32,7 +32,7 @@ export type UserSettingsSidebarItems = readonly UserSettingsSidebarItem[]
 export interface UserSettingsSidebarProps extends UserSettingsAreaRouteContext, BatchChangesProps {
     items: UserSettingsSidebarItems
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     className?: string
 }
 
@@ -55,7 +55,7 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
         user: props.user,
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
-        isSourcegraphApp: props.isSourcegraphApp,
+        isCodyApp: props.isCodyApp,
     }
 
     return (
@@ -81,44 +81,43 @@ export const UserSettingsSidebar: FC<UserSettingsSidebarProps> = props => {
                             )
                     )}
                 </SidebarGroup>
-                {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) &&
-                    !props.isSourcegraphApp && (
-                        <SidebarGroup>
-                            <SidebarGroupHeader label="Your organizations" />
-                            {props.user.organizations.nodes.map(org => (
-                                <SidebarNavItem
-                                    key={org.id}
-                                    to={`/organizations/${org.name}/settings`}
-                                    className="text-truncate text-nowrap align-items-center"
-                                    onClick={collapseMobileSidebar}
-                                >
-                                    <OrgAvatar org={org.name} className="d-inline-flex mr-1" />
-                                    <Tooltip content={org.name}>
-                                        <span className="text-truncate overflow-hidden">{org.name}</span>
-                                    </Tooltip>
+                {(props.user.organizations.nodes.length > 0 || !siteAdminViewingOtherUser) && !props.isCodyApp && (
+                    <SidebarGroup>
+                        <SidebarGroupHeader label="Your organizations" />
+                        {props.user.organizations.nodes.map(org => (
+                            <SidebarNavItem
+                                key={org.id}
+                                to={`/organizations/${org.name}/settings`}
+                                className="text-truncate text-nowrap align-items-center"
+                                onClick={collapseMobileSidebar}
+                            >
+                                <OrgAvatar org={org.name} className="d-inline-flex mr-1" />
+                                <Tooltip content={org.name}>
+                                    <span className="text-truncate overflow-hidden">{org.name}</span>
+                                </Tooltip>
+                            </SidebarNavItem>
+                        ))}
+                        {!siteAdminViewingOtherUser &&
+                            (window.context.sourcegraphDotComMode ? (
+                                <SidebarNavItem to="./about-organizations" onClick={collapseMobileSidebar}>
+                                    About organizations
                                 </SidebarNavItem>
+                            ) : (
+                                <div className={styles.newOrgBtnWrapper}>
+                                    <Button
+                                        to="/organizations/new"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        as={Link}
+                                        onClick={collapseMobileSidebar}
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
+                                    </Button>
+                                </div>
                             ))}
-                            {!siteAdminViewingOtherUser &&
-                                (window.context.sourcegraphDotComMode ? (
-                                    <SidebarNavItem to="./about-organizations" onClick={collapseMobileSidebar}>
-                                        About organizations
-                                    </SidebarNavItem>
-                                ) : (
-                                    <div className={styles.newOrgBtnWrapper}>
-                                        <Button
-                                            to="/organizations/new"
-                                            variant="secondary"
-                                            outline={true}
-                                            size="sm"
-                                            as={Link}
-                                            onClick={collapseMobileSidebar}
-                                        >
-                                            <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
-                                        </Button>
-                                    </div>
-                                ))}
-                        </SidebarGroup>
-                    )}
+                    </SidebarGroup>
+                )}
                 <SidebarGroup>
                     <SidebarGroupHeader label="Other actions" />
                     {!siteAdminViewingOtherUser && (

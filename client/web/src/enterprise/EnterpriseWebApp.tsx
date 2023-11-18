@@ -5,6 +5,15 @@ import '../SourcegraphWebApp.scss'
 import { logger } from '@sourcegraph/common'
 
 import { LegacySourcegraphWebApp } from '../LegacySourcegraphWebApp'
+import { orgAreaHeaderNavItems } from '../org/area/navitems'
+import { orgAreaRoutes } from '../org/area/routes'
+import { orgSettingsAreaRoutes } from '../org/settings/routes'
+import { orgSettingsSideBarItems } from '../org/settings/sidebaritems'
+import { repoSettingsAreaRoutes } from '../repo/settings/routes'
+import { repoSettingsSideBarGroups } from '../repo/settings/sidebaritems'
+import { routes } from '../routes'
+import { siteAdminAreaRoutes } from '../site-admin/routes'
+import { siteAdminSidebarGroups } from '../site-admin/sidebaritems'
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 import {
     type StaticAppConfig,
@@ -13,49 +22,38 @@ import {
     windowContextConfig,
 } from '../staticAppConfig'
 import type { AppShellInit } from '../storm/app-shell-init'
-import { routes } from '../storm/routes'
+import { routes as stormRoutes } from '../storm/routes'
+import { userAreaHeaderNavItems } from '../user/area/navitems'
+import { userAreaRoutes } from '../user/area/routes'
+import { userSettingsAreaRoutes } from '../user/settings/routes'
+import { userSettingsSideBarItems } from '../user/settings/sidebaritems'
 
 import { APP_ROUTES } from './app/routes'
 import { BrainDot } from './codeintel/dashboard/components/BrainDot'
-import { enterpriseOrgAreaHeaderNavItems } from './organizations/navitems'
-import { enterpriseOrganizationAreaRoutes } from './organizations/routes'
-import { enterpriseOrgSettingsAreaRoutes } from './organizations/settings/routes'
-import { enterpriseOrgSettingsSideBarItems } from './organizations/settings/sidebaritems'
 import { enterpriseRepoContainerRoutes } from './repo/enterpriseRepoContainerRoutes'
 import { enterpriseRepoRevisionContainerRoutes } from './repo/enterpriseRepoRevisionContainerRoutes'
-import { enterpriseRepoHeaderActionButtons } from './repo/repoHeaderActionButtons'
-import { enterpriseRepoSettingsAreaRoutes } from './repo/settings/routes'
-import { enterpriseRepoSettingsSidebarGroups } from './repo/settings/sidebaritems'
-import { enterpriseRoutes } from './routes'
-import { enterpriseSiteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
-import { enterpriseSiteAdminAreaRoutes } from './site-admin/routes'
-import { enterpriseSiteAdminSidebarGroups } from './site-admin/sidebaritems'
-import { enterpriseUserAreaHeaderNavItems } from './user/navitems'
-import { enterpriseUserAreaRoutes } from './user/routes'
-import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
-import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
+import { siteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
 
 const injectedValuesConfig = {
     /**
      * Routes and nav links
      */
-    siteAdminAreaRoutes: enterpriseSiteAdminAreaRoutes,
-    siteAdminSideBarGroups: enterpriseSiteAdminSidebarGroups,
-    siteAdminOverviewComponents: enterpriseSiteAdminOverviewComponents,
-    userAreaHeaderNavItems: enterpriseUserAreaHeaderNavItems,
-    userAreaRoutes: enterpriseUserAreaRoutes,
-    userSettingsSideBarItems: enterpriseUserSettingsSideBarItems,
-    userSettingsAreaRoutes: enterpriseUserSettingsAreaRoutes,
-    orgSettingsSideBarItems: enterpriseOrgSettingsSideBarItems,
-    orgSettingsAreaRoutes: enterpriseOrgSettingsAreaRoutes,
-    orgAreaRoutes: enterpriseOrganizationAreaRoutes,
-    orgAreaHeaderNavItems: enterpriseOrgAreaHeaderNavItems,
+    siteAdminAreaRoutes,
+    siteAdminSideBarGroups: siteAdminSidebarGroups,
+    siteAdminOverviewComponents,
+    userAreaHeaderNavItems,
+    userAreaRoutes,
+    userSettingsSideBarItems,
+    userSettingsAreaRoutes,
+    orgSettingsSideBarItems,
+    orgSettingsAreaRoutes,
+    orgAreaRoutes,
+    orgAreaHeaderNavItems,
     repoContainerRoutes: enterpriseRepoContainerRoutes,
     repoRevisionContainerRoutes: enterpriseRepoRevisionContainerRoutes,
-    repoHeaderActionButtons: enterpriseRepoHeaderActionButtons,
-    repoSettingsAreaRoutes: enterpriseRepoSettingsAreaRoutes,
-    repoSettingsSidebarGroups: enterpriseRepoSettingsSidebarGroups,
-    routes: windowContextConfig.isSourcegraphApp ? APP_ROUTES : enterpriseRoutes,
+    repoSettingsAreaRoutes,
+    repoSettingsSidebarGroups: repoSettingsSideBarGroups,
+    routes: windowContextConfig.isCodyApp ? APP_ROUTES : routes,
 
     /**
      * Per feature injections
@@ -88,7 +86,7 @@ export const EnterpriseWebApp: FC<AppShellInit> = props => {
         return (
             <SourcegraphWebApp
                 {...staticAppConfig}
-                routes={routes}
+                routes={stormRoutes}
                 graphqlClient={graphqlClient}
                 temporarySettingsStorage={temporarySettingsStorage}
             />

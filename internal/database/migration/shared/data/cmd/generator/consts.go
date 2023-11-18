@@ -6,9 +6,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
-// NOTE: This should be kept up-to-date with cmd/migrator/build.sh so that we "bake in"
+// NOTE: This should be kept up-to-date with cmd/migrator/generate.sh so that we "bake in"
 // fallback schemas everything we support migrating to. The release tool automates this upgrade, so don't touch this :)
-const maxVersionString = "5.1.0"
+// This should be the last minor version since patch releases only happen in the release branch.
+const maxVersionString = "5.2.0"
 
 // MaxVersion is the highest known released version at the time the migrator was built.
 var MaxVersion = func() oobmigration.Version {

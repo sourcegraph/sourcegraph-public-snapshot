@@ -11,16 +11,13 @@
 import type { Optional } from 'utility-types'
 
 /**
- * Tour supported languages
+ * Tour supported icons
  */
-export enum TourLanguage {
-    C = 'C',
-    Go = 'Go',
-    Java = 'Java',
-    Javascript = 'JavaScript',
-    Php = 'PHP',
-    Python = 'Python',
-    Typescript = 'TypeScript',
+export enum TourIcon {
+    Search = 'Search',
+    Cody = 'Cody',
+    Extension = 'Extension',
+    Check = 'Check',
 }
 
 /**
@@ -29,8 +26,9 @@ export enum TourLanguage {
 export interface TourTaskType {
     title?: string
     dataAttributes?: {}
-    icon?: React.ReactNode
+    icon?: TourIcon
     steps: TourTaskStepType[]
+    requiredSteps?: number
     /**
      * Completion percentage, 0-100. Dynamically calculated field
      */
@@ -44,21 +42,26 @@ export interface TourTaskStepType {
     action:
         | {
               type: 'video'
-              value: string | Record<TourLanguage, string>
+              value: string
           }
         | {
               type: 'link' | 'new-tab-link'
               variant?: 'button-primary'
-              value: string | Record<TourLanguage, string>
+              value: string
           }
         | {
               type: 'restart'
               value: string
           }
+        | {
+              type: 'search-query'
+              query: string
+              snippets?: string[] | Record<string, string[]>
+          }
     /**
-     * HTML string, which will be displayed in info box when navigating to a step link.
+     * String, which will be displayed in info box when navigating to a step link.
      */
-    info?: JSX.Element
+    info?: string
     /**
      * The step will be marked as completed only if one of the "completeAfterEvents" will be triggered
      */
@@ -72,7 +75,6 @@ export interface TourTaskStepType {
 export interface TourState {
     completedStepIds?: string[]
     status?: 'closed' | 'completed'
-    language?: TourLanguage
 }
 
 export type TourListState = Optional<Record<string, TourState>>

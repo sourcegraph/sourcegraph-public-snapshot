@@ -51,7 +51,7 @@ Batch Changes, you will also need to build the `batcheshelper` image.
 Run the following command to build the executor image.
 
 ```bash
-# Build the image in enterprise/cmd/executor-kubernetes
+# Build the image in cmd/executor-kubernetes
 IMAGE=executor-kubernetes ../../executor-kubernetes/build.sh
 ```
 

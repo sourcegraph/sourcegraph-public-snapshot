@@ -2,18 +2,14 @@ package background
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/own/types"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/background"
@@ -25,16 +21,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func featureFlagName(jobType IndexJobType) string {
-	return fmt.Sprintf("own-background-index-repo-%s", jobType.Name)
-}
 
 const (
 	tableName = "own_background_jobs"
@@ -143,14 +137,16 @@ func makeWorkerStore(db database.DB, observationCtx *observation.Context) dbwork
 func makeWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) (*workerutil.Worker[*Job], *dbworker.Resetter[*Job], dbworkerstore.Store[*Job]) {
 	workerStore := makeWorkerStore(db, observationCtx)
 
-	limiter := getRateLimiter()
+	limit, burst := getRateLimitConfig()
+	limiter := rate.NewLimiter(limit, burst)
+	indexLimiter := ratelimit.NewInstrumentedLimiter("OwnRepoIndexWorker", limiter)
 	conf.Watch(func() {
 		setRateLimitConfig(limiter)
 	})
 
 	task := handler{
 		workerStore:       workerStore,
-		limiter:           limiter,
+		limiter:           indexLimiter,
 		db:                db,
 		subRepoPermsCache: rcache.NewWithTTL("own_signals_subrepoperms", 3600),
 	}
@@ -164,7 +160,7 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 		Metrics:           workerutil.NewMetrics(observationCtx, "own_background_worker_processor"),
 	})
 
-	resetter := dbworker.NewResetter(log.Scoped("OwnBackgroundResetter", ""), workerStore, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(log.Scoped("OwnBackgroundResetter"), workerStore, dbworker.ResetterOptions{
 		Name:     "own_background_worker_resetter",
 		Interval: time.Second * 20,
 		Metrics:  dbworker.NewResetterMetrics(observationCtx, "own_background_worker"),
@@ -245,12 +241,7 @@ func getRateLimitConfig() (rate.Limit, int) {
 	return rate.Limit(limit), burst
 }
 
-func getRateLimiter() *ratelimit.InstrumentedLimiter {
-	limit, burst := getRateLimitConfig()
-	return ratelimit.NewInstrumentedLimiter("OwnRepoIndexWorker", rate.NewLimiter(limit, burst))
-}
-
-func setRateLimitConfig(limiter *ratelimit.InstrumentedLimiter) {
+func setRateLimitConfig(limiter *rate.Limiter) {
 	limit, burst := getRateLimitConfig()
 	limiter.SetLimit(limit)
 	limiter.SetBurst(burst)

@@ -18,10 +18,8 @@
             "description": "Title of this task",
             "type": "string"
           },
-          "dataAttributes": {
-            "description": "Additional attributes to add to the task HTML element as data-* attributes",
-            "type": "object",
-            "additionalProperties": true
+          "icon": {
+            "enum": ["Search", "Cody", "Extension", "Check"]
           },
           "steps": {
             "description": "Steps that need to be completed by the user",
@@ -53,7 +51,7 @@
                           "const": "video"
                         },
                         "value": {
-                          "$ref": "#/definitions/StepAction"
+                          "type": "string"
                         }
                       },
                       "required": ["type", "value"]
@@ -70,7 +68,7 @@
                           "const": "button-primary"
                         },
                         "value": {
-                          "$ref": "#/definitions/StepAction"
+                          "type": "string"
                         }
                       },
                       "required": ["type", "value"]
@@ -88,6 +86,41 @@
                         }
                       },
                       "required": ["type", "value"]
+                    },
+                    {
+                      "title": "Search step",
+                      "description": "Search query step",
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "const": "search-query"
+                        },
+                        "query": {
+                          "description": "The query template to use.",
+                          "type": "string"
+                        },
+                        "snippets": {
+                          "description": "Possible code snippets for this query. Can also be a language -> code snippets map.",
+                          "oneOf": [
+                            {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "patternProperties": {
+                                "^.*$": {
+                                  "type": "string"
+                                }
+                              },
+                              "additionalProperties": false
+                            }
+                          ]
+                        }
+                      },
+                      "required": ["type", "query"]
                     }
                   ]
                 },
@@ -105,30 +138,28 @@
               "additionalProperties": false
             },
             "minItems": 1
+          },
+          "requiredSteps": {
+            "description": "Set this property if only a subset of steps are required for this task to complete.",
+            "type": "number"
           }
         },
         "required": ["steps"]
       }
+    },
+    "defaultSnippets": {
+      "type": "object",
+      "patternProperties": {
+        "^.*$": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": ["tasks"],
-  "additionalProperties": false,
-  "definitions": {
-    "StepAction": {
-      "oneOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "object",
-          "patternProperties": {
-            "^.*$": {
-              "type": "string"
-            }
-          },
-          "additionalProperties": false
-        }
-      ]
-    }
-  }
+  "additionalProperties": false
 }

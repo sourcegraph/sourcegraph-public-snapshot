@@ -13,6 +13,8 @@
    "ViewerPermission": "READ",
    "RepositoryTopics": {
     "Nodes": []
-   }
+   },
+   "visibility": "public",
+   "DiskUsage": 1
   }
  ]

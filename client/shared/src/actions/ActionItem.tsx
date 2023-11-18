@@ -116,6 +116,12 @@ interface State {
     actionOrError: typeof LOADING | null | ErrorLike
 }
 
+/**
+ * For testing only, used to set the window.location value for {@link isExternalLink}.
+ * @internal
+ */
+export const windowLocation__testingOnly: { value: Pick<URL, 'origin' | 'href'> | null } = { value: null }
+
 export class ActionItem extends React.PureComponent<ActionItemProps, State, typeof WildcardThemeContext> {
     public static contextType = WildcardThemeContext
     public context!: React.ContextType<typeof WildcardThemeContext>
@@ -237,7 +243,7 @@ export class ActionItem extends React.PureComponent<ActionItemProps, State, type
         const to = primaryTo || altTo
         // Open in new tab if an external link
         const newTabProps =
-            to && isExternalLink(to)
+            to && isExternalLink(to, windowLocation__testingOnly.value ?? window.location)
                 ? {
                       target: '_blank',
                       rel: 'noopener noreferrer',

@@ -1,10 +1,10 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
 
 import { StepStateIcon } from './StepStateIcon'
 
-const decorator: DecoratorFn = story => <div className="p-3">{story()}</div>
+const decorator: Decorator = story => <div className="p-3">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/execute/workspaces/StepStateIcon',
@@ -22,7 +22,7 @@ const options = [
     { label: 'Success', value: { startedAt: 'start-time', finishedAt: 'start-time', exitCode: 0 } },
 ]
 
-export const StepStateIconStory: Story = () => (
+export const StepStateIconStory: StoryFn = () => (
     <WebStory>
         {props => (
             <>

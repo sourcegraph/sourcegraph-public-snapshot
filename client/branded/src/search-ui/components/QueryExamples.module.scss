@@ -20,13 +20,13 @@
         box-shadow: none;
     }
 
-    &:focus {
+    &:focus-visible {
         border: 1px solid transparent;
         box-shadow: 0 0 0 0.125rem var(--primary-2);
         outline: none;
     }
 
-    &:active:focus {
+    &:active:focus-visible {
         border: 1px solid var(--border-color);
         box-shadow: none;
     }
@@ -64,25 +64,6 @@
         &:last-child {
             margin-bottom: 0;
         }
-    }
-}
-
-.tip {
-    color: var(--text-muted);
-    display: flex;
-    align-items: baseline;
-    align-content: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    min-height: 2rem;
-    margin-bottom: 2.25rem;
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.25s;
-
-    &--visible {
-        visibility: visible;
-        opacity: 1;
     }
 }
 

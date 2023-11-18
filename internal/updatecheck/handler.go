@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"sort"
 	"strconv"
@@ -13,8 +14,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/sourcegraph/log"
 
@@ -36,17 +36,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.1.7")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.2.3")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.1.7")
+	latestReleaseKubernetesBuild = newPingResponse("5.2.3")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.1.7")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.2.3")
 
 	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
 	// App instances what the latest version is. The version here _must_ be available for download/released
@@ -67,31 +67,35 @@ func getLatestRelease(deployType string) pingResponse {
 	}
 }
 
-// HandlerWithLog creates an HTTP handler that responds with information about
-// software updates for Sourcegraph. Using the given logger, a scoped logger is
-// created and the handler that is returned uses the logger internally.
-func HandlerWithLog(logger log.Logger) (http.HandlerFunc, error) {
-	logger = logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
-
-	var pubsubClient pubsub.TopicClient
-	if pubSubPingsTopicID == "" {
-		pubsubClient = pubsub.NewNoopTopicClient()
-	} else {
-		var err error
-		pubsubClient, err = pubsub.NewDefaultTopicClient(pubSubPingsTopicID)
-		if err != nil {
-			return nil, errors.Errorf("create Pub/Sub client: %v", err)
-		}
+// ForwardHandler returns a handler that forwards the request to
+// https://pings.sourcegraph.com.
+func ForwardHandler() (http.HandlerFunc, error) {
+	remote, err := url.Parse(defaultUpdateCheckURL)
+	if err != nil {
+		return nil, errors.Errorf("parse default update check URL: %v", err)
 	}
+
+	// If remote has a path, the proxy server will always append an unnecessary "/" to the path.
+	remotePath := remote.Path
+	remote.Path = ""
+	proxy := httputil.NewSingleHostReverseProxy(remote)
 	return func(w http.ResponseWriter, r *http.Request) {
-		HandlePingRequest(logger, pubsubClient, w, r)
+		r.Host = remote.Host
+		r.URL.Path = remotePath
+		proxy.ServeHTTP(w, r)
 	}, nil
 }
 
-// HandlePingRequest handles the ping requests and responds with information
-// about software updates for Sourcegraph.
-func HandlePingRequest(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
-	requestCounter.Inc()
+type Meter struct {
+	RequestCounter          metric.Int64Counter
+	RequestHasUpdateCounter metric.Int64Counter
+	ErrorCounter            metric.Int64Counter
+}
+
+// Handle handles the ping requests and responds with information about software
+// updates for Sourcegraph.
+func Handle(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, w http.ResponseWriter, r *http.Request) {
+	meter.RequestCounter.Add(r.Context(), 1)
 
 	pr, err := readPingRequest(r)
 	if err != nil {
@@ -120,7 +124,7 @@ func HandlePingRequest(logger log.Logger, pubsubClient pubsub.TopicClient, w htt
 	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse, pr.DeployType)
 
 	// Always log, even on malformed version strings
-	logPing(logger, pubsubClient, r, pr, hasUpdate)
+	logPing(logger, pubsubClient, meter, r, pr, hasUpdate)
 
 	if err != nil {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
@@ -137,11 +141,11 @@ func HandlePingRequest(logger log.Logger, pubsubClient pubsub.TopicClient, w htt
 		return
 	}
 
-	// Sourcegraph App: We always send back a ping response (rather than StatusNoContent) because
+	// Cody App: We always send back a ping response (rather than StatusNoContent) because
 	// the user's instance may have unseen notification messages.
 	if deploy.IsDeployTypeApp(pr.DeployType) {
 		if hasUpdate {
-			requestHasUpdateCounter.Inc()
+			meter.RequestHasUpdateCounter.Add(r.Context(), 1)
 		}
 		w.Header().Set("content-type", "application/json; charset=utf-8")
 		_, _ = w.Write(body)
@@ -154,7 +158,7 @@ func HandlePingRequest(logger log.Logger, pubsubClient pubsub.TopicClient, w htt
 		return
 	}
 	w.Header().Set("content-type", "application/json; charset=utf-8")
-	requestHasUpdateCounter.Inc()
+	meter.RequestHasUpdateCounter.Add(r.Context(), 1)
 	_, _ = w.Write(body)
 }
 
@@ -214,7 +218,7 @@ type pingRequest struct {
 	ClientSiteID         string          `json:"site"`
 	LicenseKey           string          `json:",omitempty"`
 	DeployType           string          `json:"deployType"`
-	Os                   string          `json:"os,omitempty"` // Only used in Sourcegraph App
+	Os                   string          `json:"os,omitempty"` // Only used in Cody App
 	ClientVersionString  string          `json:"version"`
 	DependencyVersions   json.RawMessage `json:"dependencyVersions,omitempty"`
 	AuthProviders        []string        `json:"auth,omitempty"`
@@ -239,6 +243,7 @@ type pingRequest struct {
 	SearchUsage                   json.RawMessage `json:"searchUsage,omitempty"`
 	ExtensionsUsage               json.RawMessage `json:"extensionsUsage,omitempty"`
 	CodeInsightsUsage             json.RawMessage `json:"codeInsightsUsage,omitempty"`
+	SearchJobsUsage               json.RawMessage `json:"searchJobsUsage,omitempty"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"codeInsightsCriticalTelemetry,omitempty"`
 	CodeMonitoringUsage           json.RawMessage `json:"codeMonitoringUsage,omitempty"`
 	NotebooksUsage                json.RawMessage `json:"notebooksUsage,omitempty"`
@@ -251,11 +256,11 @@ type pingRequest struct {
 	TosAccepted                   bool            `json:"tosAccepted,omitempty"`
 	TotalUsers                    int32           `json:"totalUsers,omitempty"`
 	TotalOrgs                     int32           `json:"totalOrgs,omitempty"`
-	TotalRepos                    int32           `json:"totalRepos,omitempty"` // Only used in Sourcegraph App
+	TotalRepos                    int32           `json:"totalRepos,omitempty"` // Only used in Cody App
 	HasRepos                      bool            `json:"repos,omitempty"`
 	EverSearched                  bool            `json:"searched,omitempty"`
 	EverFindRefs                  bool            `json:"refs,omitempty"`
-	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Sourcegraph App
+	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Cody App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
 	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
@@ -360,6 +365,7 @@ type pingPayload struct {
 	DependencyVersions            json.RawMessage `json:"dependency_versions"`
 	ExtensionsUsage               json.RawMessage `json:"extensions_usage"`
 	CodeInsightsUsage             json.RawMessage `json:"code_insights_usage"`
+	SearchJobsUsage               json.RawMessage `json:"search_jobs_usage"`
 	CodeInsightsCriticalTelemetry json.RawMessage `json:"code_insights_critical_telemetry"`
 	CodeMonitoringUsage           json.RawMessage `json:"code_monitoring_usage"`
 	NotebooksUsage                json.RawMessage `json:"notebooks_usage"`
@@ -388,12 +394,12 @@ type pingPayload struct {
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
-func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, r *http.Request, pr *pingRequest, hasUpdate bool) {
-	logger = logger.Scoped("logPing", "logs ping requests")
+func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
+	logger = logger.Scoped("logPing")
 	defer func() {
-		if r := recover(); r != nil {
-			logger.Warn("panic", log.String("recover", fmt.Sprintf("%+v", r)))
-			errorCounter.Inc()
+		if err := recover(); err != nil {
+			logger.Warn("panic", log.String("recover", fmt.Sprintf("%+v", err)))
+			meter.ErrorCounter.Add(r.Context(), 1)
 		}
 	}()
 
@@ -415,14 +421,14 @@ func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, r *http.Request
 
 	message, err := marshalPing(pr, hasUpdate, clientAddr, time.Now())
 	if err != nil {
-		errorCounter.Inc()
+		meter.ErrorCounter.Add(r.Context(), 1)
 		logger.Error("failed to marshal payload", log.Error(err))
 		return
 	}
 
 	err = pubsubClient.Publish(context.Background(), message)
 	if err != nil {
-		errorCounter.Inc()
+		meter.ErrorCounter.Add(r.Context(), 1)
 		logger.Error("failed to publish", log.String("message", string(message)), log.Error(err))
 		return
 	}
@@ -468,6 +474,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		ExtensionsUsage:               pr.ExtensionsUsage,
 		CodeInsightsUsage:             pr.CodeInsightsUsage,
 		CodeInsightsCriticalTelemetry: pr.CodeInsightsCriticalTelemetry,
+		SearchJobsUsage:               pr.SearchJobsUsage,
 		CodeMonitoringUsage:           pr.CodeMonitoringUsage,
 		NotebooksUsage:                pr.NotebooksUsage,
 		CodeHostVersions:              pr.CodeHostVersions,
@@ -783,18 +790,3 @@ func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
 
 	return json.Marshal(singlePeriodUsage)
 }
-
-var (
-	requestCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_updatecheck_server_requests",
-		Help: "Number of requests to the update check handler.",
-	})
-	requestHasUpdateCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_updatecheck_server_requests_has_update",
-		Help: "Number of requests to the update check handler where an update is available.",
-	})
-	errorCounter = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_updatecheck_server_errors",
-		Help: "Number of errors that occur while publishing server pings.",
-	})
-)

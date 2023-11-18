@@ -305,14 +305,18 @@ interface SourcegraphURLFormProps {
 
 const getInputStatusFromKind = (kind: InputValidationState['kind']): InputStatus => {
     switch (kind) {
-        case 'INVALID':
+        case 'INVALID': {
             return InputStatus.error
-        case 'VALID':
+        }
+        case 'VALID': {
             return InputStatus.valid
-        case 'LOADING':
+        }
+        case 'LOADING': {
             return InputStatus.loading
-        default:
+        }
+        default: {
             return InputStatus.initial
+        }
     }
 }
 

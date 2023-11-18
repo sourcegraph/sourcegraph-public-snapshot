@@ -1,0 +1,42 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "executors",
+    srcs = [
+        "janitor_config.go",
+        "janitor_job.go",
+        "metricsserver_config.go",
+        "metricsserver_job.go",
+        "multiqueue_cache_cleaner.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/executors",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/env",
+        "//internal/executor/types",
+        "//internal/goroutine",
+        "//internal/httpserver",
+        "//internal/metrics/store",
+        "//internal/observation",
+        "//internal/rcache",
+        "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promhttp",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "executors_test",
+    srcs = ["multiqueue_cache_cleaner_test.go"],
+    embed = [":executors"],
+    tags = ["requires-network"],
+    deps = [
+        "//internal/executor/types",
+        "//internal/rcache",
+    ],
+)

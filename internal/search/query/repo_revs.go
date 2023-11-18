@@ -109,7 +109,7 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (ParsedRepoFilter, erro
 			if part == "" {
 				continue
 			}
-			revs = append(revs, parseRev(part))
+			revs = append(revs, ParseRevisionSpecifier(part))
 		}
 		if len(revs) == 0 {
 			revs = []RevisionSpecifier{{RevSpec: ""}} // default branch
@@ -127,7 +127,8 @@ func ParseRepositoryRevisions(repoAndOptionalRev string) (ParsedRepoFilter, erro
 	return ParsedRepoFilter{Repo: repo, RepoRegex: repoRegex, Revs: revs}, nil
 }
 
-func parseRev(spec string) RevisionSpecifier {
+// ParseRevisionSpecifier is the inverse of RevisionSpecifier.String().
+func ParseRevisionSpecifier(spec string) RevisionSpecifier {
 	if strings.HasPrefix(spec, "*!") {
 		return RevisionSpecifier{ExcludeRefGlob: spec[2:]}
 	} else if strings.HasPrefix(spec, "*") {

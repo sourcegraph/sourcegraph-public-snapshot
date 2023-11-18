@@ -8,7 +8,6 @@ import { LazyQueryInput } from '@sourcegraph/branded'
 import type { QueryState } from '@sourcegraph/shared/src/search'
 import { FilterType, resolveFilter, validateFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Card, Icon, Checkbox, Code, H3, Tooltip } from '@sourcegraph/wildcard'
 
@@ -125,9 +124,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-
     useEffect(() => {
         const value = queryState.query
         const tokens = scanSearchQuery(value)
@@ -242,7 +238,6 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
                                     onChange={setQueryState}
                                     preventNewLine={true}
                                     autoFocus={true}
-                                    applySuggestionsOnEnter={applySuggestionsOnEnter}
                                 />
                             </div>
                             <div className={styles.queryInputPreviewLink}>

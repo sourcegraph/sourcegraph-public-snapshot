@@ -61,6 +61,10 @@ The path to the code graph index artifact produced by the indexer, which is uplo
 
 Supply this argument when the target indexer produces a differently named artifact. Alternatively, some indexers provide flags to change the artifact name; in which case `dump.lsif` can be supplied there and a value for this key can be omitted.
 
+#### [`requested_envvars`](#index-job-requested-envvars)
+
+List of environment variables needed. These are made accessible to steps, local_steps, and the indexer_args command.
+
 ### Examples
 
 The following example uses the Docker image `sourcegraph/lsif-go` pinned at the tag `v1.6.7` and additionally secured with an image digest. This index configuration runs the Go indexer with quiet output in the `dev/sg` directory and uploads the resulting index file (`dump.lsif` by default).

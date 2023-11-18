@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"strings"
 	"testing"
 	"time"
 
@@ -174,17 +175,28 @@ func TestGCSList(t *testing.T) {
 	gcsClient := NewMockGcsAPI()
 	bucketHandle := NewMockGcsBucketHandle()
 	objectHandle := NewMockGcsObjectHandle()
-	mockIterator := mockGCSObjectsIterator{objects: []storage.ObjectAttrs{{Name: "test-key1"}, {Name: "test-key2"}}}
 
 	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
 	objectHandle.NewWriterFunc.SetDefaultReturn(nopCloser{buf})
 
-	bucketHandle.ObjectsFunc.SetDefaultReturn(&mockIterator)
+	objects := []storage.ObjectAttrs{{Name: "test-key1"}, {Name: "test-key2"}, {Name: "other-key"}}
+	bucketHandle.ObjectsFunc.SetDefaultHook(func(ctx context.Context, query *storage.Query) gcsObjectIterator {
+		j := 0
+		for i, obj := range objects {
+			if strings.HasPrefix(obj.Name, query.Prefix) {
+				objects[j] = objects[i]
+				j++
+			}
+		}
+		objects = objects[:j]
+
+		return &mockGCSObjectsIterator{objects}
+	})
 
 	client := testGCSClient(gcsClient, false)
 
-	iter, err := client.List(context.Background())
+	iter, err := client.List(context.Background(), "test-")
 	if err != nil {
 		t.Fatal(err)
 	}

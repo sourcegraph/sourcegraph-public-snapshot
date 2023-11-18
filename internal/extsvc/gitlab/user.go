@@ -36,9 +36,9 @@ func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.Accou
 		return nil, err
 	}
 	return &extsvc.PublicAccountData{
-		DisplayName: &data.Name,
-		Login:       &data.Username,
-		URL:         &data.WebURL,
+		DisplayName: data.Name,
+		Login:       data.Username,
+		URL:         data.WebURL,
 	}, nil
 }
 

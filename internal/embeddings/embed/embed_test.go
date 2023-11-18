@@ -286,9 +286,11 @@ func TestEmbedRepo(t *testing.T) {
 		require.Equal(t, expectedStats, stats)
 	})
 
-	t.Run("mixed code and text files", func(t *testing.T) {
+	t.Run("mixed code and text files with skips", func(t *testing.T) {
 		// 3 will be embedded, 4 will be skipped
 		fileNames := []string{"a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin"}
+		opts := opts
+		opts.TolerableFailureRatio = 0.1
 		rl := newReadLister(fileNames...)
 		statReports := 0
 		countingReporter := func(*bgrepo.EmbedRepoStats) {
@@ -413,6 +415,10 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 			"",
 			strings.Repeat("c", 32),
 		),
+		// many embedding chunks
+		"big.java": mockFile(
+			strings.Repeat("abc\n", 1000000),
+		),
 	}
 
 	mockRanks := map[string]float64{
@@ -450,15 +456,43 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 			IncludePatterns:  nil,
 			MaxFileSizeBytes: 100000,
 		},
-		SplitOptions:      splitOptions,
-		MaxCodeEmbeddings: 100000,
-		MaxTextEmbeddings: 100000,
-		BatchSize:         512,
-		ExcludeChunks:     true,
+		SplitOptions:          splitOptions,
+		MaxCodeEmbeddings:     100000,
+		MaxTextEmbeddings:     100000,
+		BatchSize:             512,
+		ExcludeChunks:         true,
+		TolerableFailureRatio: 1.0,
 	}
 
 	logger := log.NoOp()
 	noopReport := func(*bgrepo.EmbedRepoStats) {}
+
+	t.Run("fail single full request", func(t *testing.T) {
+		rl := newReadLister("a.go", "b.md", "c.java", "big.java")
+		opts := opts
+		opts.TolerableFailureRatio = 0.1
+
+		partialFailureClient := &flakyEmbeddingsClient{
+			EmbeddingsClient:  embeddingsClient,
+			remainingFailures: 1,
+		}
+		_, _, stats, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, noopReport)
+		require.NoError(t, err)
+		require.True(t, stats.CodeIndexStats.ChunksEmbedded > 0)
+	})
+
+	t.Run("fail many full requests", func(t *testing.T) {
+		rl := newReadLister("a.go", "b.md", "c.java", "big.java")
+		opts := opts
+		opts.TolerableFailureRatio = 0.1
+
+		partialFailureClient := &flakyEmbeddingsClient{
+			EmbeddingsClient:  embeddingsClient,
+			remainingFailures: 100,
+		}
+		_, _, _, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, noopReport)
+		require.Error(t, err)
+	})
 
 	t.Run("Exclude single chunk from each index", func(t *testing.T) {
 		rl := newReadLister("a.go", "b.md", "c.java")
@@ -664,6 +698,27 @@ func (c *mockEmbeddingsClient) GetDocumentEmbeddings(_ context.Context, texts []
 		return nil, err
 	}
 	return &client.EmbeddingsResults{Embeddings: make([]float32, len(texts)*dimensions), Dimensions: dimensions}, nil
+}
+
+type flakyEmbeddingsClient struct {
+	client.EmbeddingsClient
+	remainingFailures int
+}
+
+func (c *flakyEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
+	if c.remainingFailures > 0 {
+		c.remainingFailures -= 1
+		return nil, errors.New("FAIL")
+	}
+	return c.EmbeddingsClient.GetQueryEmbedding(ctx, query)
+}
+
+func (c *flakyEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
+	if c.remainingFailures > 0 {
+		c.remainingFailures -= 1
+		return nil, errors.New("FAIL")
+	}
+	return c.EmbeddingsClient.GetDocumentEmbeddings(ctx, documents)
 }
 
 type partialFailureEmbeddingsClient struct {

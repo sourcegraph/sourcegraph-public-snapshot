@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -195,7 +196,7 @@ func (s *Service) deleteObject(ctx context.Context, bucketName, objectName strin
 	return nil
 }
 
-func (s *Service) listObjects(_ context.Context, bucketName string) ([]objectMetadata, error) {
+func (s *Service) listObjects(_ context.Context, bucketName string, prefix string) ([]objectMetadata, error) {
 
 	// Ensure the bucket cannot be created/deleted while we look at it.
 	bucketLock := s.bucketLock(bucketName)
@@ -213,6 +214,12 @@ func (s *Service) listObjects(_ context.Context, bucketName string) ([]objectMet
 	var objects []objectMetadata
 	for _, entry := range entries {
 		objectName := fnameToObjectName(entry.Name())
+
+		// Skip objects that don't match the prefix.
+		if !strings.HasPrefix(objectName, prefix) {
+			continue
+		}
+
 		info, err := entry.Info()
 		if err != nil {
 			s.Log.Warn("error listing objects in bucket (ignoring)", sglog.String("key", bucketName+"/"+objectName), sglog.Error(err))

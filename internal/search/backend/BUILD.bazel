@@ -38,7 +38,7 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1:configuration",
-        "@com_github_sourcegraph_zoekt//grpc/v1:grpc",
+        "@com_github_sourcegraph_zoekt//grpc/protos/zoekt/webserver/v1:webserver",
         "@com_github_sourcegraph_zoekt//query",
         "@com_github_sourcegraph_zoekt//rpc",
         "@com_github_sourcegraph_zoekt//stream",

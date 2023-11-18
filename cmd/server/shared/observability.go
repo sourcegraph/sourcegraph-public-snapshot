@@ -3,7 +3,7 @@ package shared
 import (
 	"os"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 )
 
 const prometheusProcLine = `prometheus: env STORAGE_PATH=/var/opt/sourcegraph/prometheus /bin/prom-wrapper >> /var/opt/sourcegraph/prometheus.log 2>&1`
@@ -12,7 +12,7 @@ const grafanaProcLine = `grafana: /usr/share/grafana/bin/grafana-server -config 
 
 func maybeObservability() []string {
 	if os.Getenv("DISABLE_OBSERVABILITY") != "" {
-		log15.Info("WARNING: Running with observability disabled")
+		log.Scoped("server.observability").Info("WARNING: Running with observability disabled")
 		return []string{""}
 	}
 

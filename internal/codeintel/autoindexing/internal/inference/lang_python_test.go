@@ -2,17 +2,12 @@ package inference
 
 import (
 	"testing"
-
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/libs"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 func TestPythonGenerator(t *testing.T) {
-	expectedIndexerImage, _ := libs.DefaultIndexerForLang("python")
-
 	testGenerators(t,
 		generatorTestCase{
-			description: "python package",
+			description: "python package 1",
 			repositoryContents: map[string]string{
 				"PKG-INFO": `
 Metadata-Version: 2.1
@@ -21,34 +16,10 @@ Version: 1.22.3
 Summary:  NumPy is the fundamental package for array computing with Python.
 			`,
 			},
-			expected: []config.IndexJob{
-				{
-					Steps: []config.DockerStep{
-						{
-							Root:     "",
-							Image:    expectedIndexerImage,
-							Commands: []string{"pip install . || true"},
-						},
-					},
-					LocalSteps: nil,
-					Root:       "",
-					Indexer:    expectedIndexerImage,
-					IndexerArgs: []string{
-						"scip-python",
-						"index",
-						".",
-						"--project-name",
-						"numpy",
-						"--project-version",
-						"1.22.3",
-					},
-					Outfile: "index.scip",
-				},
-			},
 		},
 
 		generatorTestCase{
-			description: "python package",
+			description: "python package 2",
 			repositoryContents: map[string]string{
 				"PKG-INFO": `
 Metadata-Version: 2.1
@@ -63,58 +34,10 @@ Version: 1.22.3
 Summary:  NumPy is the fundamental package for array computing with Python.
 			`,
 			},
-			expected: []config.IndexJob{
-				{
-					Steps: []config.DockerStep{
-						{
-							Root:     "",
-							Image:    expectedIndexerImage,
-							Commands: []string{"pip install . || true"},
-						},
-					},
-					LocalSteps: nil,
-					Root:       "",
-					Indexer:    expectedIndexerImage,
-					IndexerArgs: []string{
-						"scip-python",
-						"index",
-						".",
-						"--project-name",
-						"numpy-base",
-						"--project-version",
-						"1.22.3",
-						"--exclude",
-						"src",
-					},
-					Outfile: "index.scip",
-				},
-				{
-					Steps: []config.DockerStep{
-						{
-							Root:     "",
-							Image:    expectedIndexerImage,
-							Commands: []string{"pip install . || true"},
-						},
-					},
-					LocalSteps: nil,
-					Root:       "src",
-					Indexer:    expectedIndexerImage,
-					IndexerArgs: []string{
-						"scip-python",
-						"index",
-						".",
-						"--project-name",
-						"numpy",
-						"--project-version",
-						"1.22.3",
-					},
-					Outfile: "index.scip",
-				},
-			},
 		},
 
 		generatorTestCase{
-			description: "python package",
+			description: "python package 3",
 			repositoryContents: map[string]string{
 				"PKG-INFO": `
 Metadata-Version: 2.1
@@ -136,75 +59,50 @@ Version: 2.0.0
 Summary:  NumPy is the fundamental package for array computing with Python.
 			`,
 			},
-			expected: []config.IndexJob{
-				{
-					Steps: []config.DockerStep{
-						{
-							Root:     "",
-							Image:    expectedIndexerImage,
-							Commands: []string{"pip install . || true"},
-						},
-					},
-					LocalSteps: nil,
-					Root:       "",
-					Indexer:    expectedIndexerImage,
-					IndexerArgs: []string{
-						"scip-python",
-						"index",
-						".",
-						"--project-name",
-						"numpy-base",
-						"--project-version",
-						"1.22.3",
-						"--exclude",
-						"nested/lib,src",
-					},
-					Outfile: "index.scip",
-				},
-				{
-					Steps: []config.DockerStep{
-						{
-							Root:     "",
-							Image:    expectedIndexerImage,
-							Commands: []string{"pip install . || true"},
-						},
-					},
-					LocalSteps: nil,
-					Root:       "src",
-					Indexer:    expectedIndexerImage,
-					IndexerArgs: []string{
-						"scip-python",
-						"index",
-						".",
-						"--project-name",
-						"numpy",
-						"--project-version",
-						"1.22.3",
-					},
-					Outfile: "index.scip",
-				},
-				{
-					Steps: []config.DockerStep{
-						{
-							Root:     "",
-							Image:    expectedIndexerImage,
-							Commands: []string{"pip install . || true"},
-						},
-					},
-					LocalSteps: nil,
-					Root:       "nested/lib",
-					Indexer:    expectedIndexerImage,
-					IndexerArgs: []string{
-						"scip-python",
-						"index",
-						".",
-						"--project-name",
-						"numpy-proj-2",
-						"--project-version",
-						"2.0.0",
-					},
-					Outfile: "index.scip",
-				},
+		},
+
+		generatorTestCase{
+			description:        "python pyproject",
+			repositoryContents: map[string]string{"pyproject.toml": ""},
+		},
+
+		generatorTestCase{
+			description:        "python requirements.txt",
+			repositoryContents: map[string]string{"requirements.txt": ""},
+		},
+
+		generatorTestCase{
+			description:        "python setup.py",
+			repositoryContents: map[string]string{"setup.py": ""},
+		},
+
+		// Only generate a single job for the PKG-INFO
+		generatorTestCase{
+			description: "python package with pyproject",
+			repositoryContents: map[string]string{
+				"PKG-INFO": `
+Metadata-Version: 2.1
+Name: numpy
+Version: 1.22.3
+Summary:  NumPy is the fundamental package for array computing with Python.`,
+				"pyproject.toml": "",
+			},
+		},
+
+		generatorTestCase{
+			description: "python multiple config files at root",
+			repositoryContents: map[string]string{
+				"x/pyproject.toml":   "",
+				"x/setup.py":         "",
+				"x/requirements.txt": "",
+			},
+		},
+
+		generatorTestCase{
+			description: "python multiple roots",
+			repositoryContents: map[string]string{
+				"first_root/pyproject.toml":  "",
+				"second_root/pyproject.toml": "",
 			},
 		},
 	)

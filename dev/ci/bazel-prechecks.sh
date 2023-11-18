@@ -34,6 +34,9 @@ echo "--- :bazel: Running bazel configure"
 bazel "${bazelrc[@]}" configure
 
 echo "--- Checking if BUILD.bazel files were updated"
+# Account for the possibility of a BUILD.bazel to be totally new, and thus untracked.
+git ls-files --exclude-standard --others | grep BUILD.bazel | xargs git add --intent-to-add
+
 git diff --exit-code || EXIT_CODE=$? # do not fail on non-zero exit
 
 # if we get a non-zero exit code, bazel configure updated files

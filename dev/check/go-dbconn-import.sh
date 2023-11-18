@@ -16,21 +16,17 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/worker
   github.com/sourcegraph/sourcegraph/cmd/repo-updater
   github.com/sourcegraph/sourcegraph/cmd/migrator
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/migrator
   github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings
+  github.com/sourcegraph/sourcegraph/cmd/symbols
+  github.com/sourcegraph/sourcegraph/cmd/embeddings
   # Doesn't connect but uses db internals for use with sqlite
   github.com/sourcegraph/sourcegraph/cmd/symbols
   # Transitively depends on zoekt package which imports but does not use DB
   github.com/sourcegraph/sourcegraph/cmd/searcher
   # Transitively depends on updatecheck package which imports but does not use DB
   github.com/sourcegraph/sourcegraph/cmd/pings
-  # Main entrypoints for running all services, so they must be allowed to import it.
-  github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
+  # Main entrypoint for running all services, so it must be allowed to import it.
+  github.com/sourcegraph/sourcegraph/cmd/sourcegraph
 )
 
 # Create regex ^(a|b|c)
@@ -40,7 +36,7 @@ allowed=$(printf "^(%s)" "${allowed:1}")
 # shellcheck disable=SC2016
 template='{{with $pkg := .}}{{ range $pkg.Deps }}{{ printf "%s imports %s\n" $pkg.ImportPath .}}{{end}}{{end}}'
 
-if go list ./cmd/... ./enterprise/cmd/... |
+if go list ./cmd/... |
   grep -Ev "$allowed" |
   xargs go list -f "$template" |
   grep "github.com/sourcegraph/sourcegraph/internal/database/dbconn"; then

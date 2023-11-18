@@ -1,5 +1,6 @@
 import assert from 'assert'
 
+import { afterEach, beforeEach, describe, it } from 'mocha'
 import type { ElementHandle, MouseButton } from 'puppeteer'
 
 import { type JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'

@@ -23,6 +23,9 @@ type MockClient struct {
 	// object controlling the behavior of the method
 	// GetAuthenticatedOAuthScopes.
 	GetAuthenticatedOAuthScopesFunc *ClientGetAuthenticatedOAuthScopesFunc
+	// GetAuthenticatedUserOrgsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetAuthenticatedUserOrgs.
+	GetAuthenticatedUserOrgsFunc *ClientGetAuthenticatedUserOrgsFunc
 	// GetAuthenticatedUserOrgsDetailsAndMembershipFunc is an instance of a
 	// mock function object controlling the behavior of the method
 	// GetAuthenticatedUserOrgsDetailsAndMembership.
@@ -74,6 +77,11 @@ func NewMockClient() *MockClient {
 	return &MockClient{
 		GetAuthenticatedOAuthScopesFunc: &ClientGetAuthenticatedOAuthScopesFunc{
 			defaultHook: func(context.Context) (r0 []string, r1 error) {
+				return
+			},
+		},
+		GetAuthenticatedUserOrgsFunc: &ClientGetAuthenticatedUserOrgsFunc{
+			defaultHook: func(context.Context, int) (r0 []*github.Org, r1 bool, r2 int, r3 error) {
 				return
 			},
 		},
@@ -154,6 +162,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.GetAuthenticatedOAuthScopes")
 			},
 		},
+		GetAuthenticatedUserOrgsFunc: &ClientGetAuthenticatedUserOrgsFunc{
+			defaultHook: func(context.Context, int) ([]*github.Org, bool, int, error) {
+				panic("unexpected invocation of MockClient.GetAuthenticatedUserOrgs")
+			},
+		},
 		GetAuthenticatedUserOrgsDetailsAndMembershipFunc: &ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc{
 			defaultHook: func(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error) {
 				panic("unexpected invocation of MockClient.GetAuthenticatedUserOrgsDetailsAndMembership")
@@ -227,6 +240,7 @@ func NewStrictMockClient() *MockClient {
 // is redefined here as it is unexported in the source package.
 type surrogateMockClient interface {
 	GetAuthenticatedOAuthScopes(context.Context) ([]string, error)
+	GetAuthenticatedUserOrgs(context.Context, int) ([]*github.Org, bool, int, error)
 	GetAuthenticatedUserOrgsDetailsAndMembership(context.Context, int) ([]github.OrgDetailsAndMembership, bool, int, error)
 	GetAuthenticatedUserTeams(context.Context, int) ([]*github.Team, bool, int, error)
 	GetOrganization(context.Context, string) (*github.OrgDetails, error)
@@ -248,6 +262,9 @@ func NewMockClientFrom(i surrogateMockClient) *MockClient {
 	return &MockClient{
 		GetAuthenticatedOAuthScopesFunc: &ClientGetAuthenticatedOAuthScopesFunc{
 			defaultHook: i.GetAuthenticatedOAuthScopes,
+		},
+		GetAuthenticatedUserOrgsFunc: &ClientGetAuthenticatedUserOrgsFunc{
+			defaultHook: i.GetAuthenticatedUserOrgs,
 		},
 		GetAuthenticatedUserOrgsDetailsAndMembershipFunc: &ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc{
 			defaultHook: i.GetAuthenticatedUserOrgsDetailsAndMembership,
@@ -397,6 +414,122 @@ func (c ClientGetAuthenticatedOAuthScopesFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientGetAuthenticatedOAuthScopesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientGetAuthenticatedUserOrgsFunc describes the behavior when the
+// GetAuthenticatedUserOrgs method of the parent MockClient instance is
+// invoked.
+type ClientGetAuthenticatedUserOrgsFunc struct {
+	defaultHook func(context.Context, int) ([]*github.Org, bool, int, error)
+	hooks       []func(context.Context, int) ([]*github.Org, bool, int, error)
+	history     []ClientGetAuthenticatedUserOrgsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetAuthenticatedUserOrgs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockClient) GetAuthenticatedUserOrgs(v0 context.Context, v1 int) ([]*github.Org, bool, int, error) {
+	r0, r1, r2, r3 := m.GetAuthenticatedUserOrgsFunc.nextHook()(v0, v1)
+	m.GetAuthenticatedUserOrgsFunc.appendCall(ClientGetAuthenticatedUserOrgsFuncCall{v0, v1, r0, r1, r2, r3})
+	return r0, r1, r2, r3
+}
+
+// SetDefaultHook sets function that is called when the
+// GetAuthenticatedUserOrgs method of the parent MockClient instance is
+// invoked and the hook queue is empty.
+func (f *ClientGetAuthenticatedUserOrgsFunc) SetDefaultHook(hook func(context.Context, int) ([]*github.Org, bool, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetAuthenticatedUserOrgs method of the parent MockClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ClientGetAuthenticatedUserOrgsFunc) PushHook(hook func(context.Context, int) ([]*github.Org, bool, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientGetAuthenticatedUserOrgsFunc) SetDefaultReturn(r0 []*github.Org, r1 bool, r2 int, r3 error) {
+	f.SetDefaultHook(func(context.Context, int) ([]*github.Org, bool, int, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientGetAuthenticatedUserOrgsFunc) PushReturn(r0 []*github.Org, r1 bool, r2 int, r3 error) {
+	f.PushHook(func(context.Context, int) ([]*github.Org, bool, int, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+func (f *ClientGetAuthenticatedUserOrgsFunc) nextHook() func(context.Context, int) ([]*github.Org, bool, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientGetAuthenticatedUserOrgsFunc) appendCall(r0 ClientGetAuthenticatedUserOrgsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientGetAuthenticatedUserOrgsFuncCall
+// objects describing the invocations of this function.
+func (f *ClientGetAuthenticatedUserOrgsFunc) History() []ClientGetAuthenticatedUserOrgsFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientGetAuthenticatedUserOrgsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientGetAuthenticatedUserOrgsFuncCall is an object that describes an
+// invocation of method GetAuthenticatedUserOrgs on an instance of
+// MockClient.
+type ClientGetAuthenticatedUserOrgsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*github.Org
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 int
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientGetAuthenticatedUserOrgsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientGetAuthenticatedUserOrgsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
 }
 
 // ClientGetAuthenticatedUserOrgsDetailsAndMembershipFunc describes the

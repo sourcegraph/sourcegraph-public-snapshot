@@ -8,9 +8,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
-        "//internal/api/internalapi",
         "//internal/database",
         "//internal/errcode",
+        "//internal/gitserver",
         "//internal/gitserver/protocol",
         "//internal/search",
         "//internal/search/client",
@@ -48,7 +48,6 @@ go_test(
         "//internal/search/searcher",
         "//internal/types",
         "//schema",
-        "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],

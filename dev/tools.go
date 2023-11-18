@@ -22,4 +22,7 @@ import (
 
 	// Used for cody-gateway to generate a GraphQL client
 	_ "github.com/Khan/genqlient"
+
+	// Used to generate schema
+	_ "github.com/pseudomuto/protoc-gen-doc"
 )

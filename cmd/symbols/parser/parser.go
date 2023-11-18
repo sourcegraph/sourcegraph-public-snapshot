@@ -272,7 +272,7 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 }
 
 func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig, source ctags_config.ParserType) (ctags.Parser, error) {
-	logger = logger.Scoped("ctags", "ctags processes")
+	logger = logger.Scoped("ctags")
 
 	var options ctags.Options
 	if source == ctags_config.UniversalCtags {

@@ -33,8 +33,8 @@ type Store interface {
 	// the age of the object exceeds the given max age.
 	ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error
 
-	// List returns an iterator over all keys.
-	List(ctx context.Context) (*iterator.Iterator[string], error)
+	// List returns an iterator over all keys with the given prefix.
+	List(ctx context.Context, prefix string) (*iterator.Iterator[string], error)
 }
 
 var storeConstructors = map[string]func(ctx context.Context, config Config, operations *Operations) (Store, error){

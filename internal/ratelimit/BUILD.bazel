@@ -4,20 +4,27 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "ratelimit",
     srcs = [
-        "codehost_ratelimit.go",
         "common.go",
+        "globallimiter.go",
         "monitor.go",
         "rate_limit.go",
+    ],
+    embedsrcs = [
+        "globallimitergettokens.lua",
+        "globallimitersettokenbucket.lua",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/ratelimit",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf",
+        "//internal/conf/deploy",
         "//internal/redispool",
         "//internal/timeutil",
         "//lib/errors",
+        "@com_github_gomodule_redigo//redis",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
         "@org_golang_x_time//rate",
     ],
 )
@@ -26,17 +33,22 @@ go_test(
     name = "ratelimit_test",
     timeout = "short",
     srcs = [
-        "codehost_ratelimit_test.go",
-        "mocks_test.go",
+        "globallimiter_test.go",
         "monitor_test.go",
-        "rate_limit_test.go",
     ],
     embed = [":ratelimit"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/redispool",
+        "//lib/pointers",
         "//schema",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",
-        "@org_golang_x_time//rate",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -2,20 +2,34 @@ package inference
 
 import (
 	"context"
+	"flag"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/require"
+	"io"
+	"os"
+	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
+
+func TestMain(m *testing.M) {
+	flag.Parse()
+	os.Exit(m.Run())
+}
+
+var update = flag.Bool("update", false, "update testdata")
 
 func TestEmptyGenerators(t *testing.T) {
 	testGenerators(t,
 		generatorTestCase{
 			description:        "empty",
 			repositoryContents: nil,
-			expected:           []config.IndexJob{},
 		},
 	)
 }
@@ -59,18 +73,6 @@ func TestOverrideGenerators(t *testing.T) {
 				"bar/sg-test": "",
 				"baz/sg-test": "",
 			},
-			expected: []config.IndexJob{
-				// sg.test -> emits jobs with `test` indexer
-				{Indexer: "test", Root: ""},
-				{Indexer: "test", Root: "bar"},
-				{Indexer: "test", Root: "baz"},
-				{Indexer: "test", Root: "foo"},
-				// mycompany.test -> emits jobs with `text-override` indexer
-				{Indexer: "test-override", Root: ""},
-				{Indexer: "test-override", Root: "bar"},
-				{Indexer: "test-override", Root: "baz"},
-				{Indexer: "test-override", Root: "foo"},
-			},
 		},
 		generatorTestCase{
 			description: "disable default",
@@ -112,25 +114,18 @@ func TestOverrideGenerators(t *testing.T) {
 				"bar/acme-custom.yaml": "",
 				"baz/acme-custom.yaml": "",
 			},
-			expected: []config.IndexJob{
-				// sg.test -> emits jobs with `test` indexer
-				// No jobs should have been generated
-
-				// acme.custom -> emits jobs with `acme/custom-indexer` indexer
-				{Indexer: "acme/custom-indexer", Root: ""},
-				{Indexer: "acme/custom-indexer", Root: "bar"},
-				{Indexer: "acme/custom-indexer", Root: "baz"},
-				{Indexer: "acme/custom-indexer", Root: "foo"},
-			},
+			// sg.test -> emits jobs with `test` indexer
+			// No jobs should have been generated
+			// acme.custom -> emits jobs with `acme/custom-indexer` indexer
 		},
 	)
 }
 
+// Run 'go test ./... -update' in this subdirectory to update snapshot outputs
 type generatorTestCase struct {
 	description        string
 	overrideScript     string
 	repositoryContents map[string]string
-	expected           []config.IndexJob
 }
 
 func testGenerators(t *testing.T, testCases ...generatorTestCase) {
@@ -152,11 +147,24 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 		if err != nil {
 			t.Fatalf("unexpected error inferring jobs: %s", err)
 		}
-		// Test shouldn't fail on mismatch between nil vs empty slice
-		if len(testCase.expected) == 0 && len(result.IndexJobs) == 0 {
+		snapshotPath := filepath.Join("testdata", strings.Replace(testCase.description, " ", "_", -1)+".yaml")
+		sortIndexJobs(result.IndexJobs)
+		if update != nil && *update == true {
+			bytes, err := yaml.Marshal(result.IndexJobs)
+			require.NoError(t, err)
+			file, err := os.Create(snapshotPath)
+			require.NoError(t, err)
+			_, err = file.Write(bytes)
+			require.NoError(t, err)
 			return
 		}
-		if diff := cmp.Diff(sortIndexJobs(testCase.expected), sortIndexJobs(result.IndexJobs)); diff != "" {
+		file, err := os.Open(snapshotPath)
+		require.NoError(t, err)
+		bytes, err := io.ReadAll(file)
+		require.NoError(t, err)
+		var expected []config.IndexJob
+		require.NoError(t, yaml.Unmarshal(bytes, &expected))
+		if diff := cmp.Diff(expected, result.IndexJobs, cmpopts.EquateEmpty()); diff != "" {
 			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 		}
 	})

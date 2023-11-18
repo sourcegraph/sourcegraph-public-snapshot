@@ -1,4 +1,3 @@
-import type * as Monaco from 'monaco-editor'
 import { RegExpParser, visitRegExpAST } from 'regexpp'
 import type {
     Alternative,
@@ -31,7 +30,7 @@ export type DecoratedToken = Token | MetaToken
 /**
  * A MetaToken defines a token that is associated with some language-specific metasyntax.
  */
-export type MetaToken =
+type MetaToken =
     | MetaRegexp
     | MetaStructural
     | MetaField
@@ -46,7 +45,7 @@ export type MetaToken =
 /**
  * Defines common properties for meta tokens.
  */
-export interface BaseMetaToken {
+interface BaseMetaToken {
     type: MetaToken['type']
     range: CharacterRange
     value: string
@@ -100,14 +99,14 @@ export enum MetaStructuralKind {
 /**
  * A token that is labeled and interpreted as a field, like "repo:" in the Sourcegraph language syntax.
  */
-export interface MetaField extends BaseMetaToken {
+interface MetaField extends BaseMetaToken {
     type: 'field'
 }
 
 /**
  * The ':' part of a filter like "repo:foo"
  */
-export interface MetaFilterSeparator extends BaseMetaToken {
+interface MetaFilterSeparator extends BaseMetaToken {
     type: 'metaFilterSeparator'
 }
 
@@ -171,7 +170,7 @@ export enum MetaSelectorKind {
     Commit = 'commit',
 }
 
-export enum MetaPathKind {
+enum MetaPathKind {
     Separator = 'Separator',
 }
 
@@ -179,14 +178,14 @@ export enum MetaPathKind {
  * Tokens that are meaningful in path patterns, like
  * path separators / or wildcards *.
  */
-export interface MetaPath {
+interface MetaPath {
     type: 'metaPath'
     range: CharacterRange
     kind: MetaPathKind
     value: string
 }
 
-export enum MetaPredicateKind {
+enum MetaPredicateKind {
     NameAccess = 'NameAccess',
     Dot = 'Dot',
     Parenthesis = 'Parenthesis',
@@ -463,7 +462,7 @@ const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
  * Returns true for filter values that have path-like values, i.e., values that typically
  * contain path separators like `/`.
  */
-export const hasPathLikeValue = (field: string): boolean => {
+const hasPathLikeValue = (field: string): boolean => {
     const fieldName = field.startsWith('-') ? field.slice(1) : field
     switch (fieldName.toLocaleLowerCase()) {
         case 'repo':
@@ -471,10 +470,12 @@ export const hasPathLikeValue = (field: string): boolean => {
         case 'file':
         case 'f':
         case 'path':
-        case 'repohasfile':
+        case 'repohasfile': {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 
@@ -612,13 +613,15 @@ const mapRevisionMeta = (token: Literal): DecoratedToken[] => {
                 }
                 break
             }
-            case ':':
+            case ':': {
                 appendDecoratedToken(start - 1)
                 accumulator.push(current)
                 appendDecoratedToken(start, MetaSourcegraphRevision.Separator)
                 break
-            default:
+            }
+            default: {
                 accumulator.push(current)
+            }
         }
     }
     appendDecoratedToken(start)
@@ -705,7 +708,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
     while (pattern.value[start] !== undefined) {
         current = nextChar()
         switch (current) {
-            case '.':
+            case '.': {
                 // Look ahead and see if this is a ... hole alias.
                 if (pattern.value.slice(start, start + 2) === '..') {
                     // It is a ... hole.
@@ -721,7 +724,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 }
                 token.push('.')
                 break
-            case ':':
+            }
+            case ':': {
                 if (open > 0) {
                     // ':' inside a hole, likely part of a regexp pattern.
                     token.push(':')
@@ -745,7 +749,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 // Trailing ':'.
                 token.push(current)
                 break
-            case '\\':
+            }
+            case '\\': {
                 if (pattern.value[start] !== undefined && open > 0) {
                     // Assume this is an escape sequence inside a regexp hole.
                     current = nextChar()
@@ -754,7 +759,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 }
                 token.push('\\')
                 break
-            case '[':
+            }
+            case '[': {
                 if (open > 0) {
                     // Assume this is a character set inside a regexp hole.
                     inside = inside + 1
@@ -763,7 +769,8 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 }
                 token.push('[')
                 break
-            case ']':
+            }
+            case ']': {
                 if (open > 0 && inside > 0) {
                     // This ']' closes a regular expression inside a hole.
                     inside = inside - 1
@@ -779,8 +786,10 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
                 }
                 token.push(current)
                 break
-            default:
+            }
+            default: {
                 token.push(current)
+            }
         }
     }
     if (token.length > 0) {
@@ -794,7 +803,7 @@ const mapStructuralMeta = (pattern: Pattern): DecoratedToken[] => {
  * Returns true for filter values that have regexp values, e.g., repo, file.
  * Excludes FilterType.content because that depends on the pattern kind.
  */
-export const hasRegexpValue = (field: string): boolean => {
+const hasRegexpValue = (field: string): boolean => {
     const fieldName = field.startsWith('-') ? field.slice(1) : field
     switch (fieldName.toLocaleLowerCase()) {
         case 'repo':
@@ -807,10 +816,12 @@ export const hasRegexpValue = (field: string): boolean => {
         case 'msg':
         case 'm':
         case 'commiter':
-        case 'author':
+        case 'author': {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 
@@ -865,7 +876,7 @@ const decorateSelector = (token: Literal): DecoratedToken[] => {
  */
 const mapOffset = (token: Token, offset: number): Token => {
     switch (token.type) {
-        case 'filter':
+        case 'filter': {
             token.range = { start: token.range.start + offset, end: token.range.end + offset }
             token.field.range = token.range = {
                 start: token.field.range.start + offset,
@@ -877,8 +888,10 @@ const mapOffset = (token: Token, offset: number): Token => {
                     end: token.value.range.end + offset,
                 }
             }
-        default:
+        }
+        default: {
             token.range = { start: token.range.start + offset, end: token.range.end + offset }
+        }
     }
     return token
 }
@@ -992,13 +1005,14 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
         case 'has.path':
         case 'contains.content':
         case 'has.content':
-        case 'has.description':
+        case 'has.description': {
             return mapRegexpMetaSucceed({
                 type: 'pattern',
                 range: { start: offset, end: body.length },
                 value: body,
                 kind: PatternKind.Regexp,
             })
+        }
         case 'has': {
             const result = decorateRepoHasMetaBody(body, offset)
             if (result !== undefined) {
@@ -1016,7 +1030,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
         case 'has.tag':
         case 'has.owner':
         case 'has.key':
-        case 'has.topic':
+        case 'has.topic': {
             return [
                 {
                     type: 'literal',
@@ -1025,6 +1039,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                     quoted: false,
                 },
             ]
+        }
     }
     decorated.push({
         type: 'literal',
@@ -1082,19 +1097,23 @@ const decoratePredicate = (predicate: Predicate, range: CharacterRange): Decorat
 export const decorate = (token: Token): DecoratedToken[] => {
     const decorated: DecoratedToken[] = []
     switch (token.type) {
-        case 'pattern':
+        case 'pattern': {
             switch (token.kind) {
-                case PatternKind.Regexp:
+                case PatternKind.Regexp: {
                     decorated.push(...mapRegexpMetaSucceed(token))
                     break
-                case PatternKind.Structural:
+                }
+                case PatternKind.Structural: {
                     decorated.push(...mapStructuralMeta(token))
                     break
-                case PatternKind.Literal:
+                }
+                case PatternKind.Literal: {
                     decorated.push(token)
                     break
+                }
             }
             break
+        }
         case 'filter': {
             decorated.push({
                 type: 'field',
@@ -1136,8 +1155,9 @@ export const decorate = (token: Token): DecoratedToken[] => {
             }
             break
         }
-        default:
+        default: {
             decorated.push(token)
+        }
     }
     return decorated
 }
@@ -1176,18 +1196,22 @@ const tokenKindToCSSName: Record<MetaRevisionKind | MetaRegexpKind | MetaPredica
  */
 export const toCSSClassName = (token: DecoratedToken): string => {
     switch (token.type) {
-        case 'field':
+        case 'field': {
             return 'search-filter-keyword'
+        }
         case 'keyword':
         case 'openingParen':
         case 'closingParen':
         case 'metaRepoRevisionSeparator':
-        case 'metaContextPrefix':
+        case 'metaContextPrefix': {
             return 'search-keyword'
-        case 'metaFilterSeparator':
+        }
+        case 'metaFilterSeparator': {
             return 'search-filter-separator'
-        case 'metaPath':
+        }
+        case 'metaPath': {
             return 'search-path-separator'
+        }
 
         case 'metaRevision': {
             return `search-revision-${tokenKindToCSSName[token.kind]}`
@@ -1205,12 +1229,14 @@ export const toCSSClassName = (token: DecoratedToken): string => {
             return `search-structural-${tokenKindToCSSName[token.kind]}`
         }
 
-        default:
+        default: {
             return 'search-query-text'
+        }
     }
 }
 
 export interface Decoration {
+    token: DecoratedToken
     value: string
     key: number
     className: string
@@ -1225,53 +1251,67 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         case 'metaPath':
         case 'metaRevision':
         case 'metaRegexp':
-        case 'metaStructural':
+        case 'metaStructural': {
             return {
+                token,
                 value: token.value,
                 key: token.range.start + token.range.end,
                 className,
             }
-        case 'openingParen':
+        }
+        case 'openingParen': {
             return {
+                token,
                 value: '(',
                 key: token.range.start + token.range.end,
                 className,
             }
-        case 'closingParen':
+        }
+        case 'closingParen': {
             return {
+                token,
                 value: ')',
                 key: token.range.start + token.range.end,
                 className,
             }
+        }
 
-        case 'metaFilterSeparator':
+        case 'metaFilterSeparator': {
             return {
+                token,
                 value: ':',
                 key: token.range.start + token.range.end,
                 className,
             }
+        }
         case 'metaRepoRevisionSeparator':
-        case 'metaContextPrefix':
+        case 'metaContextPrefix': {
             return {
+                token,
                 value: '@',
                 key: token.range.start + token.range.end,
                 className,
             }
+        }
 
         case 'metaPredicate': {
             let value = ''
             switch (token.kind) {
-                case 'NameAccess':
+                case 'NameAccess': {
                     value = query.slice(token.range.start, token.range.end)
                     break
-                case 'Dot':
+                }
+                case 'Dot': {
                     value = '.'
                     break
-                case 'Parenthesis':
+                }
+                case 'Parenthesis': {
                     value = query.slice(token.range.start, token.range.end)
                     break
+                }
             }
             return {
+                token,
                 value,
                 key: token.range.start + token.range.end,
                 className,
@@ -1279,49 +1319,9 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         }
     }
     return {
+        token,
         value: query.slice(token.range.start, token.range.end),
         key: token.range.start + token.range.end,
         className,
     }
 }
-
-const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {
-    switch (token.type) {
-        case 'field':
-        case 'whitespace':
-        case 'keyword':
-        case 'comment':
-        case 'openingParen':
-        case 'closingParen':
-        case 'metaFilterSeparator':
-        case 'metaRepoRevisionSeparator':
-        case 'metaContextPrefix':
-            return {
-                startIndex: token.range.start,
-                scopes: token.type,
-            }
-        case 'metaPath':
-        case 'metaRevision':
-        case 'metaRegexp':
-        case 'metaStructural':
-        case 'metaPredicate':
-            // The scopes value is derived from the token type and its kind.
-            // E.g., regexpMetaDelimited derives from {@link RegexpMeta} and {@link RegexpMetaKind}.
-            return {
-                startIndex: token.range.start,
-                scopes: `${token.type}${token.kind}`,
-            }
-
-        default:
-            return {
-                startIndex: token.range.start,
-                scopes: 'identifier',
-            }
-    }
-}
-
-/**
- * Decorates tokens for contextual highlighting (e.g. for regexp metasyntax) and returns the tokens converted to Monaco token types.
- */
-export const getMonacoTokens = (tokens: Token[]): Monaco.languages.IToken[] =>
-    tokens.flatMap(token => decorate(token).map(decoratedToMonaco))

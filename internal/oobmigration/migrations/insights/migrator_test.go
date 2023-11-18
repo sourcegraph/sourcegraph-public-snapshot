@@ -31,7 +31,7 @@ func TestInsightsMigrator(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	frontendDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	frontendDB := database.NewDB(logger, dbtest.NewDB(t))
 	insightsDB := dbtest.NewInsightsDB(logger, t)
 	frontendStore := basestore.NewWithHandle(frontendDB.Handle())
 	insightsStore := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, insightsDB, sql.TxOptions{}))

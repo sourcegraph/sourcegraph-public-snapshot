@@ -116,7 +116,7 @@ func TestCheckGivenUserHasPermission(t *testing.T) {
 func setup(t *testing.T, ctx context.Context) (database.DB, *types.User, *types.User, *types.Permission) {
 	t.Helper()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	newUser1 := database.NewUser{Username: "username-1"}
 	u1, err := db.Users().Create(ctx, newUser1)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
-import type { DecoratorFn, Meta } from '@storybook/react'
+import type { Decorator, Meta } from '@storybook/react'
 
 import { BrandedStory } from '../../stories'
 import { Grid } from '../Grid'
@@ -19,13 +19,19 @@ import {
 
 import styles from './MultiComboboxStory.module.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
 const config: Meta = {
     title: 'wildcard/MultiCombobox',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            enableDarkMode: true,
+            disableSnapshot: false,
+        },
+    },
 }
 
 export default config

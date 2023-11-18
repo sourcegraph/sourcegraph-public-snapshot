@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
@@ -66,7 +65,6 @@ func TestQueueIndexesExplicit(t *testing.T) {
 		&observation.TestContext,
 		mockDBStore,
 		inferenceService,
-		nil,                    // repoUpdater
 		defaultMockRepoStore(), // repoStore
 		mockGitserverClient,
 	)
@@ -165,7 +163,6 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 		&observation.TestContext,
 		mockDBStore,
 		inferenceService,
-		nil,                    // repoUpdater
 		defaultMockRepoStore(), // repoStore
 		mockGitserverClient,
 	)
@@ -269,7 +266,6 @@ func TestQueueIndexesInRepository(t *testing.T) {
 		&observation.TestContext,
 		mockDBStore,
 		inferenceService,
-		nil,                    // repoUpdater
 		defaultMockRepoStore(), // repoStore
 		gitserverClient,
 	)
@@ -356,7 +352,6 @@ func TestQueueIndexesInferred(t *testing.T) {
 		&observation.TestContext,
 		mockDBStore,
 		inferenceService,
-		nil,                    // repoUpdater
 		defaultMockRepoStore(), // repoStore
 		gitserverClient,
 	)
@@ -414,14 +409,6 @@ func TestQueueIndexesForPackage(t *testing.T) {
 	})
 	gitserverClient.ReadFileFunc.SetDefaultReturn(nil, os.ErrNotExist)
 
-	mockRepoUpdater := NewMockRepoUpdaterClient()
-	mockRepoUpdater.EnqueueRepoUpdateFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*protocol.RepoUpdateResponse, error) {
-		if repoName != "github.com/sourcegraph/sourcegraph" {
-			t.Errorf("unexpected repo %v supplied to EnqueueRepoUpdate", repoName)
-		}
-		return &protocol.RepoUpdateResponse{ID: 42}, nil
-	})
-
 	inferenceService := NewMockInferenceService()
 	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) (*shared.InferenceResult, error) {
 		return &shared.InferenceResult{
@@ -441,12 +428,19 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		}, nil
 	})
 
+	mockRepoStore := defaultMockRepoStore()
+	mockRepoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*internaltypes.Repo, error) {
+		if repoName != "github.com/sourcegraph/sourcegraph" {
+			t.Errorf("unexpected repo %v supplied to EnqueueRepoUpdate", repoName)
+		}
+		return &internaltypes.Repo{ID: 42, Name: "github.com/sourcegraph/sourcegraph"}, nil
+	})
+
 	service := newService(
 		&observation.TestContext,
 		mockDBStore,
 		inferenceService,
-		mockRepoUpdater,        // repoUpdater
-		defaultMockRepoStore(), // repoStore
+		mockRepoStore, // repoStore
 		gitserverClient,
 	)
 
@@ -454,7 +448,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		Scheme:  "gomod",
 		Name:    "https://github.com/sourcegraph/sourcegraph",
 		Version: "v3.26.0-4e7eeb0f8a96",
-	}, false)
+	})
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
 		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))

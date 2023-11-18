@@ -13,7 +13,7 @@ This contains all the Tauri code for the Cody App. Currently it consists of star
 
 2. We have to make sure that all the client code has all its dependencies installed. To do that run `pnpm install` in the root of the repository.
 
-3. Everything should now be ready! To do a full build without much thinking you can run `./enterprise/dev/app/build-release.sh`, which will build the Tauri frontend shell, `sourcegraph-backend` and ultimately the Tauri App!
+3. Everything should now be ready! To do a full build without much thinking you can run `./dev/app/build-release.sh`, which will build the Tauri frontend shell, `sourcegraph-backend` and ultimately the Tauri App!
 
 ## How do I build the individual parts?
 
@@ -31,7 +31,7 @@ The Sourcegraph backend, or "single binary" as it was previously known, contains
     -o .bin/sourcegraph-backend-aarch64-apple-darwin \
     -tags dist \
     -ldflags '-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app' \
-    ./enterprise/cmd/sourcegraph
+    ./cmd/sourcegraph
    ```
 
 3. The previous command will put a binary in `.bin` named `sourcegraph-backend-aarch64-apple-darwin`. Take note of the name, which is `sourcegraph-backend`. This name has to match the sidecar name in the `tauri.conf.json` and in the Rust code!

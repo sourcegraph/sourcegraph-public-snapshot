@@ -82,7 +82,7 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	ctx := context.Background()
 
@@ -180,7 +180,7 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	ctx := context.Background()
 
@@ -235,7 +235,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
@@ -593,7 +593,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	source := authz.SourceUserSync
@@ -756,7 +756,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	tests := []struct {
@@ -897,7 +897,7 @@ func TestPermsStore_FetchReposByExternalAccount(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	source := authz.SourceRepoSync
@@ -992,7 +992,7 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	ctx := context.Background()
@@ -1159,7 +1159,7 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	type testUpdate struct {
@@ -1189,28 +1189,32 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 		},
 		{
 			name: "add",
-			updates: []testUpdate{{
-				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            1,
-					ExternalAccountID: 1,
-				}}}, {
-				repoID: 2,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            1,
-					ExternalAccountID: 1,
+			updates: []testUpdate{
+				{
+					repoID: 1,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            1,
+						ExternalAccountID: 1,
+					}},
 				}, {
-					UserID:            2,
-					ExternalAccountID: 2,
-				}}}, {
-				repoID: 3,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            3,
-					ExternalAccountID: 3,
+					repoID: 2,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            1,
+						ExternalAccountID: 1,
+					}, {
+						UserID:            2,
+						ExternalAccountID: 2,
+					}},
 				}, {
-					UserID:            4,
-					ExternalAccountID: 4,
-				}}},
+					repoID: 3,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            3,
+						ExternalAccountID: 3,
+					}, {
+						UserID:            4,
+						ExternalAccountID: 4,
+					}},
+				},
 			},
 			expectedPerms: []authz.Permission{
 				{RepoID: 1, UserID: 1, ExternalAccountID: 1, Source: authz.SourceRepoSync},
@@ -1239,36 +1243,41 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 		},
 		{
 			name: "add and update",
-			updates: []testUpdate{{
-				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            1,
-					ExternalAccountID: 1,
-				}}}, {
-				repoID: 1,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            2,
-					ExternalAccountID: 2,
+			updates: []testUpdate{
+				{
+					repoID: 1,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            1,
+						ExternalAccountID: 1,
+					}},
 				}, {
-					UserID:            3,
-					ExternalAccountID: 3,
-				}}}, {
-				repoID: 2,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            1,
-					ExternalAccountID: 1,
+					repoID: 1,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            2,
+						ExternalAccountID: 2,
+					}, {
+						UserID:            3,
+						ExternalAccountID: 3,
+					}},
 				}, {
-					UserID:            2,
-					ExternalAccountID: 2,
-				}}}, {
-				repoID: 2,
-				users: []authz.UserIDWithExternalAccountID{{
-					UserID:            3,
-					ExternalAccountID: 3,
+					repoID: 2,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            1,
+						ExternalAccountID: 1,
+					}, {
+						UserID:            2,
+						ExternalAccountID: 2,
+					}},
 				}, {
-					UserID:            4,
-					ExternalAccountID: 4,
-				}}},
+					repoID: 2,
+					users: []authz.UserIDWithExternalAccountID{{
+						UserID:            3,
+						ExternalAccountID: 3,
+					}, {
+						UserID:            4,
+						ExternalAccountID: 4,
+					}},
+				},
 			},
 			expectedPerms: []authz.Permission{
 				{RepoID: 1, UserID: 2, ExternalAccountID: 2, Source: authz.SourceRepoSync},
@@ -1312,7 +1321,8 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 				}, {
 					UserID:            3,
 					ExternalAccountID: 3,
-				}}}, {
+				}},
+			}, {
 				repoID: 1,
 				users:  []authz.UserIDWithExternalAccountID{},
 			}},
@@ -1409,7 +1419,7 @@ func TestPermsStore_LoadUserPendingPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	t.Run("no matching with different account ID", func(t *testing.T) {
@@ -1706,7 +1716,7 @@ func TestPermsStore_SetRepoPendingPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	alice := extsvc.AccountSpec{
@@ -1989,7 +1999,7 @@ func TestPermsStore_ListPendingUsers(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	type update struct {
@@ -2107,7 +2117,7 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -2378,7 +2388,8 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 								RepoID: 2,
 								Perm:   authz.Read,
 							},
-						}, {
+						},
+						{
 							accounts: &extsvc.Accounts{
 								ServiceType: authz.SourcegraphServiceType,
 								ServiceID:   authz.SourcegraphServiceID,
@@ -2748,7 +2759,7 @@ func TestPermsStore_SetPendingPermissionsAfterGrant(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	defer cleanupPermsTables(t, s)
@@ -2820,7 +2831,7 @@ func TestPermsStore_DeleteAllUserPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	t.Cleanup(func() {
@@ -2905,7 +2916,7 @@ func TestPermsStore_DeleteAllUserPendingPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	t.Cleanup(func() {
@@ -2967,7 +2978,7 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 	t.Cleanup(func() {
@@ -3082,7 +3093,7 @@ func TestPermsStore_GetUserIDsByExternalAccounts(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	s := perms(logger, db, time.Now)
@@ -3164,7 +3175,7 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
@@ -3226,7 +3237,7 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
@@ -3281,7 +3292,7 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
@@ -3340,7 +3351,7 @@ func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
@@ -3387,7 +3398,7 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3492,7 +3503,7 @@ func TestPermsStore_CountUsersWithStalePerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3560,7 +3571,7 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3663,7 +3674,7 @@ func TestPermsStore_CountReposWithStalePerms(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3729,7 +3740,7 @@ func TestPermsStore_MapUsers(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3801,7 +3812,7 @@ func TestPermsStore_Metrics(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 
@@ -3912,7 +3923,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
@@ -3945,7 +3956,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
                                  VALUES(1, 1, ''), (2, 1, ''), (3, 1, ''), (4, 1, '')`),
 		sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config, unrestricted) VALUES(2, 'GitHub #2 Unrestricted', 'GITHUB', '{}', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
-                                 VALUES(5, 2, '')`),
+                                 VALUES(5, 2, ''), (4, 2, '')`),
 	}
 	for _, q := range qs {
 		if err := s.execute(ctx, q); err != nil {
@@ -3970,7 +3981,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 				{
 					// public repo
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					// private repo but unrestricted
@@ -3992,7 +4003,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 				},
 				{
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 			},
 		},
@@ -4019,14 +4030,14 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 					Reason: UserRepoPermissionReasonSiteAdmin,
 				},
 				{
-					// private repo but have access via user_permissions
+					// private repo but have access via user_permissions (still site admin)
 					RepoId: 2,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonSiteAdmin,
 				},
 				{
 					// public repo
 					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					// private repo but unrestricted
@@ -4073,7 +4084,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	testDb := dbtest.NewDB(logger, t)
+	testDb := dbtest.NewDB(t)
 	db := NewDB(logger, testDb)
 
 	s := perms(logtest.Scoped(t), db, clock)
@@ -4097,6 +4108,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(666, 'user666', FALSE)`),
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(777, 'user777', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin, deleted_at) VALUES(888, 'user888', TRUE, NOW())`),
+		sqlf.Sprintf(`INSERT INTO users(id, username, site_admin) VALUES(999, 'user999', TRUE)`), // Site admin user with explicit access to all repos
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(1, 'private_repo_1', TRUE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'public_repo_2', FALSE)`),
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(3, 'unrestricted_repo_3', TRUE)`),
@@ -4115,10 +4127,12 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 		}
 	}
 
-	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id) VALUES(555, 1), (666, 1), (NULL, 3), (666, 4)`)
+	q := sqlf.Sprintf(`INSERT INTO user_repo_permissions(user_id, repo_id, source) VALUES(555, 1, 'user_sync'), (666, 1, 'api'), (NULL, 3, 'api'), (666, 4, 'user_sync'), (999, 1, 'user_sync')`)
 	if err := s.execute(ctx, q); err != nil {
 		t.Fatal(err)
 	}
+
+	ctx = actor.WithActor(ctx, &actor.Actor{UID: 999})
 
 	tests := []listRepoPermissionsTest{
 		{
@@ -4127,6 +4141,11 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Args:   nil,
 			WantResults: []*listRepoPermissionsResult{
 				{
+					// have access and site-admin
+					UserID: 999,
+					Reason: UserRepoPermissionReasonSiteAdmin,
+				},
+				{
 					// do not have access but site-admin
 					UserID: 777,
 					Reason: UserRepoPermissionReasonSiteAdmin,
@@ -4134,7 +4153,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 				{
 					// have access
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 				{
 					// have access
@@ -4150,6 +4169,10 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			NoAuthzProviders: true,
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
 				{
 					UserID: 777,
 					Reason: UserRepoPermissionReasonUnrestricted,
@@ -4173,7 +4196,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			WantResults: []*listRepoPermissionsResult{
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 			},
 		},
@@ -4186,7 +4209,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			WantResults: []*listRepoPermissionsResult{
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 			},
 		},
@@ -4197,16 +4220,20 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
 				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonPublic,
+				},
+				{
 					UserID: 777,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 				{
 					UserID: 555,
-					Reason: UserRepoPermissionReasonUnrestricted,
+					Reason: UserRepoPermissionReasonPublic,
 				},
 			},
 		},
@@ -4216,6 +4243,10 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Args:   nil,
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
+				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
 				{
 					UserID: 777,
 					Reason: UserRepoPermissionReasonUnrestricted,
@@ -4237,6 +4268,10 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			// all users have access
 			WantResults: []*listRepoPermissionsResult{
 				{
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
 					UserID: 777,
 					Reason: UserRepoPermissionReasonUnrestricted,
 				},
@@ -4255,18 +4290,24 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			RepoID:                    4,
 			Args:                      nil,
 			NoAuthzProviders:          true,
-			UsePermissionsUserMapping: true,
+			UsePermissionsUserMapping: false,
 			// restricted access
 			WantResults: []*listRepoPermissionsResult{
 				{
-					// do not have access but site-admin
-					UserID: 777,
-					Reason: UserRepoPermissionReasonSiteAdmin,
+					UserID: 999,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 				{
-					// have access
+					UserID: 777,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
 					UserID: 666,
-					Reason: UserRepoPermissionReasonPermissionsSync,
+					Reason: UserRepoPermissionReasonUnrestricted,
+				},
+				{
+					UserID: 555,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 			},
 		},
@@ -4278,8 +4319,13 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			WantResults: []*listRepoPermissionsResult{
 				{
 					// have access
-					UserID: 666,
+					UserID: 999,
 					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+				{
+					// have access
+					UserID: 666,
+					Reason: UserRepoPermissionReasonExplicitPerms,
 				},
 				{
 					// have access

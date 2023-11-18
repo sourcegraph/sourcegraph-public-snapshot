@@ -31,7 +31,7 @@ func ExtractDatabase(ctx context.Context, r *runner.Runner) (database.DB, error)
 		return nil, err
 	}
 
-	return database.NewDB(log.Scoped("migrator", ""), db), nil
+	return database.NewDB(log.Scoped("migrator"), db), nil
 }
 
 func ExtractDB(ctx context.Context, r *runner.Runner, schemaName string) (*sql.DB, error) {

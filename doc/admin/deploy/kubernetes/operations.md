@@ -434,7 +434,6 @@ blobstore                       ClusterIP   10.72.3.144    <none>        9000/TC
 cadvisor                        ClusterIP   10.72.14.130   <none>        48080/TCP                    23h
 codeinsights-db                 ClusterIP   10.72.6.240    <none>        5432/TCP,9187/TCP            25h
 codeintel-db                    ClusterIP   10.72.5.10     <none>        5432/TCP,9187/TCP            25h
-github-proxy                    ClusterIP   10.72.10.117   <none>        80/TCP,6060/TCP              25h
 gitserver                       ClusterIP   None           <none>        10811/TCP                    25h
 grafana                         ClusterIP   10.72.6.245    <none>        30070/TCP                    25h
 indexed-search                  ClusterIP   None           <none>        6070/TCP                     25h

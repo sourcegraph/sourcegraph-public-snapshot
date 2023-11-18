@@ -45,7 +45,11 @@ genrule(
         mkdir -p sg_config_grafana/provisioning/dashboards/sourcegraph/ && \
         mv monitoring/grafana/* sg_config_grafana/provisioning/dashboards/sourcegraph/ &&\
 
-        tar -cf $@ usr/share/grafana/public/dashboards/ sg_config_grafana/provisioning/dashboards/sourcegraph/
+        if tar --version | grep -q bsdtar; then
+          tar -cf $@ --uid=0 --gid=0 --numeric-owner usr/share/grafana/public/dashboards/ sg_config_grafana/provisioning/dashboards/sourcegraph/
+        else
+          tar -cf $@ --owner=:0 --group=:0 --numeric-owner usr/share/grafana/public/dashboards/ sg_config_grafana/provisioning/dashboards/sourcegraph/
+        fi
         """,
     tools = ["//monitoring"],
     visibility = ["//visibility:public"],
@@ -75,7 +79,6 @@ genrule(
         "outputs/grafana/embeddings.json",
         "outputs/grafana/executor.json",
         "outputs/grafana/frontend.json",
-        "outputs/grafana/github-proxy.json",
         "outputs/grafana/gitserver.json",
         "outputs/grafana/home.json",
         "outputs/grafana/otel-collector.json",
@@ -99,7 +102,6 @@ genrule(
         "outputs/prometheus/embeddings_alert_rules.yml",
         "outputs/prometheus/executor_alert_rules.yml",
         "outputs/prometheus/frontend_alert_rules.yml",
-        "outputs/prometheus/github_proxy_alert_rules.yml",
         "outputs/prometheus/gitserver_alert_rules.yml",
         "outputs/prometheus/otel_collector_alert_rules.yml",
         "outputs/prometheus/postgres_alert_rules.yml",

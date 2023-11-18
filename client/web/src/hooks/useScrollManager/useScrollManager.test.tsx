@@ -3,6 +3,7 @@ import { useRef } from 'react'
 import { act, fireEvent, screen } from '@testing-library/react'
 import { Routes, Route } from 'react-router-dom'
 import { spy, assert } from 'sinon'
+import { vi, afterAll, beforeAll, describe, it } from 'vitest'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -27,7 +28,6 @@ const TestApp = () => (
 )
 
 describe('useScrollManager', () => {
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     const originalScrollTo = Element.prototype.scrollTo
     const scrollToMock = spy()
     beforeAll(() => {
@@ -40,7 +40,7 @@ describe('useScrollManager', () => {
     })
 
     it('handles scroll correctly', () => {
-        jest.useFakeTimers()
+        vi.useFakeTimers()
 
         const wrapper = renderWithBrandedContext(<TestApp />)
         act(() => {
@@ -53,7 +53,7 @@ describe('useScrollManager', () => {
         const pageOneContainer = screen.getByTestId('page-1')
         const PAGE_ONE_SCROLL_POSITION = 100
         fireEvent.scroll(pageOneContainer, { target: { scrollTop: PAGE_ONE_SCROLL_POSITION } })
-        jest.advanceTimersByTime(250) // Wait over 200ms for scroll position to be saved by scroll manager
+        vi.advanceTimersByTime(250) // Wait over 200ms for scroll position to be saved by scroll manager
 
         // Navigate to other page
         act(() => {
@@ -66,7 +66,7 @@ describe('useScrollManager', () => {
         const pageTwoContainer = screen.getByTestId('page-2')
         const PAGE_TWO_SCROLL_POSITION = 300
         fireEvent.scroll(pageTwoContainer, { target: { scrollTop: PAGE_TWO_SCROLL_POSITION } })
-        jest.advanceTimersByTime(250) // Wait over 200ms for scroll position to be saved by scroll manager
+        vi.advanceTimersByTime(250) // Wait over 200ms for scroll position to be saved by scroll manager
 
         // Navigate backwards to first page
         act(() => {

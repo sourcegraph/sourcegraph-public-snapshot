@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -32,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -59,8 +61,11 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 		// If a buffer is configured, wrap in events.BufferedLogger
 		if config.BigQuery.EventBufferSize > 0 {
-			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger,
+			eventLogger, err = events.NewBufferedLogger(obctx.Logger, eventLogger,
 				config.BigQuery.EventBufferSize, config.BigQuery.EventBufferWorkers)
+			if err != nil {
+				return errors.Wrap(err, "create buffered logger")
+			}
 		}
 	} else {
 		eventLogger = events.NewStdoutLogger(obctx.Logger)
@@ -68,11 +73,14 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		// Useful for testing event logging in a way that has latency that is
 		// somewhat similar to BigQuery.
 		if os.Getenv("CODY_GATEWAY_BUFFERED_LAGGY_EVENT_LOGGING_FUN_TIMES_MODE") == "true" {
-			eventLogger = events.NewBufferedLogger(
+			eventLogger, err = events.NewBufferedLogger(
 				obctx.Logger,
 				events.NewDelayedLogger(eventLogger),
 				config.BigQuery.EventBufferSize,
 				config.BigQuery.EventBufferWorkers)
+			if err != nil {
+				return errors.Wrap(err, "create buffered logger")
+			}
 		}
 	}
 
@@ -110,7 +118,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	}
 
 	authr := &auth.Authenticator{
-		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
+		Logger:      obctx.Logger.Scoped("auth"),
 		EventLogger: eventLogger,
 		Sources:     sources,
 	}
@@ -139,18 +147,27 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
-	handler, err := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr, &httpapi.Config{
-		RateLimitNotifier:          rateLimitNotifier,
-		AnthropicAccessToken:       config.Anthropic.AccessToken,
-		AnthropicAllowedModels:     config.Anthropic.AllowedModels,
-		AnthropicMaxTokensToSample: config.Anthropic.MaxTokensToSample,
-		OpenAIAccessToken:          config.OpenAI.AccessToken,
-		OpenAIOrgID:                config.OpenAI.OrgID,
-		OpenAIAllowedModels:        config.OpenAI.AllowedModels,
-		FireworksAccessToken:       config.Fireworks.AccessToken,
-		FireworksAllowedModels:     config.Fireworks.AllowedModels,
-		EmbeddingsAllowedModels:    config.AllowedEmbeddingsModels,
-	})
+	handler, err := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr,
+		&dotcomPromptRecorder{
+			// TODO: Make configurable
+			ttlSeconds: 60 * // minutes
+				60,
+			redis: redispool.Cache,
+		},
+		&httpapi.Config{
+			RateLimitNotifier:               rateLimitNotifier,
+			AnthropicAccessToken:            config.Anthropic.AccessToken,
+			AnthropicAllowedModels:          config.Anthropic.AllowedModels,
+			AnthropicMaxTokensToSample:      config.Anthropic.MaxTokensToSample,
+			AnthropicAllowedPromptPatterns:  config.Anthropic.AllowedPromptPatterns,
+			AnthropicRequestBlockingEnabled: config.Anthropic.RequestBlockingEnabled,
+			OpenAIAccessToken:               config.OpenAI.AccessToken,
+			OpenAIOrgID:                     config.OpenAI.OrgID,
+			OpenAIAllowedModels:             config.OpenAI.AllowedModels,
+			FireworksAccessToken:            config.Fireworks.AccessToken,
+			FireworksAllowedModels:          config.Fireworks.AllowedModels,
+			EmbeddingsAllowedModels:         config.AllowedEmbeddingsModels,
+		})
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
 	}
@@ -164,7 +181,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
 
 	// Initialize our server
-	server := httpserver.NewFromAddr(config.Address, &http.Server{
+	address := fmt.Sprintf(":%d", config.Port)
+	server := httpserver.NewFromAddr(address, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 		Handler:      handler,
@@ -189,7 +207,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Mark health server as ready and go!
 	ready()
-	obctx.Logger.Info("service ready", log.String("address", config.Address))
+	obctx.Logger.Info("service ready", log.String("address", address))
 
 	// Collect background routines
 	backgroundRoutines := []goroutine.BackgroundRoutine{
@@ -245,14 +263,14 @@ func initOpenTelemetry(ctx context.Context, logger log.Logger, config OpenTeleme
 	// Enable tracing, at this point tracing wouldn't have been enabled yet because
 	// we run Cody Gateway without conf which means Sourcegraph tracing is not enabled.
 	shutdownTracing, err := maybeEnableTracing(ctx,
-		logger.Scoped("tracing", "OpenTelemetry tracing"),
+		logger.Scoped("tracing"),
 		config, res)
 	if err != nil {
 		return nil, errors.Wrap(err, "maybeEnableTracing")
 	}
 
 	shutdownMetrics, err := maybeEnableMetrics(ctx,
-		logger.Scoped("metrics", "OpenTelemetry metrics"),
+		logger.Scoped("metrics"),
 		config, res)
 	if err != nil {
 		return nil, errors.Wrap(err, "maybeEnableMetrics")
@@ -279,4 +297,29 @@ func getOpenTelemetryResource(ctx context.Context) (*resource.Resource, error) {
 			semconv.ServiceVersionKey.String(version.Version()),
 		),
 	)
+}
+
+type dotcomPromptRecorder struct {
+	ttlSeconds int
+	redis      redispool.KeyValue
+}
+
+var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
+
+func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
+	// Only log prompts from Sourcegraph.com
+	if !actor.FromContext(ctx).IsDotComActor() {
+		return errors.New("attempted to record prompt from non-dotcom actor")
+	}
+	// Must expire entries
+	if p.ttlSeconds == 0 {
+		return errors.New("prompt recorder must have TTL")
+	}
+	// Always use trace ID as traceID - each trace = 1 request, and we always record
+	// it in our entries.
+	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
+	if traceID == "" {
+		return errors.New("prompt recorder requires a trace context")
+	}
+	return p.redis.SetEx(fmt.Sprintf("prompt:%s", traceID), p.ttlSeconds, prompt)
 }

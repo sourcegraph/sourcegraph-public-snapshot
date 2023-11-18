@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resolvers",
+    srcs = ["resolver.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails/resolvers",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//cmd/frontend/internal/guardrails/attribution",
+    ],
+)

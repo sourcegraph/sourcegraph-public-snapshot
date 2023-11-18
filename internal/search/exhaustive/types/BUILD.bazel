@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "types",
     srcs = [
+        "exhaustive_search.go",
         "exhaustive_search_job.go",
         "exhaustive_search_repo_job.go",
         "exhaustive_search_repo_revision_job.go",

@@ -54,9 +54,15 @@ type BuildStatus string
 
 const (
 	BuildStatusUnknown BuildStatus = ""
+	BuildInProgress    BuildStatus = "InProgress"
 	BuildPassed        BuildStatus = "Passed"
 	BuildFailed        BuildStatus = "Failed"
 	BuildFixed         BuildStatus = "Fixed"
+
+	EventJobFinished   = "job.finished"
+	EventBuildFinished = "build.finished"
+
+	JobFinishedState = "finished"
 )
 
 func (b *Build) AddJob(j *Job) error {
@@ -109,11 +115,21 @@ func (b *Build) GetAuthorEmail() string {
 	return b.Author.Email
 }
 
+func (b *Build) GetWebURL() string {
+	if b.WebURL == nil {
+		return ""
+	}
+	return util.Strp(b.WebURL)
+}
+
 func (b *Build) GetState() string {
 	return util.Strp(b.State)
 }
 
 func (b *Build) GetCommit() string {
+	if b.Commit == nil {
+		return ""
+	}
 	return util.Strp(b.Commit)
 }
 
@@ -126,6 +142,9 @@ func (b *Build) GetBranch() string {
 }
 
 func (b *Build) GetMessage() string {
+	if b.Message == nil {
+		return ""
+	}
 	return util.Strp(b.Message)
 }
 
@@ -173,11 +192,11 @@ func (b *Event) WrappedPipeline() *Pipeline {
 }
 
 func (b *Event) IsBuildFinished() bool {
-	return b.Name == "build.finished"
+	return b.Name == EventBuildFinished
 }
 
 func (b *Event) IsJobFinished() bool {
-	return b.Name == "job.finished"
+	return b.Name == EventJobFinished
 }
 
 func (b *Event) GetJobName() string {
@@ -207,7 +226,7 @@ type Store struct {
 
 func NewBuildStore(logger log.Logger) *Store {
 	return &Store{
-		logger: logger.Scoped("store", "stores all the buildkite builds"),
+		logger: logger.Scoped("store"),
 
 		builds:              make(map[int]*Build),
 		consecutiveFailures: make(map[string]int),
@@ -253,7 +272,8 @@ func (s *Store) Add(event *Event) {
 	newJob := event.WrappedJob()
 	err := build.AddJob(newJob)
 	if err != nil {
-		s.logger.Warn("job for step has no name - not added",
+		s.logger.Warn("job not added",
+			log.Error(err),
 			log.Int("buildNumber", event.GetBuildNumber()),
 			log.Object("job", log.String("name", newJob.GetName()), log.String("id", newJob.GetID())),
 			log.Int("totalSteps", len(build.Steps)),
@@ -268,7 +288,6 @@ func (s *Store) Add(event *Event) {
 		)
 
 	}
-
 }
 
 func (s *Store) Set(build *Build) {

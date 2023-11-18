@@ -7,8 +7,9 @@ export function getParsedSeriesMetadata(
     seriesData: InsightDataSeries[]
 ): SearchBasedInsightSeries[] {
     switch (insight.type) {
-        case InsightType.SearchBased:
+        case InsightType.SearchBased: {
             return insight.series
+        }
 
         case InsightType.Compute: {
             return seriesData.map((generatedSeries, index) => ({

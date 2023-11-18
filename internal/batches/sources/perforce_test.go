@@ -2,14 +2,12 @@ package sources
 
 import (
 	"context"
-	"io"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
@@ -18,9 +16,8 @@ import (
 )
 
 var (
-	testPerforceProjectName = "testdepot"
 	testPerforceChangeID    = "111"
-	testPerforceCredentials = gitserver.PerforceCredentials{Username: "user", Password: "pass", Host: "https://perforce.sgdev.org:1666"}
+	testPerforceCredentials = protocol.PerforceConnectionDetails{P4User: "user", P4Passwd: "pass", P4Port: "perforce.sgdev.org:1666"}
 )
 
 func TestPerforceSource_ValidateAuthenticator(t *testing.T) {
@@ -32,7 +29,7 @@ func TestPerforceSource_ValidateAuthenticator(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			s, client := mockPerforceSource()
-			client.P4ExecFunc.SetDefaultReturn(fakeCloser{}, http.Header{}, want)
+			client.CheckPerforceCredentialsFunc.PushReturn(want)
 			assert.Equal(t, want, s.ValidateAuthenticator(ctx))
 		})
 	}
@@ -45,10 +42,10 @@ func TestPerforceSource_LoadChangeset(t *testing.T) {
 		cs, _ := mockPerforceChangeset()
 		s, client := mockPerforceSource()
 		want := errors.New("error")
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
+		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, credentials protocol.PerforceConnectionDetails, changeID string) (*perforce.Changelist, error) {
 			assert.Equal(t, changeID, testPerforceChangeID)
 			assert.Equal(t, testPerforceCredentials, credentials)
-			return new(protocol.PerforceChangelist), want
+			return new(perforce.Changelist), want
 		})
 
 		err := s.LoadChangeset(ctx, cs)
@@ -61,7 +58,7 @@ func TestPerforceSource_LoadChangeset(t *testing.T) {
 		s, client := mockPerforceSource()
 
 		change := mockPerforceChange()
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
+		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, credentials protocol.PerforceConnectionDetails, changeID string) (*perforce.Changelist, error) {
 			assert.Equal(t, changeID, testPerforceChangeID)
 			assert.Equal(t, testPerforceCredentials, credentials)
 			return change, nil
@@ -79,10 +76,10 @@ func TestPerforceSource_CreateChangeset(t *testing.T) {
 		cs, _ := mockPerforceChangeset()
 		s, client := mockPerforceSource()
 		want := errors.New("error")
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
-			assert.Equal(t, changeID, testPerforceChangeID)
-			assert.Equal(t, testPerforceCredentials, credentials)
-			return new(protocol.PerforceChangelist), want
+		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, conn protocol.PerforceConnectionDetails, changelistID string) (*perforce.Changelist, error) {
+			assert.Equal(t, changelistID, testPerforceChangeID)
+			assert.Equal(t, testPerforceCredentials, conn)
+			return new(perforce.Changelist), want
 		})
 
 		b, err := s.CreateChangeset(ctx, cs)
@@ -96,9 +93,9 @@ func TestPerforceSource_CreateChangeset(t *testing.T) {
 		s, client := mockPerforceSource()
 
 		change := mockPerforceChange()
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
-			assert.Equal(t, changeID, testPerforceChangeID)
-			assert.Equal(t, testPerforceCredentials, credentials)
+		client.PerforceGetChangelistFunc.SetDefaultHook(func(ctx context.Context, conn protocol.PerforceConnectionDetails, changelistID string) (*perforce.Changelist, error) {
+			assert.Equal(t, changelistID, testPerforceChangeID)
+			assert.Equal(t, testPerforceCredentials, conn)
 			return change, nil
 		})
 
@@ -128,22 +125,18 @@ func mockPerforceChangeset() (*Changeset, *types.Repo) {
 
 // mockPerforceChange returns a plausible changelist that would be
 // returned from Perforce.
-func mockPerforceChange() *protocol.PerforceChangelist {
-	return &protocol.PerforceChangelist{
+func mockPerforceChange() *perforce.Changelist {
+	return &perforce.Changelist{
 		ID:     testPerforceChangeID,
 		Author: "Peter Guy",
-		State:  protocol.PerforceChangelistStatePending,
+		State:  perforce.ChangelistStatePending,
 	}
 }
 
 func mockPerforceSource() (*PerforceSource, *MockGitserverClient) {
 	client := NewStrictMockGitserverClient()
-	s := &PerforceSource{gitServerClient: client, perforceCreds: &testPerforceCredentials, server: schema.PerforceConnection{P4Port: "https://perforce.sgdev.org:1666"}}
+	// Cred checks should pass by default.
+	client.CheckPerforceCredentialsFunc.SetDefaultReturn(nil)
+	s := &PerforceSource{gitServerClient: client, perforceCreds: &testPerforceCredentials, conn: schema.PerforceConnection{P4Port: "perforce.sgdev.org:1666"}}
 	return s, client
 }
-
-type fakeCloser struct {
-	io.Reader
-}
-
-func (fakeCloser) Close() error { return nil }

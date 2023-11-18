@@ -176,6 +176,24 @@ CREATE FUNCTION delete_user_repo_permissions_on_user_soft_delete() RETURNS trigg
   END
 $$;
 
+CREATE FUNCTION extract_topics_from_metadata(external_service_type text, metadata jsonb) RETURNS text[]
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$
+BEGIN
+    RETURN CASE external_service_type
+    WHEN 'github' THEN
+        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))
+    WHEN 'gitlab' THEN
+        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata->'topics'))
+    ELSE
+        '{}'::text[]
+    END;
+EXCEPTION WHEN others THEN
+    -- Catch exceptions in the case that metadata is not shaped like we expect
+    RETURN '{}'::text[];
+END;
+$_$;
+
 CREATE FUNCTION func_configuration_policies_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -1294,7 +1312,7 @@ CREATE TABLE repo (
     id integer NOT NULL,
     name citext NOT NULL,
     description text,
-    fork boolean,
+    fork boolean DEFAULT false NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone,
     external_id text,
@@ -1307,6 +1325,7 @@ CREATE TABLE repo (
     private boolean DEFAULT false NOT NULL,
     stars integer DEFAULT 0 NOT NULL,
     blocked jsonb,
+    topics text[] GENERATED ALWAYS AS (extract_topics_from_metadata(external_service_type, metadata)) STORED,
     CONSTRAINT check_name_nonempty CHECK ((name OPERATOR(<>) ''::citext)),
     CONSTRAINT repo_metadata_check CHECK ((jsonb_typeof(metadata) = 'object'::text))
 );
@@ -3230,6 +3249,7 @@ CREATE TABLE lsif_indexes (
     cancel boolean DEFAULT false NOT NULL,
     should_reindex boolean DEFAULT false NOT NULL,
     requested_envvars text[],
+    enqueuer_user_id integer DEFAULT 0 NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -3284,7 +3304,8 @@ CREATE VIEW lsif_indexes_with_repository_name AS
     u.local_steps,
     u.should_reindex,
     u.requested_envvars,
-    r.name AS repository_name
+    r.name AS repository_name,
+    u.enqueuer_user_id
    FROM (lsif_indexes u
      JOIN repo r ON ((r.id = u.repository_id)))
   WHERE (r.deleted_at IS NULL);
@@ -4191,7 +4212,6 @@ CREATE TABLE users (
     site_admin boolean DEFAULT false NOT NULL,
     page_views integer DEFAULT 0 NOT NULL,
     search_queries integer DEFAULT 0 NOT NULL,
-    tags text[] DEFAULT '{}'::text[],
     billing_customer_id text,
     invalidated_sessions_at timestamp with time zone DEFAULT now() NOT NULL,
     tos_accepted boolean DEFAULT false NOT NULL,
@@ -4199,6 +4219,7 @@ CREATE TABLE users (
     completions_quota integer,
     code_completions_quota integer,
     completed_post_signup boolean DEFAULT false NOT NULL,
+    cody_pro_enabled_at timestamp with time zone,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
@@ -4674,6 +4695,13 @@ CREATE SEQUENCE teams_id_seq
     CACHE 1;
 
 ALTER SEQUENCE teams_id_seq OWNED BY teams.id;
+
+CREATE TABLE telemetry_events_export_queue (
+    id text NOT NULL,
+    "timestamp" timestamp with time zone NOT NULL,
+    payload_pb bytea NOT NULL,
+    exported_at timestamp with time zone
+);
 
 CREATE TABLE temporary_settings (
     id integer NOT NULL,
@@ -5759,6 +5787,9 @@ ALTER TABLE ONLY team_members
 ALTER TABLE ONLY teams
     ADD CONSTRAINT teams_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY telemetry_events_export_queue
+    ADD CONSTRAINT telemetry_events_export_queue_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY temporary_settings
     ADD CONSTRAINT temporary_settings_pkey PRIMARY KEY (id);
 
@@ -6063,9 +6094,7 @@ CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING 
 
 CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id);
 
-CREATE INDEX idx_repo_github_topics ON repo USING gin ((((metadata -> 'RepositoryTopics'::text) -> 'Nodes'::text))) WHERE (external_service_type = 'github'::text);
-
-COMMENT ON INDEX idx_repo_github_topics IS 'An index to speed up listing repos by topic. Intended to be used when TopicFilters are added to the RepoListOptions';
+CREATE INDEX idx_repo_topics ON repo USING gin (topics);
 
 CREATE INDEX insights_query_runner_jobs_cost_idx ON insights_query_runner_jobs USING btree (cost);
 
@@ -6104,6 +6133,8 @@ CREATE UNIQUE INDEX lsif_dependency_repos_unique_scheme_name ON lsif_dependency_
 CREATE INDEX lsif_dependency_syncing_jobs_state ON lsif_dependency_syncing_jobs USING btree (state);
 
 CREATE INDEX lsif_indexes_commit_last_checked_at ON lsif_indexes USING btree (commit_last_checked_at) WHERE (state <> 'deleted'::text);
+
+CREATE INDEX lsif_indexes_dequeue_order_idx ON lsif_indexes USING btree (((enqueuer_user_id > 0)) DESC, queued_at DESC, id) WHERE ((state = 'queued'::text) OR (state = 'errored'::text));
 
 CREATE INDEX lsif_indexes_queued_at_id ON lsif_indexes USING btree (queued_at DESC, id);
 

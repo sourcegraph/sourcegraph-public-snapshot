@@ -163,25 +163,28 @@ func TestExternalService_BitbucketServer(t *testing.T) {
 
 func TestExternalService_Perforce(t *testing.T) {
 	for _, tc := range []struct {
-		name      string
-		depot     string
-		useFusion bool
-		blobPath  string
-		wantBlob  string
+		name       string
+		depot      string
+		useFusion  bool
+		headBranch string
+		blobPath   string
+		wantBlob   string
 	}{
 		{
-			name:      "git p4",
-			depot:     "test-perms",
-			useFusion: false,
-			blobPath:  "README.md",
+			name:       "p4 fusion",
+			depot:      "test-perms",
+			useFusion:  true,
+			blobPath:   "README.md",
+			headBranch: "main",
 			wantBlob: `This depot is used to test user and group permissions.
 `,
 		},
 		{
-			name:      "p4 fusion",
-			depot:     "integration-test-depot",
-			useFusion: true,
-			blobPath:  "path.txt",
+			name:       "git p4",
+			depot:      "integration-test-depot",
+			useFusion:  false,
+			blobPath:   "path.txt",
+			headBranch: "master",
 			wantBlob: `./
 `,
 		},
@@ -197,7 +200,7 @@ func TestExternalService_Perforce(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			blob, err := client.GitBlob(repoName, "master", tc.blobPath)
+			blob, err := client.GitBlob(repoName, tc.headBranch, tc.blobPath)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -227,6 +230,7 @@ func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool)
 		LookAhead int  `json:"lookAhead,omitempty"`
 	}
 
+	t.Log("Creating external service")
 	// Set up external service
 	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
 		Kind:        extsvc.KindPerforce,
@@ -262,6 +266,7 @@ func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool)
 	}
 
 	return func() {
+		t.Log("Cleaning up external service")
 		if err := client.DeleteRepoFromDiskByName("perforce/" + depot); err != nil {
 			t.Fatalf("removing depot from disk: %v", err)
 		}

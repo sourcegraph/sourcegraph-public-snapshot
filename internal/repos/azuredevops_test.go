@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -16,7 +17,12 @@ import (
 //  2. Run the test with the -update flag:
 //     `go test -run='TestAzureDevOpsSource_ListRepos' -update=TestAzureDevOpsSource_ListRepos`
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
-	conf := &schema.AzureDevOpsConnection{
+	ratelimit.SetupForTest(t)
+
+	cf, save := NewClientFactory(t, t.Name())
+	defer save(t)
+
+	svc := typestest.MakeExternalService(t, extsvc.VariantAzureDevOps, &schema.AzureDevOpsConnection{
 		Url:      "https://dev.azure.com",
 		Username: os.Getenv("AZURE_DEV_OPS_USERNAME"),
 		Token:    os.Getenv("AZURE_DEV_OPS_TOKEN"),
@@ -29,14 +35,7 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 				Pattern: "^sgtestazure/sgtestazure/sgtestazure[3-9]",
 			},
 		},
-	}
-	cf, save := NewClientFactory(t, t.Name())
-	defer save(t)
-
-	svc := &types.ExternalService{
-		Kind:   extsvc.KindAzureDevOps,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
-	}
+	})
 
 	ctx := context.Background()
 	src, err := NewAzureDevOpsSource(ctx, nil, svc, cf)

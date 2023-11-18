@@ -4,17 +4,19 @@ import (
 	"context"
 
 	qdrant "github.com/qdrant/go-client/qdrant"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-func ensureModelCollectionWithDefaultConfig(ctx context.Context, db *qdrantDB, modelID string, modelDims uint64) error {
+func ensureModelCollection(ctx context.Context, db *qdrantDB, modelID string, modelDims uint64) error {
 	// Make the actual collection end with `.default` so we can switch between
 	// configurations with aliases.
 	name := CollectionName(modelID)
 	realName := name + ".default"
 
-	err := ensureCollection(ctx, db.collectionsClient, realName, defaultConfig(modelDims))
+	err := ensureCollectionWithConfig(ctx, db.collectionsClient, realName, modelDims, conf.GetEmbeddingsConfig(conf.Get().SiteConfiguration).Qdrant)
 	if err != nil {
 		return err
 	}
@@ -42,7 +44,7 @@ func ensureModelCollectionWithDefaultConfig(ctx context.Context, db *qdrantDB, m
 	return nil
 }
 
-func ensureCollection(ctx context.Context, cc qdrant.CollectionsClient, name string, config *qdrant.CollectionConfig) error {
+func ensureCollectionWithConfig(ctx context.Context, cc qdrant.CollectionsClient, name string, dims uint64, qc conftypes.QdrantConfig) error {
 	resp, err := cc.List(ctx, &qdrant.ListCollectionsRequest{})
 	if err != nil {
 		return err
@@ -50,26 +52,12 @@ func ensureCollection(ctx context.Context, cc qdrant.CollectionsClient, name str
 
 	for _, collection := range resp.GetCollections() {
 		if collection.GetName() == name {
-			// Collection already exists
-			return nil
+			_, err = cc.Update(ctx, updateCollectionParams(name, qc))
+			return err
 		}
 	}
 
-	// Create a new collection with the new config using the data of the old collection
-	_, err = cc.Create(ctx, &qdrant.CreateCollection{
-		CollectionName:         name,
-		HnswConfig:             config.HnswConfig,
-		WalConfig:              config.WalConfig,
-		OptimizersConfig:       config.OptimizerConfig,
-		ShardNumber:            &config.Params.ShardNumber,
-		OnDiskPayload:          &config.Params.OnDiskPayload,
-		VectorsConfig:          config.Params.VectorsConfig,
-		ReplicationFactor:      config.Params.ReplicationFactor,
-		WriteConsistencyFactor: config.Params.WriteConsistencyFactor,
-		InitFromCollection:     nil,
-		QuantizationConfig:     config.QuantizationConfig,
-	})
-
+	_, err = cc.Create(ctx, createCollectionParams(name, dims, qc))
 	return err
 }
 
@@ -88,41 +76,4 @@ func ensureRepoIDIndex(ctx context.Context, cc qdrant.PointsClient, name string)
 	}
 
 	return nil
-}
-
-func defaultConfig(dims uint64) *qdrant.CollectionConfig {
-	return &qdrant.CollectionConfig{
-		Params: &qdrant.CollectionParams{
-			ShardNumber:   1,
-			OnDiskPayload: true,
-			VectorsConfig: &qdrant.VectorsConfig{
-				Config: &qdrant.VectorsConfig_Params{
-					Params: &qdrant.VectorParams{
-						Size:               dims,
-						Distance:           qdrant.Distance_Cosine,
-						HnswConfig:         nil,                // use collection default
-						QuantizationConfig: nil,                // use collection default
-						OnDisk:             pointers.Ptr(true), // use collection default
-					},
-				},
-			},
-			ReplicationFactor:      nil, // default
-			WriteConsistencyFactor: nil, // default
-		},
-		OptimizerConfig: &qdrant.OptimizersConfigDiff{
-			IndexingThreshold: pointers.Ptr(uint64(0)), // disable indexing
-		},
-		WalConfig: nil, // default
-		QuantizationConfig: &qdrant.QuantizationConfig{
-			// scalar is faster than product, but doesn't compress as well
-			Quantization: &qdrant.QuantizationConfig_Scalar{
-				Scalar: &qdrant.ScalarQuantization{
-					Type: qdrant.QuantizationType_Int8,
-					// Truncate outliers for better compression
-					Quantile:  pointers.Ptr(float32(0.98)),
-					AlwaysRam: nil, // default false
-				},
-			},
-		},
-	}
 }

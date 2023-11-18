@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -83,7 +82,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 
 		requestedPath = strings.TrimPrefix(requestedPath, "/")
 
-		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), authz.DefaultSubRepoPermsChecker, repo.Name, requestedPath, &gitserver.BlameOptions{
+		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), repo.Name, requestedPath, &gitserver.BlameOptions{
 			NewestCommit: commitID,
 		})
 		if err != nil {
@@ -110,7 +109,12 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			if p, ok := parentsCache[h.CommitID]; ok {
 				parents = p
 			} else {
-				c, err := gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{})
+				c, err := gitserverClient.GetCommit(ctx, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{
+					// The list of hunks and commit IDs came from gitserver, that
+					// means the commit will exist and we don't need to ensure
+					// the revision exists.
+					NoEnsureRevision: true,
+				})
 				if err != nil {
 					tr.SetError(err)
 					http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)

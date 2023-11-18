@@ -54,7 +54,7 @@ const hoverStyle = [
         '.sg-decorated-token-hover': {
             backgroundColor: 'var(--gray-02)',
         },
-        '&dark .sg-decorated-token-hover': {
+        '.theme-dark & .sg-decorated-token-hover': {
             backgroundColor: 'var(--gray-08)',
         },
     }),
@@ -86,7 +86,7 @@ export function tokenInfo(): Extension {
                 effect.is(setHighlighedTokenPosition)
             )
             if (effect) {
-                position = effect?.value
+                position = effect.value
             }
             if (position !== null) {
                 // Mapping the position might not be necessary since we clear
@@ -151,7 +151,7 @@ export function tokenInfo(): Extension {
         EditorView.domEventHandlers({
             mousemove(event, view) {
                 const position = view.posAtCoords(event)
-                let effects: StateEffect<any> | null = null
+                let effects: StateEffect<unknown> | null = null
 
                 // event.buttons === 0 means no button is pressed
                 if (event.buttons > 0) {
@@ -239,10 +239,11 @@ function getTokensTooltipInformation(tokens: readonly DecoratedToken[], position
     const tokensAtCursor = tokens.filter(token => {
         let { start, end } = token.range
         switch (token.type) {
-            case 'field':
+            case 'field': {
                 // +1 to include field separator :
                 end += 1
                 break
+            }
         }
         return start <= position && end > position
     })
@@ -272,27 +273,32 @@ function getTokensTooltipInformation(tokens: readonly DecoratedToken[], position
             case 'pattern':
             case 'metaRevision':
             case 'metaRepoRevisionSeparator':
-            case 'metaSelector':
+            case 'metaSelector': {
                 values.push(toHover(token))
                 range = token.range
                 break
+            }
             case 'metaRegexp':
             case 'metaStructural':
-            case 'metaPredicate':
+            case 'metaPredicate': {
                 values.push(toHover(token))
                 range = token.groupRange ? token.groupRange : token.range
                 break
-            case 'keyword':
+            }
+            case 'keyword': {
                 switch (token.kind) {
-                    case KeywordKind.And:
+                    case KeywordKind.And: {
                         values.push('Find results which match both the left and the right expression.')
                         range = token.range
                         break
-                    case KeywordKind.Or:
+                    }
+                    case KeywordKind.Or: {
                         values.push('Find results which match the left or the right expression.')
                         range = token.range
                         break
+                    }
                 }
+            }
         }
     }
 

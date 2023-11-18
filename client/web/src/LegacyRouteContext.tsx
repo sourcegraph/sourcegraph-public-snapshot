@@ -21,6 +21,7 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 
 import { isBatchChangesExecutionEnabled } from './batches'
 import { useBreadcrumbs, type BreadcrumbSetters, type BreadcrumbsProps } from './components/Breadcrumbs'
+import { NotFoundPage } from './components/HeroPage'
 import type { SearchStreamingProps } from './search'
 import type { StaticSourcegraphWebAppContext, DynamicSourcegraphWebAppContext } from './SourcegraphWebApp'
 import type { StaticAppConfig } from './staticAppConfig'
@@ -102,7 +103,7 @@ export const LegacyRoute: FC<LegacyRouteProps> = ({ render, condition }) => {
     }
 
     if (condition && !condition(context)) {
-        return null
+        return <NotFoundPage pageType="" />
     }
 
     return render(context)

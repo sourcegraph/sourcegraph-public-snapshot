@@ -1,5 +1,8 @@
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:migrations.bzl", "generate_schemas")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
     name = "database",
@@ -77,6 +80,7 @@ go_library(
         "sub_repo_perms_store.go",
         "survey_responses.go",
         "teams.go",
+        "telemetry_export_store.go",
         "temporary_settings.go",
         "user_credentials.go",
         "user_emails.go",
@@ -91,6 +95,7 @@ go_library(
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
+        "//internal/accesstoken",
         "//internal/actor",
         "//internal/api",
         "//internal/audit",
@@ -130,18 +135,23 @@ go_library(
         "//internal/hashutil",
         "//internal/jsonc",
         "//internal/lazyregexp",
+        "//internal/licensing",
         "//internal/own/codeowners/v1:codeowners",
         "//internal/own/types",
+        "//internal/perforce",
         "//internal/randstring",
         "//internal/ratelimit",
         "//internal/rbac/types",
         "//internal/search/result",
         "//internal/security",
+        "//internal/telemetry/sensitivemetadataallowlist",
+        "//internal/telemetrygateway/v1:telemetrygateway",
         "//internal/temporarysettings",
         "//internal/timeutil",
         "//internal/trace",
         "//internal/types",
         "//internal/version",
+        "//internal/xcontext",
         "//lib/errors",
         "//lib/pointers",
         "//schema",
@@ -245,6 +255,7 @@ go_test(
         "sub_repo_perms_store_test.go",
         "survey_responses_test.go",
         "teams_test.go",
+        "telemetry_export_store_test.go",
         "temporary_settings_test.go",
         "user_credentials_test.go",
         "user_emails_test.go",
@@ -286,13 +297,17 @@ go_test(
         "//internal/extsvc/gitlab",
         "//internal/featureflag",
         "//internal/jsonc",
+        "//internal/licensing",
         "//internal/own/codeowners/v1:codeowners",
         "//internal/own/types",
+        "//internal/perforce",
         "//internal/rbac/types",
         "//internal/search/result",
+        "//internal/telemetrygateway/v1:telemetrygateway",
         "//internal/temporarysettings",
         "//internal/timeutil",
         "//internal/trace",
+        "//internal/trace/tracetest",
         "//internal/types",
         "//internal/types/typestest",
         "//internal/version",
@@ -317,10 +332,53 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@com_github_tidwall_gjson//:gjson",
+        "@org_golang_google_protobuf//proto",
         "@org_golang_google_protobuf//testing/protocmp",
+        "@org_golang_google_protobuf//types/known/structpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
         "@org_golang_x_exp//maps",
         "@org_golang_x_exp//slices",
         "@org_golang_x_sync//errgroup",
         "@tools_gotest//assert",
+    ],
+)
+
+generate_schemas(
+    name = "generate_schemas",
+    srcs = [
+        "//migrations/codeinsights:sql",
+        "//migrations/codeintel:sql",
+        "//migrations/frontend:sql",
+    ],
+    out_codeinsights_schema = "_schema.codeinsights.json",
+    out_codeinsights_schema_md = "_schema.codeinsights.md",
+    out_codeinsights_squash = "_codeinsights_squashed.sql",
+    out_codeintel_schema = "_schema.codeintel.json",
+    out_codeintel_schema_md = "_schema.codeintel.md",
+    out_codeintel_squash = "_codeintel_squashed.sql",
+    out_frontend_schema = "_schema.json",
+    out_frontend_schema_md = "_schema.md",
+    out_frontend_squash = "_frontend_squashed.sql",
+    visibility = ["//visibility:public"],
+)
+
+write_generated_to_source_files(
+    name = "write_schemas",
+    output_files = {
+        "schema.json": "_schema.json",
+        "schema.codeintel.json": "_schema.codeintel.json",
+        "schema.codeinsights.json": "_schema.codeinsights.json",
+        "schema.md": "_schema.md",
+        "schema.codeintel.md": "_schema.codeintel.md",
+        "schema.codeinsights.md": "_schema.codeinsights.md",
+    },
+    target = ":generate_schemas",
+)
+
+exports_files(
+    srcs = [
+        "schema.codeinsights.json",
+        "schema.codeintel.json",
+        "schema.json",
     ],
 )

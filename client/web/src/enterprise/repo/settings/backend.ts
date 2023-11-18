@@ -59,6 +59,7 @@ export const REPOSITORY_RECORDED_COMMANDS_QUERY = gql`
         node(id: $id) {
             __typename
             ... on Repository {
+                isRecordingEnabled
                 recordedCommands(offset: $offset, limit: $limit) {
                     nodes {
                         ...RepositoryRecordedCommandFields
@@ -78,6 +79,8 @@ export const REPOSITORY_RECORDED_COMMANDS_QUERY = gql`
         duration
         command
         dir
+        output
+        isSuccess
     }
 `
 
@@ -89,11 +92,13 @@ interface UseFetchRecordedCommandsResult {
     recordedCommands: RepositoryRecordedCommandFields[]
     hasNextPage: boolean
     fetchMore: (offset: number) => void
+    isRecordingEnabled?: boolean
 }
 
 export const useFetchRecordedCommands = (repoId: string): UseFetchRecordedCommandsResult => {
     const [recordedCommands, setRecordedCommands] = useState<RepositoryRecordedCommandFields[]>([])
     const [hasNextPage, setHasNextPage] = useState(false)
+    const [isRecordingEnabled, setIsRecordingEnabled] = useState<boolean>()
 
     const [fetchRecordedCommands, { loading, error }] = useLazyQuery<
         RepositoryRecordedCommandsResult,
@@ -112,6 +117,7 @@ export const useFetchRecordedCommands = (repoId: string): UseFetchRecordedComman
 
             setRecordedCommands(prev => [...prev, ...node.recordedCommands.nodes])
             setHasNextPage(node.recordedCommands.pageInfo.hasNextPage)
+            setIsRecordingEnabled(node.isRecordingEnabled)
             return node.recordedCommands
         },
     })
@@ -136,5 +142,6 @@ export const useFetchRecordedCommands = (repoId: string): UseFetchRecordedComman
         error,
         hasNextPage,
         fetchMore: getRecordedCommands,
+        isRecordingEnabled,
     }
 }

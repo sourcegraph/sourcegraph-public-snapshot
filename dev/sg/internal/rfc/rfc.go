@@ -143,7 +143,7 @@ func authResponseHandler(sendCode chan string, sendError chan error, gracefulShu
 // gracefulShutdown: Whether the server shutdown gracefully after handling a request.
 // handler: The request handler for the server, containing the authEndpoint.
 func startAuthHandlerServer(socket net.Listener, authEndpoint string, codeReceiver chan string, errorReceiver chan error) {
-	logger := log.Scoped("rfc_auth_handler", "sg rfc oauth handler")
+	logger := log.Scoped("rfc_auth_handler")
 	var server http.Server
 	gracefulShutdown := false
 

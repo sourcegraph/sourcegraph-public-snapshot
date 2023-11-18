@@ -3,9 +3,10 @@
 
     import { mark } from '$lib/images'
     import type { AuthenticatedUser } from '$lib/shared'
-    import UserAvatar from '$lib/UserAvatar.svelte'
 
     import HeaderNavLink from './HeaderNavLink.svelte'
+    import { Button } from '$lib/wildcard'
+    import UserMenu from './UserMenu.svelte'
 
     export let authenticatedUser: AuthenticatedUser | null | undefined
 </script>
@@ -17,20 +18,17 @@
     <nav class="ml-2">
         <ul>
             <HeaderNavLink href="/search" svgIconPath={mdiMagnify}>Code search</HeaderNavLink>
-            <HeaderNavLink href="/notebooks" svgIconPath={mdiBookOutline} external>Notebooks</HeaderNavLink>
-            <HeaderNavLink href="/insights" svgIconPath={mdiChartBar} external>Insights</HeaderNavLink>
+            <HeaderNavLink external href="/notebooks" svgIconPath={mdiBookOutline}>Notebooks</HeaderNavLink>
+            <HeaderNavLink external href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
         </ul>
     </nav>
     <div class="user">
         {#if authenticatedUser}
-            <UserAvatar user={authenticatedUser} />
-            <!--
-                Needs data-sveltekit-reload to force hitting the server and
-                proxying the request to the Sourcegraph instance.
-            -->
-            <a href="/-/sign-out" data-sveltekit-reload>Sign out</a>
+            <UserMenu {authenticatedUser} />
         {:else}
-            <a href="/sign-in" data-sveltekit-reload>Sign in</a>
+            <Button variant="secondary" outline>
+                <a slot="custom" let:className class={className} href="/sign-in" data-sveltekit-reload>Sign in</a>
+            </Button>
         {/if}
     </div>
 </header>

@@ -57,10 +57,10 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
   done
 
   # Please see: https://github.com/sourcegraph/sourcegraph/issues/43934
-  echo "--- ⚠️A TEMPORARILY DISABLED: Logs will not be uploaded to Grafana. Please reach out to #discuss-dev-experience"
+  echo "--- ⚠️A TEMPORARILY DISABLED: Logs will not be uploaded to Grafana. Please reach out to #discuss-dev-infra"
   # Non-zero exit code and not a soft fail: upload the logs.
   # echo "--- Uploading build logs: this only runs if your build has already failed, check the logs above, NOT below!"
-  # ./enterprise/dev/ci/scripts/upload-build-logs.sh
+  # ./dev/ci/scripts/upload-build-logs.sh
 fi
 
 # upload raw annotations as artifacts if they are available for easier access

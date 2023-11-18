@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pubsubtest",
+    srcs = ["pubsubtest.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/pubsub/pubsubtest",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/pubsub"],
+)

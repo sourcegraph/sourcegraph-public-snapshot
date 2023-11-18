@@ -54,7 +54,7 @@ type TestClientSourceOptions struct {
 	Logger log.Logger
 }
 
-func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+func NewTestClientSource(t testing.TB, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
 	logger := logtest.Scoped(t)
 	opts := TestClientSourceOptions{
 		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
@@ -111,6 +111,15 @@ func (c *testGitserverConns) AddrForRepo(ctx context.Context, userAgent string, 
 // Addresses returns the current list of gitserver addresses.
 func (c *testGitserverConns) Addresses() []AddressWithClient {
 	return c.testAddresses
+}
+
+func (c *testGitserverConns) GetAddressWithClient(addr string) AddressWithClient {
+	for _, addrClient := range c.testAddresses {
+		if addrClient.Address() == addr {
+			return addrClient
+		}
+	}
+	return nil
 }
 
 // ClientForRepo returns a client or host for the given repo name.
@@ -240,6 +249,19 @@ func (a *atomicGitServerConns) Addresses() []AddressWithClient {
 	return addrs
 }
 
+func (a *atomicGitServerConns) GetAddressWithClient(addr string) AddressWithClient {
+	conns := a.get()
+	addrConn, ok := conns.grpcConns[addr]
+	if ok {
+		return &connAndErr{
+			address: addr,
+			conn:    addrConn.conn,
+			err:     addrConn.err,
+		}
+	}
+	return nil
+}
+
 func (a *atomicGitServerConns) get() *GitserverConns {
 	a.initOnce()
 	return a.conns.Load()
@@ -272,14 +294,14 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		a.conns.Store(&after)
 		return
 	}
-	log.Scoped("", "gitserver gRPC connections").Info(
+	log.Scoped("").Info(
 		"new gitserver addresses",
 		log.Strings("before", before.Addresses),
 		log.Strings("after", after.Addresses),
 	)
 
 	// Open connections for each address
-	clientLogger := log.Scoped("gitserver.client", "gitserver gRPC client")
+	clientLogger := log.Scoped("gitserver.client")
 
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {

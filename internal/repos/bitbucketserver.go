@@ -149,7 +149,15 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 			break
 		}
 		if l.Name == "http" {
-			cloneURL = setUserinfoBestEffort(l.Href, s.config.Username, "")
+			cloneURL = l.Href
+			// If the config contains a username, we set the url user field to it.
+			if s.config.Username != "" {
+				u, err := url.Parse(l.Href)
+				if err == nil {
+					u.User = url.User(s.config.Username)
+					cloneURL = u.String()
+				}
+			}
 			// No break, so that we fallback to http in case of ssh missing
 			// with GitURLType == "ssh"
 		}

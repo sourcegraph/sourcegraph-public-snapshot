@@ -21,16 +21,13 @@ export enum PageRoutes {
     Debug = '/-/debug/*',
     RepoContainer = '/*',
     SetupWizard = '/setup',
-    InstallGitHubAppSuccess = '/install-github-app-success',
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
     GetCody = '/get-cody',
-}
-
-export enum EnterprisePageRoutes {
     BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',
+    SearchJobs = '/search-jobs/*',
     Contexts = '/contexts',
     CreateContext = '/contexts/new',
     EditContext = '/contexts/:specOrOrg/:spec?/edit',
@@ -40,9 +37,8 @@ export enum EnterprisePageRoutes {
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
     CodySearch = '/search/cody',
-    Cody = '/cody',
+    Cody = '/cody/chat',
     Own = '/own',
     AppAuthCallback = '/app/auth/callback',
-    Sentinel = '/sentinel/*',
     AppSetup = '/app-setup',
 }

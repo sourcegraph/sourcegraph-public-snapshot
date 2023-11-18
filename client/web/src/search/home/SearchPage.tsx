@@ -13,7 +13,6 @@ export interface SearchPageProps {
 
 export const SearchPage: FC<SearchPageProps> = props => {
     const shouldShowAddCodeHostWidget = useShouldShowAddCodeHostWidget(props.authenticatedUser)
-
     return <SearchPageContent shouldShowAddCodeHostWidget={shouldShowAddCodeHostWidget} />
 }
 

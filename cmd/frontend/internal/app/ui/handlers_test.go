@@ -32,10 +32,10 @@ import (
 
 func TestRedirects(t *testing.T) {
 	assets.UseDevAssetsProvider()
-	assets.MockLoadWebpackManifest = func() (*assets.WebpackManifest, error) {
-		return &assets.WebpackManifest{}, nil
+	assets.MockLoadWebBuildManifest = func() (*assets.WebBuildManifest, error) {
+		return &assets.WebBuildManifest{}, nil
 	}
-	defer func() { assets.MockLoadWebpackManifest = nil }()
+	defer func() { assets.MockLoadWebBuildManifest = nil }()
 
 	check := func(t *testing.T, path string, wantStatusCode int, wantRedirectLocation, userAgent string) {
 		t.Helper()
@@ -122,10 +122,10 @@ func TestRepoShortName(t *testing.T) {
 
 func TestNewCommon_repo_error(t *testing.T) {
 	assets.UseDevAssetsProvider()
-	assets.MockLoadWebpackManifest = func() (*assets.WebpackManifest, error) {
-		return &assets.WebpackManifest{}, nil
+	assets.MockLoadWebBuildManifest = func() (*assets.WebBuildManifest, error) {
+		return &assets.WebBuildManifest{}, nil
 	}
-	defer func() { assets.MockLoadWebpackManifest = nil }()
+	defer func() { assets.MockLoadWebBuildManifest = nil }()
 
 	cases := []struct {
 		name string

@@ -21,7 +21,7 @@ Tauri requires Windows 10 (version 1803 or later) or Windows 11. (Only Windows 1
 
 ## Build
 
-From the Git Bash shell, run `./enterprise/dev/app/build-windows.sh` to build. Bundling will fail but the main EXE will be created.
+From the Git Bash shell, run `./dev/app/build-windows.sh` to build. Bundling will fail but the main EXE will be created.
 
 ## Run
 

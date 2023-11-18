@@ -1,6 +1,7 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { StreamingProgressSkippedPopover } from './StreamingProgressSkippedPopover'
@@ -18,7 +19,7 @@ const config: Meta = {
 
 export default config
 
-export const Popover: Story = () => {
+export const Popover: StoryFn = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -67,12 +68,19 @@ export const Popover: Story = () => {
 
     return (
         <BrandedStory>
-            {() => <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={() => {}} />}
+            {() => (
+                <StreamingProgressSkippedPopover
+                    query=""
+                    progress={progress}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    onSearchAgain={() => {}}
+                />
+            )}
         </BrandedStory>
     )
 }
 
-export const ShouldCloseAllInfo: Story = () => {
+export const ShouldCloseAllInfo: StoryFn = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -103,14 +111,21 @@ export const ShouldCloseAllInfo: Story = () => {
 
     return (
         <BrandedStory>
-            {() => <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={() => {}} />}
+            {() => (
+                <StreamingProgressSkippedPopover
+                    query=""
+                    progress={progress}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    onSearchAgain={() => {}}
+                />
+            )}
         </BrandedStory>
     )
 }
 
 ShouldCloseAllInfo.storyName = 'only info, all should be closed'
 
-export const ShouldOpenOneInfo: Story = () => {
+export const ShouldOpenOneInfo: StoryFn = () => {
     const progress: Progress = {
         durationMs: 1500,
         matchCount: 2,
@@ -131,7 +146,14 @@ export const ShouldOpenOneInfo: Story = () => {
 
     return (
         <BrandedStory>
-            {() => <StreamingProgressSkippedPopover query="" progress={progress} onSearchAgain={() => {}} />}
+            {() => (
+                <StreamingProgressSkippedPopover
+                    query=""
+                    progress={progress}
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    onSearchAgain={() => {}}
+                />
+            )}
         </BrandedStory>
     )
 }

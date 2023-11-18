@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiClose } from '@mdi/js'
 import { useState } from '@storybook/addons'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
@@ -19,7 +19,7 @@ import { panels } from './TabbedPanelContent.fixtures'
 
 import styles from './Story.module.scss'
 
-const decorator: DecoratorFn = story => <BrandedStory>{() => <div>{story()}</div>}</BrandedStory>
+const decorator: Decorator = story => <BrandedStory>{() => <div>{story()}</div>}</BrandedStory>
 
 const config: Meta = {
     title: 'wildcard/Panel',
@@ -64,7 +64,7 @@ const PanelBodyContent: React.FunctionComponent<
     </div>
 )
 
-export const Simple: Story = () => {
+export const Simple: StoryFn = () => {
     const [position, setPosition] = useState<typeof PANEL_POSITIONS[number]>('left')
 
     const showPanelWithPosition = (postiion: typeof PANEL_POSITIONS[number]) => {
@@ -115,7 +115,7 @@ export const Simple: Story = () => {
 
 // props must be undefined somewhere, and Storybook docs addon causes Storybook to crash.
 // Setting a default parameter is a workaround to this issue
-export const WithChildren: Story = (props = {}) => {
+export const WithChildren: StoryFn = (props = {}) => {
     const [tabIndex, setTabIndex] = React.useState(0)
     const activeTab = panels[tabIndex]
 

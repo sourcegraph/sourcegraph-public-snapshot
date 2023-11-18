@@ -17,7 +17,6 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/uploads/internal/lsifstore",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",

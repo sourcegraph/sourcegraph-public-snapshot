@@ -2,13 +2,13 @@ package completions
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -22,7 +22,7 @@ import (
 const fireworksAPIURL = "https://api.fireworks.ai/inference/v1/completions"
 
 func NewFireworksHandler(
-	logger log.Logger,
+	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
@@ -31,7 +31,7 @@ func NewFireworksHandler(
 	allowedModels []string,
 ) http.Handler {
 	return makeUpstreamHandler(
-		logger,
+		baseLogger,
 		eventLogger,
 		rs,
 		rateLimitNotifier,
@@ -40,47 +40,60 @@ func NewFireworksHandler(
 		fireworksAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[fireworksRequest]{
-			validateRequest: func(feature codygateway.Feature, fr fireworksRequest) (int, error) {
+			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, fr fireworksRequest) (int, *flaggingResult, error) {
 				if feature != codygateway.FeatureCodeCompletions {
-					return http.StatusNotImplemented,
+					return http.StatusNotImplemented, nil,
 						errors.Newf("feature %q is currently not supported for Fireworks",
 							feature)
 				}
-				return 0, nil
+				return 0, nil, nil
 			},
-			transformBody: func(body *fireworksRequest, act *actor.Actor) {
+			transformBody: func(body *fireworksRequest, identifier string) {
 				// We don't want to let users generate multiple responses, as this would
 				// mess with rate limit counting.
 				if body.N > 1 {
 					body.N = 1
 				}
 			},
-			getRequestMetadata: func(body fireworksRequest) (promptCharacterCount int, model string, additionalMetadata map[string]any) {
-				return len(body.Prompt), body.Model, map[string]any{"stream": body.Stream}
+			getRequestMetadata: func(body fireworksRequest) (model string, additionalMetadata map[string]any) {
+				return body.Model, map[string]any{"stream": body.Stream}
 			},
 			transformRequest: func(r *http.Request) {
 				r.Header.Set("Content-Type", "application/json")
 				r.Header.Set("Authorization", "Bearer "+accessToken)
 			},
-			parseResponse: func(reqBody fireworksRequest, r io.Reader) int {
+			parseResponseAndUsage: func(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
+				// First, extract prompt usage details from the request.
+				promptUsage.characters = len(reqBody.Prompt)
+
 				// Try to parse the request we saw, if it was non-streaming, we can simply parse
 				// it as JSON.
 				if !reqBody.Stream {
 					var res fireworksResponse
 					if err := json.NewDecoder(r).Decode(&res); err != nil {
 						logger.Error("failed to parse fireworks response as JSON", log.Error(err))
-						return 0
+						return promptUsage, completionUsage
 					}
+
+					promptUsage.tokens = res.Usage.PromptTokens
+					completionUsage.tokens = res.Usage.CompletionTokens
 					if len(res.Choices) > 0 {
 						// TODO: Later, we should look at the usage field.
-						return len(res.Choices[0].Text)
+						completionUsage.characters = len(res.Choices[0].Text)
 					}
-					return 0
+					return promptUsage, completionUsage
 				}
 
 				// Otherwise, we have to parse the event stream.
+				//
+				// TODO: Does fireworks streaming include usage data?
+				// Unclear in the API currently: https://readme.fireworks.ai/reference/createcompletion
+				// For now, just count character usage, and set token counts to
+				// -1 as sentinel values.
+				promptUsage.tokens = -1
+				completionUsage.tokens = -1
+
 				dec := fireworks.NewDecoder(r)
-				var finalCompletion string
 				// Consume all the messages, but we only care about the last completion data.
 				for dec.Scan() {
 					data := dec.Data()
@@ -95,15 +108,16 @@ func NewFireworksHandler(
 						logger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
 						continue
 					}
+
 					if len(event.Choices) > 0 {
-						finalCompletion += event.Choices[0].Text
+						completionUsage.characters += len(event.Choices[0].Text)
 					}
 				}
-
 				if err := dec.Err(); err != nil {
 					logger.Error("failed to decode Fireworks streaming response", log.Error(err))
 				}
-				return len(finalCompletion)
+
+				return promptUsage, completionUsage
 			},
 		},
 
@@ -124,6 +138,10 @@ type fireworksRequest struct {
 	Stream      bool     `json:"stream,omitempty"`
 	Echo        bool     `json:"echo,omitempty"`
 	Stop        []string `json:"stop,omitempty"`
+}
+
+func (fr fireworksRequest) GetModel() string {
+	return fr.Model
 }
 
 type fireworksResponse struct {

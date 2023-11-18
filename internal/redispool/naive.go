@@ -31,7 +31,7 @@ type NaiveUpdater func(before NaiveValue, found bool) (after NaiveValue, remove 
 // have to read the full value, and any mutation requires rewriting the full
 // value. This is usually fine, but may be an issue when backed by a large
 // Hash or List. As such this function is designed with the functionality of
-// Sourcegraph App in mind (single process, low traffic).
+// Cody App in mind (single process, low traffic).
 type NaiveKeyValueStore func(ctx context.Context, key string, f NaiveUpdater) error
 
 // FromNaiveKeyValueStore returns a KeyValue based on the store function.

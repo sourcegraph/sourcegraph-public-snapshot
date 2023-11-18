@@ -4,6 +4,7 @@ import { mdiClose, mdiHistory, mdiPlus, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
 import { ChatUI, ScrollDownButton } from '../components/ChatUI'
@@ -17,9 +18,10 @@ export const SCROLL_THRESHOLD = 100
 
 interface CodySidebarProps {
     onClose?: () => void
+    authenticatedUser: AuthenticatedUser | null
 }
 
-export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
+export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, authenticatedUser }) => {
     const codySidebarStore = useCodySidebar()
     const {
         initializeNewChat,
@@ -143,7 +145,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose }) => {
                         deleteHistoryItem={deleteHistoryItem}
                     />
                 ) : (
-                    <ChatUI codyChatStore={codySidebarStore} />
+                    <ChatUI codyChatStore={codySidebarStore} authenticatedUser={authenticatedUser} />
                 )}
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}

@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"encoding/json"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/dnaeon/go-vcr/recorder"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -40,7 +40,7 @@ func Update(name string) bool {
 func TestClientFactorySetup(t testing.TB, name string, mws ...httpcli.Middleware) (httpcli.Middleware, *recorder.Recorder) {
 	cassete := filepath.Join("testdata", "sources", strings.ReplaceAll(name, " ", "-"))
 	rec := NewRecorder(t, cassete, Update(name))
-	mws = append(mws, httpcli.GitHubProxyRedirectMiddleware, GitserverRedirectMiddleware)
+	mws = append(mws, GitserverRedirectMiddleware)
 	mw := httpcli.NewMiddleware(mws...)
 	return mw, rec
 }
@@ -90,15 +90,4 @@ func NewRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 	}
 
 	return rec
-}
-
-func MarshalJSON(t testing.TB, v any) string {
-	t.Helper()
-
-	bs, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return string(bs)
 }

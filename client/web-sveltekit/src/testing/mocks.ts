@@ -49,7 +49,7 @@ export function unmockSvelteContext(key: any) {
 }
 
 // Stores all mocke context values
-export let mockedContexts = new Map<any, any>()
+export const mockedContexts = new Map<any, any>()
 
 type SourcegraphContextKey = keyof SourcegraphContext
 type MockedSourcegraphContextValue<T> = T extends Readable<infer U> ? Writable<U> : T

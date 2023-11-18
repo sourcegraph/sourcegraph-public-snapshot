@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import sinon from 'sinon'
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -46,6 +47,7 @@ describe('UserNavItem', () => {
                 },
             ],
         },
+        emails: [],
     }
 
     test('simple', () => {
@@ -57,7 +59,7 @@ describe('UserNavItem', () => {
                             showKeyboardShortcutsHelp={() => undefined}
                             authenticatedUser={USER}
                             isSourcegraphDotCom={true}
-                            isSourcegraphApp={false}
+                            isCodyApp={false}
                             showFeedbackModal={() => undefined}
                             telemetryService={NOOP_TELEMETRY_SERVICE}
                         />
@@ -74,7 +76,7 @@ describe('UserNavItem', () => {
                     showKeyboardShortcutsHelp={() => undefined}
                     authenticatedUser={USER}
                     isSourcegraphDotCom={true}
-                    isSourcegraphApp={false}
+                    isCodyApp={false}
                     showFeedbackModal={() => undefined}
                     telemetryService={NOOP_TELEMETRY_SERVICE}
                 />

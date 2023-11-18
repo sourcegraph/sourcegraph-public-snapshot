@@ -1,17 +1,17 @@
-/* eslint-disable @typescript-eslint/restrict-template-expressions */
 // @ts-check
 
 const path = require('path')
 const { readFileSync } = require('fs')
-const { execSync } = require('child_process')
+const { execFileSync } = require('child_process')
 
 const puppeteer = require('puppeteer')
 const resolveBin = require('resolve-bin')
 
-// Reads environment variables set by Bazel and returns them as a string with the format "KEY=VALUE".
+// Reads environment variables set by Bazel.
 // It also adds a custom environment variable, "PERCY_BROWSER_EXECUTABLE", which points
 // to the Puppeteer browser executable downloaded in the postinstall script.
-function getEnvVariablesString() {
+/** @returns {Record<string, string>} env vars */
+function getEnvVars() {
   // JS_BINARY__EXECROOT – Set by Bazel `js_run_binary` rule.
   // BAZEL_VOLATILE_STATUS_FILE – Set by Bazel when the `stamp` attribute on the `js_run_binary_rule` equals 1.
   // https://docs.aspect.build/rules/aspect_rules_js/docs/js_run_binary#stamp
@@ -45,9 +45,7 @@ function getEnvVariablesString() {
   }
 
   // Convert the merged environment variables to a string with the "KEY=VALUE" format
-  return Object.entries(customEnvVariables)
-    .map(([key, value]) => `${key}=${value}`)
-    .join(' ')
+  return customEnvVariables
 }
 
 // Resolve the binary paths for Percy and Mocha
@@ -56,12 +54,10 @@ const mochaBin = resolveBin.sync('mocha')
 
 // Extract command-line arguments to pass to Mocha
 const args = process.argv.slice(2)
-const testCmd = `${mochaBin} ${args.join(' ')}`
 
-// Create the final command to execute, which includes the environment variables,
-// and wraps the Mocha command with Percy's "exec" command
-// https://docs.percy.io/docs/cli-exec
-const finalCmd = `${getEnvVariablesString()} ${percyBin} exec -- ${testCmd}`
-
-// Execute the final command, inheriting the stdio settings from the parent process
-execSync(finalCmd, { stdio: 'inherit' })
+// Execute the final command, inheriting the stdio settings from the parent process and and wrapping
+// the Mocha command with Percy's "exec" command (https://docs.percy.io/docs/cli-exec).
+execFileSync(percyBin, ['exec', '--', mochaBin, ...args], {
+  env: { ...process.env, ...getEnvVars() },
+  stdio: 'inherit',
+})

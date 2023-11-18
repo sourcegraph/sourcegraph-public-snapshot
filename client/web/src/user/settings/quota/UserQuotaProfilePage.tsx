@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+// eslint-disable-next-line no-restricted-imports
 import { logger } from '@sourcegraph/common/src/util/logger'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { ErrorAlert, Text, H3, LoadingSpinner, PageHeader, Input, Container } from '@sourcegraph/wildcard'

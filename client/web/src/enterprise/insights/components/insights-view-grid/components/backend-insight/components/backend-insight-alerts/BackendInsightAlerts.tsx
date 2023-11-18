@@ -120,16 +120,18 @@ export const InsightIncompleteAlert: FC<InsightIncompleteAlertProps> = props => 
 
 function getAlertMessage(alert: IncompleteDatapointAlert): ReactNode {
     switch (alert.__typename) {
-        case 'TimeoutDatapointAlert':
+        case 'TimeoutDatapointAlert': {
             return (
                 <>
                     Some points of this data series <b>exceeded the timeout limit</b>. Results may be incomplete.
                 </>
             )
-        case 'GenericIncompleteDatapointAlert':
+        }
+        case 'GenericIncompleteDatapointAlert': {
             // Since BE doesn't handle insight level alerts properly we can't use
             // alert.reason message here but hardcoded on the client error message.
             return 'Some points of this data series encountered an error. Results may be incomplete.'
+        }
     }
 }
 
@@ -223,9 +225,11 @@ export const InsightSeriesIncompleteAlert: FC<InsightSeriesIncompleteAlertProps>
 
 function getPointAlertMessage(alert: IncompleteDatapointAlert): string {
     switch (alert.__typename) {
-        case 'TimeoutDatapointAlert':
+        case 'TimeoutDatapointAlert': {
             return 'This data point exceeded the time limit.'
-        case 'GenericIncompleteDatapointAlert':
+        }
+        case 'GenericIncompleteDatapointAlert': {
             return alert.reason
+        }
     }
 }

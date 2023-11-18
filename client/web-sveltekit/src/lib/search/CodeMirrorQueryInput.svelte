@@ -7,7 +7,7 @@
 
     import { browser } from '$app/environment'
     import { goto } from '$app/navigation'
-    import { createDefaultSuggestions, singleLine, parseInputAsQuery, querySyntaxHighlighting } from '$lib/branded'
+    import { createDefaultSuggestions, multiline, parseInputAsQuery, querySyntaxHighlighting } from '$lib/branded'
     import type { SearchPatternType } from '$lib/graphql-operations'
     import { fetchStreamSuggestions, QueryChangeSource, type QueryState } from '$lib/shared'
 
@@ -46,7 +46,6 @@
                 fetchSuggestions: query => fetchStreamSuggestions(query),
                 isSourcegraphDotCom: false,
                 navigate: url => goto(url.toString()),
-                applyOnEnter: true,
             }),
         ]
 
@@ -84,7 +83,7 @@
                     },
                 ])
             ),
-            singleLine,
+            multiline(false),
             EditorView.updateListener.of(update => {
                 const { state } = update
                 if (update.docChanged) {

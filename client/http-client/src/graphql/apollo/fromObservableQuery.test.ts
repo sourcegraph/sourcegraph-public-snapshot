@@ -2,6 +2,9 @@ import { Observable as ZenObservable, type ObservableQuery } from '@apollo/clien
 import delay from 'delay'
 import { isObservable } from 'rxjs'
 import sinon from 'sinon'
+import { describe, expect, it } from 'vitest'
+
+import { createBarrier } from '@sourcegraph/testing'
 
 import { fromObservableQuery, fromObservableQueryPromise } from './fromObservableQuery'
 
@@ -24,13 +27,16 @@ describe('fromObservableQuery', () => {
         expect(isObservable(observable)).toBe(true)
     })
 
-    it('subscribes to `ObservableQuery` data', done => {
+    it('subscribes to `ObservableQuery` data', async () => {
+        const { wait, done } = createBarrier()
         const observable = fromObservableQuery(createObservableQuery())
 
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         observable.subscribe(data => {
             expect(data).toEqual(QUERY_RESULT)
             done()
         })
+        await wait
     })
 
     it('exposes `ObservableQuery` unsubscribe method', () => {
@@ -48,13 +54,17 @@ describe('fromObservableQueryPromise', () => {
         expect(isObservable(observable)).toBe(true)
     })
 
-    it('subscribes to `ObservableQuery` data', done => {
+    it('subscribes to `ObservableQuery` data', async () => {
+        const { wait, done } = createBarrier()
+
         const observable = fromObservableQueryPromise(Promise.resolve(createObservableQuery()))
 
+        // eslint-disable-next-line rxjs/no-ignored-subscription
         observable.subscribe(data => {
             expect(data).toEqual(QUERY_RESULT)
             done()
         })
+        await wait
     })
 
     it('exposes `ObservableQuery` unsubscribe method', () => {

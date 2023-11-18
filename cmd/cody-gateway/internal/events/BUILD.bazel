@@ -12,15 +12,18 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events",
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
+        "//internal/actor",
         "//internal/codygateway",
         "//internal/goroutine",
         "//internal/trace",
+        "//internal/xcontext",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_bigquery//:bigquery",
         "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_metric//:metric",
         "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )

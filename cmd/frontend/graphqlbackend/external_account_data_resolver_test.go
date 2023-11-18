@@ -55,8 +55,8 @@ func (m mockAuthnProvider) ExternalAccountInfo(ctx context.Context, account exts
 	}
 
 	return &extsvc.PublicAccountData{
-		Login:       &data.Username,
-		DisplayName: &data.Name,
+		Login:       data.Username,
+		DisplayName: data.Name,
 	}, nil
 }
 

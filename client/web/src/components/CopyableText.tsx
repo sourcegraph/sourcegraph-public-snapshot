@@ -12,6 +12,8 @@ interface Props {
     /** The text to present and to copy. */
     text: string
 
+    children?: (props: { isRedacted: boolean }) => React.ReactNode
+
     /** An optional class name. */
     className?: string
 
@@ -55,43 +57,47 @@ export class CopyableText extends React.PureComponent<Props, State> {
 
     public render(): JSX.Element | null {
         return (
-            <div className={classNames('form-inline', this.props.className)}>
-                <div className={classNames('input-group', { 'flex-1': this.props.flex })}>
-                    <Input
-                        type={this.resolveInputType()}
-                        inputClassName={styles.input}
-                        aria-label={this.props.label}
-                        value={this.props.text}
-                        size={this.props.size}
-                        readOnly={true}
-                        onClick={this.onClickInput}
-                    />
-                    <div className="input-group-append flex-shrink-0">
-                        <Button
-                            onClick={this.onClickButton}
-                            disabled={this.state.copied}
-                            variant="secondary"
-                            aria-label="Copy"
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiContentCopy} />{' '}
-                            {this.props.secret ? '' : this.state.copied ? 'Copied' : 'Copy'}
-                        </Button>
-                    </div>
-                    {this.props.secret && (
+            <>
+                <div className={classNames('form-inline', this.props.className)}>
+                    <div className={classNames('input-group', { 'flex-1': this.props.flex })}>
+                        <Input
+                            type={this.resolveInputType()}
+                            inputClassName={styles.input}
+                            aria-label={this.props.label}
+                            value={this.props.text}
+                            size={this.props.size}
+                            readOnly={true}
+                            onClick={this.onClickInput}
+                        />
                         <div className="input-group-append flex-shrink-0">
                             <Button
-                                onClick={this.onClickSecretButton}
+                                onClick={this.onClickButton}
+                                disabled={this.state.copied}
                                 variant="secondary"
-                                aria-label={
-                                    this.state.secretShown ? 'Reveal secret value as text' : 'Hide secret value'
-                                }
+                                aria-label="Copy"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiEye} />
+                                <Icon aria-hidden={true} svgPath={mdiContentCopy} />{' '}
+                                {this.props.secret ? '' : this.state.copied ? 'Copied' : 'Copy'}
                             </Button>
                         </div>
-                    )}
+                        {this.props.secret && (
+                            <div className="input-group-append flex-shrink-0 ml-1">
+                                <Button
+                                    onClick={this.onClickSecretButton}
+                                    variant="secondary"
+                                    aria-label={
+                                        this.state.secretShown ? 'Reveal secret value as text' : 'Hide secret value'
+                                    }
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiEye} />
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+
+                {this.props.children?.({ isRedacted: Boolean(this.props.secret && !this.state.secretShown) })}
+            </>
         )
     }
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { H4, H5, RadioButton, Text, Button, Grid, Icon, Link } from '@sourcegraph/wildcard'
 
 import { CodyColorIcon, CodySpeechBubbleIcon } from '../chat/CodyPageIcon'
@@ -22,16 +23,18 @@ export const GettingStarted: React.FC<
         CodyChatStore,
         | 'scope'
         | 'logTranscriptEvent'
+        | 'transcriptHistory'
         | 'setScope'
         | 'toggleIncludeInferredRepository'
         | 'toggleIncludeInferredFile'
         | 'fetchRepositoryNames'
     > & {
-        isSourcegraphApp?: boolean
+        isCodyApp?: boolean
         isCodyChatPage?: boolean
         submitInput: (input: string, submitType: 'user' | 'suggestion' | 'example') => void
+        authenticatedUser: AuthenticatedUser | null
     }
-> = ({ isCodyChatPage, submitInput, ...scopeSelectorProps }) => {
+> = ({ isCodyChatPage, submitInput, authenticatedUser, ...scopeSelectorProps }) => {
     const [conversationScope, setConversationScope] = useState<ConversationScope>(
         !isCodyChatPage || scopeSelectorProps.scope.repositories.length > 0 ? 'repo' : 'general'
     )
@@ -77,9 +80,9 @@ export const GettingStarted: React.FC<
     const content: { title: string; examples: { label?: string; text: string }[] } = useMemo(() => {
         if (conversationScope === 'repo') {
             return {
-                title: `Great examples to start with${
+                title: `Examples to start with${
                     scopeSelectorProps.scope.repositories.length === 1
-                        ? ` for ${scopeSelectorProps.scope.repositories[0]}`
+                        ? ` for ${scopeSelectorProps.scope.repositories[0].split('/').slice(-2).join('/')}`
                         : ''
                 }`,
                 examples: [
@@ -101,10 +104,10 @@ export const GettingStarted: React.FC<
             examples: [
                 {
                     label: 'Algorithms',
-                    text: 'How the QuickSort algorithm works with an implementation in Python?',
+                    text: 'Can you explain how the QuickSort algorithm works in Python?',
                 },
                 {
-                    label: 'Good Practice',
+                    label: 'Best practices',
                     text: "I'm working on a large-scale web application using React. What are some best practices or design patterns I should be aware of to maintain code readability and performance?",
                 },
                 {
@@ -121,11 +124,22 @@ export const GettingStarted: React.FC<
                 return null
             }
 
+            const unindexedCount = repos.filter(repo => !isRepoIndexed(repo)).length
+            const warningText =
+                repos.length === 1
+                    ? 'The selected repository is not indexed for Cody and is missing embeddings.'
+                    : `${unindexedCount} of ${repos.length} selected repositories are not indexed for Cody and are missing embeddings.`
+
             return (
                 <Text size="small" className={styles.scopeSelectorWarning}>
-                    {repos.length === 1 ? 'This repo is' : 'Some repos are'} not indexed for Cody. This may affect the
-                    quality of the answers. Learn more about this{' '}
-                    <Link to="/help/cody/explanations/code_graph_context#embeddings">in the docs</Link>.
+                    {warningText} This may affect the quality of the answers. To enable indexing, see the{' '}
+                    <Link
+                        className={styles.scopeSelectorWarningLink}
+                        to="/help/cody/explanations/code_graph_context#embeddings"
+                    >
+                        embeddings documentation
+                    </Link>
+                    .
                 </Text>
             )
         },
@@ -165,11 +179,11 @@ export const GettingStarted: React.FC<
                                     name="general"
                                     label={
                                         <Text as="span" size="small">
-                                            General Coding Knowledge
+                                            General knowledge
                                         </Text>
                                     }
                                     value="general"
-                                    wrapperClassName="d-flex align-items-baseline"
+                                    wrapperClassName="d-flex align-items-center"
                                     checked={conversationScope === 'general'}
                                     onChange={event => setConversationScope(event.target.value as ConversationScope)}
                                 />
@@ -180,11 +194,11 @@ export const GettingStarted: React.FC<
                                     name="repo"
                                     label={
                                         <Text as="span" size="small">
-                                            My Repos:
+                                            Specific repositories:
                                         </Text>
                                     }
                                     value="repo"
-                                    wrapperClassName="d-flex align-items-baseline mb-1"
+                                    wrapperClassName="d-flex align-items-center mb-1"
                                     checked={conversationScope === 'repo'}
                                     onChange={event => setConversationScope(event.target.value as ConversationScope)}
                                 />
@@ -193,24 +207,29 @@ export const GettingStarted: React.FC<
                                         {...scopeSelectorProps}
                                         renderHint={renderRepoIndexingWarning}
                                         encourageOverlap={true}
+                                        authenticatedUser={authenticatedUser}
                                     />
                                 </div>
-                                <hr className={styles.divider} />
 
-                                <Text size="small" className={classNames('text-muted', styles.hintTitle)}>
-                                    Why context is important?
-                                </Text>
-                                <Text size="small" className={classNames('text-muted', styles.hintText)}>
-                                    Without providing a specific repo as context, Cody won’t be able to answer with
-                                    relevant knowledge about your project.
-                                </Text>
+                                {scopeSelectorProps.scope.repositories.length === 0 && (
+                                    <>
+                                        <hr className={styles.divider} />
+                                        <Text size="small" className={classNames('text-muted', styles.hintTitle)}>
+                                            Why is context important?
+                                        </Text>
+                                        <Text size="small" className={classNames('text-muted', styles.hintText)}>
+                                            Without providing relevant repo(s) for context, Cody won't be able to answer
+                                            questions specific to your project.
+                                        </Text>
 
-                                <Text size="small" className="mb-0 text-muted">
-                                    <Text as="span" weight="bold">
-                                        Tip:
-                                    </Text>{' '}
-                                    The context selector is always available at the bottom of the screen
-                                </Text>
+                                        <Text size="small" className="mb-0 text-muted">
+                                            <Text as="span" weight="bold">
+                                                Tip:
+                                            </Text>{' '}
+                                            The context selector is always available at the bottom of the screen
+                                        </Text>
+                                    </>
+                                )}
                             </div>
                         </fieldset>
                     </div>

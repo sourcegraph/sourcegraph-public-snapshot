@@ -54,7 +54,7 @@ import styles from './CodyChatPage.module.scss'
 interface CodyChatPageProps {
     isSourcegraphDotCom: boolean
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
@@ -93,15 +93,16 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     authenticatedUser,
     context,
     isSourcegraphDotCom,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
 
     const codyChatStore = useCodyChat({
+        userID: authenticatedUser?.id,
         onTranscriptHistoryLoad,
         autoLoadTranscriptFromHistory: false,
-        autoLoadScopeWithRepositories: isSourcegraphApp,
+        autoLoadScopeWithRepositories: isCodyApp,
     })
     const {
         initializeNewChat,
@@ -113,7 +114,6 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         deleteHistoryItem,
         logTranscriptEvent,
     } = codyChatStore
-    const [showVSCodeCTA] = useState<boolean>(Math.random() < 0.5 || true)
     const [isCTADismissed = true, setIsCTADismissed] = useTemporarySetting('cody.chatPageCta.dismissed', false)
     const onCTADismiss = (): void => setIsCTADismissed(true)
 
@@ -130,7 +130,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         const idFromUrl = transcriptIdFromUrl(pathname)
 
         if (transcriptId !== idFromUrl) {
-            navigate(`/cody/${btoa(transcriptId)}`, {
+            navigate(`/cody/chat/${btoa(transcriptId)}`, {
                 replace: true,
             })
         }
@@ -158,8 +158,8 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
 
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
-            <PageTitle title="Cody AI Chat" />
-            {!isSourcegraphDotCom && !isCTADismissed && !isSourcegraphApp && (
+            <PageTitle title="Cody chat" />
+            {!isSourcegraphDotCom && !isCTADismissed && !isCodyApp && (
                 <MarketingBlock
                     wrapperClassName="mb-5"
                     contentClassName={classNames(styles.ctaWrapper, styles.ctaContent)}
@@ -167,7 +167,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     <div className="d-flex">
                         <CodyCTAIcon className="flex-shrink-0" />
                         <div className="ml-3">
-                            <H3>Cody is more powerful in your IDE</H3>
+                            <H3>Cody is more powerful in your editor</H3>
                             <Text>
                                 Cody adds powerful AI assistant functionality like inline completions and assist, and
                                 powerful recipes to help you understand codebases and generate and fix code more
@@ -197,12 +197,12 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 }
                 description={
                     <>
-                        Cody answers code questions and writes code for you by leveraging your entire codebase and the
-                        code graph.
-                        {!isSourcegraphDotCom && !isSourcegraphApp && isCTADismissed && (
+                        Cody answers code questions and writes code for you using your entire codebase and the code
+                        graph.
+                        {!isSourcegraphDotCom && !isCodyApp && isCTADismissed && (
                             <>
                                 {' '}
-                                <Link to="/help/cody#get-cody">Cody is more powerful in the IDE</Link>.
+                                <Link to="/help/cody#get-cody">Get Cody in your editor.</Link>
                             </>
                         )}
                     </>
@@ -213,7 +213,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     <PageHeader.Breadcrumb icon={CodyColorIcon}>
                         <div className="d-inline-flex align-items-center">
                             Cody Chat
-                            {!isSourcegraphApp && (
+                            {!isCodyApp && (
                                 <Badge variant="info" className="ml-2">
                                     Beta
                                 </Badge>
@@ -245,13 +245,13 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 )}
                                 <MenuLink
                                     as={Link}
-                                    to={isSourcegraphApp ? 'https://docs.sourcegraph.com/app' : '/help/cody'}
+                                    to={isCodyApp ? 'https://docs.sourcegraph.com/app' : '/help/cody'}
                                     target="_blank"
                                     rel="noopener"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiOpenInNew} /> Cody Docs & FAQ
                                 </MenuLink>
-                                {!isSourcegraphApp && authenticatedUser?.siteAdmin && (
+                                {!isCodyApp && authenticatedUser?.siteAdmin && (
                                     <MenuLink as={Link} to="/site-admin/cody">
                                         <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Cody Settings
                                     </MenuLink>
@@ -268,88 +268,48 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             deleteHistoryItem={deleteHistoryItem}
                         />
                     </div>
-                    {isSourcegraphDotCom &&
-                        !isCTADismissed &&
-                        (showVSCodeCTA ? (
-                            <MarketingBlock
-                                wrapperClassName="d-flex"
-                                contentClassName={classNames(
-                                    'flex-grow-1 d-flex flex-column justify-content-between',
-                                    styles.ctaWrapper
-                                )}
-                            >
-                                <H3 className="d-flex align-items-center mb-4">Try the VS Code Extension</H3>
-                                <Text>
-                                    This extension combines an LLM with the context of your code to help you generate
-                                    and fix code.
-                                </Text>
-                                <div className="mb-2">
-                                    <Link
-                                        to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
-                                        className={classNames(
-                                            'd-inline-flex align-items-center text-merged',
-                                            styles.ctaLink
-                                        )}
-                                        onClick={() => logTranscriptEvent(EventName.CODY_CHAT_DOWNLOAD_VSCODE)}
-                                    >
-                                        Download the VS Code Extension
-                                        <Icon svgPath={mdiChevronRight} aria-hidden={true} />
-                                    </Link>
-                                </div>
-                                <img
-                                    src="https://storage.googleapis.com/sourcegraph-assets/TryCodyVSCodeExtension.png"
-                                    alt="Try Cody VS Code Extension"
-                                    width={666}
-                                />
-                                <Icon
-                                    svgPath={mdiClose}
-                                    aria-label="Close try Cody widget"
-                                    className={classNames(styles.closeButton, 'position-absolute m-0')}
-                                    onClick={onCTADismiss}
-                                />
-                            </MarketingBlock>
-                        ) : (
-                            <MarketingBlock
-                                wrapperClassName="d-flex"
-                                contentClassName={classNames(
-                                    'flex-grow-1 d-flex flex-column justify-content-between',
-                                    styles.ctaWrapper
-                                )}
-                            >
-                                <H3 className="d-flex align-items-center mb-4">Try Cody on Public Code</H3>
-                                <Text>
-                                    Cody explains, generates, and translates code within specific files and
-                                    repositories.
-                                </Text>
-                                <div className="mb-2">
-                                    <Link
-                                        to="https://sourcegraph.com/github.com/openai/openai-cookbook/-/blob/apps/file-q-and-a/nextjs-with-flask-server/server/answer_question.py"
-                                        className={classNames(
-                                            'd-inline-flex align-items-center text-merged',
-                                            styles.ctaLink
-                                        )}
-                                        onClick={() => logTranscriptEvent(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE)}
-                                    >
-                                        Try on a file, or repository
-                                        <Icon svgPath={mdiChevronRight} aria-hidden={true} />
-                                    </Link>
-                                </div>
-                                <img
-                                    src="https://storage.googleapis.com/sourcegraph-assets/TryCodyOnPublicCode.png"
-                                    alt="Try Cody on Public Code"
-                                    width={666}
-                                />
-                                <Icon
-                                    svgPath={mdiClose}
-                                    aria-label="Close try Cody widget"
-                                    className={classNames(styles.closeButton, 'position-absolute m-0')}
-                                    onClick={onCTADismiss}
-                                />
-                            </MarketingBlock>
-                        ))}
+                    {isSourcegraphDotCom && !isCTADismissed && (
+                        <MarketingBlock
+                            wrapperClassName="d-flex"
+                            contentClassName={classNames(
+                                'flex-grow-1 d-flex flex-column justify-content-between',
+                                styles.ctaWrapper
+                            )}
+                        >
+                            <H3 className="d-flex align-items-center mb-4">Use Cody in your editor</H3>
+                            <Text>
+                                Autocomplete, test generation, refactors, code Q&A, and more&mdash;with the context of
+                                your code.
+                            </Text>
+                            <div className="mb-2">
+                                <Link
+                                    to="/get-cody"
+                                    className={classNames(
+                                        'd-inline-flex align-items-center text-merged',
+                                        styles.ctaLink
+                                    )}
+                                    onClick={() => logTranscriptEvent(EventName.CODY_CHAT_GET_EDITOR_EXTENSION)}
+                                >
+                                    Get Cody in your editor
+                                    <Icon svgPath={mdiChevronRight} aria-hidden={true} />
+                                </Link>
+                            </div>
+                            <img
+                                src="https://storage.googleapis.com/sourcegraph-assets/TryCodyVSCodeExtension.png"
+                                alt="Try Cody VS Code Extension"
+                                width={666}
+                            />
+                            <Icon
+                                svgPath={mdiClose}
+                                aria-label="Close try Cody widget"
+                                className={classNames(styles.closeButton, 'position-absolute m-0')}
+                                onClick={onCTADismiss}
+                            />
+                        </MarketingBlock>
+                    )}
                 </div>
 
-                {isSourcegraphApp ? (
+                {isCodyApp ? (
                     <>
                         <div
                             className={classNames(
@@ -377,7 +337,12 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     New chat
                                 </Button>
                             </div>
-                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} isCodyChatPage={true} />
+                            <ChatUI
+                                codyChatStore={codyChatStore}
+                                isCodyApp={true}
+                                isCodyChatPage={true}
+                                authenticatedUser={authenticatedUser}
+                            />
                         </div>
 
                         {showMobileHistory && (
@@ -457,7 +422,11 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 deleteHistoryItem={deleteHistoryItem}
                             />
                         ) : (
-                            <ChatUI codyChatStore={codyChatStore} isCodyChatPage={true} />
+                            <ChatUI
+                                codyChatStore={codyChatStore}
+                                isCodyChatPage={true}
+                                authenticatedUser={authenticatedUser}
+                            />
                         )}
                     </div>
                 )}

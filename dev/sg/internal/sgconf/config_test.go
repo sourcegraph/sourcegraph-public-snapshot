@@ -29,9 +29,9 @@ checks:
     failMessage: "Failed to run 'docker version'. Please make sure Docker is running."
 
 commandsets:
-  oss:
+  web:
     - frontend
-    - gitserver
+    - caddy
   enterprise:
     checks:
       - docker
@@ -58,9 +58,9 @@ commandsets:
 			},
 		},
 		Commandsets: map[string]*Commandset{
-			"oss": {
-				Name:     "oss",
-				Commands: []string{"frontend", "gitserver"},
+			"web": {
+				Name:     "web",
+				Commands: []string{"frontend", "caddy"},
 			},
 			"enterprise": {
 				Name:     "enterprise",
@@ -78,19 +78,16 @@ commandsets:
 func TestParseAndMerge(t *testing.T) {
 	a := `
 commands:
-  enterprise-frontend:
-    cmd: .bin/enterprise-frontend
-    install: go build .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-    checkBinary: .bin/enterprise-frontend
+  frontend:
+    cmd: .bin/frontend
+    install: go build .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
+    checkBinary: .bin/frontend
     env:
-      ENTERPRISE: 1
       EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
     watch:
       - lib
       - internal
       - cmd/frontend
-      - enterprise/internal
-      - enterprise/cmd/frontend
 `
 	config, err := parseConfig([]byte(a))
 	if err != nil {
@@ -99,7 +96,7 @@ commands:
 
 	b := `
 commands:
-  enterprise-frontend:
+  frontend:
     env:
       EXTSVC_CONFIG_FILE: ''
 `
@@ -111,23 +108,21 @@ commands:
 
 	config.Merge(overwrite)
 
-	cmd, ok := config.Commands["enterprise-frontend"]
+	cmd, ok := config.Commands["frontend"]
 	if !ok {
 		t.Fatalf("command not found")
 	}
 
 	want := run.Command{
-		Name:        "enterprise-frontend",
-		Cmd:         ".bin/enterprise-frontend",
-		Install:     "go build .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend",
-		CheckBinary: ".bin/enterprise-frontend",
-		Env:         map[string]string{"ENTERPRISE": "1", "EXTSVC_CONFIG_FILE": ""},
+		Name:        "frontend",
+		Cmd:         ".bin/frontend",
+		Install:     "go build .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend",
+		CheckBinary: ".bin/frontend",
+		Env:         map[string]string{"EXTSVC_CONFIG_FILE": ""},
 		Watch: []string{
 			"lib",
 			"internal",
 			"cmd/frontend",
-			"enterprise/internal",
-			"enterprise/cmd/frontend",
 		},
 	}
 

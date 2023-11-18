@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import type { SearchMatch, SearchType, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { searchResultsToFileContent, buildFileName } from './searchResultsExport'
@@ -1422,6 +1424,11 @@ describe('buildFileName', () => {
         ['context:global nice type:diff', 'sourcegraph-search-export-context-global-nice-type-diff.csv'],
         ['context:global reac.. json', 'sourcegraph-search-export-context-global-reac---json.csv'],
         ['context:global function greeting( ', 'sourcegraph-search-export-context-global-function-greeting-.csv'],
+        // Test that very long queries are truncated to less than 255 characters
+        [
+            'context:global (repo:^github.com/sourcegraph/sourcegraph$ OR repo:^github.com/sourcegraph/sourcegraph-jetbrains$ OR repo:^github.com/sourcegraph/prototools$ ) count:all (lang:Java OR lang:Python OR lang:C++ OR lang:JavaScript) select:file',
+            'sourcegraph-search-export-context-global--repo--github-com-sourcegraph-sourcegraph--OR-repo--github-com-sourcegraph-sourcegraph-jetbrains--OR-repo--github-com-sourcegraph-prototools----count-all--lang-Java-OR-lang-Python-OR-lang-C---OR-lang-JavaScript.csv',
+        ],
     ]
 
     test.each(data)('builds correct fileName from query "%s"', (query, fileName) => {

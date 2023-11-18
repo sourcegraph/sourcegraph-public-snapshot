@@ -10,3 +10,6 @@
 *.DS_Store
 stats.json
 *.hot-update.json
+_sk/
+web.manifest.json
+webpack.manifest.json # legacy, can be removed after 2023-12-01

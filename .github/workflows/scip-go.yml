@@ -17,7 +17,7 @@ jobs:
           - ''
           - lib
           - monitoring
-          - enterprise/dev/ci/images
+          - dev/ci/images
     steps:
       # Setup
       - name: Checkout
@@ -57,8 +57,3 @@ jobs:
         run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
         env:
           SRC_ENDPOINT: https://demo.sourcegraph.com/
-      - name: Upload scip-go dump to Codyintel
-        working-directory: ${{ matrix.root }}
-        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
-        env:
-          SRC_ENDPOINT: https://codyintel.sourcegraphcloud.com/

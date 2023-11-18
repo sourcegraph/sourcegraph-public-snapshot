@@ -85,7 +85,7 @@ func main() {
 	liblog := log.Init(log.Resource{Name: "lsif-index-tester"})
 	defer liblog.Sync()
 
-	logger := log.Scoped(raw_indexer, "indexer testing").With(log.String("directory", directory))
+	logger := log.Scoped(raw_indexer).With(log.String("directory", directory))
 
 	if raw_indexer == "" {
 		logger.Fatal("Indexer is required. Pass with --indexer")
@@ -177,7 +177,7 @@ func testProject(ctx context.Context, logger log.Logger, indexer []string, proje
 	}
 
 	logger.Debug("... Completed setup project")
-	result, err := runIndexer(ctx, logger.Scoped("run", "run indexer"), indexer, project, name)
+	result, err := runIndexer(ctx, logger.Scoped("run"), indexer, project, name)
 	if err != nil {
 		return projectResult{
 			name:   name,
@@ -200,7 +200,7 @@ func testProject(ctx context.Context, logger log.Logger, indexer []string, proje
 	}
 	logger.Debug("... Read bundle")
 
-	testResult, err := validateTestCases(logger.Scoped("validate", "validate test cases"), project, bundle)
+	testResult, err := validateTestCases(logger.Scoped("validate"), project, bundle)
 	if err != nil {
 		return projectResult{name: name}, err
 	}

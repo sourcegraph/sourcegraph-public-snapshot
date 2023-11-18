@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
@@ -15,7 +15,7 @@ import { GlobalNavbar, type GlobalNavbarProps } from './GlobalNavbar'
 
 const defaultProps: GlobalNavbarProps = {
     isSourcegraphDotCom: false,
-    isSourcegraphApp: false,
+    isCodyApp: false,
     settingsCascade: {
         final: null,
         subjects: null,
@@ -57,7 +57,7 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: DecoratorFn = Story => {
+const decorator: Decorator<GlobalNavbarProps> = Story => {
     updateJSContextBatchChangesLicense('full')
 
     return (
@@ -71,7 +71,7 @@ const decorator: DecoratorFn = Story => {
     )
 }
 
-const config: Meta = {
+const config: Meta<typeof GlobalNavbar> = {
     title: 'web/nav/GlobalNav',
     decorators: [decorator],
     parameters: {
@@ -87,7 +87,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story<GlobalNavbarProps> = props => (
+export const Default: StoryFn<GlobalNavbarProps> = props => (
     <Grid columnCount={1}>
         <div>
             <H3 className="ml-2">Anonymous viewer</H3>

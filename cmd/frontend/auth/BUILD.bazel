@@ -30,7 +30,6 @@ go_library(
         "//internal/extsvc",
         "//internal/featureflag",
         "//internal/lazyregexp",
-        "//internal/repoupdater/protocol",
         "//internal/session",
         "//internal/types",
         "//internal/usagestats",

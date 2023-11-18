@@ -143,7 +143,7 @@ func NewWebhookLogConnectionResolver(
 	}
 
 	return &WebhookLogConnectionResolver{
-		logger:            log.Scoped("webhookLogConnectionResolver", ""),
+		logger:            log.Scoped("webhookLogConnectionResolver"),
 		args:              args,
 		externalServiceID: externalServiceID,
 		store:             db.WebhookLogs(keyring.Default().WebhookLogKey),

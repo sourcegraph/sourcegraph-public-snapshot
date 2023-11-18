@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/session"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -24,7 +25,7 @@ import (
 // and sets the actor in the request context.
 func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Handler) http.Handler {
 	session.SetSessionStore(session.NewRedisStore(func() bool {
-		if deploy.IsApp() {
+		if deploy.IsSingleBinary() {
 			// Safari / WebKit-based browsers refuse to set cookies on localhost as it is not treated
 			// as a secure domain, in contrast to all other browsers.
 			// https://bugs.webkit.org/show_bug.cgi?id=232088
@@ -35,7 +36,7 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 		return globals.ExternalURL().Scheme == "https"
 	}))
 
-	logger = logger.Scoped("appHandler", "handles routes for all app related requests")
+	logger = logger.Scoped("appHandler")
 
 	r := router.Router()
 
@@ -62,12 +63,13 @@ func NewHandler(db database.DB, logger log.Logger, githubAppSetupHandler http.Ha
 	r.Get(router.UI).Handler(ui.Router())
 
 	lockoutStore := userpasswd.NewLockoutStoreFromConf(conf.AuthLockout())
+	eventRecorder := telemetryrecorder.New(db)
 
-	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db)))
+	r.Get(router.SignUp).Handler(trace.Route(userpasswd.HandleSignUp(logger, db, eventRecorder)))
 	r.Get(router.RequestAccess).Handler(trace.Route(accessrequest.HandleRequestAccess(logger, db)))
-	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db)))
-	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore)))
-	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(db)))
+	r.Get(router.SiteInit).Handler(trace.Route(userpasswd.HandleSiteInit(logger, db, eventRecorder)))
+	r.Get(router.SignIn).Handler(trace.Route(userpasswd.HandleSignIn(logger, db, lockoutStore, eventRecorder)))
+	r.Get(router.SignOut).Handler(trace.Route(serveSignOutHandler(logger, db)))
 	r.Get(router.UnlockAccount).Handler(trace.Route(userpasswd.HandleUnlockAccount(logger, db, lockoutStore)))
 	r.Get(router.UnlockUserAccount).Handler(trace.Route(userpasswd.HandleUnlockUserAccount(logger, db, lockoutStore)))
 	r.Get(router.ResetPasswordInit).Handler(trace.Route(userpasswd.HandleResetPasswordInit(logger, db)))

@@ -16,7 +16,7 @@ contents:
 
     - coursier@sourcegraph
     - p4cli@sourcegraph
-    - p4-fusion@sourcegraph
+    - p4-fusion-sg@sourcegraph
 
 paths:
   - path: /data/repos
@@ -27,4 +27,4 @@ paths:
 
 work-dir: /
 
-# MANUAL REBUILD: Thu Jun 22 13:43:35 BST 2023
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

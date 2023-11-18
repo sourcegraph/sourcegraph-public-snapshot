@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -50,7 +52,7 @@ func NewClient(urn string, config *schema.PagureConnection, httpClient httpcli.D
 		Config:     config,
 		URL:        u,
 		httpClient: httpClient,
-		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		rateLimit:  ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("PagureClient"), urn)),
 	}, nil
 }
 

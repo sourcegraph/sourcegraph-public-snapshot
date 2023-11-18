@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -28,7 +29,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 
@@ -44,7 +45,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
@@ -97,7 +98,7 @@ func TestSiteConfiguration(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 			if err != nil {
@@ -129,7 +130,7 @@ func TestSiteConfiguration(t *testing.T) {
 		})
 
 		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
@@ -163,7 +164,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}
@@ -286,17 +287,8 @@ func TestSiteConfigurationHistory(t *testing.T) {
 				siteConfigChangeResolverIDs[i] = s.siteConfig.ID
 			}
 
-			if len(siteConfigChangeResolvers) != len(tc.expectedSiteConfigIDs) {
-				diff := cmp.Diff(tc.expectedSiteConfigIDs, siteConfigChangeResolverIDs)
-				t.Fatalf(`mismatched number of resolvers, expected %d, got %d\n
-diff in IDs: %s,\n
-`, len(tc.expectedSiteConfigIDs), len(siteConfigChangeResolvers), diff)
-			}
-
-			for i, resolver := range siteConfigChangeResolvers {
-				if resolver.siteConfig.ID != tc.expectedSiteConfigIDs[i] {
-					t.Errorf("position %d: expected siteConfig.ID %d, but got %d", i, tc.expectedSiteConfigIDs[i], resolver.siteConfig.ID)
-				}
+			if diff := cmp.Diff(tc.expectedSiteConfigIDs, siteConfigChangeResolverIDs, cmpopts.EquateEmpty()); diff != "" {
+				t.Fatalf("unexpected site config ids (-want +got):%s\n", diff)
 			}
 		})
 	}

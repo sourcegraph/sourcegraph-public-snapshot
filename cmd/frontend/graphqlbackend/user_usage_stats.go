@@ -125,16 +125,6 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		return nil, nil
 	}
 
-	decode := func(v *string) (payload json.RawMessage, _ error) {
-		if v != nil {
-			if err := json.Unmarshal([]byte(*v), &payload); err != nil {
-				return nil, err
-			}
-		}
-
-		return payload, nil
-	}
-
 	userID := actor.FromContext(ctx).UID
 	userPrimaryEmail := ""
 	if envvar.SourcegraphDotComMode() {
@@ -169,10 +159,30 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		}
 
 		// On Sourcegraph.com only, log a HubSpot event indicating when the user installed a Cody client.
-		if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" {
+		// if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" && userID != 0 && userPrimaryEmail != "" {
+		if envvar.SourcegraphDotComMode() && args.Event == "CodyInstalled" {
+			emailsEnabled := false
+
+			ide := getIdeFromEvent(&args)
+
+			if strings.ToLower(ide) == "vscode" {
+				if ffs := featureflag.FromContext(ctx); ffs != nil {
+					emailsEnabled = ffs.GetBoolOr("vscodeCodyEmailsEnabled", false)
+				}
+			}
+
 			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.CodyClientInstalledEventID, &hubspot.ContactProperties{
 				DatabaseID: userID,
 			})
+
+			hubspotutil.SyncUserWithV3Event(userPrimaryEmail, hubspotutil.CodyClientInstalledV3EventID,
+				&hubspot.ContactProperties{
+					DatabaseID: userID,
+				},
+				&hubspot.CodyInstallV3EventProperties{
+					Ide:           ide,
+					EmailsEnabled: strconv.FormatBool(emailsEnabled),
+				})
 		}
 
 		// On Sourcegraph.com only, log a HubSpot event indicating when the user clicks button to downloads Cody App.
@@ -229,6 +239,39 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 	}
 
 	return nil, nil
+}
+
+func decode(v *string) (payload json.RawMessage, _ error) {
+	if v != nil {
+		if err := json.Unmarshal([]byte(*v), &payload); err != nil {
+			return nil, err
+		}
+	}
+
+	return payload, nil
+}
+
+type VSCodeEventExtensionDetails struct {
+	Ide string `json:"ide"`
+}
+
+type VSCodeEventPublicArgument struct {
+	ExtensionDetails VSCodeEventExtensionDetails `json:"extensionDetails"`
+}
+
+func getIdeFromEvent(args *Event) string {
+	payload, err := decode(args.PublicArgument)
+	if err != nil {
+		return ""
+	}
+
+	var argument VSCodeEventPublicArgument
+
+	if err := json.Unmarshal(payload, &argument); err != nil {
+		return ""
+	}
+
+	return argument.ExtensionDetails.Ide
 }
 
 var (

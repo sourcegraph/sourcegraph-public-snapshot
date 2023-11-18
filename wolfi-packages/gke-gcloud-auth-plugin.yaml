@@ -1,0 +1,52 @@
+# this is a fork of
+# https://github.com/wolfi-dev/os/blob/613e945205007f5e0182868f07946c6a3f5403eb/gke-gcloud-auth-plugin.yaml
+#
+# changelog:
+# - 2023-09-7: removed gcloud from runtime dependencies as it is not needed at runtime,
+#   we always use Application Default Credentials from the environment
+
+package:
+  name: gke-gcloud-auth-plugin
+  version: 0.0.2
+  epoch: 0
+  description: 'kubectl plugin for GKE authentication'
+  copyright:
+    - license: Apache-2.0
+  dependencies:
+    runtime:
+      - kubectl
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - ca-certificates-bundle
+      - busybox
+      - go
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: https://github.com/kubernetes/cloud-provider-gcp/archive/refs/tags/auth-provider-gcp/v${{package.version}}.tar.gz
+      expected-sha256: bb74ee2604d454f6a55b374554ac59546c7ed5baa3ea515fcb51185d2d2fd053
+
+  - uses: go/build
+    with:
+      packages: ./cmd/gke-gcloud-auth-plugin
+      output: gke-gcloud-auth-plugin
+      # TODO(mattmoor): Consider adding all of these:
+      # https://github.com/kubernetes/cloud-provider-gcp/blob/e64cf3b0fcb1958cee1fe55d7e30f4573c34bf4e/defs/version.bzl#L38
+      ldflags: -s -w
+
+  - uses: strip
+
+update:
+  enabled: true
+  github:
+    identifier: kubernetes/cloud-provider-gcp
+    strip-prefix: auth-provider-gcp/v
+    tag-filter: auth-provider-gcp/v
+    use-tag: true

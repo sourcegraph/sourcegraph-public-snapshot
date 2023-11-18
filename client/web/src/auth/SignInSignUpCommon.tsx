@@ -4,6 +4,7 @@ import type * as H from 'history'
 
 import { Input, type InputProps } from '@sourcegraph/wildcard'
 
+import { PageRoutes } from '../routes.constants'
 import { USERNAME_MAX_LENGTH, VALID_USERNAME_REGEXP } from '../user'
 
 interface CommonInputProps extends InputProps, React.InputHTMLAttributes<HTMLInputElement> {
@@ -69,10 +70,14 @@ export const UsernameInput: React.FunctionComponent<React.PropsWithChildren<Comm
  *
  * 🚨 SECURITY: We must disallow open redirects (to arbitrary hosts).
  */
-export function getReturnTo(location: H.Location): string {
+export function getReturnTo(location: H.Location, defaultReturnTo: string = PageRoutes.Search): string {
     const searchParameters = new URLSearchParams(location.search)
-    const returnTo = searchParameters.get('returnTo') || '/search'
-    const newURL = new URL(returnTo, window.location.href)
+    const returnTo = searchParameters.get('returnTo') || defaultReturnTo
 
-    return newURL.pathname + newURL.search + newURL.hash
+    // 🚨 SECURITY: check newURL scheme http or https or relative
+    if (returnTo.startsWith('http:') || returnTo.startsWith('https:') || returnTo.startsWith('/')) {
+        const newURL = new URL(returnTo, window.location.href)
+        return newURL.pathname + newURL.search + newURL.hash
+    }
+    return defaultReturnTo
 }

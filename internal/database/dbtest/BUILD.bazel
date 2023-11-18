@@ -15,6 +15,7 @@ go_library(
         "//internal/database/postgresdsn",
         "@com_github_lib_pq//:pq",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )
 

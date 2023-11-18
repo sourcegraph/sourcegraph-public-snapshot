@@ -47,7 +47,10 @@ type RecordingCmd struct {
 	recording    bool
 	start        time.Time
 	done         bool
+	redactorFunc RedactorFunc
 }
+
+type RedactorFunc func(string) string
 
 // ShouldRecordFunc is a predicate to signify if a command should be recorded or just pass through.
 type ShouldRecordFunc func(context.Context, *exec.Cmd) bool
@@ -96,6 +99,19 @@ func (rc *RecordingCmd) before(ctx context.Context, _ log.Logger, cmd *exec.Cmd)
 	return nil
 }
 
+// WithRedactorFunc sets a redaction function f that will be called to redact  the command's arguments
+// and output before recording.
+//
+// The redaction function f accepts the raw argument or output string as input and returns the
+// redacted string.
+//
+// This allows sensitive arguments or output to be redacted before recording.
+// Returns the RecordingCmd to allow chaining.
+func (rc *RecordingCmd) WithRedactorFunc(f RedactorFunc) *RecordingCmd {
+	rc.redactorFunc = f
+	return rc
+}
+
 func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cmd) {
 	// ensure we don't record ourselves twice if the caller calls Wait() twice for example.
 	defer func() { rc.done = true }()
@@ -108,16 +124,36 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 		return
 	}
 
+	commandArgs := cmd.Args
+	commandOutput := rc.Cmd.GetExecutionOutput()
+
+	if rc.redactorFunc != nil {
+		commandOutput = rc.redactorFunc(commandOutput)
+
+		redactedArgs := make([]string, len(commandArgs))
+		for i, arg := range commandArgs {
+			redactedArgs[i] = rc.redactorFunc(arg)
+		}
+		// We don't directly modify the commandArgs above because we want to avoid
+		// overwriting the original args (cmd.Args).
+		commandArgs = redactedArgs
+	}
+
+	isSuccess := false
+	if cmd.ProcessState != nil {
+		isSuccess = cmd.ProcessState.Success()
+	}
+
 	// record this command in redis
 	val := RecordedCommand{
 		Start:    rc.start,
 		Duration: time.Since(rc.start).Seconds(),
-		Args:     cmd.Args,
+		Args:     commandArgs,
 		Dir:      cmd.Dir,
 		Path:     cmd.Path,
 
-		IsSuccess: cmd.ProcessState.Success(),
-		Output:    rc.Cmd.GetExecutionOutput(),
+		IsSuccess: isSuccess,
+		Output:    commandOutput,
 	}
 
 	data, err := json.Marshal(&val)

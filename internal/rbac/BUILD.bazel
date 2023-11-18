@@ -54,21 +54,16 @@ go_test(
 )
 
 genrule(
-    name = "generate_constants",
+    name = "generate_constants_go",
     srcs = [
         "//internal/rbac:schema.yaml",
     ],
     outs = [
-        "constants.go",
-        "constants.ts",
+        "_constants.go",
     ],
     cmd = """
-    outs=($(OUTS))
-
-    $(location //internal/rbac/gen:type_gen) -i $< -o $${outs[0]} -lang go -kind constants
-    $(location @go_sdk//:bin/gofmt) -s -w $${outs[0]}
-
-    $(location //internal/rbac/gen:type_gen) -i $< -o $${outs[1]} -lang ts -kind constants
+    $(location //internal/rbac/gen:type_gen) -i $< -o $@ -lang go -kind constants
+    $(location @go_sdk//:bin/gofmt) -s -w $@
     """,
     tools = [
         "//internal/rbac/gen:type_gen",
@@ -77,11 +72,28 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
+genrule(
+    name = "generate_constants_ts",
+    srcs = [
+        "//internal/rbac:schema.yaml",
+    ],
+    outs = [
+        "_constants.ts",
+    ],
+    cmd = """\
+    $(location //internal/rbac/gen:type_gen) -i $< -o $@ -lang ts -kind constants
+    """,
+    tools = [
+        "//internal/rbac/gen:type_gen",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 write_generated_to_source_files(
     name = "write_generated",
-    src = ":generate_constants",
-    files = ["constants.go"],
+    output_files = {"constants.go": "_constants.go"},
     tags = ["go_generate"],
+    target = ":generate_constants_go",
 )
 
 exports_files(

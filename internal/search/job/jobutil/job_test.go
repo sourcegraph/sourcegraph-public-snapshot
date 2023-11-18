@@ -994,9 +994,8 @@ func TestToTextPatternInfo(t *testing.T) {
 			return "Empty"
 		}
 		b := plan[0]
-		mode := search.Batch
 		resultTypes := computeResultTypes(b, query.SearchTypeLiteral)
-		p := toTextPatternInfo(b, resultTypes, mode)
+		p := toTextPatternInfo(b, resultTypes, limits.DefaultMaxSearchResults)
 		v, _ := json.Marshal(p)
 		return string(v)
 	}
@@ -1030,19 +1029,27 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 }
 
 func Test_computeResultTypes(t *testing.T) {
-	test := func(input string) string {
-		plan, _ := query.Pipeline(query.Init(input, query.SearchTypeStandard))
+	test := func(input string, searchType query.SearchType) string {
+		plan, _ := query.Pipeline(query.Init(input, searchType))
 		b := plan[0]
-		resultTypes := computeResultTypes(b, query.SearchTypeStandard)
+		resultTypes := computeResultTypes(b, searchType)
 		return resultTypes.String()
 	}
 
-	t.Run("only search file content when type not set", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar")))
+	t.Run("standard, only search file content when type not set", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeStandard)))
 	})
 
-	t.Run("plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar")))
+	t.Run("standard, plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeStandard)))
+	})
+
+	t.Run("newStandardRC1, only search file content when type not set", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeNewStandardRC1)))
+	})
+
+	t.Run("newStandardRC1, plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeNewStandardRC1)))
 	})
 }
 
@@ -1471,7 +1478,7 @@ func RunRepoSubsetTextSearch(
 		}
 
 		typ := search.TextRequest
-		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, nil, typ)
+		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &search.Features{}, typ)
 		if err != nil {
 			return nil, streaming.Stats{}, err
 		}

@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { testCodeHostMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'

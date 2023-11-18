@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '../../../../stories/BrandedStory'
 import { H2, Text } from '../../../Typography'
@@ -27,7 +27,7 @@ const getColor = (datum: LanguageUsageDatum) => datum.fill
 const getLink = (datum: LanguageUsageDatum) => datum.linkURL
 const getName = (datum: LanguageUsageDatum) => datum.name
 
-export const PieChartDemo: Story = () => (
+export const PieChartDemo: StoryFn = () => (
     <main
         style={{
             display: 'flex',

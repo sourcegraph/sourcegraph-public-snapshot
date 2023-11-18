@@ -9,9 +9,8 @@ Sourcegraph makes it easy to read, write, and fix code—even in big, complex co
 
 ## Usage
 
-- [**Download Sourcegraph**](https://about.sourcegraph.com/app) for macOS and Linux
 - [**Get Cody**](cody/overview/index.md), the AI coding assistant
-- [Use Sourcegraph on the cloud or self-hosted](admin/deploy/index.md)
+- [**Use Sourcegraph on the cloud or self-hosted**](admin/deploy/index.md)
 - [Sourcegraph.com public code search](https://sourcegraph.com/search)
 
 <br>

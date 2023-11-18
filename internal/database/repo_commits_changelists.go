@@ -2,13 +2,16 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -107,6 +110,12 @@ WHERE
 
 func (s *repoCommitsChangelistsStore) GetRepoCommitChangelist(ctx context.Context, repoID api.RepoID, changelistID int64) (*types.RepoCommit, error) {
 	q := sqlf.Sprintf(getRepoCommitFmtStr, repoID, changelistID)
-	row := s.QueryRow(ctx, q)
-	return scanRepoCommitRow(row)
+
+	repoCommit, err := scanRepoCommitRow(s.QueryRow(ctx, q))
+	if err == sql.ErrNoRows {
+		return nil, &perforce.ChangelistNotFoundError{RepoID: repoID, ID: changelistID}
+	} else if err != nil {
+		return nil, err
+	}
+	return repoCommit, nil
 }

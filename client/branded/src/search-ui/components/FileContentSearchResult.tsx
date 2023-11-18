@@ -110,9 +110,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         if (location?.pathname === '/search') {
             // Check if search.contextLines is configured in settings.
             const contextLinesSetting =
-                isSettingsValid(settingsCascade) &&
-                settingsCascade.final &&
-                settingsCascade.final['search.contextLines']
+                isSettingsValid(settingsCascade) && settingsCascade.final?.['search.contextLines']
 
             if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
                 return contextLinesSetting
@@ -133,7 +131,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                       })),
                       content: match.content,
                       startLine: match.contentStart.line,
-                      endLine: match.ranges[match.ranges.length - 1].end.line,
+                      endLine: match.ranges.at(-1)!.end.line,
                       aggregableBadges: match.aggregableBadges,
                   })) ||
                   result.lineMatches?.map(match => ({

@@ -95,7 +95,7 @@ const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => (
             description={false}
             progressBar={false}
             telemetryService={telemetryService}
-            isSourcegraphApp={true}
+            isCodyApp={true}
         />
     </div>
 )

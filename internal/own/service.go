@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -112,7 +111,6 @@ func (s *service) RulesetForRepo(ctx context.Context, repoName api.RepoName, rep
 		for _, path := range codeownersLocations {
 			content, err := s.gitserverClient.ReadFile(
 				ctx,
-				authz.DefaultSubRepoPermsChecker,
 				repoName,
 				commitID,
 				path,

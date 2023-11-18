@@ -9,9 +9,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/ricochet2200/go-disk-usage/du"
+	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
 )
 
 type testRegisterer struct{}
@@ -175,6 +177,7 @@ type diskCollector struct {
 	path          string
 	availableDesc *prometheus.Desc
 	totalDesc     *prometheus.Desc
+	logger        log.Logger
 }
 
 func newDiskCollector(path string) prometheus.Collector {
@@ -193,6 +196,7 @@ func newDiskCollector(path string) prometheus.Collector {
 			nil,
 			constLabels,
 		),
+		logger: log.Scoped("diskCollector"),
 	}
 }
 
@@ -202,7 +206,11 @@ func (c *diskCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
-	usage := du.NewDiskUsage(c.path)
+	usage, err := du.New(c.path)
+	if err != nil {
+		c.logger.Error("error getting disk usage info", log.Error(err))
+		return
+	}
 	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(usage.Available()))
 	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(usage.Size()))
 }

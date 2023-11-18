@@ -11,7 +11,7 @@ server_integration_test(
         "//:mocha_config",
         "//client/web/src/end-to-end:e2e",
         "//client/web/src/end-to-end:testing_e2e_bundle",
-        "//enterprise/cmd/server:image_tarball",
+        "//cmd/server:image_tarball",
     ],
     env = {
         "SG_FEATURE_FLAG_GRPC": "false",
@@ -43,14 +43,15 @@ server_integration_test(
 
 server_integration_test(
     name = "backend_integration_test",
+    timeout = "long",
     args = [
         "$(location //dev/gqltest:gqltest_test)",  # actual test
         "$(location //dev/authtest:authtest_test)",  # actual test
     ],
     data = [
+        "//cmd/server:image_tarball",
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
-        "//enterprise/cmd/server:image_tarball",
     ],
     env = {
         "SG_FEATURE_FLAG_GRPC": "false",
@@ -78,14 +79,15 @@ server_integration_test(
 
 server_integration_test(
     name = "grpc_backend_integration_test",
+    timeout = "long",
     args = [
         "$(location //dev/gqltest:gqltest_test)",  # actual test
         "$(location //dev/authtest:authtest_test)",  # actual test
     ],
     data = [
+        "//cmd/server:image_tarball",
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
-        "//enterprise/cmd/server:image_tarball",
     ],
     env = {
         "SG_FEATURE_FLAG_GRPC": "true",
@@ -126,13 +128,13 @@ server_integration_test(
         "$(location //dev/ci/integration/code-intel:repos.json)",
     ],
     data = [
+        "//cmd/server:image_tarball",
         "//dev/ci/integration/code-intel:repos.json",
         "//dev/codeintel-qa/cmd/clear",
         "//dev/codeintel-qa/cmd/download",
         "//dev/codeintel-qa/cmd/query",
         "//dev/codeintel-qa/cmd/upload",
         "//dev/tools:src-cli",
-        "//enterprise/cmd/server:image_tarball",
         "//internal/cmd/init-sg",
     ],
     env = {
@@ -199,23 +201,23 @@ server_integration_test(
     }),
     data = select({
         "//:darwin_docker_e2e_go": [
+            "//cmd/server:image_tarball",
             "//dev/ci/integration/code-intel:repos.json",
             "//dev/codeintel-qa/cmd/clear:clear-darwin-arm64",
             "//dev/codeintel-qa/cmd/download:download-darwin-arm64",
             "//dev/codeintel-qa/cmd/query:query-darwin-arm64",
             "//dev/codeintel-qa/cmd/upload:upload-darwin-arm64",
-            "//enterprise/cmd/server:image_tarball",
             "//internal/cmd/init-sg:init-sg-darwin-arm64",
             "@src-cli-darwin-arm64//:src-cli-darwin-arm64",
         ],
         "//conditions:default": [
+            "//cmd/server:image_tarball",
             "//dev/ci/integration/code-intel:repos.json",
             "//dev/codeintel-qa/cmd/clear",
             "//dev/codeintel-qa/cmd/download",
             "//dev/codeintel-qa/cmd/query",
             "//dev/codeintel-qa/cmd/upload",
             "//dev/tools:src-cli",
-            "//enterprise/cmd/server:image_tarball",
             "//internal/cmd/init-sg",
         ],
     }),
@@ -249,6 +251,6 @@ server_integration_test(
     runner_src = ":codeintel_integration_test.sh",
     tags = [
         "manual",
-        "no-sanbdox",
+        "no-sandbox",
     ],
 )

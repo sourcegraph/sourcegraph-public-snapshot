@@ -68,8 +68,8 @@ export interface SearchQueryState {
 
     // DATA
     /**
-     * The current seach query and auxiliary information needed by the
-     * MonacoQueryInput component. You most likely don't have to read this value
+     * The current search query and auxiliary information needed by the
+     * query input component. You most likely don't have to read this value
      * directly.
      * See {@link QueryState} for more information.
      */
@@ -136,17 +136,21 @@ export type QueryUpdate =
 export function updateQuery(query: string, updates: QueryUpdate[]): string {
     return updates.reduce((query, update) => {
         switch (update.type) {
-            case 'appendFilter':
+            case 'appendFilter': {
                 if (!update.unique || !filterExists(query, update.field)) {
                     return appendFilter(query, update.field, update.value)
                 }
                 break
-            case 'updateOrAppendFilter':
+            }
+            case 'updateOrAppendFilter': {
                 return updateFilter(query, update.field, update.value)
-            case 'toggleSubquery':
+            }
+            case 'toggleSubquery': {
                 return toggleSubquery(query, update.value)
-            case 'replaceQuery':
+            }
+            case 'replaceQuery': {
                 return update.value
+            }
         }
         return query
     }, query)

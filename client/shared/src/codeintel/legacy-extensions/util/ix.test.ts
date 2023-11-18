@@ -1,5 +1,7 @@
 import * as assert from 'assert'
 
+import { describe, it } from 'vitest'
+
 import { asyncGeneratorFromPromise, concat, observableFromAsyncIterator } from './ix'
 
 describe('observableFromAsyncIterator', () => {

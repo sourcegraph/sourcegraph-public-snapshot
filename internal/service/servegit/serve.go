@@ -167,6 +167,9 @@ func (s *Serve) handler() http.Handler {
 			// calling FromSlash.
 			return filepath.FromSlash("/" + name)
 		},
+		ErrorHook: func(err error, stderr string) {
+			s.Logger.Error("git-service error", log.Error(err), log.String("stderr", stderr))
+		},
 		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
 			return func(err error) {

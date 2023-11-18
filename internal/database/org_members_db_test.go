@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
@@ -20,7 +19,7 @@ func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create fixtures.
@@ -119,7 +118,7 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	// Create fixtures.
 	org1, err := db.Orgs().Create(ctx, "org1", nil)
@@ -198,7 +197,7 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	tests := []struct {
@@ -262,16 +261,6 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 			username: "testuser11",
 			email:    "em119@test.com",
 		},
-		{
-			name:     "searchabletrue",
-			username: "testuser12",
-			email:    "em19@test.com",
-		},
-		{
-			name:     "test user12",
-			username: "searchablefalse",
-			email:    "em19@test.com",
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -295,22 +284,5 @@ func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
 
 	if want := 10; len(users) != want {
 		t.Errorf("got %d, want %d", len(users), want)
-	}
-
-	user, err := db.Users().GetByUsername(ctx, "searchablefalse")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := db.Users().Update(ctx, user.ID, UserUpdate{Searchable: pointers.Ptr(false)}); err != nil {
-		t.Fatal(err)
-	}
-
-	users2, err := db.OrgMembers().AutocompleteMembersSearch(ctx, 1, "searchable")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if want := 1; len(users2) != want {
-		t.Errorf("got %d, want %d", len(users2), want)
 	}
 }

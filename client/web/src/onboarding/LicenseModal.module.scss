@@ -1,0 +1,50 @@
+$primary: #f9fafb;
+$secondary: #e6ebf2;
+$tertiary: #ffffff;
+$quaternary: #dbe2f0;
+$quinary: #cad2e2;
+
+:global(.theme-light) {
+    .modal {
+        background-color: $primary;
+        border: 1px solid $secondary;
+    }
+
+    .key-wrapper {
+        background: $tertiary;
+    }
+
+    .modal-container {
+        background-color: hsla(224deg, 22%, 10%, 0.33);
+    }
+}
+
+.key-wrapper {
+    border: 1px solid $quaternary;
+}
+
+.key-container {
+    display: grid;
+    grid-template-columns: 50px 1fr;
+    column-gap: 1.5rem;
+}
+
+.logo-container {
+    display: grid;
+    align-items: center;
+}
+
+.empty-logo {
+    border: 1px dotted $quinary;
+    border-radius: 50%;
+    width: 3.125rem;
+    height: 3.125rem;
+    align-self: center;
+    justify-self: center;
+}
+
+.submit {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.5rem;
+}

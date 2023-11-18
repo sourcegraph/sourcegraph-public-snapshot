@@ -1,6 +1,8 @@
+use std::collections::HashSet;
+
 use tree_sitter::Language;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BundledParser {
     C,
     Cpp,
@@ -11,6 +13,7 @@ pub enum BundledParser {
     Javascript,
     Jsonnet,
     Kotlin,
+    Matlab,
     Nickel,
     Perl,
     Pod,
@@ -28,7 +31,7 @@ pub enum BundledParser {
 }
 
 impl BundledParser {
-    pub fn get_language(&self) -> Language {
+    pub fn get_language(self) -> Language {
         match self {
             BundledParser::C => tree_sitter_c::language(),
             BundledParser::Cpp => tree_sitter_cpp::language(),
@@ -38,6 +41,7 @@ impl BundledParser {
             BundledParser::Javascript => tree_sitter_javascript::language(),
             BundledParser::Jsonnet => tree_sitter_jsonnet::language(),
             BundledParser::Kotlin => tree_sitter_kotlin::language(),
+            BundledParser::Matlab => tree_sitter_matlab::language(),
             BundledParser::Nickel => tree_sitter_nickel::language(),
             BundledParser::Perl => tree_sitter_perl::language(),
             BundledParser::Pod => tree_sitter_pod::language(),
@@ -63,6 +67,7 @@ impl BundledParser {
             "javascript" => Some(BundledParser::Javascript),
             "jsonnet" => Some(BundledParser::Jsonnet),
             "kotlin" => Some(BundledParser::Kotlin),
+            "matlab" => Some(BundledParser::Matlab),
             "nickel" => Some(BundledParser::Nickel),
             "perl" => Some(BundledParser::Perl),
             "pod" => Some(BundledParser::Pod),
@@ -89,6 +94,7 @@ impl BundledParser {
             BundledParser::Javascript => "javascript",
             BundledParser::Jsonnet => "jsonnet",
             BundledParser::Kotlin => "kotlin",
+            BundledParser::Matlab => "matlab",
             BundledParser::Nickel => "nickel",
             BundledParser::Perl => "perl",
             BundledParser::Pod => "pod",
@@ -104,6 +110,21 @@ impl BundledParser {
         }
     }
 
+    pub fn get_language_extensions(&self) -> HashSet<&str> {
+        let ar = {
+            match self {
+                BundledParser::Go => vec!["go"],
+                BundledParser::Java => vec!["java"],
+                BundledParser::Javascript => vec!["js"],
+                BundledParser::Typescript => vec!["ts"],
+                BundledParser::Python => vec!["py"],
+                _ => vec![],
+            }
+        };
+
+        HashSet::from_iter(ar.into_iter())
+    }
+
     // TODO(SuperAuguste): language detection library
     pub fn get_parser_from_extension(name: &str) -> Option<Self> {
         match name {
@@ -114,6 +135,7 @@ impl BundledParser {
             "java" => Some(BundledParser::Java),
             "js" => Some(BundledParser::Javascript),
             "jsonnet" => Some(BundledParser::Jsonnet),
+            "m" => Some(BundledParser::Matlab),
             "kt" => Some(BundledParser::Kotlin),
             "ncl" => Some(BundledParser::Nickel),
             "pl" => Some(BundledParser::Perl),

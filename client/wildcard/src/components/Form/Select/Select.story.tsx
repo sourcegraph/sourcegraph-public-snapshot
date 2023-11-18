@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { H1, H2 } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
@@ -73,7 +73,7 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
     )
 }
 
-export const SelectExamples: Story = () => (
+export const SelectExamples: StoryFn = () => (
     <>
         <H1>Select</H1>
         <H2>Native</H2>

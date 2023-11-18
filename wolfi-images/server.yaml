@@ -22,7 +22,7 @@ contents:
     - posix-libc-utils # Adds locale, used by server postgres init scripts
     - postgresql-12
     - postgresql-12-contrib
-    - prometheus-postgres-exporter=0.13.1-r0 # IMPORTANT: Pinned version for managed updates
+    - prometheus-postgres-exporter
     - prometheus-alertmanager
     - python3
     - posix-libc-utils # Locales
@@ -36,7 +36,7 @@ contents:
     - ctags@sourcegraph
     - coursier@sourcegraph
     - p4cli@sourcegraph
-    - p4-fusion@sourcegraph
+    - p4-fusion-sg@sourcegraph
     - s3proxy@sourcegraph
     - grafana@chainguard
 
@@ -81,4 +81,4 @@ paths:
     type: directory
     permissions: 0o755
 
-# MANUAL REBUILD: Fri Jun 23 10:31:13 BST 2023
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

@@ -5,7 +5,7 @@
 
     <String Id="DowngradeError" Value="A newer version of [ProductName] is already installed." />
 
-    <String Id="CodyDescription" Value="Cody AI desktop application." />
+    <String Id="CodyDescription" Value="Cody desktop application." />
     <String Id="BackendDescription" Value="Sourcegraph main server, responsible for indexing, embeddings, and repo management." />
 
 </WixLocalization>

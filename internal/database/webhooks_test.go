@@ -33,7 +33,7 @@ func TestWebhookCreate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	for _, encrypted := range []bool{true, false} {
 		t.Run(fmt.Sprintf("encrypted=%t", encrypted), func(t *testing.T) {
 			store := db.Webhooks(nil)
@@ -148,7 +148,7 @@ func TestWebhookDelete(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Webhooks(nil)
 
 	// Test that delete with wrong UUID returns an error
@@ -192,7 +192,7 @@ func TestWebhookUpdate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	newCodeHostURN, err := extsvc.NewCodeHostBaseURL("https://new.github.com")
 	require.NoError(t, err)
@@ -271,7 +271,7 @@ func TestWebhookUpdate(t *testing.T) {
 		webhook := types.Webhook{ID: 100, UUID: nonExistentUUID}
 
 		logger := logtest.Scoped(t)
-		db := NewDB(logger, dbtest.NewDB(logger, t))
+		db := NewDB(logger, dbtest.NewDB(t))
 
 		store := db.Webhooks(nil)
 		_, err := store.Update(ctx, &webhook)
@@ -294,7 +294,7 @@ func createWebhookWithActorUID(ctx context.Context, t *testing.T, actorUID int32
 
 func TestWebhookCount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Webhooks(et.ByteaTestKey{})
 	ctx := context.Background()
 
@@ -315,7 +315,7 @@ func TestWebhookCount(t *testing.T) {
 
 func TestWebhookList(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Webhooks(et.ByteaTestKey{})
 	ctx := context.Background()
 
@@ -414,7 +414,7 @@ func TestGetByID(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Webhooks(nil)
 
 	// Test that non-existent webhook cannot be found
@@ -445,7 +445,7 @@ func TestGetByUUID(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Webhooks(nil)
 
 	// Test that non-existent webhook cannot be found

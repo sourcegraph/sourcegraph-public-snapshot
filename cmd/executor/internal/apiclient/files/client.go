@@ -28,7 +28,7 @@ var _ files.Store = &Client{}
 
 // New creates a new Client based on the provided Options.
 func New(observationCtx *observation.Context, options apiclient.BaseClientOptions) (*Client, error) {
-	logger := log.Scoped("executor-api-files-client", "The API client adapter for executors to interact with the Files over HTTP")
+	logger := log.Scoped("executor-api-files-client")
 	client, err := apiclient.NewBaseClient(logger, options)
 	if err != nil {
 		return nil, err

@@ -93,6 +93,7 @@ func TestClientKeepsBaseURLPath(t *testing.T) {
 	bbConf := &schema.BitbucketServerConnection{Url: srvURL}
 	client, err := NewClient("test", bbConf, nil)
 	require.NoError(t, err)
+	client.rateLimit = ratelimit.NewInstrumentedLimiter("bitbucket", rate.NewLimiter(100, 10))
 
 	_, _ = client.AuthenticatedUsername(ctx)
 	assert.Equal(t, true, succeeded)

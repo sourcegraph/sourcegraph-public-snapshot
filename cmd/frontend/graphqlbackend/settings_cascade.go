@@ -30,7 +30,7 @@ func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubjectResol
 		return nil, err
 	}
 
-	return resolversForSubjects(ctx, log.Scoped("settings", "subjects"), r.db, subjects)
+	return resolversForSubjects(ctx, log.Scoped("settings"), r.db, subjects)
 }
 
 func (r *settingsCascade) Final(ctx context.Context) (string, error) {
@@ -62,7 +62,7 @@ func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, 
 		return nil, err
 	}
 	if user == nil {
-		return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings", "ViewerSettings"), r.db)}}, nil
+		return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings"), r.db)}}, nil
 	}
 	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: user}}, nil
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -189,7 +190,7 @@ sg migration add --db codeintel 'add missing index'
 # Squash migrations for default database
 sg migration squash
 `,
-		Category: CategoryDev,
+		Category: category.Dev,
 		Subcommands: []*cli.Command{
 			addCommand,
 			revertCommand,
@@ -224,7 +225,7 @@ func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (*ru
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
 	config, _ := getConfig()
-	logger := log.Scoped("migrations.runner", "migration runner")
+	logger := log.Scoped("migrations.runner")
 	if config != nil {
 		getEnv = config.GetEnv
 	} else {

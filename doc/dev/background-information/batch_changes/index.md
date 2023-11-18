@@ -108,10 +108,10 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
 - `enterprise/internal/batches/search/syntax`:
 
     The old Sourcegraph-search-query parser we inherited from the search team a week or two back (the plan is _not_ to keep it, but switch to the new one when we have time)
-- `enterprise/cmd/frontend/internal/batches/resolvers`:
+- `cmd/frontend/internal/batches/resolvers`:
 
-    The GraphQL resolvers that are injected into the `enterprise/frontend` in `enterprise/cmd/frontend/internal/batches/init.go`. They mostly concern themselves with input/argument parsing/validation, (bulk-)reading (and paginating) from the database via the `batches/store`, but delegate most business logic to `batches/service`.
-- `enterprise/cmd/frontend/internal/batches/resolvers/apitest`:
+    The GraphQL resolvers that are injected into the `enterprise/frontend` in `cmd/frontend/internal/batches/init.go`. They mostly concern themselves with input/argument parsing/validation, (bulk-)reading (and paginating) from the database via the `batches/store`, but delegate most business logic to `batches/service`.
+- `cmd/frontend/internal/batches/resolvers/apitest`:
 
     A package that helps with testing the resolvers by defining types that match the GraphQL schema.
 - `enterprise/internal/batches/testing`:
@@ -126,7 +126,7 @@ The following is a list of Go packages in the [`sourcegraph/sourcegraph`](https:
 - `enterprise/internal/batches/service`:
 
     This is what's often called the "service layer" in web architectures and contains a lot of the business logic: creating a batch change and validating whether the user can create one, applying new batch specs, calling the `rewirer`, deleting batch changes, closing batch changes, etc.
-- `enterprise/cmd/frontend/internal/batches/webhooks`:
+- `cmd/frontend/internal/batches/webhooks`:
 
     These `webhooks` endpoints are injected by `InitFrontend` into the `frontend` and implement the `cmd/frontend/webhooks` interfaces.
 - `enterprise/internal/batches/store`:

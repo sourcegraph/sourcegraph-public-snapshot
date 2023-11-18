@@ -42,7 +42,7 @@ export function useSearchResultsKeyboardNavigation(
                     break
                 }
                 case 'ArrowLeft':
-                case 'h':
+                case 'h': {
                     if (selectedResult) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('collapseSearchResultsGroup', { bubbles: true, cancelable: true })
@@ -50,8 +50,9 @@ export function useSearchResultsKeyboardNavigation(
                         event.preventDefault()
                     }
                     break
+                }
                 case 'ArrowRight':
-                case 'l':
+                case 'l': {
                     if (selectedResult) {
                         selectedResult.dispatchEvent(
                             new CustomEvent('expandSearchResultsGroup', { bubbles: true, cancelable: true })
@@ -59,13 +60,15 @@ export function useSearchResultsKeyboardNavigation(
                         event.preventDefault()
                     }
                     break
-                case '/':
+                }
+                case '/': {
                     setShowFocusInputMessage(false)
                     if (focusInputMessageTimeoutId) {
                         clearTimeout(focusInputMessageTimeoutId)
                     }
                     break
-                default:
+                }
+                default: {
                     // If the user tries typing alphanumeric characters while focused on the search results, we
                     // show him a message on how to focus the search input.
                     if (
@@ -84,6 +87,7 @@ export function useSearchResultsKeyboardNavigation(
                         setFocusInputMessageTimeoutId(timeoutId)
                     }
                     break
+                }
             }
         }
 
@@ -104,6 +108,7 @@ export function useSearchResultsKeyboardNavigation(
                 }
                 // Otherwise, find the last visible result in the group and select it.
                 const groupSelectables = group.querySelectorAll<HTMLElement>('[data-selectable-search-result="true"]')
+                // eslint-disable-next-line unicorn/prefer-at
                 selectElement(groupSelectables[groupSelectables.length - 1])
             }, 0)
         }

@@ -1,45 +1,20 @@
-import { noop } from 'lodash'
+import * as esbuild from 'esbuild'
 import signale from 'signale'
-import webpack from 'webpack'
 
-import { config } from '../config/webpack/development.config'
+import { esbuildBuildOptions } from '../config/esbuild'
 
-import * as autoReloading from './auto-reloading'
-import * as tasks from './tasks'
+import { browserBuildStepsPlugin, copyAssetsPlugin } from './esbuildPlugins'
 
-signale.config({ displayTimestamp: true })
+async function watch(): Promise<void> {
+    const ctx = await esbuild.context(esbuildBuildOptions('dev', [copyAssetsPlugin, browserBuildStepsPlugin('dev')]))
+    await ctx.watch()
+    signale.info('Watching...')
+    await new Promise(() => {}) // wait forever
+}
 
-const triggerReload = process.env.AUTO_RELOAD === 'false' ? noop : autoReloading.initializeServer()
-
-const buildChrome = tasks.buildChrome('dev')
-const buildFirefox = tasks.buildFirefox('dev')
-const buildEdge = tasks.buildEdge('dev')
-
-tasks.copyAssets()
-
-const compiler = webpack(config)
-
-signale.info('Running webpack')
-
-compiler.hooks.watchRun.tap('Notify', () => signale.await('Compiling...'))
-
-compiler.watch(
-    {
-        aggregateTimeout: 300,
-    },
-    (error, stats) => {
-        signale.complete(stats?.toString(tasks.WEBPACK_STATS_OPTIONS))
-
-        if (error || stats?.hasErrors()) {
-            signale.error('Webpack compilation error')
-            return
-        }
-        signale.success('Webpack compilation done')
-
-        buildChrome()
-        buildEdge()
-        buildFirefox()
-        tasks.copyIntegrationAssets()
-        triggerReload()
-    }
-)
+if (require.main === module) {
+    watch().catch(error => {
+        console.error('Error:', error)
+        process.exit(1)
+    })
+}

@@ -18,6 +18,8 @@ go_library(
         "//lib/iterator",
         "//schema",
         "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_time//rate",
     ],
 )
 

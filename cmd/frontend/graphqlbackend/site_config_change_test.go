@@ -16,7 +16,7 @@ func TestSiteConfigurationDiff(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}
@@ -30,7 +30,7 @@ func TestSiteConfigurationDiff(t *testing.T) {
 	}{
 		{
 			ID:           6,
-			AuthorUserID: 1,
+			AuthorUserID: 3,
 			Diff:         expectedDiffs[6],
 		},
 		{
@@ -101,6 +101,20 @@ func TestSiteConfigurationDiff(t *testing.T) {
 
 				if diff := cmp.Diff(expectedNode.Diff, nodes[i].Diff()); diff != "" {
 					t.Errorf("mismatched node diff (-want, +got):\n%s ", diff)
+				}
+
+				author, err := nodes[i].Author(ctx)
+				if err != nil {
+					t.Fatalf("failed to get author: %v", err)
+				}
+				if siteConfig.AuthorUserID == 3 || siteConfig.AuthorUserID == 0 { // User with ID 3 is not created in the test setup
+					if author != nil {
+						t.Fatalf("expected author to be nil for user ID %d", siteConfig.AuthorUserID)
+					}
+				} else {
+					if author == nil {
+						t.Fatalf("expected non-nil author resolver for user ID %d", siteConfig.AuthorUserID)
+					}
 				}
 			}
 		})

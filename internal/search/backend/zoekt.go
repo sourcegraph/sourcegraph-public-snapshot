@@ -5,7 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
-	v1 "github.com/sourcegraph/zoekt/grpc/v1"
+	proto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
 	"github.com/sourcegraph/zoekt/rpc"
 	zoektstream "github.com/sourcegraph/zoekt/stream"
 	"google.golang.org/grpc"
@@ -117,12 +117,12 @@ const maxRecvMsgSize = 128 * 1024 * 1024 // 128MiB
 func ZoektDialGRPC(endpoint string) zoekt.Streamer {
 	conn, err := defaults.Dial(
 		endpoint,
-		log.Scoped("zoekt", "Dial"),
+		log.Scoped("zoekt"),
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxRecvMsgSize)),
 	)
 	return NewMeteredSearcher(endpoint, &zoektGRPCClient{
 		endpoint: endpoint,
-		client:   v1.NewWebserverServiceClient(conn),
+		client:   proto.NewWebserverServiceClient(conn),
 		dialErr:  err,
 	})
 }

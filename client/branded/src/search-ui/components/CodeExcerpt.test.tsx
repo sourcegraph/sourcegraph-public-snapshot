@@ -1,6 +1,7 @@
 import { cleanup, getByText, render } from '@testing-library/react'
 import { of } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { afterAll, describe, expect, it } from 'vitest'
 
 import {
     HIGHLIGHTED_FILE_LINES,

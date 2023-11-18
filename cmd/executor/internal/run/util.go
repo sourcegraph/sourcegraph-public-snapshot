@@ -40,7 +40,7 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 		logger.Error("Failed to get git version", log.Error(err))
 	}
 
-	if !config.IsKubernetes() && (!deploy.IsApp() || deploy.IsAppFullSourcegraph()) {
+	if !config.IsKubernetes() && !deploy.IsApp() {
 		t.SrcCliVersion, err = util.GetSrcVersion(ctx, runner)
 		if err != nil {
 			logger.Error("Failed to get src-cli version", log.Error(err))
@@ -268,7 +268,7 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 }
 
 func makeWorkerMetrics(queueName string) workerutil.WorkerObservability {
-	observationCtx := observation.NewContext(log.Scoped("executor_processor", "executor worker processor"))
+	observationCtx := observation.NewContext(log.Scoped("executor_processor"))
 
 	return workerutil.NewMetrics(observationCtx, "executor_processor", workerutil.WithSampler(func(job workerutil.Record) bool { return true }),
 		// derived from historic data, ideally we will use spare high-res histograms once they're a reality

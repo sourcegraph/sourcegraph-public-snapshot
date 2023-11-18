@@ -7,7 +7,6 @@ use std::path;
 
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use scip_syntax::get_globals;
 use scip_treesitter_languages::parsers::BundledParser;
 use serde::Deserialize;
 use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};
@@ -75,7 +74,7 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
         None => return json!({"error": "Could not infer parser from extension"}),
     };
 
-    let document = match scip_syntax::get_symbols(&parser, q.content.as_bytes()) {
+    let document = match scip_syntax::get_symbols(parser, q.content.as_bytes()) {
         Ok(vals) => vals,
         Err(err) => {
             return jsonify_err(err);

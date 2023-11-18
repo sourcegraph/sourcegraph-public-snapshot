@@ -106,6 +106,7 @@ type RepoEmbeddingJobsStore interface {
 	CountRepoEmbeddingJobs(ctx context.Context, args ListOpts) (int, error)
 	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
 	CancelRepoEmbeddingJob(ctx context.Context, job int) error
+	RescheduleAllRepos(ctx context.Context) error
 
 	UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error
 	GetRepoEmbeddingJobStats(ctx context.Context, jobID int) (EmbedRepoStats, error)
@@ -253,6 +254,27 @@ func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, rep
 	q := sqlf.Sprintf(createRepoEmbeddingJobFmtStr, repoID, revision)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return id, err
+}
+
+func (s *repoEmbeddingJobsStore) RescheduleAllRepos(ctx context.Context) error {
+	const rescheduleAllQuery = `
+	INSERT INTO repo_embedding_jobs (repo_id, revision)
+	SELECT * FROM (
+		SELECT
+			DISTINCT repo_id,
+			(
+				SELECT r2.revision
+				FROM repo_embedding_jobs r2
+				WHERE r2.repo_id = r1.repo_id
+					AND state = 'completed'
+				ORDER BY finished_at DESC
+				LIMIT 1
+			) latest_successful_revision
+		FROM repo_embedding_jobs r1
+	) subquery
+	WHERE latest_successful_revision IS NOT NULL
+	`
+	return s.Store.Exec(ctx, sqlf.Sprintf(rescheduleAllQuery))
 }
 
 var repoEmbeddingJobStatsColumns = []*sqlf.Query{

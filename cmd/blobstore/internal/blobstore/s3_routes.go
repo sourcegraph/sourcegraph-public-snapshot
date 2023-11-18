@@ -67,8 +67,10 @@ func (s *Service) serveS3(w http.ResponseWriter, r *http.Request) error {
 // GET /<bucket>
 // https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html
 func (s *Service) serveListObjectsV2(w http.ResponseWriter, r *http.Request, bucketName string) error {
+	prefix := r.URL.Query().Get("prefix")
+
 	var contents []s3Object
-	objects, err := s.listObjects(r.Context(), bucketName)
+	objects, err := s.listObjects(r.Context(), bucketName, prefix)
 	if err != nil {
 		return writeS3Error(w, s3ErrorNoSuchBucket, bucketName, err, http.StatusConflict)
 	}

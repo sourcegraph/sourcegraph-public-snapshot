@@ -40,7 +40,7 @@ func Validate(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, con
 
 		// Validate src-cli is of a good version, rely on the connected instance to tell
 		// us what "good" means.
-		if err = util.ValidateSrcCLIVersion(cliCtx.Context, runner, client, copts.BaseClientOptions.EndpointOptions); err != nil {
+		if err = util.ValidateSrcCLIVersion(cliCtx.Context, runner, client); err != nil {
 			if errors.Is(err, util.ErrSrcPatchBehind) {
 				// This is ok. The patch just doesn't match but still works.
 				logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))

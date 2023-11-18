@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -295,6 +297,7 @@ file contains invalid utf8 � characters
 `},
 	}
 
+	zoektURL := newZoekt(t, &zoekt.Repository{}, nil)
 	s := newStore(t, files)
 	s.FilterTar = func(_ context.Context, _ gitserver.Client, _ api.RepoName, _ api.CommitID) (search.FilterFunc, error) {
 		return func(hdr *tar.Header) bool {
@@ -302,8 +305,9 @@ file contains invalid utf8 � characters
 		}, nil
 	}
 	ts := httptest.NewServer(&search.Service{
-		Store: s,
-		Log:   s.Log,
+		Store:   s,
+		Log:     s.Log,
+		Indexed: backend.ZoektDial(zoektURL),
 	})
 	defer ts.Close()
 
@@ -575,7 +579,7 @@ func newStore(t *testing.T, files map[string]struct {
 	}
 
 	return &search.Store{
-		GitserverClient: gitserver.NewClient(),
+		GitserverClient: gitserver.NewTestClient(t),
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			r, w := io.Pipe()
 			go func() {

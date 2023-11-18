@@ -16,6 +16,7 @@ import (
 )
 
 var depot = flag.String("d", "", "depot name")
+var ignoreRulesWithHostFlag = flag.Bool("i", false, "ignore protects rules with a non-wildcard Host field")
 
 func main() {
 	flag.Parse()
@@ -36,12 +37,14 @@ func main() {
 	})
 	defer liblog.Sync()
 
-	logger := log.Scoped("scanprotects", "")
-	run(logger, *depot, os.Stdin)
+	ignoreRulesWithHost := ignoreRulesWithHostFlag == nil || *ignoreRulesWithHostFlag
+
+	logger := log.Scoped("scanprotects")
+	run(logger, *depot, os.Stdin, ignoreRulesWithHost)
 }
 
-func run(logger log.Logger, depot string, input io.Reader) {
-	perms, err := perforce.PerformDebugScan(logger, input, extsvc.RepoID(depot))
+func run(logger log.Logger, depot string, input io.Reader, ignoreRulesWithHost bool) {
+	perms, err := perforce.PerformDebugScan(logger, input, extsvc.RepoID(depot), ignoreRulesWithHost)
 	if err != nil {
 		fail(fmt.Sprintf("Error parsing permissions: %s", err))
 	}

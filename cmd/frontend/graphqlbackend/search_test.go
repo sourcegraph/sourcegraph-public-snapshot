@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -119,7 +120,9 @@ func TestSearch(t *testing.T) {
 			gsClient.ResolveRevisionFunc.SetDefaultHook(tc.repoRevsMock)
 
 			sr := newSchemaResolver(db, gsClient)
-			gqlSchema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&requestTracer{}))
+			gqlSchema, err := graphql.ParseSchema(mainSchema, sr,
+				graphql.Tracer(newRequestTracer(logtest.Scoped(t), db)),
+				graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -354,8 +357,12 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			client: client.MockedZoekt(logtest.Scoped(b), db, z),
-			db:     db,
+			client: client.Mocked(job.RuntimeClients{
+				Logger: logtest.Scoped(b),
+				DB:     db,
+				Zoekt:  z,
+			}),
+			db: db,
 			SearchInputs: &search.Inputs{
 				Plan:         plan,
 				Query:        plan.ToQ(),

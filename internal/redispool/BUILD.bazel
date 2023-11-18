@@ -9,7 +9,6 @@ go_library(
         "mem.go",
         "mocks.go",
         "naive.go",
-        "ratelimit.go",
         "redis.go",
         "redis_conn.go",
         "redispool.go",
@@ -34,7 +33,6 @@ go_test(
     srcs = [
         "keyvalue_test.go",
         "naive_test.go",
-        "ratelimit_test.go",
         "redispool_test.go",
     ],
     embed = [":redispool"],

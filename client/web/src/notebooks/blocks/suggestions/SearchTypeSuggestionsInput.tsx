@@ -5,7 +5,7 @@ import type { EditorView } from '@codemirror/view'
 import { type Observable, of } from 'rxjs'
 import { delay, startWith } from 'rxjs/operators'
 
-import { CodeMirrorQueryInput, SyntaxHighlightedSearchQuery, singleLine, changeListener } from '@sourcegraph/branded'
+import { CodeMirrorQueryInput, SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { pluralize } from '@sourcegraph/common'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
@@ -114,14 +114,13 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
                     <SyntaxHighlightedSearchQuery className={styles.searchTypeQueryPart} query={queryPrefix} />
                 </div>
                 <CodeMirrorQueryInput
+                    ref={onEditorCreatedLocal}
                     value={queryInput}
-                    onEditorCreated={onEditorCreatedLocal}
                     patternType={SearchPatternType.standard}
                     interpretComments={true}
-                    extensions={useMemo(
-                        () => [blockKeymap({ runBlock }), changeListener(setQueryInput), singleLine, extension ?? []],
-                        [setQueryInput, runBlock, extension]
-                    )}
+                    multiLine={false}
+                    onChange={setQueryInput}
+                    extension={useMemo(() => [blockKeymap({ runBlock }), extension ?? []], [runBlock, extension])}
                 />
             </div>
             <div className="mt-1">

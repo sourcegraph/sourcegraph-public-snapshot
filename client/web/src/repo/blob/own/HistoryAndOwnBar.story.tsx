@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
@@ -131,6 +131,7 @@ const barData: FetchOwnersAndHistoryResult = {
             },
             __typename: 'GitCommit',
         },
+        changelist: null,
         __typename: 'Repository',
     },
 }
@@ -154,6 +155,6 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory mocks={[mockLoaded]}>{() => <HistoryAndOwnBar enableOwnershipPanel={true} {...variables} />}</WebStory>
 )

@@ -33,7 +33,8 @@
     "star_count": 0,
     "forks_count": 0,
     "empty_repo": false,
-    "default_branch": "main"
+    "default_branch": "main",
+    "topics": ["topic1", "topic2"]
    }
   }
  ]

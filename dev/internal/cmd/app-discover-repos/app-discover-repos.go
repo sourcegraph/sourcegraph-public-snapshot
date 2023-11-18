@@ -42,7 +42,7 @@ func main() {
 
 	srv := &servegit.Serve{
 		ServeConfig: c.ServeConfig,
-		Logger:      log.Scoped("serve", ""),
+		Logger:      log.Scoped("serve"),
 	}
 
 	if *lsRemote {

@@ -100,7 +100,6 @@ export {
 
 /**
  * Type Exports
- * `export type` is required to avoid Webpack warnings.
  */
 export type { ButtonGroupProps } from './Button'
 export type { FeedbackPromptSubmitEventHandler } from './Feedback'
@@ -110,7 +109,7 @@ export type { ButtonLinkProps } from './ButtonLink'
 export type { SelectProps, InputProps } from './Form'
 export type { Series, SeriesLikeChart, CategoricalLikeChart, LineChartProps, BarChartProps } from './Charts'
 export type { LinkProps } from './Link'
-export type { PopoverOpenEvent, Rectangle } from './Popover'
+export type { PopoverOpenEvent, Rectangle, TetherInstanceAPI } from './Popover'
 export type { MenuLinkProps, MenuItemProps } from './Menu'
 export type { TabsProps, TabListProps, TabProps, TabPanelProps, TabPanelsProps } from './Tabs'
 export type { IconProps, IconType } from './Icon'

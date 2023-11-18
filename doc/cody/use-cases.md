@@ -28,17 +28,17 @@ To refactor code inline:
 
 1. Highlight the snippet of code you'd like to refactor
 2. Click the `+` icon to the left of the first line of code
-3. In the Cody chat box, type `/fix` + your prompt for Cody. For example: `/fix refactor this code to be more easily readable`
+3. In the Cody chat box, type `/edit` + your prompt for Cody. For example: `/edit refactor this code to be more easily readable`
 4. Click `Ask Cody` (or alternatively use shortcut `Cmd + Enter`)
 
-After submitting the request, Cody will prepare a code fix. You can click `Apply` and Cody will change the code inline, or you can click `Show Diff` to see Cody's proposed change.
+After submitting the request, Cody will prepare a code edit. You can click `Apply` and Cody will change the code inline, or you can click `Show Diff` to see Cody's proposed change.
 
-Here are some examples of what you can do with inline /fix commands:
+Here are some examples of what you can do with inline /edit commands:
 
-- "/fix Add a link here to the admin settings page"
-- "/fix Make this code less verbose"
-- "/fix Factor out any common helper functions"
-- "/fix Convert this code to a react functional component"
+- "/edit Add a link here to the admin settings page"
+- "/edit Make this code less verbose"
+- "/edit Factor out any common helper functions"
+- "/edit Convert this code to a react functional component"
 
 Note: inline chat is currently only available in the VS Code extension.
 
@@ -60,9 +60,9 @@ Cody will respond with potential issues it sees in your code. You can then respo
 
 ### Fix bugs with inline chat
 
-The same inline chat `/fix` functionality that can be used to refactor code can also be used to debug, fix, and update code from directly within a file.
+The same inline chat `/edit` functionality that can be used to refactor code can also be used to debug, fix, and update code from directly within a file.
 
-For example, try: "/fix fix the bug in this function"
+For example, try: "/edit fix the bug in this function"
 
 ## Onboarding to a new codebase
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/linters"
@@ -59,7 +60,7 @@ sg lint client
 # List all available check groups
 sg lint --help
 `,
-	Category: CategoryDev,
+	Category: category.Dev,
 	Flags: []cli.Flag{
 		generateAnnotations,
 		lintFix,

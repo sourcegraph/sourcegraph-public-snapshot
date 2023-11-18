@@ -1,11 +1,11 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { H1, H2 } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
 
 import { Tabs, Tab, TabList, TabPanel, TabPanels, type TabsProps } from '.'
 
-export const TabsStory: Story<TabsProps & { actions: boolean }> = args => (
+export const TabsStory: StoryFn<TabsProps & { actions: boolean }> = args => (
     <>
         <H1>Tabs</H1>
         <Container title="Standard">
@@ -64,7 +64,7 @@ const config: Meta = {
     },
 }
 
-const TabsVariant: Story<TabsProps & { actions: boolean }> = args => {
+const TabsVariant: StoryFn<TabsProps & { actions: boolean }> = args => {
     const { actions, lazy, behavior, size, ...props } = args
     return (
         <Tabs lazy={lazy} behavior={behavior} size={size} {...props}>

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -890,9 +889,6 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, 
 	rcache.SetupForTest(t)
 
 	cf, save := newClientFactory(t, tName)
-
-	lg := log15.New()
-	lg.SetHandler(log15.DiscardHandler())
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,

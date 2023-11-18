@@ -32,6 +32,7 @@ build --test_env=BUILDKITE
 # the mocha tests target is the build target and it's tested with `build_test`.
 build --define=E2E_HEADLESS=false
 build --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080"
+build --define=DISPLAY=:99
 
 # Provides git commit, branch information to build targets like Percy via status file.
 # https://bazel.build/docs/user-manual#workspace-status
@@ -42,3 +43,6 @@ build --test_env=INCLUDE_ADMIN_ONBOARDING=false
 
 # Used for container_structure_tests
 build --test_env=DOCKER_HOST
+
+# Used by migration rules
+build --action_env=PGUSER=postgres

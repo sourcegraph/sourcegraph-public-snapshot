@@ -1,11 +1,11 @@
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
 
-const decorator: DecoratorFn = story => <div className="container p-3">{story()}</div>
+const decorator: Decorator = story => <div className="container p-3">{story()}</div>
 
 const config: Meta = {
     title: 'web/search/notebooks/blocks/file/NotebookFileBlockInputs',
@@ -32,6 +32,6 @@ const defaultProps = {
     isSourcegraphDotCom: false,
 }
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>{webProps => <NotebookFileBlockInputs {...webProps} {...defaultProps} />}</WebStory>
 )

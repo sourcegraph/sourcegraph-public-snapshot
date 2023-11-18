@@ -47,7 +47,7 @@ func NewKubernetesRunner(
 	options command.KubernetesContainerOptions,
 ) Runner {
 	return &kubernetesRunner{
-		internalLogger: log.Scoped("kubernetes-runner", ""),
+		internalLogger: log.Scoped("kubernetes-runner"),
 		commandLogger:  commandLogger,
 		cmd:            cmd,
 		dir:            dir,

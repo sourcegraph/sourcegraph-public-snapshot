@@ -11,3 +11,4 @@
   - [Row-level security](row_level_security.md)
 - [Configure repository metadata](metadata.md)
 - [Set up Perforce depots](perforce.md)
+- [Configure command recording](recording.md)

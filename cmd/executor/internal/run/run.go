@@ -30,7 +30,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 		return err
 	}
 
-	logger = log.Scoped("service", "executor service")
+	logger = log.Scoped("service")
 
 	// Initialize tracing/metrics
 	observationCtx := observation.NewContext(logger)
@@ -66,7 +66,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 		if err != nil {
 			return err
 		}
-		if err = util.ValidateSrcCLIVersion(ctx, runner, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
+		if err = util.ValidateSrcCLIVersion(ctx, runner, client); err != nil {
 			if errors.Is(err, util.ErrSrcPatchBehind) {
 				// This is ok. The patch just doesn't match but still works.
 				logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
@@ -103,7 +103,7 @@ func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger
 
 	if cfg.UseFirecracker {
 		routines = append(routines, janitor.NewOrphanedVMJanitor(
-			log.Scoped("orphaned-vm-janitor", "deletes VMs from a previous executor instance"),
+			log.Scoped("orphaned-vm-janitor"),
 			cfg.VMPrefix,
 			nameSet,
 			cfg.CleanupTaskInterval,

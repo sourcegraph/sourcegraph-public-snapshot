@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/ci"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
+	"github.com/sourcegraph/sourcegraph/dev/sg/msp"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -80,9 +82,6 @@ var (
 const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/new?template=sg_bug.md"
 
 // sg is the main sg CLI application.
-//
-// To generate the reference.md (previously done with go generate) do:
-// bazel run //doc/dev/background-information/sg:write_cli_reference_doc
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
@@ -149,11 +148,6 @@ var sg = &cli.App{
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
-		// Add feedback flag to all commands and subcommands - we add this here, before
-		// we exit in bashCompletionsMode, so that '--feedback' is available via
-		// autocompletions.
-		addFeedbackFlags(cmd.App.Commands)
-
 		// All other setup pertains to running commands - to keep completions fast,
 		// we skip all other setup when in bashCompletions mode.
 		if bashCompletionsMode {
@@ -271,7 +265,7 @@ var sg = &cli.App{
 		// Common dev tasks
 		startCommand,
 		runCommand,
-		ciCommand,
+		ci.Command,
 		testCommand,
 		lintCommand,
 		generateCommand,
@@ -294,16 +288,15 @@ var sg = &cli.App{
 		// Company
 		teammateCommand,
 		rfcCommand,
-		adrCommand,
 		liveCommand,
 		opsCommand,
 		auditCommand,
 		pageCommand,
 		cloudCommand,
+		msp.Command,
 
 		// Util
 		helpCommand,
-		feedbackCommand,
 		versionCommand,
 		updateCommand,
 		installCommand,

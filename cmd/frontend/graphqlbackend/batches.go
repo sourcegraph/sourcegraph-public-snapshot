@@ -304,6 +304,8 @@ type BatchChangesResolver interface {
 
 	MaxUnlicensedChangesets(ctx context.Context) int32
 
+	GetChangesetsByIDs(ctx context.Context, args *GetChangesetsByIDsArgs) (graphqlutil.SliceConnectionResolver[ChangesetResolver], error)
+
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
@@ -617,12 +619,15 @@ type ListBatchSpecWorkspaceFilesArgs struct {
 }
 
 type AvailableBulkOperationsArgs struct {
-	BatchChange graphql.ID
-	Changesets  []graphql.ID
+	BulkOperationBaseArgs
 }
 
 type CheckBatchChangesCredentialArgs struct {
 	BatchChangesCredential graphql.ID
+}
+
+type GetChangesetsByIDsArgs struct {
+	BulkOperationBaseArgs
 }
 
 type ListWorkspacesArgs struct {

@@ -56,7 +56,7 @@ var _ actor.SourceSyncer = &Source{}
 
 func NewSource(logger log.Logger, cache httpcache.Cache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
-		log:    logger.Scoped("productsubscriptions", "product subscription actor source"),
+		log:    logger.Scoped("productsubscriptions"),
 		cache:  cache,
 		dotcom: dotcomClient,
 
@@ -177,7 +177,7 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 	}
 
 	for _, gqlerr := range gqlerrs {
-		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.GQLErrCodeProductSubscriptionNotFound {
+		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == productsubscription.GQLErrCodeProductSubscriptionNotFound {
 			return nil, actor.ErrAccessTokenDenied{
 				Source: s.Name(),
 				Reason: "associated product subscription not found",
