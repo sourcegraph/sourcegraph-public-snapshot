@@ -596,6 +596,14 @@ type Completions struct {
 	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
 	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
 	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
+	// PerUserCommunityMonthlyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.
+	PerUserCommunityMonthlyLimit int `json:"perUserCommunityMonthlyLimit,omitempty"`
+	// PerUserCommunityCodeCompletionsMonthlyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.
+	PerUserCommunityCodeCompletionsMonthlyLimit int `json:"perUserCommunityCodeCompletionsMonthlyLimit,omitempty"`
+	// PerUserProDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerUserProDailyLimit int `json:"perUserProDailyLimit,omitempty"`
+	// PerUserProCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerUserProCodeCompletionsDailyLimit int `json:"perUserProCodeCompletionsDailyLimit,omitempty"`
 	// Provider description: The external completions provider. Defaults to 'sourcegraph'.
 	Provider string `json:"provider,omitempty"`
 }

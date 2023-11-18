@@ -3,6 +3,8 @@ package productsubscription
 import (
 	"context"
 	"fmt"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"math"
 
 	"github.com/graph-gophers/graphql-go"
@@ -161,6 +163,12 @@ func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Cont
 }
 
 const tokensPerDollar = int(1 / (0.0001 / 1_000))
+const oneDayInSeconds = int32(60 * 60 * 24)
+
+// oneMonthInSeconds is a bad approximation. Our logic in Cody Gateway
+// is "till the Nth day of the next month", so this is basically a magic number,
+// and we shouldn't use this value as a duration.
+const oneMonthInSeconds = oneDayInSeconds * 30
 
 func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
 	// If the user isn't enabled return no rate limit
@@ -185,6 +193,7 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
 	var limit *int
 	var err error
+
 	source := graphqlbackend.CodyGatewayRateLimitSourceOverride
 
 	switch scope {
@@ -198,6 +207,54 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if err != nil {
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 	}
+
+	intervalSeconds := oneDayInSeconds
+	if limit == nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro-dec-ga", false) {
+		actor := sgactor.FromContext(ctx)
+		user, err := actor.User(ctx, db.Users())
+		if err != nil {
+			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
+		}
+		isProUser := user.CodyProEnabledAt != nil
+
+		cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+		switch scope {
+		case types.CompletionsFeatureChat:
+			if isProUser {
+				if cfg != nil && cfg.PerUserProDailyLimit > 0 {
+					limit = pointers.Ptr(cfg.PerUserProDailyLimit)
+				}
+			} else {
+				if cfg != nil && cfg.PerUserCommunityMonthlyLimit > 0 {
+					limit = pointers.Ptr(cfg.PerUserCommunityMonthlyLimit)
+					intervalSeconds = oneMonthInSeconds
+				}
+			}
+		case types.CompletionsFeatureCode:
+			if isProUser {
+				if cfg != nil && cfg.PerUserProCodeCompletionsDailyLimit > 0 {
+					limit = pointers.Ptr(cfg.PerUserProCodeCompletionsDailyLimit)
+				}
+			} else {
+				if cfg != nil && cfg.PerUserCommunityCodeCompletionsMonthlyLimit > 0 {
+					limit = pointers.Ptr(cfg.PerUserCommunityCodeCompletionsMonthlyLimit)
+					intervalSeconds = oneMonthInSeconds
+				}
+			}
+		default:
+			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope (self-serve limiting): %s", scope)
+		}
+
+		if limit == nil {
+			limit = pointers.Ptr(0)
+		}
+		return licensing.CodyGatewayRateLimit{
+			AllowedModels:   allowedModels(scope),
+			Limit:           int64(*limit),
+			IntervalSeconds: intervalSeconds, // Daily limit TODO(davejrt)
+		}, source, nil
+	}
+
 	if limit == nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		// Otherwise, fall back to the global limit.
@@ -212,7 +269,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 				limit = pointers.Ptr(cfg.PerUserCodeCompletionsDailyLimit)
 			}
 		default:
-			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope: %s", scope)
+			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope (dotcom limiting): %s", scope)
 		}
 	}
 	if limit == nil {
@@ -221,7 +278,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	return licensing.CodyGatewayRateLimit{
 		AllowedModels:   allowedModels(scope),
 		Limit:           int64(*limit),
-		IntervalSeconds: 86400, // Daily limit TODO(davejrt)
+		IntervalSeconds: intervalSeconds, // Daily limit TODO(davejrt)
 	}, source, nil
 }
 
