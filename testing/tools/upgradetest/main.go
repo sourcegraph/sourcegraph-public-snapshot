@@ -3,6 +3,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"database/sql"
@@ -64,7 +65,7 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 	defer cleanup()
 
 	// ensure env correctly initialized
-	if err := validateUpgrade(ctx, latestMinorVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestMinorVersion.String()), networkName, dbs); err != nil {
+	if err := validateDBs(ctx, latestMinorVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestMinorVersion.String()), networkName, dbs, false); err != nil {
 		fmt.Println("🚨 Upgrade failed: ", err)
 		return err
 	}
@@ -100,7 +101,7 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 
 	fmt.Println("-- ⚙️  post upgrade validation")
 	// Validate the upgrade
-	if err := validateUpgrade(ctx, "0.0.0+dev", "migrator:candidate", networkName, dbs); err != nil {
+	if err := validateDBs(ctx, "0.0.0+dev", "migrator:candidate", networkName, dbs, true); err != nil {
 		fmt.Println("🚨 Upgrade failed: ", err)
 		return err
 	}
@@ -274,7 +275,7 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 	return hash, networkName, dbs, cleanup, err
 }
 
-func validateUpgrade(ctx context.Context, version, migratorImage, networkName string, dbs []testDB) error {
+func validateDBs(ctx context.Context, version, migratorImage, networkName string, dbs []testDB, upgrade bool) error {
 	fmt.Println("-- ⚙️  validating dbs")
 
 	// Get DB clients
@@ -322,6 +323,14 @@ func validateUpgrade(ctx context.Context, version, migratorImage, networkName st
 		fmt.Println("✅ no failed migrations found")
 	}
 
+	// Get the last commit in the release branch
+	var candidateGitHead bytes.Buffer
+	if err := run.Cmd(ctx, "git", "rev-parse", "HEAD").Run().Stream(&candidateGitHead); err != nil {
+		fmt.Printf("🚨 failed to get latest commit on candidate branch: %s\n", err)
+		return err
+	}
+	fmt.Println("Latest commit on candidate branch: ", candidateGitHead.String())
+
 	// Check DBs for drift
 	fmt.Println("🔎 Checking DBs for drift")
 	for _, db := range dbs {
@@ -330,11 +339,18 @@ func validateUpgrade(ctx context.Context, version, migratorImage, networkName st
 			fmt.Printf("🚨 failed to get container hash: %s\n", err)
 			return err
 		}
-		fmt.Println(db.Name)
-		if err = run.Cmd(ctx, dockerMigratorBaseString(fmt.Sprintf("drift --db %s --version v%s --ignore-migrator-update", db.Name, version),
-			migratorImage, networkName, hash, dbs)...).Run().Stream(os.Stdout); err != nil {
-			fmt.Printf("🚨 failed to check drift on %s: %s\n", db.Name, err)
-			return err
+		if upgrade {
+			if err = run.Cmd(ctx, dockerMigratorBaseString(fmt.Sprintf("drift --db %s --version %s --ignore-migrator-update --skip-version-check", db.Name, candidateGitHead.String()),
+				migratorImage, networkName, hash, dbs)...).Run().Stream(os.Stdout); err != nil {
+				fmt.Printf("🚨 failed to check drift on %s: %s\n", db.Name, err)
+				return err
+			}
+		} else {
+			if err = run.Cmd(ctx, dockerMigratorBaseString(fmt.Sprintf("drift --db %s --version v%s --ignore-migrator-update", db.Name, version),
+				migratorImage, networkName, hash, dbs)...).Run().Stream(os.Stdout); err != nil {
+				fmt.Printf("🚨 failed to check drift on %s: %s\n", db.Name, err)
+				return err
+			}
 		}
 	}
 
