@@ -185,15 +185,21 @@ func streamAutocomplete(
 			return err
 		}
 
-		// Text and Finish reason are marked as REQUIRED in documentation but check just in case
+		// hasValidFirstCompletionsChoice checks for a valid 1st choice which has text
 		if hasValidFirstCompletionsChoice(entry.Choices) {
 			content += *entry.Choices[0].Text
-			finish := string(*entry.Choices[0].FinishReason)
+			finish := ""
+			if entry.Choices[0].FinishReason != nil {
+				finish = string(*entry.Choices[0].FinishReason)
+			}
 			ev := types.CompletionResponse{
 				Completion: content,
 				StopReason: finish,
 			}
-			return sendEvent(ev)
+			err := sendEvent(ev)
+			if err != nil {
+				return err
+			}
 		}
 	}
 }
@@ -227,10 +233,15 @@ func streamChat(
 		}
 
 		if hasValidFirstChatChoice(entry.Choices) {
-			// hasValidFirstChatChoice checks that FinishReason and Delta.Content aren't null
-			// they are both marked as REQUIRED in docs despite being a pointer
+			// hasValidFirstChatChoice checks that Delta.Content isn't null
+			// it is marked as REQUIRED in docs despite being a pointer
 			content += *entry.Choices[0].Delta.Content
-			finish := string(*entry.Choices[0].FinishReason)
+
+			finish := ""
+			// FinishReason is marked as REQUIRED but it's nil until the end
+			if entry.Choices[0].FinishReason != nil {
+				finish = string(*entry.Choices[0].FinishReason)
+			}
 			ev := types.CompletionResponse{
 				Completion: content,
 				StopReason: finish,
@@ -247,15 +258,13 @@ func streamChat(
 func hasValidFirstChatChoice(choices []azopenai.ChatChoice) bool {
 	return len(choices) > 0 &&
 		choices[0].Delta != nil &&
-		choices[0].Delta.Content != nil &&
-		choices[0].FinishReason != nil
+		choices[0].Delta.Content != nil
 }
 
 // hasValidChatChoice checks to ensure there is a choice and the first one contains non-nil values
 func hasValidFirstCompletionsChoice(choices []azopenai.Choice) bool {
 	return len(choices) > 0 &&
-		choices[0].Text != nil &&
-		choices[0].FinishReason != nil
+		choices[0].Text != nil
 }
 
 func getChatMessages(messages []types.Message) []azopenai.ChatMessage {
