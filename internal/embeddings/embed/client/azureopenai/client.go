@@ -3,7 +3,7 @@ package azureopenai
 import (
 	"context"
 	"fmt"
-	"sort"
+	"strings"
 	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
@@ -32,7 +32,7 @@ type EmbeddingsClient interface {
 	GetEmbeddings(ctx context.Context, body azopenai.EmbeddingsOptions, options *azopenai.GetEmbeddingsOptions) (azopenai.GetEmbeddingsResponse, error)
 }
 
-type GetEmbeddingsAPIClientFunc func(accessToken, endpoint string) (EmbeddingsClient, error)
+type GetEmbeddingsAPIClientFunc func(endpoint, accessToken string) (EmbeddingsClient, error)
 
 func GetAPIClient(endpoint, accessToken string) (EmbeddingsClient, error) {
 	apiClient.mu.RLock()
@@ -62,7 +62,7 @@ func GetAPIClient(endpoint, accessToken string) (EmbeddingsClient, error) {
 }
 
 func NewClient(getClient GetEmbeddingsAPIClientFunc, config *conftypes.EmbeddingsConfig) (*azureOpenaiEmbeddingsClient, error) {
-	client, err := getClient(config.AccessToken, config.Endpoint)
+	client, err := getClient(config.Endpoint, config.AccessToken)
 	if err != nil {
 		return nil, err
 	}
@@ -106,49 +106,34 @@ func (c *azureOpenaiEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context,
 func (c *azureOpenaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	for _, text := range texts {
 		if text == "" {
-			// The OpenAI API will return an error if any of the strings in texts is an empty string,
+			// The Azure OpenAI API will return an error if any of the strings in texts is an empty string,
 			// so fail fast to avoid making tons of retryable requests.
 			return nil, errors.New("cannot generate embeddings for an empty string")
 		}
 	}
 
-	response, err := c.client.GetEmbeddings(ctx, azopenai.EmbeddingsOptions{
-		Input:      texts,
-		Deployment: c.model,
-	}, nil)
-
-	if err != nil {
-		return nil, err
+	// For now, we assume all Azure OpenAI models will benefit from stripping out newlines.
+	augmentedTexts := make([]string, len(texts))
+	// Replace newlines for certain (OpenAI) models, because they can negatively affect performance.
+	for idx, text := range texts {
+		augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
 	}
 
-	if len(response.Data) == 0 {
-		return nil, nil
-	}
-
-	// Ensure embedding responses are sorted in the original order.
-	sort.Slice(response.Data, func(i, j int) bool {
-		return *response.Data[i].Index < *response.Data[j].Index
-	})
-
-	embeddings := make([]float32, 0, len(response.Data)*c.dimensions)
+	embeddings := make([]float32, 0, len(augmentedTexts)*c.dimensions)
 	failed := make([]int, 0)
-	for _, embedding := range response.Data {
-		if len(embedding.Embedding) != 0 {
-			embeddings = append(embeddings, embedding.Embedding...)
-		} else {
-			// HACK(camdencheek): Nondeterministically, the OpenAI API will
-			// occasionally send back a `null` for an embedding in the
-			// response. Try it again a few times and hope for the best.
-			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, texts[*embedding.Index], 3)
-			if err != nil {
-				failed = append(failed, int(*embedding.Index))
+	for i, input := range augmentedTexts {
+		// This is a difference to the OpenAI implementation: Azure OpenAI currently
+		// only supports a single input at a time, so we will need to fire off a request
+		// for each of the texts individually.
+		resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, input, 3)
+		if err != nil {
+			failed = append(failed, i)
 
-				// reslice to provide zero value embedding for failed chunk
-				embeddings = embeddings[:len(embeddings)+c.dimensions]
-				continue
-			}
-			embeddings = append(embeddings, resp.Data[0].Embedding...)
+			// reslice to provide zero value embedding for failed chunk
+			embeddings = embeddings[:len(embeddings)+c.dimensions]
+			continue
 		}
+		embeddings = append(embeddings, resp.Data[0].Embedding...)
 	}
 
 	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: c.dimensions}, nil
