@@ -57,6 +57,8 @@ func TestAzureOpenAI(t *testing.T) {
 				[]mockResponse{
 					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{
 						{Embedding: append(make([]float32, 1535), 1), Index: int32Ptr(0)},
+					}}}, err: nil},
+					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{
 						{Embedding: nil, Index: int32Ptr(1)},
 					}}}, err: nil},
 					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{
@@ -82,16 +84,26 @@ func TestAzureOpenAI(t *testing.T) {
 		client, _ := NewClient(
 			newMockAPIClient(
 				[]mockResponse{
+					// First success
 					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{
 						{Embedding: append(make([]float32, 1535), 1), Index: int32Ptr(0)},
+					}}}, err: nil},
+					// Initial Failure
+					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{
 						{Embedding: nil, Index: int32Ptr(1)},
+					}}}, err: nil},
+					// Retry 1
+					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{
+						{Embedding: nil, Index: int32Ptr(1)},
+					}}}, err: nil},
+					// Retry 2
+					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{
+						{Embedding: nil, Index: int32Ptr(1)},
+					}}}, err: nil},
+					// Final success
+					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{
 						{Embedding: append(make([]float32, 1535), 2), Index: int32Ptr(2)},
 					}}}, err: nil},
-					// Mock retry requests returning empty embeddings
-					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{{Embedding: nil, Index: int32Ptr(1)}}}}, err: nil},
-					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{{Embedding: nil, Index: int32Ptr(1)}}}}, err: nil},
-					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{{Embedding: nil, Index: int32Ptr(1)}}}}, err: nil},
-					{resp: azopenai.GetEmbeddingsResponse{Embeddings: azopenai.Embeddings{Data: []azopenai.EmbeddingItem{{Embedding: nil, Index: int32Ptr(1)}}}}, err: nil},
 				}),
 			&conftypes.EmbeddingsConfig{Dimensions: 1536},
 		)
