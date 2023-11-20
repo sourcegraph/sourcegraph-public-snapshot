@@ -517,17 +517,10 @@ func testAccessTokens_Lookup_expiredLicense(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Set license as expired
-	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-		return &license.Info{
-			ExpiresAt: time.Now().Add(-1 * time.Hour),
-		}, "", nil
-	}
-
-	if _, err := db.AccessTokens().Lookup(ctx, adminToken, TokenLookupOpts{RequiredScope: "a"}); err != nil {
+	if _, err := db.AccessTokens().Lookup(ctx, adminToken, TokenLookupOpts{RequiredScope: "a", OnlyAdmin: true}); err != nil {
 		t.Fatal("Lookup: lookup should not fail for admin user")
 	}
-	if _, err := db.AccessTokens().Lookup(ctx, regularToken, TokenLookupOpts{RequiredScope: "a"}); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, regularToken, TokenLookupOpts{RequiredScope: "a", OnlyAdmin: true}); err == nil {
 		t.Fatal("Lookup: lookup should fail for regular user")
 	}
 }
