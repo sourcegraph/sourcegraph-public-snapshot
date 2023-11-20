@@ -142,6 +142,6 @@ oci_push(
 
 oci_push(
     name = "scip-ctags_candidate_push",
-    image = ":image",
+    image = ":scip-ctags_image",
     repository = image_repository("scip-ctags"),
 )
