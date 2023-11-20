@@ -2,13 +2,13 @@ import React from 'react'
 
 import { Link } from '@sourcegraph/wildcard'
 
-import { AnalyticsUserActivity } from '../../../graphql-operations'
+import { AnalyticsUserActivityFields } from '../../../graphql-operations'
 
 import styles from './index.module.scss'
 
 interface UserNodeProps {
-    node: AnalyticsUserActivity
-    setFilterPackage?: (node: AnalyticsUserActivity) => void
+    node: AnalyticsUserActivityFields
+    setFilterPackage?: (node: AnalyticsUserActivityFields) => void
 }
 
 export const UserNode: React.FunctionComponent<React.PropsWithChildren<UserNodeProps>> = ({ node }) => (

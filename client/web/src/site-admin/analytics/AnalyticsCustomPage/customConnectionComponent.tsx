@@ -9,7 +9,7 @@ import { AnchorLink, Button, ErrorAlert, H2, Icon, LoadingSpinner } from '@sourc
 import { useShowMorePagination } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../../../components/FilteredConnection/ui'
 import {
-    AnalyticsUserActivity,
+    AnalyticsUserActivityFields,
     CustomUsersConnectionResult,
     CustomUsersConnectionVariables,
 } from '../../../graphql-operations'
@@ -42,7 +42,7 @@ export const AnalyticsCustomConnectionComponent: React.FunctionComponent<Props> 
         loading: usersLoading,
         fetchMore,
         hasNextPage,
-    } = useShowMorePagination<CustomUsersConnectionResult, CustomUsersConnectionVariables, AnalyticsUserActivity>({
+    } = useShowMorePagination<CustomUsersConnectionResult, CustomUsersConnectionVariables, AnalyticsUserActivityFields>({
         query: CUSTOM_USERS_CONNECTION,
         variables: queryVariables,
         getConnection: result => {

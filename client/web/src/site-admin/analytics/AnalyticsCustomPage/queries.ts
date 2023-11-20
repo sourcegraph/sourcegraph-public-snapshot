@@ -36,24 +36,32 @@ export const CUSTOM_USERS_CONNECTION = gql`
             analytics {
                 custom(dateRange: $dateRange, grouping: $grouping, events: $events) {
                     userActivity(first: $first, after: $after) {
-                        nodes {
-                            userID
-                            username
-                            displayName
-                            totalEventCount
-                            periods {
-                                date
-                                count
-                            }
-                        }
-                        totalCount
-                        pageInfo {
-                            endCursor
-                            hasNextPage
-                        }
+                        ...AnalyticsCustomResultFields
                     }
                 }
             }
+        }
+    }
+    fragment AnalyticsCustomResultFields on AnalyticsUserActivityConnection {
+        __typename
+        nodes {
+            ...AnalyticsUserActivityFields
+        }
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+    }
+    fragment AnalyticsUserActivityFields on AnalyticsUserActivity {
+        __typename
+        userID
+        username
+        displayName
+        totalEventCount
+        periods {
+            date
+            count
         }
     }
 `
