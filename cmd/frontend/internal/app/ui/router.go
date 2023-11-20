@@ -14,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -428,15 +429,25 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 		tr.SetAttributes(attribute.String("error-id", errorID))
 		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
 	}
-	logger.Error(
-		"ui HTTP handler error response",
+	logFields := []zapcore.Field{
 		log.String("method", r.Method),
 		log.String("request_uri", r.URL.RequestURI()),
 		log.Int("status_code", statusCode),
 		log.Error(err),
 		log.String("error_id", errorID),
 		log.String("trace", traceURL),
-	)
+	}
+	if statusCode >= 400 && statusCode < 500 {
+		logger.Warn(
+			"ui HTTP handler error response",
+			logFields...,
+		)
+	} else {
+		logger.Error(
+			"ui HTTP handler error response",
+			logFields...,
+		)
+	}
 
 	// In the case of recovering from a panic, we nicely include the stack
 	// trace in the error that is shown on the page. Additionally, we log it

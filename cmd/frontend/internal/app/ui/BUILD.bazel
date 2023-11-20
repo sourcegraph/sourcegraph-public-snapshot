@@ -66,6 +66,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_uber_go_zap//zapcore",
     ],
 )
 
