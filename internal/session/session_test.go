@@ -545,12 +545,22 @@ func TestExpiredLicenseOnlyAllowsAdmins(t *testing.T) {
 				t.Fatal("expected exactly 1 authed cookie")
 			}
 
-			gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httptest.NewRecorder()))
+			httpRec := httptest.NewRecorder()
+			gotActor := actor.FromContext(authenticateByCookie(logger, db, authedReq, httpRec))
 
 			if tc.WantActor && !reflect.DeepEqual(gotActor, actr) {
 				t.Errorf("didn't find actor %v != %v", gotActor, actr)
 			} else if !tc.WantActor && reflect.DeepEqual(gotActor, actr) {
 				t.Errorf("found actor %v == %v", gotActor, actr)
+			}
+
+			if !tc.WantActor && len(httpRec.Result().Cookies()) != 1 {
+				t.Errorf("should have received remove cookie instruction")
+			} else if !tc.WantActor && httpRec.Result().Cookies()[0].Expires.After(time.Now()) {
+				t.Errorf("cookie expiration should be in the past")
+			}
+			if tc.WantActor && len(httpRec.Result().Cookies()) == 1 {
+				t.Errorf("should not have received remove cookie instruction")
 			}
 		})
 	}

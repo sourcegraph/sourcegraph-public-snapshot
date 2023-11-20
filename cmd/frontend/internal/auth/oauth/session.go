@@ -125,7 +125,7 @@ func SessionIssuer(logger log.Logger, db database.DB, s SessionIssuerHelper, ses
 
 		// Since we obtained a valid user from the OAuth token, we consider the GitHub login successful at this point
 		ctx, err = session.SetActorFromUser(ctx, w, r, user, expiryDuration)
-		if err != nil { // TODO: test session expiration
+		if err != nil {
 			span.SetError(err)
 			logger.Error("OAuth failed: could not initiate session.", log.Error(err))
 			http.Error(w, fmt.Sprintf("Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: %s", err.Error()), http.StatusInternalServerError)
