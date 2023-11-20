@@ -526,7 +526,7 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/opsgenie/opsgenie-go-sdk-v2 v1.2.13
-	github.com/pandatix/go-cvss v0.5.2
+	github.com/pandatix/go-cvss v0.6.1
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0 // indirect
