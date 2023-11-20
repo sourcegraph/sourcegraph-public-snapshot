@@ -25,7 +25,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		types.CompletionsFeatureChat,
 		rl,
 		"chat",
-		func(_ctx context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+		func(_ context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
 			if isAllowedCustomChatModel(requestParams.Model) {
 				return requestParams.Model, nil
 			}
