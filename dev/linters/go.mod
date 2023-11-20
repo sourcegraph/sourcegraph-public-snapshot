@@ -11,7 +11,8 @@ require (
 	github.com/kyoh86/exportloopref v0.1.11
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20231006061601-ed9b2d0caec2
 	github.com/timakin/bodyclose v0.0.0-20221125081123-e39cf3fc478e
-	golang.org/x/tools v0.7.0
+	go.uber.org/nilaway v0.0.0-20231117175943-a267567c6fff
+	golang.org/x/tools v0.11.0
 	honnef.co/go/tools v0.4.3
 	mvdan.cc/unparam v0.0.0-20230312165513-e84e2d14e3b8
 )
@@ -33,14 +34,16 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.1.1 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
+	github.com/klauspost/compress v1.17.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	golang.org/x/crypto v0.7.0 // indirect
+	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20230203172020-98cc5a0785f9 // indirect
-	golang.org/x/mod v0.9.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/mod v0.12.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
