@@ -14,7 +14,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -429,7 +428,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 		tr.SetAttributes(attribute.String("error-id", errorID))
 		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())
 	}
-	logFields := []zapcore.Field{
+	logFields := []log.Field{
 		log.String("method", r.Method),
 		log.String("request_uri", r.URL.RequestURI()),
 		log.Int("status_code", statusCode),
