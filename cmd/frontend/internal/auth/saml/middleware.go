@@ -174,7 +174,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			// if info.SessionNotOnOrAfter != nil {
 			// 	exp = time.Until(*info.SessionNotOnOrAfter)
 			// }
-			if err := session.SetActor(w, r, actor, exp, user.CreatedAt); err != nil {
+			if _, err := session.SetActorFromUser(r.Context(), w, r, user, exp); err != nil {
 				log15.Error("Error setting SAML-authenticated actor in session.", "err", err)
 				http.Error(w, "Error starting SAML-authenticated session. Try signing in again.", http.StatusInternalServerError)
 				return
