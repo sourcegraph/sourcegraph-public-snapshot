@@ -894,7 +894,7 @@ $ cp components/patches/frontend-ingress-annotations.yaml instances/$INSTANCE_NA
     - patch: patches/frontend-ingress.annotations.yaml
   ```
 
-This will add the annotations specified in your copy of the [frontend-ingress-annotations.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml) file to the sourcegraph-frontend ingress resource. For more information on [ingress-nginx annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/), refer to the [NGINX Configuration documentation](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/).
+This will add the annotations specified in your copy of the [frontend-ingress-annotations.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/sourcegraph/frontend/sourcegraph-frontend.Ingress.yaml) file to the sourcegraph-frontend ingress resource. For more information on [ingress-nginx annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/), refer to the [NGINX Configuration documentation](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/).
 
 ### NetworkPolicy
 
@@ -1195,7 +1195,7 @@ To mount the files through Kustomize:
     - configs/known_hosts
   ```
 
-**Step 3:** Include the following component to mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod) in [gitserver.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/gitserver/gitserver.StatefulSet.yaml).
+**Step 3:** Include the following component to mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod) in [gitserver.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/sourcegraph/gitserver/gitserver.StatefulSet.yaml).
 
   ```yaml
   # instances/$INSTANCE_NAME/kustomization.yaml
