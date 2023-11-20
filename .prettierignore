@@ -30,8 +30,8 @@ doc/
 **/__fixtures__
 GH2SG.bookmarklet.js
 docker-images/grafana/config/provisioning/dashboards/sourcegraph/
-docker-images/syntax-highlighter/crates/
-docker-images/syntax-highlighter/target/
+syntax-highlighter/crates/
+syntax-highlighter/target/
 storybook-static/
 browser/code-intel-extensions/
 vscode/code-intel-extensions/
