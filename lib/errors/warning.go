@@ -90,6 +90,7 @@ func (w *warning) As(target any) bool {
 func IsWarning(err error) bool {
 	var ref Warning
 	if As(err, &ref) {
+		// nolint:nilaway
 		return ref.IsWarning()
 	}
 	return false

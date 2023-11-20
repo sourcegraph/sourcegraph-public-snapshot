@@ -22,6 +22,7 @@ func Ignore(err error, pred ErrorPredicate) error {
 		if len(filtered) == 0 {
 			return nil
 		}
+		// nolint:nilaway
 		multi.errs = filtered
 		return err
 	}

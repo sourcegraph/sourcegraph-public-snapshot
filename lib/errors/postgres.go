@@ -8,5 +8,6 @@ import (
 // signify a postgres error with the given error code.
 func HasPostgresCode(err error, code string) bool {
 	var pgerr *pgconn.PgError
+	// nolint:nilaway
 	return As(err, &pgerr) && pgerr.Code == code
 }
