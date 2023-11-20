@@ -244,15 +244,6 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		default:
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope (self-serve limiting): %s", scope)
 		}
-
-		if limit == nil {
-			limit = pointers.Ptr(0)
-		}
-		return licensing.CodyGatewayRateLimit{
-			AllowedModels:   allowedModels(scope),
-			Limit:           int64(*limit),
-			IntervalSeconds: intervalSeconds, // Daily limit TODO(davejrt)
-		}, source, nil
 	}
 
 	if limit == nil {
