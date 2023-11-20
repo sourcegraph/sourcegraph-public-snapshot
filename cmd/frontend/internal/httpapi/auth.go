@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -118,7 +119,19 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 			} else {
 				requiredScope = authz.ScopeSiteAdminSudo
 			}
-			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
+
+			info, err := licensing.GetConfiguredProductLicenseInfo()
+			if err != nil {
+				http.Error(w, "Could not check license for access token authorization.", http.StatusInternalServerError)
+				return
+			}
+
+			opts := database.TokenLookupOpts{
+				RequiredScope: requiredScope,
+				OnlyAdmin:     info.IsExpired(),
+			}
+
+			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, opts)
 			if err != nil {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
 					anonymousId, anonCookieSet := cookie.AnonymousUID(r)

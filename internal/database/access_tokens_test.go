@@ -101,7 +101,7 @@ func testAccessTokens_Create(t *testing.T) {
 		t.Errorf("got %q, want %q", got.Note, want)
 	}
 
-	gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, "a")
+	gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -358,7 +358,7 @@ func testAccessTokens_Lookup(t *testing.T) {
 	}
 
 	for _, scope := range []string{"a", "b"} {
-		gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, scope)
+		gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: scope})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -368,12 +368,12 @@ func testAccessTokens_Lookup(t *testing.T) {
 	}
 
 	// Lookup with a nonexistent scope and ensure it fails.
-	if _, err := db.AccessTokens().Lookup(ctx, tv0, "x"); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "x"}); err == nil {
 		t.Fatal(err)
 	}
 
 	// Lookup with an empty scope and ensure it fails.
-	if _, err := db.AccessTokens().Lookup(ctx, tv0, ""); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: ""}); err == nil {
 		t.Fatal(err)
 	}
 
@@ -381,12 +381,12 @@ func testAccessTokens_Lookup(t *testing.T) {
 	if err := db.AccessTokens().DeleteByID(ctx, tid0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 		t.Fatal(err)
 	}
 
 	// Try to Lookup a token that was never created.
-	if _, err := db.AccessTokens().Lookup(ctx, "abcdefg" /* this token value was never created */, "a"); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, "abcdefg" /* this token value was never created */, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 		t.Fatal(err)
 	}
 }
@@ -430,7 +430,7 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 		if err := db.Users().Delete(ctx, subject.ID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
+		if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 			t.Fatal("Lookup: want error looking up token for deleted subject user")
 		}
 
@@ -466,7 +466,7 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 		if err := db.Users().Delete(ctx, creator.ID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
+		if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 			t.Fatal("Lookup: want error looking up token for deleted creator user")
 		}
 
@@ -524,10 +524,10 @@ func testAccessTokens_Lookup_expiredLicense(t *testing.T) {
 		}, "", nil
 	}
 
-	if _, err := db.AccessTokens().Lookup(ctx, adminToken, "a"); err != nil {
+	if _, err := db.AccessTokens().Lookup(ctx, adminToken, TokenLookupOpts{RequiredScope: "a"}); err != nil {
 		t.Fatal("Lookup: lookup should not fail for admin user")
 	}
-	if _, err := db.AccessTokens().Lookup(ctx, regularToken, "a"); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, regularToken, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 		t.Fatal("Lookup: lookup should fail for regular user")
 	}
 }
