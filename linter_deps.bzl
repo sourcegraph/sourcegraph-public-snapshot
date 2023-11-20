@@ -182,3 +182,10 @@ def linter_dependencies():
     version = "v1.2.1",
     sum = "h1:AHcMYuw56NPjq/2y615IGg2kYkBdTvOaojYCBcRE7MA=",
   )
+
+  go_repository(
+    name ="org_uber_go_nilaway",
+    importpath = "go.uber.org/nilaway",
+    version = "v0.0.0-20231117175943-a267567c6fff",
+    sum = "h1:MSLkMoDm4RpwG6QRJPaiNK4dAnFMX81SmEaRBSs/zws=",
+  )
