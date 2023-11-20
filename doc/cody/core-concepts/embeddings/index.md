@@ -81,7 +81,7 @@ To use embeddings with OpenAI:
 <p>
 <span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> Azure OpenAI support is in the experimental stage.
 <br />
-For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+For any feedback, you can <a href="https://sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
 </p>
 </aside>
 

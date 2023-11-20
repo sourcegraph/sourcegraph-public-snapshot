@@ -384,7 +384,7 @@ const SidebarNavigation: FC<SidebarNavigationProps> = props => {
 
                     {isSourcegraphDotCom && (
                         <NavItemLink
-                            url="https://about.sourcegraph.com"
+                            url="https://sourcegraph.com"
                             external={true}
                             onClick={handleNavigationClick}
                         >

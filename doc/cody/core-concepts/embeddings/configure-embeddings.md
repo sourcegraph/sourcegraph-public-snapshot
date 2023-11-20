@@ -82,4 +82,4 @@ The new jobs will be shown in the list of jobs below. The initial status of the 
 
 Whether created manually or through a policy, embeddings will be generated incrementally if [incremental updates](./../embeddings.md#incremental-embeddings) are enabled.
 
-> NOTE: Generating embeddings sends code snippets to a third-party language party provider. By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
+> NOTE: Generating embeddings sends code snippets to a third-party language party provider. By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://sourcegraph.com/terms/cody-notice).

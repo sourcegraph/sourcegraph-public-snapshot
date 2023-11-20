@@ -1,9 +1,9 @@
 # Code hosts on GCP without public access
 
-<p>Please contact Sourcegraph directly via <a href="https://about.sourcegraph.com/contact">prefered contact method</a> for more informations</p>
+<p>Please contact Sourcegraph directly via <a href="https://sourcegraph.com/contact">prefered contact method</a> for more informations</p>
 </aside>
 
-As part of the [Enterprise tier](https://about.sourcegraph.com/pricing), Sourcegraph Cloud supports connecting to customer code hosts on GCP using [GCP Private Service Connect](https://cloud.google.com/vpc/docs/private-service-connect). It creates a secure connection between customer GCP project and Sourcegraph Cloud instance, so that access to a private code host never occurs over the public internet.
+As part of the [Enterprise tier](https://sourcegraph.com/pricing), Sourcegraph Cloud supports connecting to customer code hosts on GCP using [GCP Private Service Connect](https://cloud.google.com/vpc/docs/private-service-connect). It creates a secure connection between customer GCP project and Sourcegraph Cloud instance, so that access to a private code host never occurs over the public internet.
 
 When a customer has private code hosts inside the GCP and needs to expose it for Sourcegraph Cloud instance, please reach out to your account manager to initiate the process.
 
@@ -68,4 +68,4 @@ All traffic between the producer and consumer is encrypted in transit. You may l
 [private service connect]: https://cloud.google.com/vpc/docs/private-service-connect
 [service attachment]: https://cloud.google.com/vpc/docs/private-service-connect#service-attachments
 [encryption in transit]: https://cloud.google.com/docs/security/encryption-in-transit
-[Sourcegraph's security practices]: https://about.sourcegraph.com/security
+[Sourcegraph's security practices]: https://sourcegraph.com/security

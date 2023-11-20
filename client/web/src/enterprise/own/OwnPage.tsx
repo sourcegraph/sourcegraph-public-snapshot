@@ -68,7 +68,7 @@ export const OwnPage: React.FunctionComponent<{}> = () => {
                         <Text>
                             Code ownership is in a beta and is getting smarter fast. We’d love your feedback. You can
                             turn it on using the documentation below, or{' '}
-                            <Link to="https://about.sourcegraph.com/demo">contact us</Link> to get a demo and learn more
+                            <Link to="https://sourcegraph.com/demo">contact us</Link> to get a demo and learn more
                             about our roadmap.
                         </Text>
                         <H3 as="h4">Resources</H3>
@@ -80,7 +80,7 @@ export const OwnPage: React.FunctionComponent<{}> = () => {
                                 </Link>
                             </li>
                             <li>
-                                <Link to="https://about.sourcegraph.com/own" target="_blank" rel="noopener">
+                                <Link to="https://sourcegraph.com/own" target="_blank" rel="noopener">
                                     Product page{' '}
                                     <Icon role="img" aria-label="Open in a new tab" svgPath={mdiOpenInNew} />
                                 </Link>

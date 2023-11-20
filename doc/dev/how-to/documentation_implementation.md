@@ -89,7 +89,7 @@ If you need to force a reload — either because your change is _extremely_ urge
 
 >WARNING: There may be a few seconds of downtime when restarting the docs cluster this way. This shouldn't be a routine part of your workflow!
 
-To do this, follow the ["Restarting about.sourcegraph.com and docs.sourcegraph.com" playbook](https://handbook.sourcegraph.com/engineering/deployments/playbooks#restarting-about-sourcegraph-com-and-docs-sourcegraph-com).
+To do this, follow the ["Restarting sourcegraph.com and docs.sourcegraph.com" playbook](https://handbook.sourcegraph.com/engineering/deployments/playbooks#restarting-sourcegraph.com-and-docs-sourcegraph-com).
 
 ## Other ways of previewing changes locally (very rare)
 

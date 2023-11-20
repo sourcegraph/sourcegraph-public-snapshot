@@ -52,7 +52,7 @@ const (
 
 	routeAboutSubdomain = "about-subdomain"
 	aboutRedirectScheme = "https"
-	aboutRedirectHost   = "about.sourcegraph.com"
+	aboutRedirectHost   = "sourcegraph.com"
 
 	// Legacy redirects
 	routeLegacyLogin      = "login"
@@ -61,7 +61,7 @@ const (
 )
 
 // aboutRedirects contains map entries, each of which indicates that
-// sourcegraph.com/$KEY should redirect to about.sourcegraph.com/$VALUE.
+// sourcegraph.com/$KEY should redirect to sourcegraph.com/$VALUE.
 var aboutRedirects = map[string]string{
 	"about":      "about",
 	"blog":       "blog",
@@ -199,7 +199,7 @@ func InitRouter(db database.DB) {
 	r.Path("/search/badge").Methods("GET").Name(routeSearchBadge).Handler(searchBadgeHandler())
 
 	if envvar.SourcegraphDotComMode() {
-		// about.sourcegraph.com subdomain
+		// sourcegraph.com subdomain
 		r.Path("/{Path:(?:" + strings.Join(mapKeys(aboutRedirects), "|") + ")}").Methods("GET").
 			Name(routeAboutSubdomain).
 			Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -220,7 +220,7 @@ func InitRouter(db database.DB) {
 
 		// legacy routes
 		r.Path("/login").Methods("GET").Name(routeLegacyLogin).Handler(staticRedirectHandler("/sign-in", http.StatusMovedPermanently))
-		r.Path("/careers").Methods("GET").Name(routeLegacyCareers).Handler(staticRedirectHandler("https://about.sourcegraph.com/jobs", http.StatusMovedPermanently))
+		r.Path("/careers").Methods("GET").Name(routeLegacyCareers).Handler(staticRedirectHandler("https://sourcegraph.com/jobs", http.StatusMovedPermanently))
 
 		r.PathPrefix("/extensions").Methods("GET").Name("extensions").
 			HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

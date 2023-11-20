@@ -426,12 +426,12 @@ const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNo
                         <>
                             <Link to={`/sign-in?returnTo=${location.pathname}`}>Sign in</Link> to get access to Cody.
                             You can learn more about Cody{' '}
-                            <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                            <Link to="https://sourcegraph.com/cody?utm_source=server">here</Link>.
                         </>
                     ) : (
                         <>
                             Cody isn't available on this instance, but you can learn more about Cody{' '}
-                            <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                            <Link to="https://sourcegraph.com/cody?utm_source=server">here</Link>.
                         </>
                     )}
                 </Text>

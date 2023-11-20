@@ -107,7 +107,7 @@ Cody enhances your coding experience by providing intelligent code suggestions, 
 
 <ul class="limg">
   <li>
-    <a class="card text-left" target="_blank" href="https://about.sourcegraph.com/cody/pricing">
+    <a class="card text-left" target="_blank" href="https://sourcegraph.com/cody/pricing">
       <h3><img alt="Cody Enterprise" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody Enterprise</h3>
       <p>Get in touch with our team to try Cody for Sourcegraph enterprise.</p>
     </a>
@@ -123,7 +123,7 @@ Cody enhances your coding experience by providing intelligent code suggestions, 
 
 ### Enable Cody on your Sourcegraph instance
 
-Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review [Cody's usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). Code snippets are sent to a third-party language model provider when you use the Cody extension or enable embeddings.
+Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review [Cody's usage and privacy notice](https://sourcegraph.com/terms/cody-notice). Code snippets are sent to a third-party language model provider when you use the Cody extension or enable embeddings.
 
 This requires site-admin privileges. To do so,
 
@@ -275,7 +275,7 @@ Create your own key with OpenAI [here](https://beta.openai.com/account/api-keys)
 <p>
 <span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> Azure OpenAI support is in the experimental stage.
 <br />
-For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+For any feedback, you can <a href="https://sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
 </p>
 </aside>
 
@@ -306,7 +306,7 @@ Once done, go to **Site admin > Site configuration** (`/site-admin/configuration
 <p>
 <span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> AWS Bedrock support is in the experimental stage. You must have Sourcegraph 5.2.2 or higher.
 <br />
-For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
+For any feedback, you can <a href="https://sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
 </p>
 </aside>
 

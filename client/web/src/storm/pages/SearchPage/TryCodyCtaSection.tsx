@@ -98,7 +98,7 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
                     <MeetCodySVG />
                 </div>
                 <Text>
-                    <Link to="https://about.sourcegraph.com/cody?utm_source=server">Learn about Cody</Link>,
+                    <Link to="https://sourcegraph.com/cody?utm_source=server">Learn about Cody</Link>,
                     Sourcegraph's AI coding assistant
                 </Text>
                 <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>

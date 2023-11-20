@@ -171,7 +171,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                             By registering, you agree to our{' '}
                             <Link
                                 className={styles.termsPrivacyLink}
-                                to="https://about.sourcegraph.com/terms"
+                                to="https://sourcegraph.com/terms"
                                 target="_blank"
                                 rel="noopener"
                             >
@@ -180,7 +180,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                             and{' '}
                             <Link
                                 className={styles.termsPrivacyLink}
-                                to="https://about.sourcegraph.com/privacy"
+                                to="https://sourcegraph.com/privacy"
                                 target="_blank"
                                 rel="noopener"
                             >
@@ -205,7 +205,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                             <li>Write code faster</li>
                         </ul>
                         <Text className="mb-0">
-                            <Link to="https://about.sourcegraph.com/cody">Learn more about Cody &rarr;</Link>
+                            <Link to="https://sourcegraph.com/cody">Learn more about Cody &rarr;</Link>
                             {authenticatedUser?.siteAdmin && (
                                 <>
                                     {' '}
@@ -243,7 +243,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                             <H4 className={styles.learnMoreItemsTitle}>Overview</H4>
                             <Text className="mb-0">
                                 Visit the{' '}
-                                <Link to="https://about.sourcegraph.com/cody" target="_blank" rel="noopener">
+                                <Link to="https://sourcegraph.com/cody" target="_blank" rel="noopener">
                                     product page
                                 </Link>{' '}
                                 and see what devs are building with Cody.
@@ -255,7 +255,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                                 <MeetCodySVG />
                             </div>
                             <Text className="ml-3">
-                                <Link to="https://about.sourcegraph.com/cody">Learn about Cody</Link>, Sourcegraph's AI
+                                <Link to="https://sourcegraph.com/cody">Learn about Cody</Link>, Sourcegraph's AI
                                 coding assistant.
                             </Text>
                         </div>
@@ -286,7 +286,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                         </Text>
                         <div className="mb-2">
                             <Link
-                                to="https://about.sourcegraph.com/demo"
+                                to="https://sourcegraph.com/demo"
                                 className={classNames('d-inline-flex align-items-center', styles.footerCtaLink)}
                                 onClick={onSpeakToAnEngineer}
                             >
