@@ -26,6 +26,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The setting `experimentalFeatures.searchQueryInput` now refers to the new query input as `v2` (not `experimental`). <!-- NOTE: If v2 becomes the default before this release is cut, then update this entry to mention that instead of adding a separate entry. -->
 - Search-based code intel doesn't include the currently selected search context anymore. It was possible to get into a situation where search-based code intel wouldn't find any information due to being restricted by the current search context. [#58010](https://github.com/sourcegraph/sourcegraph/pull/58010)
 - The last commit which changed a file/directory is now shown in the files panel on the repo and file pages. To avoid duplicating information and confusion, the commits panel was removed. [58328](https://github.com/sourcegraph/sourcegraph/pull/58328)
+- Clicking on a search result now opens the blob view at the same commit as the search result. Before, blob views were opened at the tip of the default branch, which sometimes caused inconsistencies in line numbers if the index was out of date. [#58381](https://github.com/sourcegraph/sourcegraph/pull/58381)
 
 ### Fixed
 

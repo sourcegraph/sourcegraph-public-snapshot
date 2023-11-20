@@ -1514,8 +1514,8 @@ func (s *Server) doClone(
 	}
 
 	if opts.Overwrite {
-		// remove the current repo by putting it into our temporary directory
-		err := fileutil.RenameAndSync(dstPath, filepath.Join(filepath.Dir(tmpDir), "old"))
+		// remove the current repo by putting it into our temporary directory, outside of the git repo.
+		err := fileutil.RenameAndSync(dstPath, filepath.Join(tmpDir, "old"))
 		if err != nil && !os.IsNotExist(err) {
 			return errors.Wrapf(err, "failed to remove old clone")
 		}
