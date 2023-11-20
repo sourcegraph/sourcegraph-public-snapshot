@@ -42,18 +42,20 @@ export const AnalyticsCustomConnectionComponent: React.FunctionComponent<Props> 
         loading: usersLoading,
         fetchMore,
         hasNextPage,
-    } = useShowMorePagination<CustomUsersConnectionResult, CustomUsersConnectionVariables, AnalyticsUserActivityFields>({
-        query: CUSTOM_USERS_CONNECTION,
-        variables: queryVariables,
-        getConnection: result => {
-            const data = dataOrThrowErrors(result)
-            return data.site.analytics.custom.userActivity
-        },
-        options: {
-            fetchPolicy: 'cache-and-network',
-            useURL: true,
-        },
-    })
+    } = useShowMorePagination<CustomUsersConnectionResult, CustomUsersConnectionVariables, AnalyticsUserActivityFields>(
+        {
+            query: CUSTOM_USERS_CONNECTION,
+            variables: queryVariables,
+            getConnection: result => {
+                const data = dataOrThrowErrors(result)
+                return data.site.analytics.custom.userActivity
+            },
+            options: {
+                fetchPolicy: 'cache-and-network',
+                useURL: true,
+            },
+        }
+    )
 
     return (
         <>
