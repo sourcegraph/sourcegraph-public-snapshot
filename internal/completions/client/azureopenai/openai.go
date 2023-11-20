@@ -1,32 +1,81 @@
 package azureopenai
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
-	"net/url"
-	"strings"
+	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
+	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
-	return &azureCompletionClient{
-		cli:         cli,
-		accessToken: accessToken,
-		endpoint:    endpoint,
+// We want to reuse the client because when using the DefaultAzureCredential
+// it will acquire a short lived token and reusing the client
+// prevents acquiring a new token on every request.
+// The client will refresh the token as needed.
+
+var apiClient completionsClient
+
+type completionsClient struct {
+	mu          sync.RWMutex
+	accessToken string
+	endpoint    string
+	client      *azopenai.Client
+}
+
+type CompletionsClient interface {
+	GetCompletionsStream(ctx context.Context, body azopenai.CompletionsOptions, options *azopenai.GetCompletionsStreamOptions) (azopenai.GetCompletionsStreamResponse, error)
+	GetCompletions(ctx context.Context, body azopenai.CompletionsOptions, options *azopenai.GetCompletionsOptions) (azopenai.GetCompletionsResponse, error)
+	GetChatCompletions(ctx context.Context, body azopenai.ChatCompletionsOptions, options *azopenai.GetChatCompletionsOptions) (azopenai.GetChatCompletionsResponse, error)
+	GetChatCompletionsStream(ctx context.Context, body azopenai.ChatCompletionsOptions, options *azopenai.GetChatCompletionsStreamOptions) (azopenai.GetChatCompletionsStreamResponse, error)
+}
+
+func GetAPIClient(endpoint, accessToken string) (CompletionsClient, error) {
+	apiClient.mu.RLock()
+	if apiClient.client != nil && apiClient.endpoint == endpoint && apiClient.accessToken == accessToken {
+		apiClient.mu.RUnlock()
+		return apiClient.client, nil
 	}
+	apiClient.mu.RUnlock()
+	apiClient.mu.Lock()
+	defer apiClient.mu.Unlock()
+	var err error
+	if accessToken != "" {
+		credential, credErr := azopenai.NewKeyCredential(accessToken)
+		if credErr != nil {
+			return nil, credErr
+		}
+		apiClient.client, err = azopenai.NewClientWithKeyCredential(endpoint, credential, nil)
+	} else {
+		credential, credErr := azidentity.NewDefaultAzureCredential(nil)
+		if credErr != nil {
+			return nil, credErr
+		}
+		apiClient.client, err = azopenai.NewClient(endpoint, credential, nil)
+	}
+	return apiClient.client, err
+
+}
+
+type GetCompletionsAPIClientFunc func(accessToken, endpoint string) (CompletionsClient, error)
+
+func NewClient(getClient GetCompletionsAPIClientFunc, accessToken, endpoint string) (types.CompletionsClient, error) {
+	client, err := getClient(accessToken, endpoint)
+	if err != nil {
+		return nil, err
+	}
+	return &azureCompletionClient{
+		client: client,
+	}, nil
 }
 
 type azureCompletionClient struct {
-	cli         httpcli.Doer
-	accessToken string
-	endpoint    string
+	client CompletionsClient
 }
 
 func (c *azureCompletionClient) Complete(
@@ -34,35 +83,56 @@ func (c *azureCompletionClient) Complete(
 	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
-	var resp *http.Response
-	var err error
-	defer (func() {
-		if resp != nil {
-			resp.Body.Close()
-		}
-	})()
-	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, false)
-	} else {
-		resp, err = c.makeRequest(ctx, requestParams, false)
+
+	switch feature {
+	case types.CompletionsFeatureCode:
+		return completeAutocomplete(ctx, c.client, requestParams)
+	case types.CompletionsFeatureChat:
+		return completeChat(ctx, c.client, requestParams)
+	default:
+		return nil, errors.New("invalid completions feature")
 	}
+}
+
+func completeAutocomplete(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
+	options, err := getCompletionsOptions(requestParams)
 	if err != nil {
 		return nil, err
 	}
-
-	var response openaiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, err
+	response, err := client.GetCompletions(ctx, options, nil)
+	if err != nil {
+		return nil, toStatusCodeError(err)
 	}
 
-	if len(response.Choices) == 0 {
-		// Empty response.
+	// Text and FinishReason are documented as REQUIRED but checking just to be safe
+	if !hasValidFirstCompletionsChoice(response.Choices) {
 		return &types.CompletionResponse{}, nil
 	}
-
 	return &types.CompletionResponse{
-		Completion: response.Choices[0].Text,
-		StopReason: response.Choices[0].FinishReason,
+		Completion: *response.Choices[0].Text,
+		StopReason: string(*response.Choices[0].FinishReason),
+	}, nil
+}
+
+func completeChat(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
+	response, err := client.GetChatCompletions(ctx, getChatOptions(requestParams), nil)
+	if err != nil {
+		return nil, toStatusCodeError(err)
+	}
+	if !hasValidFirstChatChoice(response.Choices) {
+		return &types.CompletionResponse{}, nil
+	}
+	return &types.CompletionResponse{
+		Completion: *response.Choices[0].Delta.Content,
+		StopReason: string(*response.Choices[0].FinishReason),
 	}, nil
 }
 
@@ -72,239 +142,184 @@ func (c *azureCompletionClient) Stream(
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	var resp *http.Response
-	var err error
-
-	defer (func() {
-		if resp != nil {
-			resp.Body.Close()
-		}
-	})()
-	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, true)
-	} else {
-		resp, err = c.makeRequest(ctx, requestParams, true)
+	switch feature {
+	case types.CompletionsFeatureCode:
+		return streamAutocomplete(ctx, c.client, requestParams, sendEvent)
+	case types.CompletionsFeatureChat:
+		return streamChat(ctx, c.client, requestParams, sendEvent)
+	default:
+		return errors.New("invalid completions feature")
 	}
+}
+
+func streamAutocomplete(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+	sendEvent types.SendCompletionEvent,
+) error {
+	options, err := getCompletionsOptions(requestParams)
 	if err != nil {
 		return err
 	}
+	resp, err := client.GetCompletionsStream(ctx, options, nil)
+	if err != nil {
+		return toStatusCodeError(err)
+	}
+	defer resp.CompletionsStream.Close()
 
-	dec := openai.NewDecoder(resp.Body)
+	// Azure sends incremental deltas for each message in a chat stream
+	// build up the full message content over multiple responses
 	var content string
-	for dec.Scan() {
-		if ctx.Err() != nil && ctx.Err() == context.Canceled {
+	for {
+		entry, err := resp.CompletionsStream.Read()
+		// stream is done
+		if errors.Is(err, io.EOF) {
 			return nil
 		}
-
-		data := dec.Data()
-		// Gracefully skip over any data that isn't JSON-like.
-		if !bytes.HasPrefix(data, []byte("{")) {
-			continue
+		// some other error has occured
+		if err != nil {
+			return err
 		}
 
-		var event openaiResponse
-		if err := json.Unmarshal(data, &event); err != nil {
-			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
-		}
-
-		if len(event.Choices) > 0 {
-			if feature == types.CompletionsFeatureCode {
-				content += event.Choices[0].Text
-			} else {
-				content += event.Choices[0].Delta.Content
+		// hasValidFirstCompletionsChoice checks for a valid 1st choice which has text
+		if hasValidFirstCompletionsChoice(entry.Choices) {
+			content += *entry.Choices[0].Text
+			finish := ""
+			if entry.Choices[0].FinishReason != nil {
+				finish = string(*entry.Choices[0].FinishReason)
 			}
 			ev := types.CompletionResponse{
 				Completion: content,
-				StopReason: event.Choices[0].FinishReason,
+				StopReason: finish,
 			}
-			err = sendEvent(ev)
+			err := sendEvent(ev)
 			if err != nil {
 				return err
 			}
 		}
 	}
-
-	return dec.Err()
 }
 
-func (c *azureCompletionClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	if requestParams.TopK < 0 {
-		requestParams.TopK = 0
-	}
-	if requestParams.TopP < 0 {
-		requestParams.TopP = 0
-	}
+func streamChat(
+	ctx context.Context,
+	client CompletionsClient,
+	requestParams types.CompletionRequestParameters,
+	sendEvent types.SendCompletionEvent,
+) error {
 
-	payload := azureChatCompletionsRequestParameters{
-		Temperature: requestParams.Temperature,
-		TopP:        requestParams.TopP,
-		N:           1,
-		Stream:      stream,
-		MaxTokens:   requestParams.MaxTokensToSample,
-		Stop:        requestParams.StopSequences,
+	resp, err := client.GetChatCompletionsStream(ctx, getChatOptions(requestParams), nil)
+	if err != nil {
+		return toStatusCodeError(err)
 	}
-	for _, m := range requestParams.Messages {
-		var role string
+	defer resp.ChatCompletionsStream.Close()
+
+	// Azure sends incremental deltas for each message in a chat stream
+	// build up the full message content over multiple responses
+	var content string
+	for {
+		entry, err := resp.ChatCompletionsStream.Read()
+		// stream is done
+		if errors.Is(err, io.EOF) {
+			return nil
+		}
+		// some other error has occurred
+		if err != nil {
+			return err
+		}
+
+		if hasValidFirstChatChoice(entry.Choices) {
+			// hasValidFirstChatChoice checks that Delta.Content isn't null
+			// it is marked as REQUIRED in docs despite being a pointer
+			content += *entry.Choices[0].Delta.Content
+
+			finish := ""
+			// FinishReason is marked as REQUIRED but it's nil until the end
+			if entry.Choices[0].FinishReason != nil {
+				finish = string(*entry.Choices[0].FinishReason)
+			}
+			ev := types.CompletionResponse{
+				Completion: content,
+				StopReason: finish,
+			}
+			err := sendEvent(ev)
+			if err != nil {
+				return err
+			}
+		}
+	}
+}
+
+// hasValidChatChoice checks to ensure there is a choice and the first one contains non-nil values
+func hasValidFirstChatChoice(choices []azopenai.ChatChoice) bool {
+	return len(choices) > 0 &&
+		choices[0].Delta != nil &&
+		choices[0].Delta.Content != nil
+}
+
+// hasValidChatChoice checks to ensure there is a choice and the first one contains non-nil values
+func hasValidFirstCompletionsChoice(choices []azopenai.Choice) bool {
+	return len(choices) > 0 &&
+		choices[0].Text != nil
+}
+
+func getChatMessages(messages []types.Message) []azopenai.ChatMessage {
+	azureMessages := make([]azopenai.ChatMessage, len(messages))
+	for i, m := range messages {
+		var role azopenai.ChatRole
+		message := m.Text
 		switch m.Speaker {
 		case types.HUMAN_MESSAGE_SPEAKER:
-			role = "user"
+			role = azopenai.ChatRoleUser
 		case types.ASISSTANT_MESSAGE_SPEAKER:
-			role = "assistant"
-		default:
-			role = strings.ToLower(role)
+			role = azopenai.ChatRoleAssistant
 		}
-		payload.Messages = append(payload.Messages, message{
-			Role:    role,
-			Content: m.Text,
-		})
+		azureMessages[i] = azopenai.ChatMessage{
+			Content: &message,
+			Role:    &role,
+		}
 	}
-
-	reqBody, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-
-	url, err := url.Parse(c.endpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse configured endpoint")
-	}
-	q := url.Query()
-	q.Add("api-version", "2023-05-15")
-	url.RawQuery = q.Encode()
-	url.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", requestParams.Model)
-
-	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("api-key", c.accessToken)
-
-	resp, err := c.cli.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("AzureOpenAI", resp)
-	}
-
-	return resp, nil
+	return azureMessages
 }
 
-func (c *azureCompletionClient) makeCompletionRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+func getChatOptions(requestParams types.CompletionRequestParameters) azopenai.ChatCompletionsOptions {
 	if requestParams.TopK < 0 {
 		requestParams.TopK = 0
 	}
 	if requestParams.TopP < 0 {
 		requestParams.TopP = 0
 	}
+	return azopenai.ChatCompletionsOptions{
+		Messages:    getChatMessages(requestParams.Messages),
+		Temperature: &requestParams.Temperature,
+		TopP:        &requestParams.TopP,
+		N:           intToInt32Ptr(1),
+		Stop:        requestParams.StopSequences,
+		MaxTokens:   intToInt32Ptr(requestParams.MaxTokensToSample),
+		Deployment:  requestParams.Model,
+	}
+}
 
+func getCompletionsOptions(requestParams types.CompletionRequestParameters) (azopenai.CompletionsOptions, error) {
+	if requestParams.TopK < 0 {
+		requestParams.TopK = 0
+	}
+	if requestParams.TopP < 0 {
+		requestParams.TopP = 0
+	}
 	prompt, err := getPrompt(requestParams.Messages)
 	if err != nil {
-		return nil, err
+		return azopenai.CompletionsOptions{}, err
 	}
-
-	payload := azureCompletionsRequestParameters{
-		Temperature: requestParams.Temperature,
-		TopP:        requestParams.TopP,
-		N:           1,
-		Stream:      stream,
-		MaxTokens:   requestParams.MaxTokensToSample,
+	return azopenai.CompletionsOptions{
+		Prompt:      []string{prompt},
+		Temperature: &requestParams.Temperature,
+		TopP:        &requestParams.TopP,
+		N:           intToInt32Ptr(1),
 		Stop:        requestParams.StopSequences,
-		Prompt:      prompt,
-	}
-
-	reqBody, err := json.Marshal(payload)
-	if err != nil {
-		return nil, err
-	}
-	url, err := url.Parse(c.endpoint)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse configured endpoint")
-	}
-	q := url.Query()
-	q.Add("api-version", "2023-05-15")
-	url.RawQuery = q.Encode()
-	url.Path = fmt.Sprintf("/openai/deployments/%s/completions", requestParams.Model)
-
-	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("api-key", c.accessToken)
-
-	resp, err := c.cli.Do(req)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("AzureOpenAI", resp)
-	}
-
-	return resp, nil
-}
-
-type azureChatCompletionsRequestParameters struct {
-	Messages         []message          `json:"messages"`
-	Temperature      float32            `json:"temperature,omitempty"`
-	TopP             float32            `json:"top_p,omitempty"`
-	N                int                `json:"n,omitempty"`
-	Stream           bool               `json:"stream,omitempty"`
-	Stop             []string           `json:"stop,omitempty"`
-	MaxTokens        int                `json:"max_tokens,omitempty"`
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"`
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`
-	User             string             `json:"user,omitempty"`
-}
-
-type azureCompletionsRequestParameters struct {
-	Prompt           string             `json:"prompt"`
-	Temperature      float32            `json:"temperature,omitempty"`
-	TopP             float32            `json:"top_p,omitempty"`
-	N                int                `json:"n,omitempty"`
-	Stream           bool               `json:"stream,omitempty"`
-	Stop             []string           `json:"stop,omitempty"`
-	MaxTokens        int                `json:"max_tokens,omitempty"`
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"`
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`
-	Suffix           string             `json:"suffix,omitempty"`
-	User             string             `json:"user,omitempty"`
-}
-
-type message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-type azure struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
-}
-
-type openaiChoiceDelta struct {
-	Content string `json:"content"`
-}
-
-type openaiChoice struct {
-	Delta        openaiChoiceDelta `json:"delta"`
-	Role         string            `json:"role"`
-	Text         string            `json:"text"`
-	FinishReason string            `json:"finish_reason"`
-}
-
-type openaiResponse struct {
-	// Usage is only available for non-streaming requests.
-	Usage   azure          `json:"usage"`
-	Model   string         `json:"model"`
-	Choices []openaiChoice `json:"choices"`
+		MaxTokens:   intToInt32Ptr(requestParams.MaxTokensToSample),
+		Deployment:  requestParams.Model,
+	}, nil
 }
 
 func getPrompt(messages []types.Message) (string, error) {
@@ -313,4 +328,22 @@ func getPrompt(messages []types.Message) (string, error) {
 	}
 
 	return messages[0].Text, nil
+}
+
+func intToInt32Ptr(i int) *int32 {
+	v := int32(i)
+	return &v
+}
+
+// toStatusCodeError converts Azure SDK ResponseError to a ErrStatusNotOK error
+// when the status code is not OK.  This allows the request handler to return the
+// appropriate status code to the calling client which is especially important for rate limits.
+func toStatusCodeError(err error) error {
+	var responseError *azcore.ResponseError
+	if errors.As(err, &responseError) {
+		if responseError.StatusCode != http.StatusOK {
+			return types.NewErrStatusNotOK("AzureOpenAI", responseError.RawResponse)
+		}
+	}
+	return err
 }
