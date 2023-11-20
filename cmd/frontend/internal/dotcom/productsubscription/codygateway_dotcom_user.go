@@ -213,6 +213,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	intervalSeconds := oneDayInSeconds
 	if limit == nil && cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro-dec-ga", false) {
+		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		actor := sgactor.FromContext(ctx)
 		user, _ := actor.User(ctx, db.Users())
 		if err != nil {
