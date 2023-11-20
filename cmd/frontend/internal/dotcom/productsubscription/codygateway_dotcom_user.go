@@ -212,7 +212,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	// If there's no override, check the self-serve limits.
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	intervalSeconds := oneDayInSeconds
-	if limit == nil && cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro-dec-ga", false) {
+	if limit == nil && cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		actor := sgactor.FromContext(ctx)
 		user, _ := actor.User(ctx, db.Users())
