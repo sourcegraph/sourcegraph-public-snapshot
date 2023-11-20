@@ -11,7 +11,8 @@ import {
     mdiRefresh,
     mdiSecurity,
     mdiVectorPolyline,
-    mdiListStatus, mdiSearchWeb,
+    mdiListStatus,
+    mdiSearchWeb,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
