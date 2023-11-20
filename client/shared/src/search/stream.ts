@@ -591,8 +591,7 @@ export function getRevision(branches?: string[], version?: string): string {
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
     // We are not using getRevision here, because we want to flip the logic from
     // "branches first" to "revsion first"
-    const revision =
-        fileMatch.commit ?? (fileMatch.branches && fileMatch.branches.length > 0 ? fileMatch.branches[0] : '')
+    const revision = fileMatch.commit ?? fileMatch.branches?.[0]
     const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
     return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }
