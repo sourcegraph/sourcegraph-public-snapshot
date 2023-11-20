@@ -645,13 +645,13 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 }
 
 func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSource, resp *protocol.CreateCommitFromPatchResponse, remoteRepo *types.Repo, opts protocol.CreateCommitFromPatchRequest) (err error) {
-	var rejectUnverifiedCommit bool
-	if rejectUnverifiedCommitConfig := conf.Get().SiteConfig().BatchChangesRejectUnverifiedCommit; rejectUnverifiedCommitConfig != nil {
-		rejectUnverifiedCommit = *rejectUnverifiedCommitConfig
-	}
+	rejectUnverifiedCommit := conf.RejectUnverifiedCommit()
+	fmt.Println("gege ===>>", rejectUnverifiedCommit)
+
 	// If we're pushing to a GitHub code host, we should check if a GitHub App is
 	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
+		fmt.Println("changeset is GitHub Source")
 		// Attempt to get a ChangesetSource authenticated with a GitHub App.
 		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp, e.remote)
 		if err != nil {
@@ -701,6 +701,7 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 			}
 		}
 	}
+	fmt.Println("wraps ---->>")
 	return nil
 }
 

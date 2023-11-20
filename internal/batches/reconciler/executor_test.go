@@ -10,12 +10,15 @@ import (
 	"testing"
 	"time"
 
+	"github.com/aws/smithy-go/ptr"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -141,6 +144,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		wantWebhookType string
 
 		wantErr error
+
+		rejectUnverifiedCommit *bool
 	}
 
 	tests := map[string]testCase{
@@ -188,6 +193,34 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		},
 		"push and publish": {
 			hasCurrentSpec: true,
+			changeset: bt.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+			plan: &Plan{
+				Ops: Operations{
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationPublish,
+				},
+			},
+
+			wantCreateOnCodeHost: true,
+			wantGitserverCommit:  true,
+
+			wantChangeset: bt.ChangesetAssertions{
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    btypes.ChangesetExternalStateOpen,
+				Title:            githubPR.Title,
+				Body:             githubPR.Body,
+				DiffStat:         state.DiffStat,
+			},
+
+			wantWebhookType: webhooks.ChangesetPublish,
+		},
+		"push and publish (reject unverified commit)": {
+			rejectUnverifiedCommit: ptr.Bool(true),
+			hasCurrentSpec:         true,
 			changeset: bt.TestChangesetOpts{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
@@ -666,6 +699,9 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Create necessary associations.
 			batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "executor-test-batch-change", admin.ID, 0)
 			batchChange := bt.CreateBatchChange(t, ctx, bstore, "executor-test-batch-change", admin.ID, batchSpec.ID)
+
+			conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{BatchChangesRejectUnverifiedCommit: tc.rejectUnverifiedCommit}})
+			defer conf.Mock(nil)
 
 			// Create the changesetSpec with associations wired up correctly.
 			var changesetSpec *btypes.ChangesetSpec
