@@ -286,6 +286,7 @@ nogo(
             "//dev/linters/gocheckcompilerdirectives",
             "//dev/linters/gocritic",
             "//dev/linters/ineffassign",
+            "//dev/linters/nilaway",
             "//dev/linters/unparam",
             # Disabled because we currently have a lot of unused code
             # "//dev/linters/unused",
