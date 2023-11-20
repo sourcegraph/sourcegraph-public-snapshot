@@ -1,7 +1,6 @@
 load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:migrations.bzl", "generate_schemas")
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
