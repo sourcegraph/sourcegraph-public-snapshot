@@ -1,6 +1,5 @@
 import React, { type FC, useRef, useState, useEffect, useMemo } from 'react'
 
-import { mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -178,7 +177,7 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
             </thead>
             <tbody>
                 {entries.map(entry => {
-                    const { icon, iconClass } = getIcon(entry.name)
+                    const { icon, iconClass } = getIcon(entry.name, entry.isDirectory)
 
                     return (
                         <tr key={entry.name}>
@@ -193,9 +192,10 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                     title={entry.path}
                                     data-testid="tree-entry"
                                 >
+
                                     <Icon
-                                        className={classNames("mr-2", iconClass)}
-                                        svgPath={entry.isDirectory ? mdiFolderOutline : icon}
+                                        as={icon}
+                                        className={classNames('mr-1', iconClass)}
                                         aria-hidden={true}
                                     />
                                     {entry.name}
