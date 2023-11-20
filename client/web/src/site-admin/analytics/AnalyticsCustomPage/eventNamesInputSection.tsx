@@ -113,7 +113,7 @@ interface PopoverProps {
 const AddEventNamePopover = ({ eventNames, onSelect }: PopoverProps): JSX.Element => (
     <Popover>
         <PopoverTrigger as={Button} variant="primary" aria-label="Add an event">
-            <Icon svgPath={mdiMagnifyPlus} size="sm" />
+            <Icon svgPath={mdiMagnifyPlus} size="sm" aria-hidden={true} />
         </PopoverTrigger>
 
         <PopoverContent position={Position.bottom} className="d-flex flex-column">

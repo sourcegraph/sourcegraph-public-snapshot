@@ -8319,7 +8319,9 @@ type AnalyticsUserActivity {
     """
     periods: [AnalyticsUserActivePeriod!]!
 }
-
+"""
+A single time period with an event count.
+"""
 type AnalyticsUserActivePeriod {
     """
     The date for which the user was active, in ISO format.
