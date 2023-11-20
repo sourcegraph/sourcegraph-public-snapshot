@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"math"
 
@@ -194,8 +195,8 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	var limit *int
 	var err error
 
+	// Apply overrides first.
 	source := graphqlbackend.CodyGatewayRateLimitSourceOverride
-
 	switch scope {
 	case types.CompletionsFeatureChat:
 		limit, err = db.Users().GetChatCompletionsQuota(ctx, userID)
@@ -208,48 +209,25 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 	}
 
+	// If there's no override, check the self-serve limits.
+	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	intervalSeconds := oneDayInSeconds
-	if limit == nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro-dec-ga", false) {
+	if limit == nil && cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro-dec-ga", false) {
 		actor := sgactor.FromContext(ctx)
-		user, err := actor.User(ctx, db.Users())
+		user, _ := actor.User(ctx, db.Users())
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 		}
 		isProUser := user.CodyProEnabledAt != nil
-
-		cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-		switch scope {
-		case types.CompletionsFeatureChat:
-			if isProUser {
-				if cfg != nil && cfg.PerUserProDailyLimit > 0 {
-					limit = pointers.Ptr(cfg.PerUserProDailyLimit)
-				}
-			} else {
-				if cfg != nil && cfg.PerUserCommunityMonthlyLimit > 0 {
-					limit = pointers.Ptr(cfg.PerUserCommunityMonthlyLimit)
-					intervalSeconds = oneMonthInSeconds
-				}
-			}
-		case types.CompletionsFeatureCode:
-			if isProUser {
-				if cfg != nil && cfg.PerUserProCodeCompletionsDailyLimit > 0 {
-					limit = pointers.Ptr(cfg.PerUserProCodeCompletionsDailyLimit)
-				}
-			} else {
-				if cfg != nil && cfg.PerUserCommunityCodeCompletionsMonthlyLimit > 0 {
-					limit = pointers.Ptr(cfg.PerUserCommunityCodeCompletionsMonthlyLimit)
-					intervalSeconds = oneMonthInSeconds
-				}
-			}
-		default:
-			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope (self-serve limiting): %s", scope)
-		}
+		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, isProUser, *cfg)
+	}
+	if err != nil {
+		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 	}
 
+	// Otherwise, fall back to the global limit.
 	if limit == nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		// Otherwise, fall back to the global limit.
-		cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		switch scope {
 		case types.CompletionsFeatureChat:
 			if cfg != nil && cfg.PerUserDailyLimit > 0 {
@@ -271,6 +249,32 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 		Limit:           int64(*limit),
 		IntervalSeconds: intervalSeconds, // Daily limit TODO(davejrt)
 	}, source, nil
+}
+
+func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg conftypes.CompletionsConfig) (int32, *int, error) {
+	switch scope {
+	case types.CompletionsFeatureChat:
+		if isProUser {
+			if cfg.PerUserProDailyLimit > 0 {
+				return oneDayInSeconds, pointers.Ptr(cfg.PerUserProDailyLimit), nil
+			}
+		} else {
+			if cfg.PerUserCommunityMonthlyLimit > 0 {
+				return oneMonthInSeconds, pointers.Ptr(cfg.PerUserCommunityMonthlyLimit), nil
+			}
+		}
+	case types.CompletionsFeatureCode:
+		if isProUser {
+			if cfg.PerUserProCodeCompletionsDailyLimit > 0 {
+				return oneDayInSeconds, pointers.Ptr(cfg.PerUserProCodeCompletionsDailyLimit), nil
+			}
+		} else {
+			if cfg.PerUserCommunityCodeCompletionsMonthlyLimit > 0 {
+				return oneMonthInSeconds, pointers.Ptr(cfg.PerUserCommunityCodeCompletionsMonthlyLimit), nil
+			}
+		}
+	}
+	return 0, nil, errors.Newf("unknown scope (self-serve limiting): %s", scope)
 }
 
 func allowedModels(scope types.CompletionsFeature) []string {
