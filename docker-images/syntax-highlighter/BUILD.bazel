@@ -139,3 +139,9 @@ oci_push(
     image = ":image",
     repository = image_repository("syntax-highlighter"),
 )
+
+oci_push(
+    name = "scip-ctags_candidate_push",
+    image = ":scip-ctags_image",
+    repository = image_repository("scip-ctags"),
+)
