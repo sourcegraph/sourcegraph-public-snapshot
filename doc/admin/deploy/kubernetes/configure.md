@@ -106,7 +106,7 @@ RBAC must be enabled in your cluster for the frontend to communicate with other 
 This will allow the frontend service to discover endpoints for each service replica and communicate with them through the Kubernetes API. Note that this component should only be added if RBAC is enabled in your cluster.
 
 ### Embeddings Service
-By default the Embeddings service which is used to handle embeddings searches is disabled. To enable it the following must be commented out. By default the Embeddings service stores indexes in `blobstore`. Use the [embeddings-backend](./configure.md#external-embeddings-object-storage) patch to configure an external object store.
+By default, the Embeddings service which is used to handle embeddings searches is disabled. To enable it the following must be commented out. By default, the Embeddings service stores indexes in `blobstore`. Use the [embeddings-backend](./configure.md#external-embeddings-object-storage) patch to configure an external object store.
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
 components:
@@ -117,7 +117,7 @@ components:
 
 ## Monitoring stack
 
-The monitoring stack for Sourcegraph, similar to the main stack, does not include RBAC (Role-Based Access Control) resources by default. As a result, some dashboards may not display any data unless cAdvisor is deployed seperately with privileged access.
+The monitoring stack for Sourcegraph, similar to the main stack, does not include RBAC (Role-Based Access Control) resources by default. As a result, some dashboards may not display any data unless cAdvisor is deployed separately with privileged access.
 
 To deploy the monitoring stack, add the monitoring resources to the resources-list:
 
@@ -290,7 +290,7 @@ Some resources and components (e.g. [Prometheus](#prometheus-targets)) are pre-c
 
 ### Set namespace
 
-To set a namespace for all your Sourcegraph resources, update the `namespace` field to an exisiting namespace in your cluster:
+To set a namespace for all your Sourcegraph resources, update the `namespace` field to an existing namespace in your cluster:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -377,7 +377,7 @@ Here is an example on how to adjust the storage sizes for different services:
 
 > WARNING: Only available in version 4.5.0 or above
 
-In cases where adjusting resource allocation (e.g. replica count, resource limits, etc) is necessary, it is important to follow the instructions provided below.
+In cases where adjusting resource allocation (e.g. replica count, resource limits, etc.) is necessary, it is important to follow the instructions provided below.
 
 > NOTE: The built-in [replica transformer](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replicas/) is currently not supported unless being used as a component.
 
@@ -503,7 +503,7 @@ The component takes care of creating a new storage class named `sourcegraph` wit
 - Provisioner: pd.csi.storage.gke.io
 - SSD: types: pd-ssd
 
-It also update the storage class name for all resources to `sourcegraph`.
+It also updates the storage class name for all resources to `sourcegraph`.
 
 [Additional documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for more information.
 
@@ -530,7 +530,7 @@ It also update the storage class name for all resources to `sourcegraph`.
 
 ### Azure
 
-> WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact
+> WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact
 
 **Step 1**: Follow the [official instructions](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) to deploy the [Container Storage Interface (CSI) drivers](https://learn.microsoft.com/en-us/azure/aks/csi-storage-drivers).
 
@@ -1010,7 +1010,7 @@ configMapGenerator:
 
 These values will be automatically merged with the environment variables currently listed in the ConfigMap for frontend.
 
-> WARNING: You must restart frontend for the updated values to be activiated
+> WARNING: You must restart frontend for the updated values to be activated
 
 ### Gitserver
 
@@ -1102,7 +1102,7 @@ To connect Sourcegraph to an existing PostgreSQL instance, add the relevant envi
         - PGPORT=NEW_PGPORT
 ```
 
-> WARNING: You must restart frontend for the updated values to be activiated
+> WARNING: You must restart frontend for the updated values to be activated
 
 ### External Redis
 
@@ -1142,7 +1142,7 @@ This adds the new environment variables for redis to the services listed above.
     REDIS_STORE_ENDPOINT: REDIS_STORE_DSN
 ```
 
-> WARNING: You must restart frontend for the updated values to be activiated
+> WARNING: You must restart frontend for the updated values to be activated
 
 ### External Embeddings Object Storage
 
@@ -1200,9 +1200,9 @@ To mount the files through Kustomize:
   ```yaml
   # instances/$INSTANCE_NAME/kustomization.yaml
   components:
-    # Enable SSH to clon repositories as non-root user (default)
+    # Enable SSH to clone repositories as non-root user (default)
     - ../../components/enable/ssh/non-root
-    # Enable SSH to clon repositories as root user
+    # Enable SSH to clone repositories as root user
     - ../../components/enable/ssh/root
   ```
 
@@ -1281,7 +1281,7 @@ This will cause Prometheus to drop all metrics *from cAdvisor* that are not serv
 
 ## Private registry
 
-**Step 1:** To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
+**Step 1:** To update all image names with your private registry, e.g. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -1367,7 +1367,7 @@ After transferring ownerships, you can redeploy the instance with non-privileged
 
 ## Outbound Traffic
 
-When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or VPC it may be necessary to expose ports for outbound network traffic. Sourcegraph must open port 443 for outbound traffic to codehosts, and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with Sourcegraph.com. Port 22 must also be opened to enable git SSH cloning by Sourcegraph. In addition, please make sure to apply other required changes to secure your cluster in a manner that meets your organization's security requirements.
+When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or VPC it may be necessary to expose ports for outbound network traffic. Sourcegraph must open port 443 for outbound traffic to code hosts, and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with Sourcegraph.com. Port 22 must also be opened to enable git SSH cloning by Sourcegraph. In addition, please make sure to apply other required changes to secure your cluster in a manner that meets your organization's security requirements.
 
 ---
 
