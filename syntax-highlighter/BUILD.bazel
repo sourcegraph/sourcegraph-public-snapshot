@@ -16,9 +16,9 @@ rust_binary(
     deps = all_crate_deps(
         normal = True,
     ) + [
-        "//docker-images/syntax-highlighter/crates/scip-syntax",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
-        "//docker-images/syntax-highlighter/crates/sg-syntax",
+        "//syntax-highlighter/crates/scip-syntax",
+        "//syntax-highlighter/crates/scip-treesitter-languages",
+        "//syntax-highlighter/crates/sg-syntax",
     ],
 )
 
@@ -49,7 +49,7 @@ rust_binary(
     deps = all_crate_deps(
         normal = True,
     ) + [
-        "//docker-images/syntax-highlighter/crates/scip-syntax",
+        "//syntax-highlighter/crates/scip-syntax",
     ],
 )
 

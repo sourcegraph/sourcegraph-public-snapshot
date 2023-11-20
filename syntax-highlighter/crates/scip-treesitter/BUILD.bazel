@@ -8,7 +8,7 @@ rust_library(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ),
-    visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
+    visibility = ["//syntax-highlighter:__subpackages__"],
     deps = all_crate_deps(
         normal = True,
     ),

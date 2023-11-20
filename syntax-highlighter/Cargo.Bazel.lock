@@ -1,5 +1,5 @@
 {
-  "checksum": "11f7d9a0b9555b34f58c199ad41741442c4c6c493eb30b0cdb798b46612bff41",
+  "checksum": "4412ee40d2df064fdb190fc59c8df164ef0861952aba1b3baca72bead375310f",
   "crates": {
     "addr2line 0.20.0": {
       "name": "addr2line",
@@ -17217,13 +17217,13 @@
   },
   "binary_crates": [],
   "workspace_members": {
-    "scip-macros 0.1.0": "docker-images/syntax-highlighter/crates/scip-macros",
-    "scip-syntax 0.1.0": "docker-images/syntax-highlighter/crates/scip-syntax",
-    "scip-treesitter 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter",
-    "scip-treesitter-cli 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-cli",
-    "scip-treesitter-languages 0.1.0": "docker-images/syntax-highlighter/crates/scip-treesitter-languages",
-    "sg-syntax 0.1.0": "docker-images/syntax-highlighter/crates/sg-syntax",
-    "syntect_server 1.0.1": "docker-images/syntax-highlighter"
+    "scip-macros 0.1.0": "syntax-highlighter/crates/scip-macros",
+    "scip-syntax 0.1.0": "syntax-highlighter/crates/scip-syntax",
+    "scip-treesitter 0.1.0": "syntax-highlighter/crates/scip-treesitter",
+    "scip-treesitter-cli 0.1.0": "syntax-highlighter/crates/scip-treesitter-cli",
+    "scip-treesitter-languages 0.1.0": "syntax-highlighter/crates/scip-treesitter-languages",
+    "sg-syntax 0.1.0": "syntax-highlighter/crates/sg-syntax",
+    "syntect_server 1.0.1": "syntax-highlighter"
   },
   "conditions": {
     "aarch64-apple-darwin": [

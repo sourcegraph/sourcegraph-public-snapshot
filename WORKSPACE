@@ -310,7 +310,7 @@ rust_version = "1.73.0"
 rust_register_toolchains(
     edition = "2021",
     # Keep in sync with docker-images/syntax-highlighter/Dockerfile
-    # and docker-images/syntax-highlighter/rust-toolchain.toml
+    # and /syntax-highlighter/rust-toolchain.toml
     versions = [
         rust_version,
     ],
@@ -330,21 +330,21 @@ load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "crate_index",
-    cargo_config = "//docker-images/syntax-highlighter:.cargo/config.toml",
-    cargo_lockfile = "//docker-images/syntax-highlighter:Cargo.lock",
+    cargo_config = "//syntax-highlighter:.cargo/config.toml",
+    cargo_lockfile = "//syntax-highlighter:Cargo.lock",
     # this file has to be manually created and it will be filled when
     # the target is ran.
     # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
-    lockfile = "//docker-images/syntax-highlighter:Cargo.Bazel.lock",
+    lockfile = "//syntax-highlighter:Cargo.Bazel.lock",
     # glob doesn't work in WORKSPACE files: https://github.com/bazelbuild/bazel/issues/11935
     manifests = [
-        "//docker-images/syntax-highlighter:Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-macros/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-syntax/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/scip-treesitter-cli/Cargo.toml",
-        "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
+        "//syntax-highlighter:Cargo.toml",
+        "//syntax-highlighter:crates/scip-macros/Cargo.toml",
+        "//syntax-highlighter:crates/scip-syntax/Cargo.toml",
+        "//syntax-highlighter:crates/scip-treesitter/Cargo.toml",
+        "//syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
+        "//syntax-highlighter:crates/scip-treesitter-cli/Cargo.toml",
+        "//syntax-highlighter:crates/sg-syntax/Cargo.toml",
     ],
 )
 

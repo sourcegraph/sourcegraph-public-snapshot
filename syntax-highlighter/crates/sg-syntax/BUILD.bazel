@@ -8,15 +8,15 @@ rust_library(
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
     ) + [
-        "//docker-images/syntax-highlighter/crates/scip-macros:scip-macros",
+        "//syntax-highlighter/crates/scip-macros:scip-macros",
     ],
-    visibility = ["//docker-images/syntax-highlighter:__subpackages__"],
+    visibility = ["//syntax-highlighter:__subpackages__"],
     deps = all_crate_deps(
         normal = True,
     ) + [
-        "//docker-images/syntax-highlighter/crates/scip-syntax",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
+        "//syntax-highlighter/crates/scip-syntax",
+        "//syntax-highlighter/crates/scip-treesitter",
+        "//syntax-highlighter/crates/scip-treesitter-languages",
     ],
 )
 
