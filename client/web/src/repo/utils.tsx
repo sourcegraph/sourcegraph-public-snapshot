@@ -1,31 +1,41 @@
 import { type GitCommitFields, RepositoryType } from '../graphql-operations'
 
 import { CodeHostType } from './constants'
+import { CiSettings, CiTextAlignLeft } from 'react-icons/ci'
+import { MdOutlineScience } from 'react-icons/md'
+import { GoDatabase, GoTerminal } from 'react-icons/go'
 import {
-    mdiLanguageTypescript,
-    mdiLanguageCss3,
-    mdiTestTube,
-    mdiFileDocumentOutline,
-    mdiReact,
-    mdiSass,
-    mdiLanguageGo,
-    mdiCogOutline,
-    mdiGraphql,
-    mdiLanguageMarkdown,
-    mdiLanguageJavascript,
-    mdiCodeJson,
-    mdiGit,
-    mdiLanguageLua,
-    mdiText,
-    mdiLanguagePython,
-    mdiDatabaseOutline,
-    mdiDocker,
-    mdiHeart,
-    mdiNpm,
-    mdiConsole,
-} from "@mdi/js"
+    SiC,
+    SiCplusplus,
+    SiCsharp,
+    SiCssmodules,
+    SiDocker,
+    SiGit,
+    SiGo,
+    SiGraphql,
+    SiHtml5,
+    SiJavascript,
+    SiJson,
+    SiKotlin,
+    SiLua,
+    SiMarkdown,
+    SiNixos,
+    SiNpm,
+    SiPerl,
+    SiPhp,
+    SiPython,
+    SiReact,
+    SiRubygems,
+    SiRust,
+    SiScala,
+    SiSvg,
+    SiTypescript,
+    SiZig
+} from 'react-icons/si'
 
 import styles from "./RepoRevisionSidebarFileTree.module.scss"
+import { IconType } from '@sourcegraph/wildcard'
+import { FaJava, FaRegFile, FaSass } from 'react-icons/fa'
 
 export const isPerforceChangelistMappingEnabled = (): boolean =>
     window.context.experimentalFeatures.perforceChangelistMapping === 'enabled'
@@ -81,17 +91,13 @@ export const contains = (arr: string[], target: string): boolean => {
 }
 
 export const getExtension = (file: string): string => {
-    const testRegex = /test/;
-    if (testRegex.test(file)) {
+    const f = file.split(".")
+    if (contains(f, "test")) {
         return "test"
     }
 
-    const s = file.split(".").slice(1)
-    // if (s.length === 1) {
-    //     return s[0]
-    // }
+    const s = f.slice(1)
 
-    // handle test files separately
     if (contains(s, "mod") || contains(s, "sum")) {
         return "go"
     } else {
@@ -99,103 +105,132 @@ export const getExtension = (file: string): string => {
     }
 }
 
-export const getIcon = (file: string, isBranch: boolean): { icon: string; iconClass: string } => {
+export const getIcon = (file: string, isBranch: boolean): {
+    icon: IconType;
+    iconClass: string;
+} => {
     if (isBranch) {
-        return { icon: mdiFileDocumentOutline, iconClass: styles.defaultIcon }
+        return { icon: FaRegFile, iconClass: styles.defaultIcon }
     }
     const extension = getExtension(file)
 
     switch (extension) {
-        case "ts": {
-            return { icon: mdiLanguageTypescript, iconClass: styles.blue }
+        case "c": {
+            return { icon: SiC, iconClass: styles.blue }
         }
-        case "tsx": {
-            return { icon: mdiReact, iconClass: styles.blue }
+        case "cc": {
+            return { icon: SiCplusplus, iconClass: styles.blue }
         }
-        case "js": {
-            return { icon: mdiLanguageJavascript, iconClass: styles.yellow }
-        }
-        case "jsx": {
-            return { icon: mdiReact, iconClass: styles.blue }
-        }
-        case "scss": {
-            return { icon: mdiSass, iconClass: styles.pink }
+        case "cs": {
+            return { icon: SiCsharp, iconClass: styles.blue }
         }
         case "css": {
-            return { icon: mdiLanguageCss3, iconClass: styles.blue }
-        }
-        case "go": {
-            return { icon: mdiLanguageGo, iconClass: styles.blue }
-        }
-        case "lua": {
-            return { icon: mdiLanguageLua, iconClass: styles.blue }
-        }
-        case "yaml": {
-            return { icon: mdiCogOutline, iconClass: styles.gray }
-        }
-        case "yml": {
-            return { icon: mdiCogOutline, iconClass: styles.gray }
-        }
-        case "py": {
-            return { icon: mdiLanguagePython, iconClass: styles.yellow }
-        }
-        case "sql": {
-            return { icon: mdiDatabaseOutline, iconClass: styles.blue }
-        }
-        case "graphql": {
-            return { icon: mdiGraphql, iconClass: styles.pink }
-        }
-        case "md": {
-            return { icon: mdiLanguageMarkdown, iconClass: styles.blue }
-        }
-        case "txt": {
-            return { icon: mdiText, iconClass: styles.defaultIcon }
-        }
-        case "test": {
-            return { icon: mdiTestTube, iconClass: styles.cyan }
-        }
-        case "json": {
-            return { icon: mdiCodeJson, iconClass: styles.defaultIcon }
-        }
-        case "lock": {
-            return { icon: mdiCodeJson, iconClass: styles.defaultIcon }
-        }
-        case "gitignore": {
-            return { icon: mdiGit, iconClass: styles.red }
-        }
-        case "gitattributes": {
-            return { icon: mdiGit, iconClass: styles.red }
+            return { icon: SiCssmodules, iconClass: styles.blue }
         }
         case "dockerignore": {
-            return { icon: mdiDocker, iconClass: styles.blue }
+            return { icon: SiDocker, iconClass: styles.blue }
         }
-        case "bazel": {
-            return { icon: mdiHeart, iconClass: styles.green }
+        case "gitignore": {
+            return { icon: SiGit, iconClass: styles.red }
         }
-        case "bzl": {
-            return { icon: mdiHeart, iconClass: styles.green }
+        case "gitattributes": {
+            return { icon: SiGit, iconClass: styles.red }
         }
-        case "bazelignore": {
-            return { icon: mdiHeart, iconClass: styles.green }
+        case "go": {
+            return { icon: SiGo, iconClass: styles.blue }
         }
-        case "bazeliskrc": {
-            return { icon: mdiHeart, iconClass: styles.green }
+        case "graphql": {
+            return { icon: SiGraphql, iconClass: styles.pink }
         }
-        case "bazelrc": {
-            return { icon: mdiHeart, iconClass: styles.green }
+        case "html": {
+            return { icon: SiHtml5, iconClass: styles.blue }
         }
-        case "bazelversion": {
-            return { icon: mdiHeart, iconClass: styles.green }
+        case "java": {
+            return { icon: FaJava, iconClass: styles.defaultIcon }
+        }
+        case "js": {
+            return { icon: SiJavascript, iconClass: styles.yellow }
+        }
+        case "json": {
+            return { icon: SiJson, iconClass: styles.defaultIcon }
+        }
+        case "jsx": {
+            return { icon: SiReact, iconClass: styles.yellow }
+        }
+        case "kt": {
+            return { icon: SiKotlin, iconClass: styles.green }
+        }
+        case "lock": {
+            return { icon: SiJson, iconClass: styles.defaultIcon }
+        }
+        case "lua": {
+            return { icon: SiLua, iconClass: styles.blue }
+        }
+        case "md": {
+            return { icon: SiMarkdown, iconClass: styles.blue }
+        }
+        case "ncl": {
+            return { icon: CiSettings, iconClass: styles.gray }
+        }
+        case "nix": {
+            return { icon: SiNixos, iconClass: styles.gray }
         }
         case "npmrc": {
-            return { icon: mdiNpm, iconClass: styles.red }
+            return { icon: SiNpm, iconClass: styles.red }
+        }
+        case "php": {
+            return { icon: SiPhp, iconClass: styles.defaultIcon }
+        }
+        case "pl": {
+            return { icon: SiPerl, iconClass: styles.defaultIcon }
+        }
+        case "py": {
+            return { icon: SiPython, iconClass: styles.yellow }
+        }
+        case "rb": {
+            return { icon: SiRubygems, iconClass: styles.red }
+        }
+        case "rs": {
+            return { icon: SiRust, iconClass: styles.defaultIcon }
+        }
+        case "scala": {
+            return { icon: SiScala, iconClass: styles.red }
+        }
+        case "scss": {
+            return { icon: FaSass, iconClass: styles.pink }
         }
         case "sh": {
-            return { icon: mdiConsole, iconClass: styles.defaultIcon }
+            return { icon: GoTerminal, iconClass: styles.defaultIcon }
         }
-
+        case "sql": {
+            return { icon: GoDatabase, iconClass: styles.blue }
+        }
+        case "svg": {
+            return { icon: SiSvg, iconClass: styles.blue }
+        }
+        case "test": {
+            return { icon: MdOutlineScience, iconClass: styles.defaultIcon }
+        }
+        case "ts": {
+            return { icon: SiTypescript, iconClass: styles.blue }
+        }
+        case "tsx": {
+            return { icon: SiReact, iconClass: styles.blue }
+        }
+        case "txt": {
+            return { icon: CiTextAlignLeft, iconClass: styles.defaultIcon }
+        }
+        case "yaml": {
+            return { icon: CiSettings, iconClass: styles.gray }
+        }
+        case "yml": {
+            return { icon: CiSettings, iconClass: styles.gray }
+        }
+        case "zig": {
+            return { icon: SiZig, iconClass: styles.yellow }
+        }
         default: {
-            return { icon: mdiFileDocumentOutline, iconClass: styles.defaultIcon }
+            return { icon: FaRegFile, iconClass: styles.defaultIcon }
         }
     }
 }

@@ -3,8 +3,6 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
     mdiSourceRepository,
-    mdiFolderOutline,
-    mdiFolderOpenOutline,
     mdiFolderArrowUp,
 } from '@mdi/js'
 import classNames from 'classnames'
@@ -32,7 +30,6 @@ import styles from './RepoRevisionSidebarFileTree.module.scss'
 import {
     getExtension,
     getIcon,
-    isTestFile,
 } from './utils'
 
 export const MAX_TREE_ENTRIES = 2500
@@ -395,7 +392,6 @@ function renderNode({
     const url = entry?.url
     const { icon, iconClass } = getIcon(name, isBranch)
     const extension = getExtension(name)
-    console.log(extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -479,12 +475,11 @@ function renderNode({
         >
             {/* Icon should be dynamically populated based on what kind of file type */}
             <Icon
-                svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : icon}
+                as={icon}
                 className={classNames('mr-1', styles.icon, iconClass)}
                 aria-hidden={true}
             />
-
-            <span className={extension === "test" ? styles.green : styles.defaultIcon}>
+            <span className={extension === "test" ? styles.gray : styles.defaultIcon}>
                 {name}
             </span>
         </Link >
