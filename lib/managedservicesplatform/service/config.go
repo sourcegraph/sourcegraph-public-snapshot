@@ -87,7 +87,7 @@ func (c postgreSQLContract) getCloudSQLConnConfig(ctx context.Context, database 
 	}
 
 	// https://github.com/GoogleCloudPlatform/cloud-sql-go-connector?tab=readme-ov-file#automatic-iam-database-authentication
-	dsn := fmt.Sprintf("user=%s database=%s", *c.user, database)
+	dsn := fmt.Sprintf("user=%s database=%s sslmode=disable", *c.user, database)
 	config, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return nil, errors.Wrap(err, "pgx.ParseConfig")
@@ -101,7 +101,7 @@ func (c postgreSQLContract) getCloudSQLConnConfig(ctx context.Context, database 
 	}
 	// Use the Cloud SQL connector to handle connecting to the instance.
 	// This approach does *NOT* require the Cloud SQL proxy.
-	config.DialFunc = func(ctx context.Context, network, instance string) (net.Conn, error) {
+	config.DialFunc = func(ctx context.Context, _, _ string) (net.Conn, error) {
 		return d.Dial(ctx, *c.instanceConnectionName)
 	}
 	return config, nil
