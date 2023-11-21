@@ -52,6 +52,10 @@ const (
 	None
 )
 
+// matchNothing is a RunTypeMatcher that matches nothing ie. the branch is empty. Which can not happen since we're
+// always on some branch. matchNothing is primarily useful as a final case incase no other runtypes match.
+var matchNothing = &RunTypeMatcher{BranchExact: true}
+
 // Compute determines what RunType matches the given parameters.
 func Compute(tag, branch string, env map[string]string) RunType {
 	for runType := PullRequest + 1; runType < None; runType += 1 {
@@ -176,7 +180,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	}
 
-	return nil
+	return matchNothing
 }
 
 func (t RunType) String() string {
