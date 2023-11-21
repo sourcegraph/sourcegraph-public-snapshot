@@ -33,7 +33,7 @@ func mainErr() error {
 		return err
 	}
 	// This script is invoked via a go:generate directive in internal/database/migration/shared (embed.go)
-	repoRoot := filepath.Join(wd, "..", "..", "..", "..")
+	repoRoot := "." // filepath.Join(wd, "..", "..", "..", "..")
 
 	//
 	// Write stitched migrations
@@ -55,7 +55,7 @@ func mainErr() error {
 		// Write frozen migrations. There is an optional flag that will short circuit this step. This is useful for
 		// clients that are only interested in the stitch graph, such as the release tool.
 		for _, rev := range FrozenRevisions {
-			if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "frozen", fmt.Sprintf("%s.json", rev)), []string{rev}); err != nil {
+			if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "frozen", fmt.Sprintf("__%s.json", rev)), []string{rev}); err != nil {
 				return err
 			}
 		}

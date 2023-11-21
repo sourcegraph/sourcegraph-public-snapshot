@@ -36,7 +36,7 @@ func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, err
 		// Here we will try the release branch fallback. This should be encountered for future versions, in other words
 		// we are updating the max supported version to something that isn't yet tagged.
 		if branch, ok := tagRevToBranch(rev); ok && strings.Contains(string(out), "fatal: invalid object name") {
-			cmd := exec.Command("git", "show", fmt.Sprintf("origin/%s:%s", branch, pathForSchemaAtRev))
+			cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", branch, pathForSchemaAtRev))
 			cmd.Dir = dir
 			out, err = cmd.CombinedOutput()
 		}
@@ -111,7 +111,7 @@ func archiveContents(dir, rev string) (map[string]string, error) {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if branch, ok := tagRevToBranch(rev); ok && strings.Contains(string(out), "fatal: not a valid object name") {
-			cmd := exec.Command("git", "archive", "--format=tar", "origin/"+branch, "migrations")
+			cmd := exec.Command("git", "archive", "--format=tar", ""+branch, "migrations")
 			cmd.Dir = dir
 			out, err = cmd.CombinedOutput()
 		}

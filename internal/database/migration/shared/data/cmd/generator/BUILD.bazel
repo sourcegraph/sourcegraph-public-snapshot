@@ -26,3 +26,18 @@ go_binary(
         "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
     },
 )
+
+genrule(
+    name = "foo",
+    srcs = [":generator", "//internal/database/migration/shared:data/frozen/4.5.0.json"],
+    outs = ["bar.json"],
+    cmd = """\
+    frozen=$$(dirname $(location //internal/database/migration/shared:data/frozen/4.5.0.json))
+    git clone https://github.com/sourcegraph/sourcegraph.git --bare
+    mkdir sourcegraph.git/data
+    cp -R $$frozen sourcegraph.git/data/
+    cd sourcegraph.git
+    ../$(location :generator)
+    """,
+    tags = ["requires-network"]
+)
