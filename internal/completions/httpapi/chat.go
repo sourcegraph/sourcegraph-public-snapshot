@@ -26,6 +26,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		"chat",
 		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
 			if isAllowedCustomChatModel(requestParams.Model) {
+				// Use pinned version claude-2.0 instead of claude-2
 				if requestParams.Model == "anthropic/claude-2" {
 					return "anthropic/claude-2.0", nil
 				}
@@ -50,6 +51,7 @@ func isAllowedCustomChatModel(model string) bool {
 	switch model {
 	case "anthropic/claude-2",
 		"anthropic/claude-2.0",
+		"anthropic/claude-2.1",
 		"anthropic/claude-instant-1.2-cyan",
 		"openai/gpt-3.5-turbo",
 		"openai/gpt-4-1106-preview":
