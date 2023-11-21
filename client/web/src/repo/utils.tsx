@@ -24,6 +24,7 @@ import {
     SiPerl,
     SiPhp,
     SiPython,
+    SiR,
     SiReact,
     SiRubygems,
     SiRust,
@@ -36,6 +37,7 @@ import {
 import styles from "./RepoRevisionSidebarFileTree.module.scss"
 import { IconType } from '@sourcegraph/wildcard'
 import { FaJava, FaRegFile, FaSass } from 'react-icons/fa'
+import { CustomIcon } from '@sourcegraph/wildcard/src/components/Icon'
 
 export const isPerforceChangelistMappingEnabled = (): boolean =>
     window.context.experimentalFeatures.perforceChangelistMapping === 'enabled'
@@ -106,7 +108,7 @@ export const getExtension = (file: string): string => {
 }
 
 export const getIcon = (file: string, isBranch: boolean): {
-    icon: IconType;
+    icon: CustomIcon;
     iconClass: string;
 } => {
     if (isBranch) {
@@ -186,6 +188,9 @@ export const getIcon = (file: string, isBranch: boolean): {
         }
         case "py": {
             return { icon: SiPython, iconClass: styles.yellow }
+        }
+        case "r": {
+            return { icon: SiR, iconClass: styles.red }
         }
         case "rb": {
             return { icon: SiRubygems, iconClass: styles.red }
