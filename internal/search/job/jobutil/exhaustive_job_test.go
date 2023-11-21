@@ -108,6 +108,56 @@ func TestNewExhaustive(t *testing.T) {
   (indexed . false))
 `),
 		},
+		{
+			Name:  "repo:has.file predicate",
+			Query: "type:file index:no foo repo:has.file(go.mod)",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (repoOpts.hasFileContent[0].path . go.mod)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+      (numRepos . 0)
+      (pathRegexps . [])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+  (numRepos . 1)
+  (pathRegexps . [])
+  (indexed . false))
+`),
+		},
+		{
+			Name:  "repo:has.meta predicate",
+			Query: "type:file index:no foo repo:has.meta(cognition)",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (repoOpts.hasKVPs[0].key . cognition)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+      (numRepos . 0)
+      (pathRegexps . [])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+  (numRepos . 1)
+  (pathRegexps . [])
+  (indexed . false))
+`),
+		},
 	}
 
 	for _, tc := range cases {
