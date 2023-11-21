@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cloudsql",
+    srcs = ["cloudsql.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resource/gsmsecret",
+        "//dev/managedservicesplatform/internal/resource/random",
+        "//dev/managedservicesplatform/internal/resource/serviceaccount",
+        "//dev/managedservicesplatform/internal/resourceid",
+        "//dev/managedservicesplatform/spec",
+        "//lib/pointers",
+        "@com_github_aws_constructs_go_constructs_v10//:constructs",
+        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computenetwork",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//sqldatabase",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//sqldatabaseinstance",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//sqluser",
+        "@com_github_sourcegraph_managed_services_platform_cdktf_gen_random//password",
+    ],
+)

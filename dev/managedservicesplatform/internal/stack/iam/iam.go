@@ -52,6 +52,8 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		{ID: resourceid.New("role_monitoring_metricwriter"), Role: "roles/monitoring.metricWriter"},
 		// Allow service to publish Cloud Profiler profiles
 		{ID: resourceid.New("role_cloudprofiler_agent"), Role: "roles/cloudprofiler.agent"},
+		// Allow service to connect to Cloud SQL
+		{ID: resourceid.New("role_cloudsql_client"), Role: "roles/cloudsql.client"},
 	}
 
 	// Grant configured roles to the workload identity
@@ -83,6 +85,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		})
 	}
 
+	// Create a service account for the workload identity in Cloud Run
 	workloadServiceAccount := serviceaccount.New(stack,
 		id.Group("workload"),
 		serviceaccount.Config{

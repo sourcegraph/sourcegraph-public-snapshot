@@ -1,27 +1,83 @@
 package service
 
 import (
+	"context"
+	"fmt"
+	"net"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"cloud.google.com/go/cloudsqlconn"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Contract loads standardized MSP-provisioned configuration.
+// Contract loads standardized MSP-provisioned (Managed Services Platform)
+// configuration.
 type Contract struct {
+	// Indicate if we are running in a MSP environment.
+	MSP bool
 	// Port is the port the service must listen on.
 	Port int
 	// ExternalDNSName is the DNS name the service uses, if one is configured.
 	ExternalDNSName *string
+
+	postgreSQLContract
+}
+
+type postgreSQLContract struct {
+	customDSN *string
+
+	instanceConnectionName *string
+	user                   *string
 }
 
 func newContract(env *Env) Contract {
 	return Contract{
+		MSP:             env.GetBool("MSP", "false", "indicates if we are running in a MSP environment"),
 		Port:            env.GetInt("PORT", "", "service port"),
 		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
+		postgreSQLContract: postgreSQLContract{
+			customDSN: env.GetOptional("PGDSN", "custom PostgreSQL DSN"),
+
+			instanceConnectionName: env.GetOptional("PGINSTANCE", "Cloud SQL instance connection name"),
+			user:                   env.GetOptional("PGUSER", "Cloud SQL user"),
+		},
 	}
+}
+
+func (c postgreSQLContract) GetPostgreSQLDSN(ctx context.Context, database string) (string, error) {
+	if c.customDSN != nil {
+		return *c.customDSN, nil
+	}
+
+	if c.instanceConnectionName == nil || c.user == nil {
+		return "", errors.New("missing required PostgreSQL configuration")
+	}
+
+	// https://github.com/GoogleCloudPlatform/cloud-sql-go-connector?tab=readme-ov-file#automatic-iam-database-authentication
+	dsn := fmt.Sprintf("user=%s database=%s", *c.user, database)
+	config, err := pgx.ParseConfig(dsn)
+	if err != nil {
+		return "", err
+	}
+	d, err := cloudsqlconn.NewDialer(ctx,
+		cloudsqlconn.WithIAMAuthN(),
+		// MSP uses private IP
+		cloudsqlconn.WithDefaultDialOptions(cloudsqlconn.WithPrivateIP()))
+	if err != nil {
+		return "", err
+	}
+	// Use the Cloud SQL connector to handle connecting to the instance.
+	// This approach does *NOT* require the Cloud SQL proxy.
+	config.DialFunc = func(ctx context.Context, network, instance string) (net.Conn, error) {
+		return d.Dial(ctx, *c.instanceConnectionName)
+	}
+	return stdlib.RegisterConnConfig(config), nil
 }
 
 type ConfigLoader[ConfigT any] interface {

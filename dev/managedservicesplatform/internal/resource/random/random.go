@@ -9,6 +9,8 @@ import (
 )
 
 type Config struct {
+	// ByteLength is the number of bytes of randomness to generate. The converted
+	// hex value is half this length.
 	ByteLength int `validate:"required"`
 	// Prefix is added to the start of the random output followed by a '-', for
 	// example:

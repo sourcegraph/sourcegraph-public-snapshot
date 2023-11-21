@@ -256,14 +256,20 @@ type EnvironmentJobScheduleSpec struct {
 }
 
 type EnvironmentResourcesSpec struct {
-	// Redis, if provided, provisions a Redis instance. Details for using this
-	// Redis instance is automatically provided in environment variables:
+	// Redis, if provided, provisions a Redis instance backed by Cloud Memorystore.
+	// Details for using this Redis instance is automatically provided in
+	// environment variables:
 	//
 	//  - REDIS_ENDPOINT
 	//
 	// Sourcegraph Redis libraries (i.e. internal/redispool) will automatically
 	// use the given configuration.
 	Redis *EnvironmentResourceRedisSpec `json:"redis,omitempty"`
+	// PostgreSQL, if provided, provisions a PostgreSQL database instance backed
+	// by CloudSQL.
+	//
+	// TODO
+	PostgreSQL *EnvironmentResourcePostgreSQLSpec `json:"postgreSQL,omitempty"`
 	// BigQueryTable, if provided, provisions a table for the service to write
 	// to. Details for writing to the table are automatically provided in
 	// environment variables:
@@ -289,6 +295,9 @@ func (s *EnvironmentResourcesSpec) NeedsCloudRunConnector() bool {
 	if s.Redis != nil {
 		return true
 	}
+	if s.PostgreSQL != nil {
+		return true
+	}
 	return false
 }
 
@@ -297,6 +306,19 @@ type EnvironmentResourceRedisSpec struct {
 	Tier *string `json:"tier,omitempty"`
 	// Defaults to 1.
 	MemoryGB *int `json:"memoryGB,omitempty"`
+}
+
+type EnvironmentResourcePostgreSQLSpec struct {
+	// Databases to provision - required.
+	Databases []string `json:"databases"`
+	// Defaults to 1.
+	CPU *int `json:"cpu,omitempty"`
+	// Defaults to 1.
+	MemoryGB *int `json:"memoryGB,omitempty"`
+
+	// DisableDeletionProtection disables the Cloud SQL deletion protection that
+	// we enable by default. Only set to true if tearing down the database.
+	DisableDeletionProtection bool `json:"disableDeletionProtection,omitempty"`
 }
 
 type EnvironmentResourceBigQueryTableSpec struct {

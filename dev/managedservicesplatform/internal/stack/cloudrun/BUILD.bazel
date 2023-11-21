@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/internal/resource/bigquery",
+        "//dev/managedservicesplatform/internal/resource/cloudsql",
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
         "//dev/managedservicesplatform/internal/resource/privatenetwork",
         "//dev/managedservicesplatform/internal/resource/random",

@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
@@ -170,6 +171,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		})
 	}
 
+	// Add MSP env var indicating that the service is running in a Managed
+	// Services Platform environment.
+	cloudRunBuilder.AddEnv("MSP", "true")
+
 	// redisInstance is only created and non-nil if Redis is configured for the
 	// environment.
 	if vars.Environment.Resources != nil && vars.Environment.Resources.Redis != nil {
@@ -177,13 +182,14 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			resourceid.New("redis"),
 			redis.Config{
 				ProjectID: vars.ProjectID,
-				Network:   cloudRunBuildVars.PrivateNetwork.Network,
 				Region:    gcpRegion,
 				Spec:      *vars.Environment.Resources.Redis,
+				Network:   cloudRunBuildVars.PrivateNetwork.Network,
 			})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Redis instance")
 		}
+
 		// We don't use serviceEnvVarPrefix here because this is a
 		// Sourcegraph-wide convention.
 		cloudRunBuilder.AddEnv("REDIS_ENDPOINT", redisInstance.Endpoint)
@@ -201,6 +207,36 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		)
 		cloudRunBuilder.AddVolumeMount(caCertVolumeName, "/etc/ssl/custom-certs")
 		cloudRunBuilder.AddEnv("SSL_CERT_DIR", "/etc/ssl/certs:/etc/ssl/custom-certs")
+	}
+
+	if vars.Environment.Resources != nil && vars.Environment.Resources.PostgreSQL != nil {
+		sqlInstance, err := cloudsql.New(stack, resourceid.New("postgresql"), cloudsql.Config{
+			ProjectID: vars.ProjectID,
+			Region:    gcpRegion,
+			Spec:      *vars.Environment.Resources.PostgreSQL,
+			Network:   cloudRunBuildVars.PrivateNetwork.Network,
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render Redis instance")
+		}
+
+		// Add parameters required for authentication
+		cloudRunBuilder.AddEnv("PGINSTANCE", *sqlInstance.Instance.ConnectionName())
+		cloudRunBuilder.AddEnv("PGUSER", *sqlInstance.WorkloadUser.Name())
+
+		// Mount the custom cert and add it to SSL_CERT_DIR
+		caCertVolumeName := "cloudsql-ca-cert"
+		cloudRunBuilder.AddSecretVolume(
+			caCertVolumeName,
+			"cloudsql-ca-cert.pem",
+			builder.SecretRef{
+				Name:    sqlInstance.Certificate.ID,
+				Version: sqlInstance.Certificate.Version,
+			},
+			292, // 0444 read-only
+		)
+		cloudRunBuilder.AddVolumeMount(caCertVolumeName, "/etc/ssl/cloudsql-certs")
+		cloudRunBuilder.AddEnv("SSL_CERT_DIR", "/etc/ssl/certs:/etc/ssl/cloudsql-certs")
 	}
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
