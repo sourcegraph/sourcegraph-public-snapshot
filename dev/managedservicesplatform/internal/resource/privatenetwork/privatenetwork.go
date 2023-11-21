@@ -20,10 +20,14 @@ type Config struct {
 }
 
 type Output struct {
-	Network                     computenetwork.ComputeNetwork
-	Subnetwork                  computesubnetwork.ComputeSubnetwork
+	// Network is the private network for GCP resources that the Cloud Run
+	// workload needs to access.
+	Network computenetwork.ComputeNetwork
+	// ServiceNetworkingConnection is required for Cloud SQL access, and is
+	// provisioned by default.
 	ServiceNetworkingConnection servicenetworkingconnection.ServiceNetworkingConnection
-	Connector                   vpcaccessconnector.VpcAccessConnector
+	// Connector is used by Cloud Run to connect to the private network.
+	Connector vpcaccessconnector.VpcAccessConnector
 }
 
 // New sets up a network for the Cloud Run service to interface with other GCP
@@ -106,7 +110,6 @@ func New(scope constructs.Construct, config Config) *Output {
 
 	return &Output{
 		Network:                     network,
-		Subnetwork:                  subnetwork,
 		ServiceNetworkingConnection: serviceNetworkingConnection,
 		Connector:                   connector,
 	}

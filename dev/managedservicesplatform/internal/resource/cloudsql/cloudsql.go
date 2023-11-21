@@ -23,9 +23,17 @@ import (
 )
 
 type Output struct {
-	Instance               sqldatabaseinstance.SqlDatabaseInstance
-	AdminUser              sqluser.SqlUser
-	WorkloadUser           sqluser.SqlUser
+	// Instance is the Cloud SQL database instance. It can be accessed using
+	// WorkloadUser
+	Instance sqldatabaseinstance.SqlDatabaseInstance
+	// WorkloadUser is the SQL user corresponding to the Cloud Run workload
+	// service account. It should be used for automatic IAM authentication:
+	// https://pkg.go.dev/cloud.google.com/go/cloudsqlconn#readme-automatic-iam-database-authentication
+	//
+	// Before using WorkloadUser, WorkloadSuperuserGrant should be ready.
+	WorkloadUser sqluser.SqlUser
+	// WorkloadSuperuserGrant should be referenced as a dependency before
+	// WorkloadUser is used.
 	WorkloadSuperuserGrant cdktf.ITerraformDependable
 }
 
@@ -33,10 +41,13 @@ type Config struct {
 	ProjectID string
 	Region    string
 
+	// Spec configures the Cloud SQL instance.
 	Spec spec.EnvironmentResourcePostgreSQLSpec
-
+	// WorkloadIdentity is the service account attached to the Cloud Run workload.
+	// A database user will be provisioned that can be accessed as this identity.
 	WorkloadIdentity serviceaccount.Output
-	Network          computenetwork.ComputeNetwork
+	// Network to connect the created Cloud SQL instance to.
+	Network computenetwork.ComputeNetwork
 
 	DependsOn []cdktf.ITerraformDependable
 }
@@ -186,7 +197,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 
 	return &Output{
 		Instance:               instance,
-		AdminUser:              adminUser,
 		WorkloadUser:           workloadUser,
 		WorkloadSuperuserGrant: workloadSuperuserGrant,
 	}, nil

@@ -153,6 +153,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		Description: "Resolved image tag to deploy",
 	})
 
+	// privateNetworkEnabled indicates if privateNetwork has been instantiated
+	// before.
 	var privateNetworkEnabled bool
 	// privateNetwork is only instantiated if used, and is only instantiated
 	// once. If called, it always returns a non-nil value.
@@ -215,7 +217,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 
 			WorkloadIdentity: *vars.CloudRunWorkloadServiceAccount,
 
-			// https://cloud.google.com/sql/docs/mysql/private-ip#network_requirements
+			// ServiceNetworkingConnection is required for Cloud SQL to connect
+			// to the private network, so we must wait for it to be provisioned.
+			// See https://cloud.google.com/sql/docs/mysql/private-ip#network_requirements
 			DependsOn: []cdktf.ITerraformDependable{
 				privateNetwork().ServiceNetworkingConnection,
 			},
