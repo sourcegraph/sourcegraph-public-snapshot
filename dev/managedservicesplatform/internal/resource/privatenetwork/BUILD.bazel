@@ -8,7 +8,6 @@ go_library(
     deps = [
         "//lib/pointers",
         "@com_github_aws_constructs_go_constructs_v10//:constructs",
-        "@com_github_aws_jsii_runtime_go//:jsii-runtime-go",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computeglobaladdress",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computenetwork",
         "@com_github_sourcegraph_managed_services_platform_cdktf_gen_google//computesubnetwork",

@@ -2,6 +2,7 @@ package cloudsql
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
@@ -15,6 +16,7 @@ import (
 	postgresql "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/provider"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/random/password"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
@@ -27,6 +29,7 @@ type Output struct {
 	AdminUser              sqluser.SqlUser
 	WorkloadUser           sqluser.SqlUser
 	WorkloadSuperuserGrant cdktf.ITerraformDependable
+	Certificate            gsmsecret.Output
 }
 
 type Config struct {
@@ -184,10 +187,18 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		WithAdminOption: jsii.Bool(true),
 	})
 
+	// Share CA certificate for connecting to Redis over TLS as a GSM secret
+	instanceCACert := gsmsecret.New(scope, id.Group("ca-cert"), gsmsecret.Config{
+		ProjectID: config.ProjectID,
+		ID:        strings.ToUpper(id.DisplayName()) + "_CA_CERT",
+		Value:     *instance.ServerCaCert().Get(pointers.Float64(0)).Cert(),
+	})
+
 	return &Output{
 		Instance:               instance,
 		AdminUser:              adminUser,
 		WorkloadUser:           workloadUser,
 		WorkloadSuperuserGrant: workloadSuperuserGrant,
+		Certificate:            *instanceCACert,
 	}, nil
 }

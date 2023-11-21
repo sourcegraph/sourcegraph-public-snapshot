@@ -153,9 +153,11 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		Description: "Resolved image tag to deploy",
 	})
 
+	var privateNetworkEnabled bool
 	// privateNetwork is only instantiated if used, and is only instantiated
 	// once. If called, it always returns a non-nil value.
 	privateNetwork := syncx.OnceValue(func() *privatenetwork.Output {
+		privateNetworkEnabled = true
 		return privatenetwork.New(stack, privatenetwork.Config{
 			ProjectID: vars.ProjectID,
 			ServiceID: vars.Service.ID,
@@ -166,6 +168,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	// Add MSP env var indicating that the service is running in a Managed
 	// Services Platform environment.
 	cloudRunBuilder.AddEnv("MSP", "true")
+
+	// For SSL_CERT_DIR
+	sslCertDirs := []string{"/etc/ssl/certs"}
 
 	// redisInstance is only created and non-nil if Redis is configured for the
 	// environment.
@@ -198,7 +203,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			292, // 0444 read-only
 		)
 		cloudRunBuilder.AddVolumeMount(caCertVolumeName, "/etc/ssl/custom-certs")
-		cloudRunBuilder.AddEnv("SSL_CERT_DIR", "/etc/ssl/certs:/etc/ssl/custom-certs")
+		sslCertDirs = append(sslCertDirs, "/etc/ssl/custom-certs")
 	}
 
 	if vars.Environment.Resources != nil && vars.Environment.Resources.PostgreSQL != nil {
@@ -226,6 +231,20 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// We need the workload superuser role to be granted before Cloud Run
 		// can correctly use the database instance
 		cloudRunBuilder.AddDependency(sqlInstance.WorkloadSuperuserGrant)
+
+		// Mount the custom cert and add it to SSL_CERT_DIR
+		caCertVolumeName := "cloudsql-ca-cert"
+		cloudRunBuilder.AddSecretVolume(
+			caCertVolumeName,
+			"cloudsql-ca-cert.pem",
+			builder.SecretRef{
+				Name:    sqlInstance.Certificate.ID,
+				Version: sqlInstance.Certificate.Version,
+			},
+			292, // 0444 read-only
+		)
+		cloudRunBuilder.AddVolumeMount(caCertVolumeName, "/etc/ssl/cloudsql-certs")
+		sslCertDirs = append(sslCertDirs, "/etc/ssl/cloudsql-certs")
 	}
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
@@ -244,6 +263,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	}
 
 	// Finalize output of builder
+	cloudRunBuilder.AddEnv("SSL_CERT_DIR", strings.Join(sslCertDirs, ":"))
 	if _, err := cloudRunBuilder.Build(stack, builder.Variables{
 		Service:           vars.Service,
 		Image:             vars.Image,
@@ -254,6 +274,12 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		ServiceAccount:    vars.CloudRunWorkloadServiceAccount,
 		DiagnosticsSecret: diagnosticsSecret,
 		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
+		PrivateNetwork: func() *privatenetwork.Output {
+			if privateNetworkEnabled {
+				return privateNetwork()
+			}
+			return nil
+		}(),
 	}); err != nil {
 		return nil, errors.Wrapf(err, "build Cloud Run resource kind %q", cloudRunBuilder.Kind())
 	}
