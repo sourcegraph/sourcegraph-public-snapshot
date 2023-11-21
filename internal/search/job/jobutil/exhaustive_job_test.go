@@ -157,10 +157,11 @@ func TestNewExhaustive_negative(t *testing.T) {
 		// catch-all regex
 		{query: `type:file index:no r:.* .*`, isPatterntypeRegex: true},
 		{query: `type:file index:no r:repo .*`, isPatterntypeRegex: true},
-		// predicates
-		{query: `type:file index:no repohasfile:foo.bar content`},
-		{query: `type:file index:no file:has.content("content")`},
-		{query: `type:file index:no repo:has.path("src") content`},
+		// file predicates
+		{query: `type:file index:no file:has.content(content)`},
+		{query: `type:file index:no file:has.owner(owner)`},
+		{query: `type:file index:no file:contains.content(content)`},
+		{query: `type:file index:no file:has.contributor(contributor)`},
 	}
 
 	for _, c := range tc {
