@@ -9,6 +9,8 @@ import (
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
@@ -215,6 +217,11 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			Region:    gcpRegion,
 			Spec:      *vars.Environment.Resources.PostgreSQL,
 			Network:   cloudRunBuildVars.PrivateNetwork.Network,
+
+			// https://cloud.google.com/sql/docs/mysql/private-ip#network_requirements
+			DependsOn: []cdktf.ITerraformDependable{
+				cloudRunBuildVars.PrivateNetwork.ServiceNetworkingConnection,
+			},
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Redis instance")
@@ -223,20 +230,6 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// Add parameters required for authentication
 		cloudRunBuilder.AddEnv("PGINSTANCE", *sqlInstance.Instance.ConnectionName())
 		cloudRunBuilder.AddEnv("PGUSER", *sqlInstance.WorkloadUser.Name())
-
-		// Mount the custom cert and add it to SSL_CERT_DIR
-		caCertVolumeName := "cloudsql-ca-cert"
-		cloudRunBuilder.AddSecretVolume(
-			caCertVolumeName,
-			"cloudsql-ca-cert.pem",
-			builder.SecretRef{
-				Name:    sqlInstance.Certificate.ID,
-				Version: sqlInstance.Certificate.Version,
-			},
-			292, // 0444 read-only
-		)
-		cloudRunBuilder.AddVolumeMount(caCertVolumeName, "/etc/ssl/cloudsql-certs")
-		cloudRunBuilder.AddEnv("SSL_CERT_DIR", "/etc/ssl/certs:/etc/ssl/cloudsql-certs")
 	}
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for

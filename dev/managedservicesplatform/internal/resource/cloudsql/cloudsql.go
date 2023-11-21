@@ -2,7 +2,6 @@ package cloudsql
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
@@ -36,12 +35,14 @@ type Config struct {
 
 	WorkloadIdentity serviceaccount.Output
 	Network          computenetwork.ComputeNetwork
+
+	DependsOn []cdktf.ITerraformDependable
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
 	machineType := fmt.Sprintf("db-custom-%d-%d",
 		pointers.Deref(config.Spec.CPU, 1),
-		pointers.Deref(config.Spec.MemoryGB, 1)*1024)
+		pointers.Deref(config.Spec.MemoryGB, 4)*1024)
 
 	instance := sqldatabaseinstance.NewSqlDatabaseInstance(scope, id.TerraformID("instance"), &sqldatabaseinstance.SqlDatabaseInstanceConfig{
 		Project: pointers.Ptr(config.ProjectID),
@@ -54,7 +55,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		Name: pointers.Ptr(fmt.Sprintf("%s-%s",
 			id.DisplayName(),
 			random.New(scope, id.Group("instance_name_suffix"), random.Config{
-				ByteLength: 8,
+				ByteLength: 2,
 			}).HexValue)),
 
 		Settings: &sqldatabaseinstance.SqlDatabaseInstanceSettings{
@@ -63,8 +64,8 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			DiskType:         pointers.Ptr("PD_SSD"),
 
 			// Arbitrary starting disk size - we use autoresizing to scale the
-			// disk up automatically.
-			DiskSize:            pointers.Float64(5),
+			// disk up automatically. The minimum size is 10GB.
+			DiskSize:            pointers.Float64(10),
 			DiskAutoresize:      pointers.Ptr(true),
 			DiskAutoresizeLimit: pointers.Float64(0),
 
@@ -78,7 +79,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			// so we do the same.
 			BackupConfiguration: &sqldatabaseinstance.SqlDatabaseInstanceSettingsBackupConfiguration{
 				Enabled:                     pointers.Ptr(true),
-				PointInTimeRecoveryEnabled:  pointers.Ptr(true),
+				PointInTimeRecoveryEnabled:  pointers.Ptr(false), // PITR uses a lot of resources and is cumbersome to use
 				StartTime:                   pointers.Ptr("10:00"),
 				TransactionLogRetentionDays: pointers.Float64(7),
 				BackupRetentionSettings: &sqldatabaseinstance.SqlDatabaseInstanceSettingsBackupConfigurationBackupRetentionSettings{
@@ -108,12 +109,19 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			},
 		},
 
-		DeletionProtection: pointers.Ptr(!config.Spec.DisableDeletionProtection),
+		// More of an inconvenience than anything else - is still delete-able
+		// from the UI.
+		DeletionProtection: pointers.Ptr(false),
 
 		Lifecycle: &cdktf.TerraformResourceLifecycle{
 			// Autoscaling is typically enabled - no need to worry about it
 			IgnoreChanges: []string{"settings[0].disk_size"},
 		},
+
+		// Instance is the primary resource here, so placing DependsOn here
+		// effectively blocks this resource from being created until dependencies
+		// are ready.
+		DependsOn: &config.DependsOn,
 	})
 
 	// Collect resources that must be ready before database can be accessed
@@ -151,26 +159,16 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		// See https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/sql_user
 		Name: cdktf.Fn_Trimsuffix(&config.WorkloadIdentity.Email,
 			pointers.Ptr(".gserviceaccount.com")),
-	})
-	databaseResources = append(databaseResources,
-		workloadUser)
 
-	// Share CA certificate for connecting to Cloud SQL over TLS as a GSM secret
-	instanceCACert := gsmsecret.New(scope, id.Group("ca-cert"), gsmsecret.Config{
-		ProjectID: config.ProjectID,
-		ID:        strings.ToUpper(id.DisplayName()) + "_CA_CERT",
-		Value:     *instance.ServerCaCert().Get(pointers.Float64(0)).Cert(),
-
-		// instanceCACert is required to connect to this instance, so do ensure
-		// database resources are all fully provisioned, we gate the availability
-		// of this secret on all resources being ready.
-		DependsOn: databaseResources,
+		// workloadUser's username is required to connect to this instance, so
+		// to ensure database resources are all fully provisioned, we gate the
+		// availability of this secret on all database resources being ready.
+		DependsOn: &databaseResources,
 	})
 
 	return &Output{
 		Instance:     instance,
 		AdminUser:    adminUser,
 		WorkloadUser: workloadUser,
-		Certificate:  *instanceCACert,
 	}, nil
 }

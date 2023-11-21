@@ -313,12 +313,8 @@ type EnvironmentResourcePostgreSQLSpec struct {
 	Databases []string `json:"databases"`
 	// Defaults to 1.
 	CPU *int `json:"cpu,omitempty"`
-	// Defaults to 1.
+	// Defaults to 4 (to meet CloudSQL minimum).
 	MemoryGB *int `json:"memoryGB,omitempty"`
-
-	// DisableDeletionProtection disables the Cloud SQL deletion protection that
-	// we enable by default. Only set to true if tearing down the database.
-	DisableDeletionProtection bool `json:"disableDeletionProtection,omitempty"`
 }
 
 type EnvironmentResourceBigQueryTableSpec struct {
