@@ -26,10 +26,6 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		"chat",
 		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
 			if isAllowedCustomChatModel(requestParams.Model) {
-				// Use pinned version claude-2.0 instead of claude-2
-				if requestParams.Model == "anthropic/claude-2" {
-					return "anthropic/claude-2.0", nil
-				}
 				return requestParams.Model, nil
 			}
 			// No user defined models for now.
