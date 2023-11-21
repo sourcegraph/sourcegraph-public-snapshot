@@ -24,7 +24,7 @@ function ctrl_c() {
 trap ctrl_c INT
 
 function build_scip_ctags {
-  cd docker-images/syntax-highlighter
+  cd syntax-highlighter
   cargo fetch
   cargo build --bin scip-ctags --release
   cp ./target/release/scip-ctags "$TARGET"

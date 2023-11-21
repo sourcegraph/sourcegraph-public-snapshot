@@ -1,4 +1,4 @@
-# Melange-based replacement for https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/syntax-highlighter/Dockerfile?L16
+# Melange-based replacement for https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/syntax-highlighter/Dockerfile?L16
 
 package:
   name: http-server-stabilizer

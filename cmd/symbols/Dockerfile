@@ -8,7 +8,7 @@ FROM rust:1.73.0-alpine3.18@sha256:200be646c656b180aa9cf6cee1766f05fcf5bb0b94cf2
 # hadolint ignore=DL3002
 USER root
 RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
-COPY docker-images/syntax-highlighter /repo
+COPY syntax-highlighter /repo
 WORKDIR /repo
 RUN cargo fetch
 

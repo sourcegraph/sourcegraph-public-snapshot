@@ -33,7 +33,7 @@ pkg_tar(
 
 pkg_tar(
     name = "tar_scip-ctags",
-    srcs = ["//docker-images/syntax-highlighter:scip-ctags"],
+    srcs = ["//syntax-highlighter:scip-ctags"],
     package_dir = "/usr/local/bin",
 )
 

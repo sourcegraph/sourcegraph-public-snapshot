@@ -988,7 +988,7 @@ bazelCommands:
   searcher:
     target: //cmd/searcher
   syntax-highlighter:
-    target: //docker-images/syntax-highlighter:syntect_server
+    target: //syntax-highlighter:syntect_server
     ignoreStdout: true
     ignoreStderr: true
     env:

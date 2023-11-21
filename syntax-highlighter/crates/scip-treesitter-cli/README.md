@@ -48,7 +48,7 @@ cargo test
 ```
 
 ```bash
-bazel test //docker-images/syntax-highlighter/crates/scip-treesitter-cli:all
+bazel test //syntax-highlighter/crates/scip-treesitter-cli:all
 ```
 
 We use [Insta](https://insta.rs/) for snapshot testing.
@@ -63,7 +63,7 @@ cargo build
 ```
 
 ```bash
-bazel build //docker-images/syntax-highlighter/crates/scip-treesitter-cli
+bazel build //syntax-highlighter/crates/scip-treesitter-cli
 ```
 
 ### Run the locally built CLI
@@ -73,5 +73,5 @@ cargo run -- index --language java --out ./index.scip file1.java file2.java ...
 ```
 
 ```bash
-bazel run //docker-images/syntax-highlighter/crates/scip-treesitter-cli -- index --language java --out ./index.scip file1.java file2.java ...
+bazel run //syntax-highlighter/crates/scip-treesitter-cli -- index --language java --out ./index.scip file1.java file2.java ...
 ```

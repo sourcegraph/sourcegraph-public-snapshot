@@ -1,4 +1,4 @@
-# Melange-based replacement for https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/syntax-highlighter/Dockerfile?L2
+# Melange-based replacement for https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/syntax-highlighter/Dockerfile?L2
 
 package:
   name: syntect-server
@@ -35,11 +35,11 @@ pipeline:
       destination: /sourcegraph
 
   - runs: |
-      cd /sourcegraph/docker-images/syntax-highlighter
+      cd /sourcegraph/syntax-highlighter
       cargo test --release --workspace
       cargo rustc --release
 
   - runs: |
-      cd /sourcegraph/docker-images/syntax-highlighter
+      cd /sourcegraph/syntax-highlighter
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp target/release/syntect_server ${{targets.destdir}}/usr/local/bin/syntax_highlighter

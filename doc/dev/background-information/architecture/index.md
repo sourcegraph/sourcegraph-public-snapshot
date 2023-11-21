@@ -52,7 +52,7 @@ Sourcegraph also has a fast search path for code that isn't indexed yet, or for 
 
 - [searcher](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/searcher/README.md) implements the non-indexed search.
 
-Syntax highlighting for any code view, including search results, is provided by [Syntect server](https://github.com/sourcegraph/sourcegraph/tree/main/docker-images/syntax-highlighter).
+Syntax highlighting for any code view, including search results, is provided by [Syntect server](https://github.com/sourcegraph/sourcegraph/tree/main/syntax-highlighter).
 
 If you want to learn more about search:
 

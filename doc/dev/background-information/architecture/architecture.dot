@@ -137,7 +137,7 @@ digraph architecture {
             label="syntect\nserver"
             fillcolor="#cc0085"
             shape="box3d"
-            URL="https://github.com/sourcegraph/sourcegraph/tree/main/docker-images/syntax-highlighter"
+            URL="https://github.com/sourcegraph/sourcegraph/tree/main/syntax-highlighter"
         ]
     }
 

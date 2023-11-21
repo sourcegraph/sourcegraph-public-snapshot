@@ -2,9 +2,9 @@
 
 ## General
 
-### `bazel configure` prints out a warning about TSConfig 
+### `bazel configure` prints out a warning about TSConfig
 
-Everytime you run `bazel configure`, you'll see a warning: 
+Everytime you run `bazel configure`, you'll see a warning:
 
 ```
 $ bazel configure
@@ -241,7 +241,7 @@ bazel run //.aspect/bazelrc:update_aspect_bazelrc_presets
 
 ## Rust
 
-### I'm getting `Error in path: Not a regular file: docker-images/syntax-highlighter/Cargo.Bazel.lock` when I try to build `syntax-highlighter`
+### I'm getting `Error in path: Not a regular file: syntax-highlighter/Cargo.Bazel.lock` when I try to build `syntax-highlighter`
 
 Below is a full example of this error:
 ```
@@ -251,16 +251,16 @@ ERROR: An error occurred during the fetch of repository 'crate_index':
                 lockfiles = get_lockfiles(repository_ctx)
         File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 311, column 36, in get_lockfiles
                 bazel = repository_ctx.path(repository_ctx.attr.lockfile) if repository_ctx.attr.lockfile else None,
-Error in path: Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/Cargo.Bazel.lock
+Error in path: Not a regular file: /Users/william/code/sourcegraph/syntax-highlighter/Cargo.Bazel.lock
 ERROR: /Users/william/code/sourcegraph/WORKSPACE:197:18: fetching crates_repository rule //external:crate_index: Traceback (most recent call last):
         File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/crates_repository.bzl", line 34, column 30, in _crates_repository_impl
                 lockfiles = get_lockfiles(repository_ctx)
         File "/private/var/tmp/_bazel_william/c92ec739369034d3064b6df55c419545/external/rules_rust/crate_universe/private/generate_utils.bzl", line 311, column 36, in get_lockfiles
                 bazel = repository_ctx.path(repository_ctx.attr.lockfile) if repository_ctx.attr.lockfile else None,
-Error in path: Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/fake.lock
-ERROR: Error computing the main repository mapping: no such package '@crate_index//': Not a regular file: /Users/william/code/sourcegraph/docker-images/syntax-highlighter/Cargo.Bazel.lock
+Error in path: Not a regular file: /Users/william/code/sourcegraph/syntax-highlighter/fake.lock
+ERROR: Error computing the main repository mapping: no such package '@crate_index//': Not a regular file: /Users/william/code/sourcegraph/syntax-highlighter/Cargo.Bazel.lock
 ```
-The error happens when the file specified in the lockfiles attribute of `crates_repository` (see WORKSPACE file for the definition) does not exist on disk. Currently this rule does not generate the file, instead it just generates the _content_ of the file. So to get passed this error you should create the file `touch docker-images/syntax-highlighter/Cargo.Bazel.lock`. With the file create it we can now populate `Cargo.Bazel.lock` with content using bazel by running `CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index`.
+The error happens when the file specified in the lockfiles attribute of `crates_repository` (see WORKSPACE file for the definition) does not exist on disk. Currently this rule does not generate the file, instead it just generates the _content_ of the file. So to get passed this error you should create the file `touch syntax-highlighter/Cargo.Bazel.lock`. With the file create it we can now populate `Cargo.Bazel.lock` with content using bazel by running `CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index`.
 
 ### When I build `syntax-highlighter` it complains that the current `lockfile` is out of date
 The error will look like this:
@@ -299,13 +299,13 @@ Bazel uses a separate lock file to keep track of the dependencies and needs to b
 The error looks something like this:
 ```
 error[E0433]: failed to resolve: use of undeclared crate or module `scip_treesitter_languages`
-  --> docker-images/syntax-highlighter/src/main.rs:56:5
+  --> syntax-highlighter/src/main.rs:56:5
    |
 56 |     scip_treesitter_languages::highlights::CONFIGURATIONS
    |     ^^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `scip_treesitter_languages`
 
 error[E0433]: failed to resolve: use of undeclared crate or module `scip_treesitter_languages`
-  --> docker-images/syntax-highlighter/src/main.rs:57:15
+  --> syntax-highlighter/src/main.rs:57:15
    |
 57 |         .get(&scip_treesitter_languages::parsers::BundledParser::Go);
    |               ^^^^^^^^^^^^^^^^^^^^^^^^^ use of undeclared crate or module `scip_treesitter_languages`
@@ -313,9 +313,9 @@ error[E0433]: failed to resolve: use of undeclared crate or module `scip_treesit
 error: aborting due to 2 previous errors
 ```
 Bazel doesn't know about the module/crate being use in the rust code. If you do a git blame `Cargo.toml` you'll probably see that a new dependency has been added, but the build files were not updated. There are two ways to solve this:
-1. Run `bazel configure` and `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. Once the commands have completed you can check that the dependency has been picked up and syntax-highlighter can be built by running `bazel build //docker-images/syntax-highlighter/...`. **Note** this will usually work if the dependency is an *external* dependency.
+1. Run `bazel configure` and `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. Once the commands have completed you can check that the dependency has been picked up and syntax-highlighter can be built by running `bazel build //syntax-highlighter/...`. **Note** this will usually work if the dependency is an *external* dependency.
 2. You're going to have to update the `BUILD.bazel` file yourself. Which one you might ask? From the above error we can see the file `src/main.rs` is where the error is encountered, so we need to tell *its BUILD.bazel* about the new dependency.
-For the above dependency, the crate is defined in `docker-images/syntax-highlighter/crates`. You'll also see that each of those crates have their own `BUILD.bazel` files in them, which means we can reference them as targets! Take a peak at `scip-treesitter-languages` `BUILD.bazel` file and take note of the name - that is its target. Now that we have the name of the target we can add it as a dep to `docker-images/syntax-highlighter`. In the snippet below the `syntax-highlighter` `rust_binary` rule is updated with the `scip-treesitter-languages` dependency. Note that we need to refer to the full target path when adding it to the dep list in the `BUILD.bazel` file.
+For the above dependency, the crate is defined in `syntax-highlighter/crates`. You'll also see that each of those crates have their own `BUILD.bazel` files in them, which means we can reference them as targets! Take a peak at `scip-treesitter-languages` `BUILD.bazel` file and take note of the name - that is its target. Now that we have the name of the target we can add it as a dep to `docker-images/syntax-highlighter`. In the snippet below the `syntax-highlighter` `rust_binary` rule is updated with the `scip-treesitter-languages` dependency. Note that we need to refer to the full target path when adding it to the dep list in the `BUILD.bazel` file.
 ```
 rust_binary(
     name = "syntect_server",
@@ -327,8 +327,8 @@ rust_binary(
     deps = all_crate_deps(
         normal = True,
     ) + [
-        "//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
+        "//syntax-highlighter/crates/sg-syntax:sg-syntax",
+        "//syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
     ],
 )
 ```
