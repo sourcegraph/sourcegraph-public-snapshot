@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -35,9 +35,9 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 		},
 	})
 
-	svc := types.ExternalService{
-		Kind: extsvc.KindPythonPackages,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.PythonPackagesConnection{
+	svc := typestest.MakeExternalService(t,
+		extsvc.VariantPythonPackages,
+		&schema.PythonPackagesConnection{
 			Urls: []string{
 				"https://pypi.org/simple",
 			},
@@ -47,13 +47,12 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 				"randio==0.1.1",
 				"pytimeparse==1.1.8",
 			},
-		})),
-	}
+		})
 
 	cf, save := NewClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewPythonPackagesSource(ctx, &svc, cf)
+	src, err := NewPythonPackagesSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

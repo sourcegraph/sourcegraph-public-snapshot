@@ -3,6 +3,8 @@ package bytesize
 import (
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestParse(t *testing.T) {
@@ -90,7 +92,8 @@ func TestReadNumber(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		num, numLen := readNumber(tt.input)
+		num, numLen, err := readNumber(tt.input)
+		require.NoError(t, err)
 
 		if num != tt.want {
 			t.Errorf("readNumber(%q) = %d, want %d", tt.input, num, tt.want)

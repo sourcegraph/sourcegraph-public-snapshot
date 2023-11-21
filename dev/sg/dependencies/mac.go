@@ -158,6 +158,12 @@ var Mac = []category{
 			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.2.0"))),
 			Fix:   cmdFix(`brew upgrade sourcegraph/src-cli/src-cli || brew install sourcegraph/src-cli/src-cli`),
 		},
+		// gnu-parallel is never available by default on MacOs.
+		&dependency{
+			Name:  "gnu-parallel",
+			Check: checkAction(check.InPath("parallel")),
+			Fix:   cmdFix(`brew install parallel`),
+		},
 	),
 	{
 		Name:      "Postgres database",

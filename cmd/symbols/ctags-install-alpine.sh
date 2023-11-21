@@ -3,7 +3,7 @@
 # This script installs universal-ctags within an alpine container.
 
 # Commit hash of github.com/universal-ctags/ctags.
-# Last bumped 2022-04-04.
+# Last bumped 2023-10-24.
 # When bumping please remember to also update Zoekt: https://github.com/sourcegraph/zoekt/blob/d3a8fbd8385f0201dd54ab24114ebd588dfcf0d8/install-ctags-alpine.sh
 CTAGS_VERSION=v6.0.0
 CTAGS_ARCHIVE_TOP_LEVEL_DIR=ctags-6.0.0

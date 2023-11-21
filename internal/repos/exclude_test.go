@@ -1,26 +1,114 @@
 package repos
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestBuildGitHubExcludeRule(t *testing.T) {
-	assertExcluded := func(t *testing.T, rule *schema.ExcludedGitHubRepo, repo github.Repository, wantExcluded bool) {
+func TestRepoExcluderRuleErrors(t *testing.T) {
+	var ex repoExcluder
+
+	ex.AddRule().Pattern("valid")
+	require.NoError(t, ex.RuleErrors())
+
+	ex.AddRule().Pattern("[\\\\")
+	require.Error(t, ex.RuleErrors())
+}
+
+func TestRuleExcludes(t *testing.T) {
+	startsWithFoo := func(input any) bool {
+		if s, ok := input.(string); ok {
+			return strings.HasPrefix(s, "foo")
+		}
+		return false
+	}
+
+	t.Run("ExactName", func(t *testing.T) {
+		r := &rule{}
+		r.Exact("foobar")
+
+		assert.Equal(t, true, r.Excludes("foobar"))
+		assert.Equal(t, false, r.Excludes("barfoo"))
+
+		// Only one exact value can exist
+		r.Exact("barfoo")
+		assert.Equal(t, false, r.Excludes("foobar"))
+		assert.Equal(t, true, r.Excludes("barfoo"))
+	})
+
+	t.Run("Pattern", func(t *testing.T) {
+		r := &rule{}
+		r.Pattern("^foo.*")
+
+		assert.Equal(t, true, r.Excludes("foobar"))
+		assert.Equal(t, false, r.Excludes("barfoo"))
+	})
+
+	t.Run("Generic", func(t *testing.T) {
+		r := &rule{}
+		r.Generic(startsWithFoo)
+
+		assert.Equal(t, true, r.Excludes("foobar"))
+		assert.Equal(t, false, r.Excludes("barfoo"))
+	})
+
+	t.Run("multiple conditions", func(t *testing.T) {
+		r := &rule{}
+		r.Exact("foobar")
+		r.Pattern("^foo.*")
+
+		assert.Equal(t, true, r.Excludes("foobar"))
+		assert.Equal(t, false, r.Excludes("barfoo"))
+
+		r.Generic(startsWithFoo)
+
+		assert.Equal(t, true, r.Excludes("foobar"))
+		assert.Equal(t, false, r.Excludes("barfoo"))
+
+		endsWithFoo := func(input any) bool {
+			if s, ok := input.(string); ok {
+				return strings.HasSuffix(s, "foo")
+			}
+			return false
+		}
+
+		r.Generic(endsWithFoo)
+		// All conditions have to be true and no argument here fulfills all of them
+		assert.Equal(t, false, r.Excludes("foobar"))
+		assert.Equal(t, false, r.Excludes("barfoo"))
+	})
+}
+
+func TestGitHubStarsAndSize(t *testing.T) {
+	assertExcluded := func(t *testing.T, githubRule *schema.ExcludedGitHubRepo, repo github.Repository, wantExcluded bool) {
 		t.Helper()
-		fn, err := buildGitHubExcludeRule(rule)
-		assert.Nil(t, err)
+		rule := &rule{}
+
+		if githubRule.Stars != "" {
+			fn, err := buildStarsConstraintsExcludeFn(githubRule.Stars)
+			require.NoError(t, err)
+			rule.Generic(fn)
+		}
+
+		if githubRule.Size != "" {
+			fn, err := buildSizeConstraintsExcludeFn(githubRule.Size)
+			require.NoError(t, err)
+			rule.Generic(fn)
+		}
+
 		assert.Equal(
 			t,
 			wantExcluded,
-			fn(repo),
+			rule.Excludes(repo),
 			"rule.Stars=%q, rule.Size=%q, repo.StarGazerCount=%d, repo.DiskUsageKibibytes=%d",
-			rule.Stars,
-			rule.Size,
+			githubRule.Stars,
+			githubRule.Size,
 			repo.StargazerCount,
 			repo.DiskUsageKibibytes,
 		)
@@ -93,6 +181,9 @@ func TestBuildGitHubExcludeRule(t *testing.T) {
 
 			{"< 1 GB", 1024*1024 - 1, false},
 			{"< 2 GB", 1024 * 1024, true},
+
+			// Ignore repositories with 0 size
+			{"< 1 MB", 0, false},
 		}
 
 		for _, tt := range tests {

@@ -4,7 +4,7 @@ This contains all the Tauri code for the Cody App. Currently it consists of star
 
 ## Required software
 
-- Rust 1.68.0
+- Rust 1.73.0
 - pnpm
 
 ## Getting started
