@@ -54,6 +54,7 @@ func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
 		{ID: resourceid.New("role_cloudprofiler_agent"), Role: "roles/cloudprofiler.agent"},
 		// Allow service to connect to Cloud SQL
 		{ID: resourceid.New("role_cloudsql_client"), Role: "roles/cloudsql.client"},
+		{ID: resourceid.New("role_cloudsql_instanceuser"), Role: "roles/cloudsql.instanceUser"},
 	}
 
 	// Grant configured roles to the workload identity
