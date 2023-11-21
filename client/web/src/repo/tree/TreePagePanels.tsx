@@ -26,7 +26,9 @@ import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 
 import styles from './TreePagePanels.module.scss'
-import { getIcon } from '../utils'
+import { getExtension } from '../utils'
+import { FILE_ICONS } from '../constants'
+import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 
 export const treeHistoryFragment = gql`
     fragment TreeHistoryFields on TreeEntry {
@@ -177,7 +179,8 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
             </thead>
             <tbody>
                 {entries.map(entry => {
-                    const { icon, iconClass } = getIcon(entry.name, entry.isDirectory)
+                    const extension = getExtension(entry.name)
+                    const fIcon = FILE_ICONS.get(extension)
 
                     return (
                         <tr key={entry.name}>
@@ -193,11 +196,20 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                     data-testid="tree-entry"
                                 >
 
-                                    <Icon
-                                        as={icon}
-                                        className={classNames('mr-1', iconClass)}
-                                        aria-hidden={true}
-                                    />
+                                    {fIcon ? (
+                                        <Icon
+                                            as={fIcon.icon}
+                                            className={classNames('mr-1', fIcon.iconClass)}
+                                            aria-hidden={true}
+                                        />
+                                    ) : (
+                                        <Icon
+                                            svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
+                                            className={classNames('mr-1')}
+                                            aria-hidden={true}
+                                        />
+
+                                    )}
                                     {entry.name}
                                     {entry.isDirectory && '/'}
                                 </LinkOrSpan>
