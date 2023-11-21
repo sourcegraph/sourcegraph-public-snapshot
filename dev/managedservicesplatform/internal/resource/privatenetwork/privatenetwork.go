@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/aws/jsii-runtime-go"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computeglobaladdress"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesubnetwork"
@@ -73,24 +72,20 @@ func New(scope constructs.Construct, config Config) *Output {
 		scope,
 		pointers.Ptr("cloudrun-network-service-networking-connection-ip"),
 		&computeglobaladdress.ComputeGlobalAddressConfig{
-			Name:         pointers.Ptr(fmt.Sprintf("%s-service-networking-connection", config.ServiceID)),
 			Project:      &config.ProjectID,
+			Name:         pointers.Ptr(fmt.Sprintf("%s-service-networking-connection", config.ServiceID)),
 			Network:      network.Id(),
-			Purpose:      jsii.String("VPC_PEERING"),
-			AddressType:  jsii.String("INTERNAL"),
-			PrefixLength: jsii.Number(16),
+			Purpose:      pointers.Ptr("VPC_PEERING"),
+			AddressType:  pointers.Ptr("INTERNAL"),
+			PrefixLength: pointers.Float64(16),
 		})
 	serviceNetworkingConnection := servicenetworkingconnection.NewServiceNetworkingConnection(
 		scope,
 		pointers.Ptr("cloudrun-network-service-networking-connection"),
 		&servicenetworkingconnection.ServiceNetworkingConnectionConfig{
-			Network: network.Id(),
-			Service: jsii.String("servicenetworking.googleapis.com"),
-			ReservedPeeringRanges: func(address computeglobaladdress.ComputeGlobalAddress) *[]*string {
-				result := make([]*string, 1)
-				result[0] = address.Name()
-				return &result
-			}(serviceNetworkingConnectionIP),
+			Network:               network.Id(),
+			Service:               pointers.Ptr("servicenetworking.googleapis.com"),
+			ReservedPeeringRanges: &[]*string{serviceNetworkingConnectionIP.Name()},
 		})
 
 	// Cloud Run services can't connect directly to networks, and seem to require a

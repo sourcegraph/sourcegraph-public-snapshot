@@ -87,7 +87,7 @@ func (c postgreSQLContract) getCloudSQLConnConfig(ctx context.Context, database 
 	}
 
 	// https://github.com/GoogleCloudPlatform/cloud-sql-go-connector?tab=readme-ov-file#automatic-iam-database-authentication
-	dsn := fmt.Sprintf("user=%s database=%s sslmode=disable", *c.user, database)
+	dsn := fmt.Sprintf("user=%s dbname=%s", *c.user, database)
 	config, err := pgx.ParseConfig(dsn)
 	if err != nil {
 		return nil, errors.Wrap(err, "pgx.ParseConfig")
