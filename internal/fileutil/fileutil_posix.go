@@ -15,7 +15,7 @@ import (
 func RenameAndSync(oldpath, newpath string) error {
 	err := os.Rename(oldpath, newpath)
 	if err != nil {
-		return errors.Wrapf(err, "failed to rename %q to %q", oldpath, newpath)
+		return errors.Wrapf(err, "failed to rename %q to %q", errors.Safe(oldpath), errors.Safe(newpath))
 	}
 
 	oldparent, newparent := filepath.Dir(oldpath), filepath.Dir(newpath)
