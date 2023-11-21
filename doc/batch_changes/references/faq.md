@@ -139,7 +139,7 @@ When working with `src`, there are occurences where applying your batch spec mig
 
 Yes, you can create a batch change under a team's namespace so that the team owns and manages the batch change. Here are the steps to achieve this:
 
-1. Create an [organization](../../../doc/admin/organizations.md) on Sourcegraph for your team.
+1. Create an [organization](../../admin/organizations.md) on Sourcegraph for your team.
 1. Add all members of your team to the organization.
 1. When creating the batch change, select the organization's namespace instead of your personal namespace. This can be done via the UI or using the `-namespace` flag with `src batch preview/apply`.
 1. The batch change will now be created under the organization's namespace.
