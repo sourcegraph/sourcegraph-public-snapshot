@@ -20,7 +20,7 @@ interactions:
       "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-source/src-cli/refs/tags"},
       "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-source/src-cli/downloads"},
       "source": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-source/src-cli/src"},
-      "clone": [{"name": "https", "href": "https://ee3ixafyoxkf5c2st4zdqyv8mbi93n@bitbucket.org/sourcegraph-source/src-cli.git"},
+      "clone": [{"name": "https", "href": "https://2h1ehnddx9o2mwnng8plaqp56mb7aq@bitbucket.org/sourcegraph-source/src-cli.git"},
       {"name": "ssh", "href": "git@bitbucket.org:sourcegraph-source/src-cli.git"}],
       "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-source/src-cli/hooks"}},
       "name": "src-cli", "slug": "src-cli", "description": "", "scm": "git", "website":
@@ -55,7 +55,7 @@ interactions:
       "tags": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-source/source-test/refs/tags"},
       "downloads": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-source/source-test/downloads"},
       "source": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-source/source-test/src"},
-      "clone": [{"name": "https", "href": "https://ee3ixafyoxkf5c2st4zdqyv8mbi93n@bitbucket.org/sourcegraph-source/source-test.git"},
+      "clone": [{"name": "https", "href": "https://2h1ehnddx9o2mwnng8plaqp56mb7aq@bitbucket.org/sourcegraph-source/source-test.git"},
       {"name": "ssh", "href": "git@bitbucket.org:sourcegraph-source/source-test.git"}],
       "hooks": {"href": "https://api.bitbucket.org/2.0/repositories/sourcegraph-source/source-test/hooks"}},
       "name": "source-test", "slug": "source-test", "description": "", "scm": "git",
@@ -85,9 +85,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 21 Nov 2023 14:21:08 GMT
+      - Tue, 21 Nov 2023 14:28:09 GMT
       Etag:
-      - '"e552649c4cd11547e0602df1a62e1c84"'
+      - '"81bd5365c10a63e8359344c6deaad885"'
       Server:
       - envoy
       Strict-Transport-Security:
@@ -97,9 +97,9 @@ interactions:
       X-Asap-Succeeded:
       - "True"
       X-B3-Spanid:
-      - 595bfce64fdd62ed
+      - 57e688568582f1b8
       X-B3-Traceid:
-      - 7247200bb2442ab2
+      - 1d016bef27946a4e
       X-Content-Type-Options:
       - nosniff
       X-Credential-Type:
@@ -107,29 +107,29 @@ interactions:
       X-Dc-Location:
       - Micros-3
       X-Envoy-Upstream-Service-Time:
-      - "204"
+      - "250"
       X-Frame-Options:
       - SAMEORIGIN
       X-Render-Time:
-      - "0.1868760585784912"
+      - "0.23119592666625977"
       X-Request-Count:
-      - "1856"
+      - "1601"
       X-Request-Id:
-      - 7247200bb2442ab2
+      - 1d016bef27946a4e
       X-Served-By:
-      - 38f8183f5647
+      - 3ce7dc13e690
       X-Static-Version:
       - ba8afb91e693
       X-Trace-Id:
-      - 7247200bb2442ab2
+      - 1d016bef27946a4e
       X-Usage-Input-Ops:
       - "0"
       X-Usage-Output-Ops:
       - "0"
       X-Usage-System-Time:
-      - "0.013017"
+      - "0.004212"
       X-Usage-User-Time:
-      - "0.090864"
+      - "0.125926"
       X-Used-Mesh:
       - "False"
       X-Version:
