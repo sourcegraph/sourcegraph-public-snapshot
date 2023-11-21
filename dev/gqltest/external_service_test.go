@@ -169,7 +169,6 @@ func TestExternalService_Perforce(t *testing.T) {
 		headBranch string
 		blobPath   string
 		wantBlob   string
-		disabled   bool
 	}{
 		{
 			name:       "p4 fusion",
@@ -188,14 +187,9 @@ func TestExternalService_Perforce(t *testing.T) {
 			headBranch: "master",
 			wantBlob: `./
 `,
-			disabled: true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			// TODO(burmudar): disabled because on Aspect Workflows it times out
-			if tc.disabled {
-				t.Skip(tc.name + " test is disabled")
-			}
 			repoName := "perforce/" + tc.depot
 			checkPerforceEnvironment(t)
 			cleanup := createPerforceExternalService(t, tc.depot, tc.useFusion)
