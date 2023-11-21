@@ -4,6 +4,9 @@ import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
     mdiSourceRepository,
     mdiFolderArrowUp,
+    mdiFolderOpenOutline,
+    mdiFileDocumentOutline,
+    mdiFolderOutline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -27,10 +30,8 @@ import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
-import {
-    getExtension,
-    getIcon,
-} from './utils'
+import { getExtension } from './utils'
+import { FILE_ICONS } from './constants'
 
 export const MAX_TREE_ENTRIES = 2500
 
@@ -390,9 +391,8 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const { icon, iconClass } = getIcon(name, isBranch)
     const extension = getExtension(name)
-    console.log(icon.toString())
+    const fIcon = FILE_ICONS.get(extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -475,13 +475,19 @@ function renderNode({
             }}
         >
             {/* Icon should be dynamically populated based on what kind of file type */}
-            {icon &&
+            {fIcon ? (
                 <Icon
-                    as={icon}
-                    className={classNames('mr-1', styles.icon, iconClass)}
+                    as={fIcon.icon}
+                    className={classNames('mr-1', styles.icon, fIcon.iconClass)}
                     aria-hidden={true}
                 />
-            }
+            ) : (
+                <Icon
+                    svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline}
+                    className={classNames('mr-1', styles.icon)}
+                    aria-hidden={true}
+                />
+            )}
             <span className={extension === "test" ? styles.gray : styles.defaultIcon}>
                 {name}
             </span>
