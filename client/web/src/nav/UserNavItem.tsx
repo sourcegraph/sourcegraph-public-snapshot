@@ -254,7 +254,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             {isSourcegraphDotCom && (
                                 <MenuLink
                                     as={AnchorLink}
-                                    to="https://about.sourcegraph.com"
+                                    to="https://sourcegraph.com"
                                     target="_blank"
                                     rel="noopener"
                                 >
