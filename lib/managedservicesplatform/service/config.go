@@ -50,6 +50,8 @@ func newContract(env *Env) Contract {
 	}
 }
 
+// TODO: refine this API, what's the right abstraction to offer for flexibility
+// and local dev experience?
 func (c postgreSQLContract) GetPostgreSQLDSN(ctx context.Context, database string) (string, error) {
 	if c.customDSN != nil {
 		return *c.customDSN, nil
@@ -63,14 +65,14 @@ func (c postgreSQLContract) GetPostgreSQLDSN(ctx context.Context, database strin
 	dsn := fmt.Sprintf("user=%s database=%s", *c.user, database)
 	config, err := pgx.ParseConfig(dsn)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "pgx.ParseConfig")
 	}
 	d, err := cloudsqlconn.NewDialer(ctx,
 		cloudsqlconn.WithIAMAuthN(),
 		// MSP uses private IP
 		cloudsqlconn.WithDefaultDialOptions(cloudsqlconn.WithPrivateIP()))
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "cloudsqlconn.NewDialer")
 	}
 	// Use the Cloud SQL connector to handle connecting to the instance.
 	// This approach does *NOT* require the Cloud SQL proxy.

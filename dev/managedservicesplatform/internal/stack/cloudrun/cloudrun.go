@@ -218,6 +218,8 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			Spec:      *vars.Environment.Resources.PostgreSQL,
 			Network:   cloudRunBuildVars.PrivateNetwork.Network,
 
+			WorkloadIdentity: *vars.CloudRunWorkloadServiceAccount,
+
 			// https://cloud.google.com/sql/docs/mysql/private-ip#network_requirements
 			DependsOn: []cdktf.ITerraformDependable{
 				cloudRunBuildVars.PrivateNetwork.ServiceNetworkingConnection,

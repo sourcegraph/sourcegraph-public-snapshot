@@ -2,6 +2,7 @@ package example
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
@@ -16,11 +17,11 @@ import (
 )
 
 type Config struct {
-	Variable int
+	Variable string
 }
 
 func (c *Config) Load(env *service.Env) {
-	c.Variable = env.GetInt("VARIABLE", "13", "variable value")
+	c.Variable = env.Get("VARIABLE", "13", "variable value")
 }
 
 type Service struct{}
@@ -48,7 +49,7 @@ func (s Service) Initialize(
 			Server: &http.Server{
 				Addr: fmt.Sprintf(":%d", contract.Port),
 				Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.Write([]byte(fmt.Sprintf("Variable: %d", config.Variable)))
+					w.Write([]byte(fmt.Sprintf("Variable: %s", config.Variable)))
 				}),
 			},
 		},
@@ -85,8 +86,12 @@ func initDB(ctx context.Context, contract service.Contract) error {
 		return errors.Wrap(err, "GetPostgreSQLDSN")
 	}
 
+	sqlDB, err := sql.Open("pgx", dsn)
+	if err != nil {
+		return errors.Wrap(err, "sql.Open")
+	}
 	db, err := gorm.Open(
-		postgres.Open(dsn),
+		postgres.New(postgres.Config{Conn: sqlDB}),
 		&gorm.Config{
 			SkipDefaultTransaction: true,
 			NowFunc: func() time.Time {
