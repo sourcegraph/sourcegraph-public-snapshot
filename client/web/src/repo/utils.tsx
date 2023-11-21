@@ -1,6 +1,6 @@
 import { type GitCommitFields, RepositoryType } from '../graphql-operations'
 
-import { CodeHostType, Language } from './constants'
+import { CodeHostType, FileExtension } from './constants'
 
 export const isPerforceChangelistMappingEnabled = (): boolean =>
     window.context.experimentalFeatures.perforceChangelistMapping === 'enabled'
@@ -55,17 +55,18 @@ const contains = (arr: string[], target: string): boolean => {
     return false
 }
 
-export const getExtension = (file: string): Language => {
-    const f = file.split(".")
-    if (contains(f, "test")) {
-        return Language.TEST
+export const getExtension = (file: string): { extension: FileExtension; isTest: boolean } => {
+    let e = { extension: '' as FileExtension, isTest: false }
+    const f = file.split('.')
+    if (contains(f, 'test')) {
+        e.isTest = true
     }
 
     const s = f.slice(1)
-
-    if (contains(s, "mod") || contains(s, "sum")) {
-        return Language.GO
+    if (contains(s, 'mod') || contains(s, 'sum')) {
+        e.extension = 'go' as FileExtension
     } else {
-        return s[s.length - 1] as Language
+        e.extension = s[s.length - 1] as FileExtension
     }
+    return e
 }

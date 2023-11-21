@@ -1,4 +1,6 @@
-import { CustomIcon } from "@sourcegraph/wildcard/src/components/Icon";
+import { CiSettings, CiTextAlignLeft } from 'react-icons/ci'
+import { FaJava, FaSass } from 'react-icons/fa'
+import { GoDatabase, GoTerminal } from 'react-icons/go'
 import {
     SiC,
     SiCplusplus,
@@ -10,7 +12,6 @@ import {
     SiGraphql,
     SiHtml5,
     SiJavascript,
-    SiJson,
     SiKotlin,
     SiLua,
     SiMarkdown,
@@ -26,13 +27,13 @@ import {
     SiScala,
     SiSvg,
     SiTypescript,
-    SiZig
-} from "react-icons/si";
-import styles from "./RepoRevisionSidebarFileTree.module.scss"
-import { GoDatabase, GoTerminal } from "react-icons/go";
-import { FaJava, FaSass } from "react-icons/fa";
-import { CiSettings, CiTextAlignLeft } from "react-icons/ci";
-import { MdOutlineScience } from "react-icons/md";
+    SiZig,
+} from 'react-icons/si'
+import { VscJson } from 'react-icons/vsc'
+
+import { CustomIcon } from '@sourcegraph/wildcard/src/components/Icon'
+
+import styles from './RepoRevisionSidebarFileTree.module.scss'
 
 export const LogsPageTabs = {
     COMMANDS: 0,
@@ -50,7 +51,7 @@ export enum CodeHostType {
     OTHER = 'other',
 }
 
-export enum Language {
+export enum FileExtension {
     BASH = 'sh',
     C = 'c',
     CPP = 'cc',
@@ -92,44 +93,48 @@ export enum Language {
     ZIG = 'zig',
 }
 
-export const FILE_ICONS: Map<Language, { icon: CustomIcon; iconClass: string; }> = new Map([
-    [Language.BASH, { icon: GoTerminal, iconClass: styles.defaultIcon }],
-    [Language.C, { icon: SiC, iconClass: styles.blue }],
-    [Language.CPP, { icon: SiCplusplus, iconClass: styles.blue }],
-    [Language.CSHARP, { icon: SiCsharp, iconClass: styles.blue }],
-    [Language.CSS, { icon: SiCssmodules, iconClass: styles.blue }],
-    [Language.DOCKERIGNORE, { icon: SiDocker, iconClass: styles.blue }],
-    [Language.GITIGNORE, { icon: SiGit, iconClass: styles.red }],
-    [Language.GITATTRIBUTES, { icon: SiGit, iconClass: styles.red }],
-    [Language.GO, { icon: SiGo, iconClass: styles.blue }],
-    [Language.GRAPHQL, { icon: SiGraphql, iconClass: styles.pink }],
-    [Language.HTML, { icon: SiHtml5, iconClass: styles.blue }],
-    [Language.JAVA, { icon: FaJava, iconClass: styles.defaultIcon }],
-    [Language.JAVASCRIPT, { icon: SiJavascript, iconClass: styles.yellow }],
-    [Language.JSX, { icon: SiReact, iconClass: styles.yellow }],
-    [Language.JSON, { icon: SiJson, iconClass: styles.defaultIcon }],
-    [Language.KOTLIN, { icon: SiKotlin, iconClass: styles.green }],
-    [Language.LOCKFILE, { icon: SiJson, iconClass: styles.defaultIcon }],
-    [Language.LUA, { icon: SiLua, iconClass: styles.blue }],
-    [Language.MARKDOWN, { icon: SiMarkdown, iconClass: styles.blue }],
-    [Language.NCL, { icon: CiSettings, iconClass: styles.gray }],
-    [Language.NIX, { icon: SiNixos, iconClass: styles.gray }],
-    [Language.NPM, { icon: SiNpm, iconClass: styles.red }],
-    [Language.PHP, { icon: SiPhp, iconClass: styles.defaultIcon }],
-    [Language.PERL, { icon: SiPerl, iconClass: styles.defaultIcon }],
-    [Language.PYTHON, { icon: SiPython, iconClass: styles.yellow }],
-    [Language.R, { icon: SiR, iconClass: styles.red }],
-    [Language.RUBY, { icon: SiRuby, iconClass: styles.red }],
-    [Language.RUST, { icon: SiRust, iconClass: styles.defaultIcon }],
-    [Language.SCALA, { icon: SiScala, iconClass: styles.red }],
-    [Language.SASS, { icon: FaSass, iconClass: styles.pink }],
-    [Language.SQL, { icon: GoDatabase, iconClass: styles.blue }],
-    [Language.SVG, { icon: SiSvg, iconClass: styles.blue }],
-    [Language.TEST, { icon: MdOutlineScience, iconClass: styles.defaultIcon }],
-    [Language.TYPESCRIPT, { icon: SiTypescript, iconClass: styles.blue }],
-    [Language.TSX, { icon: SiReact, iconClass: styles.blue }],
-    [Language.TEXT, { icon: CiTextAlignLeft, iconClass: styles.defaultIcon }],
-    [Language.YAML, { icon: CiSettings, iconClass: styles.gray }],
-    [Language.YML, { icon: CiSettings, iconClass: styles.gray }],
-    [Language.ZIG, { icon: SiZig, iconClass: styles.yellow }]
-]);
+/*
+    * We use the react-icons package instead of material design icons for two reasons:
+    * 1) Many of mdi's programming language icons will be deprecated soon.
+    * 2) They are missing quite a few icons that are needed when displaying file types.
+*/
+export const FILE_ICONS: Map<FileExtension, { icon: CustomIcon; iconClass: string }> = new Map([
+    [FileExtension.BASH, { icon: GoTerminal, iconClass: styles.defaultIcon }],
+    [FileExtension.C, { icon: SiC, iconClass: styles.blue }],
+    [FileExtension.CPP, { icon: SiCplusplus, iconClass: styles.blue }],
+    [FileExtension.CSHARP, { icon: SiCsharp, iconClass: styles.blue }],
+    [FileExtension.CSS, { icon: SiCssmodules, iconClass: styles.blue }],
+    [FileExtension.DOCKERIGNORE, { icon: SiDocker, iconClass: styles.blue }],
+    [FileExtension.GITIGNORE, { icon: SiGit, iconClass: styles.red }],
+    [FileExtension.GITATTRIBUTES, { icon: SiGit, iconClass: styles.red }],
+    [FileExtension.GO, { icon: SiGo, iconClass: styles.blue }],
+    [FileExtension.GRAPHQL, { icon: SiGraphql, iconClass: styles.pink }],
+    [FileExtension.HTML, { icon: SiHtml5, iconClass: styles.blue }],
+    [FileExtension.JAVA, { icon: FaJava, iconClass: styles.defaultIcon }],
+    [FileExtension.JAVASCRIPT, { icon: SiJavascript, iconClass: styles.yellow }],
+    [FileExtension.JSX, { icon: SiReact, iconClass: styles.yellow }],
+    [FileExtension.JSON, { icon: VscJson, iconClass: styles.defaultIcon }],
+    [FileExtension.KOTLIN, { icon: SiKotlin, iconClass: styles.green }],
+    [FileExtension.LOCKFILE, { icon: VscJson, iconClass: styles.defaultIcon }],
+    [FileExtension.LUA, { icon: SiLua, iconClass: styles.blue }],
+    [FileExtension.MARKDOWN, { icon: SiMarkdown, iconClass: styles.blue }],
+    [FileExtension.NCL, { icon: CiSettings, iconClass: styles.defaultIcon }],
+    [FileExtension.NIX, { icon: SiNixos, iconClass: styles.gray }],
+    [FileExtension.NPM, { icon: SiNpm, iconClass: styles.red }],
+    [FileExtension.PHP, { icon: SiPhp, iconClass: styles.defaultIcon }],
+    [FileExtension.PERL, { icon: SiPerl, iconClass: styles.defaultIcon }],
+    [FileExtension.PYTHON, { icon: SiPython, iconClass: styles.yellow }],
+    [FileExtension.R, { icon: SiR, iconClass: styles.red }],
+    [FileExtension.RUBY, { icon: SiRuby, iconClass: styles.red }],
+    [FileExtension.RUST, { icon: SiRust, iconClass: styles.defaultIcon }],
+    [FileExtension.SCALA, { icon: SiScala, iconClass: styles.red }],
+    [FileExtension.SASS, { icon: FaSass, iconClass: styles.pink }],
+    [FileExtension.SQL, { icon: GoDatabase, iconClass: styles.blue }],
+    [FileExtension.SVG, { icon: SiSvg, iconClass: styles.blue }],
+    [FileExtension.TYPESCRIPT, { icon: SiTypescript, iconClass: styles.blue }],
+    [FileExtension.TSX, { icon: SiReact, iconClass: styles.blue }],
+    [FileExtension.TEXT, { icon: CiTextAlignLeft, iconClass: styles.defaultIcon }],
+    [FileExtension.YAML, { icon: CiSettings, iconClass: styles.defaultIcon }],
+    [FileExtension.YML, { icon: CiSettings, iconClass: styles.defaultIcon }],
+    [FileExtension.ZIG, { icon: SiZig, iconClass: styles.yellow }],
+])

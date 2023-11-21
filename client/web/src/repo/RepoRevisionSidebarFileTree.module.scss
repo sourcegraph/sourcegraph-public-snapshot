@@ -1,7 +1,24 @@
+.icon-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
 .icon {
     flex-shrink: 0;
     width: 1rem;
     height: 1rem;
+}
+
+.test-indicator {
+    border-radius: 100%;
+    width: 6px;
+    height: 6px;
+    margin-left: -0.65rem;
+    margin-bottom: 0.15rem;
+    margin-right: 0.25rem;
+    background-color: var(--warning-2);
+    align-self: end;
 }
 
 .blue {

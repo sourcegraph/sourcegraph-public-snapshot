@@ -1,5 +1,6 @@
 import React, { type FC, useRef, useState, useEffect, useMemo } from 'react'
 
+import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -24,11 +25,10 @@ import type { BlobFileFields, TreeHistoryFields } from '../../graphql-operations
 import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
+import { FILE_ICONS } from '../constants'
+import { getExtension } from '../utils'
 
 import styles from './TreePagePanels.module.scss'
-import { getExtension } from '../utils'
-import { FILE_ICONS } from '../constants'
-import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 
 export const treeHistoryFragment = gql`
     fragment TreeHistoryFields on TreeEntry {
@@ -179,8 +179,8 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
             </thead>
             <tbody>
                 {entries.map(entry => {
-                    const extension = getExtension(entry.name)
-                    const fIcon = FILE_ICONS.get(extension)
+                    const fExtension = getExtension(entry.name)
+                    const fIcon = FILE_ICONS.get(fExtension.extension)
 
                     return (
                         <tr key={entry.name}>
@@ -195,7 +195,6 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                     title={entry.path}
                                     data-testid="tree-entry"
                                 >
-
                                     {fIcon ? (
                                         <Icon
                                             as={fIcon.icon}
@@ -208,7 +207,6 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                             className={classNames('mr-1')}
                                             aria-hidden={true}
                                         />
-
                                     )}
                                     {entry.name}
                                     {entry.isDirectory && '/'}

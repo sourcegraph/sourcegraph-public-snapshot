@@ -2,11 +2,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
-    mdiSourceRepository,
-    mdiFolderArrowUp,
-    mdiFolderOpenOutline,
     mdiFileDocumentOutline,
+    mdiSourceRepository,
     mdiFolderOutline,
+    mdiFolderOpenOutline,
+    mdiFolderArrowUp,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
@@ -27,11 +27,11 @@ import {
 
 import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 
+import { FILE_ICONS } from './constants'
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
+import { getExtension } from './utils'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
-import { getExtension } from './utils'
-import { FILE_ICONS } from './constants'
 
 export const MAX_TREE_ENTRIES = 2500
 
@@ -391,8 +391,8 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const extension = getExtension(name)
-    const fIcon = FILE_ICONS.get(extension)
+    const fExtension = getExtension(name)
+    const fIcon = FILE_ICONS.get(fExtension.extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -475,23 +475,26 @@ function renderNode({
             }}
         >
             {/* Icon should be dynamically populated based on what kind of file type */}
-            {fIcon ? (
-                <Icon
-                    as={fIcon.icon}
-                    className={classNames('mr-1', styles.icon, fIcon.iconClass)}
-                    aria-hidden={true}
-                />
-            ) : (
-                <Icon
-                    svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline}
-                    className={classNames('mr-1', styles.icon)}
-                    aria-hidden={true}
-                />
-            )}
-            <span className={extension === "test" ? styles.gray : styles.defaultIcon}>
+            <div className={classNames(styles.iconContainer)}>
+                {fIcon ? (
+                    <Icon
+                        as={fIcon.icon}
+                        className={classNames('mr-1', styles.icon, fIcon.iconClass)}
+                        aria-hidden={true}
+                    />
+                ) : (
+                    <Icon
+                        svgPath={
+                            isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline
+                        }
+                        className={classNames('mr-1', styles.icon)}
+                        aria-hidden={true}
+                    />
+                )}
+                {fExtension.isTest && <div className={classNames(styles.testIndicator)} />}
                 {name}
-            </span>
-        </Link >
+            </div>
+        </Link>
     )
 }
 
