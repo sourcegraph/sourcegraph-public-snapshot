@@ -23,18 +23,18 @@ export const SearchPageFooter: FC = () => {
                           name: 'Docs',
                           href: 'https://docs.sourcegraph.com/',
                       },
-                      { name: 'About', href: 'https://about.sourcegraph.com' },
+                      { name: 'Homepage', href: 'https://sourcegraph.com' },
                       {
                           name: 'Cody',
-                          href: 'https://about.sourcegraph.com/cody',
+                          href: 'https://sourcegraph.com/cody',
                       },
                       {
                           name: 'Enterprise',
-                          href: 'https://about.sourcegraph.com/get-started?t=enterprise',
+                          href: 'https://sourcegraph.com/get-started?t=enterprise',
                       },
                       {
                           name: 'Security',
-                          href: 'https://about.sourcegraph.com/security',
+                          href: 'https://sourcegraph.com/security',
                       },
                       { name: 'Discord', href: 'https://srcgr.ph/discord-server' },
                   ]
