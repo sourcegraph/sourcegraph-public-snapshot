@@ -1,12 +1,15 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
@@ -30,7 +33,7 @@ type Contract struct {
 }
 
 type postgreSQLContract struct {
-	customDSN *string
+	customDSNTemplate *string
 
 	instanceConnectionName *string
 	user                   *string
@@ -42,7 +45,8 @@ func newContract(env *Env) Contract {
 		Port:            env.GetInt("PORT", "", "service port"),
 		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
 		postgreSQLContract: postgreSQLContract{
-			customDSN: env.GetOptional("PGDSN", "custom PostgreSQL DSN"),
+			customDSNTemplate: env.GetOptional("PGDSN",
+				"custom PostgreSQL DSN with templatized database, e.g. 'user=foo database={{ .Database }}'"),
 
 			instanceConnectionName: env.GetOptional("PGINSTANCE", "Cloud SQL instance connection name"),
 			user:                   env.GetOptional("PGUSER", "Cloud SQL user"),
@@ -50,36 +54,57 @@ func newContract(env *Env) Contract {
 	}
 }
 
-// TODO: refine this API, what's the right abstraction to offer for flexibility
-// and local dev experience?
-func (c postgreSQLContract) GetPostgreSQLDSN(ctx context.Context, database string) (string, error) {
-	if c.customDSN != nil {
-		return *c.customDSN, nil
+// GetPostgreSQLDB returns a standard library DB pointing to the configured
+// PostgreSQL database. In MSP, we connect to a Cloud SQL instance over IAM auth.
+//
+// In development, the connection can be overridden with the PGDSN environment
+// variable.
+func (c postgreSQLContract) GetPostgreSQLDB(ctx context.Context, database string) (*sql.DB, error) {
+	if c.customDSNTemplate != nil {
+		tmpl, err := template.New("PGDSN").Parse(*c.customDSNTemplate)
+		if err != nil {
+			return nil, errors.Wrap(err, "PGDSN is not a valid template")
+		}
+		var dsn bytes.Buffer
+		if err := tmpl.Execute(&dsn, struct{ Database string }{Database: database}); err != nil {
+			return nil, errors.Wrap(err, "PGDSN template is invalid")
+		}
+		return sql.Open("pgx", dsn.String())
 	}
 
+	config, err := c.getCloudSQLConnConfig(ctx, database)
+	if err != nil {
+		return nil, errors.Wrap(err, "get CloudSQL connection config")
+	}
+	return sql.Open("pgx", stdlib.RegisterConnConfig(config))
+}
+
+// getCloudSQLConnConfig generates a pgx connection configuration for using
+// a Cloud SQL instance using IAM auth.
+func (c postgreSQLContract) getCloudSQLConnConfig(ctx context.Context, database string) (*pgx.ConnConfig, error) {
 	if c.instanceConnectionName == nil || c.user == nil {
-		return "", errors.New("missing required PostgreSQL configuration")
+		return nil, errors.New("missing required PostgreSQL configuration")
 	}
 
 	// https://github.com/GoogleCloudPlatform/cloud-sql-go-connector?tab=readme-ov-file#automatic-iam-database-authentication
 	dsn := fmt.Sprintf("user=%s database=%s", *c.user, database)
 	config, err := pgx.ParseConfig(dsn)
 	if err != nil {
-		return "", errors.Wrap(err, "pgx.ParseConfig")
+		return nil, errors.Wrap(err, "pgx.ParseConfig")
 	}
 	d, err := cloudsqlconn.NewDialer(ctx,
 		cloudsqlconn.WithIAMAuthN(),
 		// MSP uses private IP
 		cloudsqlconn.WithDefaultDialOptions(cloudsqlconn.WithPrivateIP()))
 	if err != nil {
-		return "", errors.Wrap(err, "cloudsqlconn.NewDialer")
+		return nil, errors.Wrap(err, "cloudsqlconn.NewDialer")
 	}
 	// Use the Cloud SQL connector to handle connecting to the instance.
 	// This approach does *NOT* require the Cloud SQL proxy.
 	config.DialFunc = func(ctx context.Context, network, instance string) (net.Conn, error) {
 		return d.Dial(ctx, *c.instanceConnectionName)
 	}
-	return stdlib.RegisterConnConfig(config), nil
+	return config, nil
 }
 
 type ConfigLoader[ConfigT any] interface {

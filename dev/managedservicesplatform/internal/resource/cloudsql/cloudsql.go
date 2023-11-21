@@ -4,15 +4,17 @@ import (
 	"fmt"
 
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/sqldatabase"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/sqldatabaseinstance"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/sqluser"
+	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/grantrole"
+	postgresql "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/provider"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/random/password"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
@@ -21,10 +23,10 @@ import (
 )
 
 type Output struct {
-	Instance     sqldatabaseinstance.SqlDatabaseInstance
-	AdminUser    sqluser.SqlUser
-	WorkloadUser sqluser.SqlUser
-	Certificate  gsmsecret.Output
+	Instance               sqldatabaseinstance.SqlDatabaseInstance
+	AdminUser              sqluser.SqlUser
+	WorkloadUser           sqluser.SqlUser
+	WorkloadSuperuserGrant cdktf.ITerraformDependable
 }
 
 type Config struct {
@@ -45,7 +47,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		pointers.Deref(config.Spec.MemoryGB, 4)*1024)
 
 	instance := sqldatabaseinstance.NewSqlDatabaseInstance(scope, id.TerraformID("instance"), &sqldatabaseinstance.SqlDatabaseInstanceConfig{
-		Project: pointers.Ptr(config.ProjectID),
+		Project: &config.ProjectID,
 		Region:  &config.Region,
 
 		// Current default: https://cloud.google.com/sql/docs/postgres/db-versions
@@ -166,9 +168,26 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		DependsOn: &databaseResources,
 	})
 
+	// Additional configuration directly via Postgres
+	pgProvider := postgresql.NewPostgresqlProvider(scope, id.TerraformID("postgresql_provider"), &postgresql.PostgresqlProviderConfig{
+		Scheme:    pointers.Ptr("gcppostgres"),
+		Host:      instance.ConnectionName(),
+		Username:  adminUser.Name(),
+		Password:  adminPassword.Result(),
+		Port:      jsii.Number(5432),
+		Superuser: jsii.Bool(false),
+	})
+	workloadSuperuserGrant := grantrole.NewGrantRole(scope, id.TerraformID("workload_service_account_role_cloudsqlsuperuser"), &grantrole.GrantRoleConfig{
+		Provider:        pgProvider,
+		Role:            workloadUser.Name(),
+		GrantRole:       jsii.String("cloudsqlsuperuser"),
+		WithAdminOption: jsii.Bool(true),
+	})
+
 	return &Output{
-		Instance:     instance,
-		AdminUser:    adminUser,
-		WorkloadUser: workloadUser,
+		Instance:               instance,
+		AdminUser:              adminUser,
+		WorkloadUser:           workloadUser,
+		WorkloadSuperuserGrant: workloadSuperuserGrant,
 	}, nil
 }

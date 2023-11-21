@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -152,26 +153,15 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		Description: "Resolved image tag to deploy",
 	})
 
-	// Set up build configuration.
-	cloudRunBuildVars := builder.Variables{
-		Service:           vars.Service,
-		Image:             vars.Image,
-		ResolvedImageTag:  *imageTag.StringValue,
-		Environment:       vars.Environment,
-		GCPProjectID:      vars.ProjectID,
-		GCPRegion:         gcpRegion,
-		ServiceAccount:    vars.CloudRunWorkloadServiceAccount,
-		DiagnosticsSecret: diagnosticsSecret,
-		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
-	}
-
-	if vars.Environment.Resources.NeedsCloudRunConnector() {
-		cloudRunBuildVars.PrivateNetwork = privatenetwork.New(stack, privatenetwork.Config{
+	// privateNetwork is only instantiated if used, and is only instantiated
+	// once. If called, it always returns a non-nil value.
+	privateNetwork := syncx.OnceValue(func() *privatenetwork.Output {
+		return privatenetwork.New(stack, privatenetwork.Config{
 			ProjectID: vars.ProjectID,
 			ServiceID: vars.Service.ID,
 			Region:    gcpRegion,
 		})
-	}
+	})
 
 	// Add MSP env var indicating that the service is running in a Managed
 	// Services Platform environment.
@@ -186,7 +176,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 				ProjectID: vars.ProjectID,
 				Region:    gcpRegion,
 				Spec:      *vars.Environment.Resources.Redis,
-				Network:   cloudRunBuildVars.PrivateNetwork.Network,
+				Network:   privateNetwork().Network,
 			})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Redis instance")
@@ -216,13 +206,13 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			ProjectID: vars.ProjectID,
 			Region:    gcpRegion,
 			Spec:      *vars.Environment.Resources.PostgreSQL,
-			Network:   cloudRunBuildVars.PrivateNetwork.Network,
+			Network:   privateNetwork().Network,
 
 			WorkloadIdentity: *vars.CloudRunWorkloadServiceAccount,
 
 			// https://cloud.google.com/sql/docs/mysql/private-ip#network_requirements
 			DependsOn: []cdktf.ITerraformDependable{
-				cloudRunBuildVars.PrivateNetwork.ServiceNetworkingConnection,
+				privateNetwork().ServiceNetworkingConnection,
 			},
 		})
 		if err != nil {
@@ -232,6 +222,10 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// Add parameters required for authentication
 		cloudRunBuilder.AddEnv("PGINSTANCE", *sqlInstance.Instance.ConnectionName())
 		cloudRunBuilder.AddEnv("PGUSER", *sqlInstance.WorkloadUser.Name())
+
+		// We need the workload superuser role to be granted before Cloud Run
+		// can correctly use the database instance
+		cloudRunBuilder.AddDependency(sqlInstance.WorkloadSuperuserGrant)
 	}
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
@@ -250,8 +244,18 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	}
 
 	// Finalize output of builder
-	if _, err := cloudRunBuilder.Build(stack, cloudRunBuildVars); err != nil {
-		return nil, err
+	if _, err := cloudRunBuilder.Build(stack, builder.Variables{
+		Service:           vars.Service,
+		Image:             vars.Image,
+		ResolvedImageTag:  *imageTag.StringValue,
+		Environment:       vars.Environment,
+		GCPProjectID:      vars.ProjectID,
+		GCPRegion:         gcpRegion,
+		ServiceAccount:    vars.CloudRunWorkloadServiceAccount,
+		DiagnosticsSecret: diagnosticsSecret,
+		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
+	}); err != nil {
+		return nil, errors.Wrapf(err, "build Cloud Run resource kind %q", cloudRunBuilder.Kind())
 	}
 
 	// Collect outputs

@@ -2,7 +2,6 @@ package example
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
@@ -81,14 +80,9 @@ func (s *httpRoutine) Stop() {
 // It then sets up a few example databases using Gorm, in a manner similar to
 // https://github.com/sourcegraph/accounts.sourcegraph.com
 func initDB(ctx context.Context, contract service.Contract) error {
-	dsn, err := contract.GetPostgreSQLDSN(ctx, "primary")
+	sqlDB, err := contract.GetPostgreSQLDB(ctx, "primary")
 	if err != nil {
-		return errors.Wrap(err, "GetPostgreSQLDSN")
-	}
-
-	sqlDB, err := sql.Open("pgx", dsn)
-	if err != nil {
-		return errors.Wrap(err, "sql.Open")
+		return errors.Wrap(err, "GetPostgreSQLDB")
 	}
 	db, err := gorm.Open(
 		postgres.New(postgres.Config{Conn: sqlDB}),
