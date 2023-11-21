@@ -11,6 +11,7 @@ import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetry
 import { Form } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { type NavbarQueryState, setSearchMode, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { useV2QueryInput } from '../useV2QueryInput'
@@ -77,6 +78,12 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         submitSearchOnChangeRef.current()
     }, [])
 
+    // If the feature-flag "search-new-keyword" is set, we allow the user to
+    // choose between precise (legacy), precise (new), and smart search.  This
+    // is only temporary for internal testing.  The goal is to make the new
+    // precise search the default.
+    const [showExtendedPicker] = useFeatureFlag('search-new-keyword')
+
     // TODO (#48103): Remove/simplify when new search input is released
     if (v2QueryInput) {
         return (
@@ -108,6 +115,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                         navbarSearchQuery={queryState.query}
                         submitSearch={submitSearchOnChange}
                         structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
+                        showExtendedPicker={showExtendedPicker}
                     />
                 </LazyV2SearchInput>
             </Form>

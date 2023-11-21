@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -19,7 +19,10 @@ import (
 func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 	ratelimit.SetupForTest(t)
 
-	conf := &schema.AzureDevOpsConnection{
+	cf, save := NewClientFactory(t, t.Name())
+	defer save(t)
+
+	svc := typestest.MakeExternalService(t, extsvc.VariantAzureDevOps, &schema.AzureDevOpsConnection{
 		Url:      "https://dev.azure.com",
 		Username: os.Getenv("AZURE_DEV_OPS_USERNAME"),
 		Token:    os.Getenv("AZURE_DEV_OPS_TOKEN"),
@@ -32,14 +35,7 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 				Pattern: "^sgtestazure/sgtestazure/sgtestazure[3-9]",
 			},
 		},
-	}
-	cf, save := NewClientFactory(t, t.Name())
-	defer save(t)
-
-	svc := &types.ExternalService{
-		Kind:   extsvc.KindAzureDevOps,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
-	}
+	})
 
 	ctx := context.Background()
 	src, err := NewAzureDevOpsSource(ctx, nil, svc, cf)

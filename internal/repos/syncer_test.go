@@ -677,7 +677,7 @@ func TestSyncerSync(t *testing.T) {
 			sort.Sort(want)
 			sort.Sort(have)
 
-			typestest.Assert.ReposEqual(want...)(t, have)
+			typestest.AssertReposEqual(want...)(t, have)
 		}))
 	}
 }

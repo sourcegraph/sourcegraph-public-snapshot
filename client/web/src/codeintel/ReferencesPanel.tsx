@@ -263,12 +263,8 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
             // change. This way we avoid showing stale results.
             key={shouldMixPreciseAndSearchBasedReferences.toString()}
             {...props}
-            token={props.token}
             searchToken={tokenResult?.searchToken}
             spec={spec}
-            fileContent={props.fileContent}
-            isFork={props.isFork}
-            isArchived={props.isArchived}
         />
     )
 }

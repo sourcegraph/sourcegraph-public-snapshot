@@ -460,6 +460,29 @@ func PasswordPolicyEnabled() bool {
 	return pc.Enabled
 }
 
+func RateLimits() schema.RateLimits {
+	rl := schema.RateLimits{
+		GraphQLMaxAliases:    500,
+		GraphQLMaxFieldCount: 500_000,
+		GraphQLMaxDepth:      30,
+	}
+
+	configured := Get().RateLimits
+
+	if configured != nil {
+		if configured.GraphQLMaxAliases <= 0 {
+			rl.GraphQLMaxAliases = configured.GraphQLMaxAliases
+		}
+		if configured.GraphQLMaxFieldCount <= 0 {
+			rl.GraphQLMaxFieldCount = configured.GraphQLMaxFieldCount
+		}
+		if configured.GraphQLMaxDepth <= 0 {
+			rl.GraphQLMaxDepth = configured.GraphQLMaxDepth
+		}
+	}
+	return rl
+}
+
 // By default, password reset links are valid for 4 hours.
 const defaultPasswordLinkExpiry = 14400
 
@@ -674,11 +697,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
 		// If no endpoint is configured, this provider is misconfigured.
 		if completionsConfig.Endpoint == "" {
-			return nil
-		}
-
-		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
-		if completionsConfig.AccessToken == "" {
 			return nil
 		}
 
@@ -908,11 +926,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameAzureOpenAI) {
 		// If no endpoint is configured, we cannot talk to Azure OpenAI.
 		if embeddingsConfig.Endpoint == "" {
-			return nil
-		}
-
-		// If not access token is set, we cannot talk to OpenAI. Bail.
-		if embeddingsConfig.AccessToken == "" {
 			return nil
 		}
 

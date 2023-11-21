@@ -1,7 +1,7 @@
 package typestest
 
 import (
-	"sort"
+	"encoding/json"
 	"strconv"
 	"testing"
 	"time"
@@ -117,6 +117,20 @@ func MakeGitLabExternalService() *types.ExternalService {
 	}
 }
 
+func MakeExternalService(t *testing.T, variant extsvc.Variant, config any) *types.ExternalService {
+	t.Helper()
+
+	bs, err := json.Marshal(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return &types.ExternalService{
+		Kind:   variant.AsKind(),
+		Config: extsvc.NewUnencryptedConfig(string(bs)),
+	}
+}
+
 // MakeExternalServices creates one configured external service per kind and returns the list.
 func MakeExternalServices() types.ExternalServices {
 	clock := timeutil.NewFakeClock(time.Now(), 0)
@@ -218,36 +232,15 @@ func ExternalServicesToMap(es types.ExternalServices) map[string]*types.External
 
 // Opt contains functional options to be used in tests.
 var Opt = struct {
-	ExternalServiceID         func(int64) func(*types.ExternalService)
-	ExternalServiceModifiedAt func(time.Time) func(*types.ExternalService)
-	ExternalServiceDeletedAt  func(time.Time) func(*types.ExternalService)
-	RepoID                    func(api.RepoID) func(*types.Repo)
-	RepoName                  func(api.RepoName) func(*types.Repo)
-	RepoCreatedAt             func(time.Time) func(*types.Repo)
-	RepoModifiedAt            func(time.Time) func(*types.Repo)
-	RepoDeletedAt             func(time.Time) func(*types.Repo)
-	RepoSources               func(...string) func(*types.Repo)
-	RepoMetadata              func(any) func(*types.Repo)
-	RepoArchived              func(bool) func(*types.Repo)
-	RepoExternalID            func(string) func(*types.Repo)
+	RepoID         func(api.RepoID) func(*types.Repo)
+	RepoName       func(api.RepoName) func(*types.Repo)
+	RepoCreatedAt  func(time.Time) func(*types.Repo)
+	RepoModifiedAt func(time.Time) func(*types.Repo)
+	RepoDeletedAt  func(time.Time) func(*types.Repo)
+	RepoSources    func(...string) func(*types.Repo)
+	RepoArchived   func(bool) func(*types.Repo)
+	RepoExternalID func(string) func(*types.Repo)
 }{
-	ExternalServiceID: func(n int64) func(*types.ExternalService) {
-		return func(e *types.ExternalService) {
-			e.ID = n
-		}
-	},
-	ExternalServiceModifiedAt: func(ts time.Time) func(*types.ExternalService) {
-		return func(e *types.ExternalService) {
-			e.UpdatedAt = ts
-			e.DeletedAt = time.Time{}
-		}
-	},
-	ExternalServiceDeletedAt: func(ts time.Time) func(*types.ExternalService) {
-		return func(e *types.ExternalService) {
-			e.UpdatedAt = ts
-			e.DeletedAt = ts
-		}
-	},
 	RepoID: func(n api.RepoID) func(*types.Repo) {
 		return func(r *types.Repo) {
 			r.ID = n
@@ -286,11 +279,6 @@ var Opt = struct {
 			}
 		}
 	},
-	RepoMetadata: func(md any) func(*types.Repo) {
-		return func(r *types.Repo) {
-			r.Metadata = md
-		}
-	},
 	RepoArchived: func(b bool) func(*types.Repo) {
 		return func(r *types.Repo) {
 			r.Archived = b
@@ -310,60 +298,14 @@ var Opt = struct {
 // A ReposAssertion performs an assertion on the given Repos.
 type ReposAssertion func(testing.TB, types.Repos)
 
-// An ExternalServicesAssertion performs an assertion on the given
-// types.ExternalServices.
-type ExternalServicesAssertion func(testing.TB, types.ExternalServices)
-
-// Assert contains assertion functions to be used in tests.
-var Assert = struct {
-	ReposEqual                func(...*types.Repo) ReposAssertion
-	ReposOrderedBy            func(func(a, b *types.Repo) bool) ReposAssertion
-	ExternalServicesEqual     func(...*types.ExternalService) ExternalServicesAssertion
-	ExternalServicesOrderedBy func(func(a, b *types.ExternalService) bool) ExternalServicesAssertion
-}{
-	ReposEqual: func(rs ...*types.Repo) ReposAssertion {
-		want := types.Repos(rs)
-		return func(t testing.TB, have types.Repos) {
-			t.Helper()
-			// Exclude auto-generated IDs from equality tests
-			opts := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt")
-			if diff := cmp.Diff(want, have, opts); diff != "" {
-				t.Errorf("repos (-want +got): %s", diff)
-			}
+func AssertReposEqual(rs ...*types.Repo) ReposAssertion {
+	want := types.Repos(rs)
+	return func(t testing.TB, have types.Repos) {
+		t.Helper()
+		// Exclude auto-generated IDs from equality tests
+		opts := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt")
+		if diff := cmp.Diff(want, have, opts); diff != "" {
+			t.Errorf("repos (-want +got): %s", diff)
 		}
-	},
-	ReposOrderedBy: func(ord func(a, b *types.Repo) bool) ReposAssertion {
-		return func(t testing.TB, have types.Repos) {
-			t.Helper()
-			want := have.Clone()
-			sort.Slice(want, func(i, j int) bool {
-				return ord(want[i], want[j])
-			})
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Errorf("repos (-want +got): %s", cmp.Diff(want, have))
-			}
-		}
-	},
-	ExternalServicesEqual: func(es ...*types.ExternalService) ExternalServicesAssertion {
-		want := types.ExternalServices(es)
-		return func(t testing.TB, have types.ExternalServices) {
-			t.Helper()
-			opts := cmpopts.IgnoreFields(types.ExternalService{}, "ID", "CreatedAt", "UpdatedAt")
-			if diff := cmp.Diff(want, have, opts); diff != "" {
-				t.Errorf("external services (-want +got): %s", diff)
-			}
-		}
-	},
-	ExternalServicesOrderedBy: func(ord func(a, b *types.ExternalService) bool) ExternalServicesAssertion {
-		return func(t testing.TB, have types.ExternalServices) {
-			t.Helper()
-			want := have.Clone()
-			sort.Slice(want, func(i, j int) bool {
-				return ord(want[i], want[j])
-			})
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Errorf("external services (-want +got): %s", cmp.Diff(want, have))
-			}
-		}
-	},
+	}
 }

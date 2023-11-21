@@ -9,7 +9,7 @@ The code intel extensions provide the following functionality:
   keyboard
 - Code intel tooltips: Information about a specific token (if available)
 - Document highlights: Highlight all occurrences of a specific token
-- Got to definition: The ability to navigate to the definition for a specific
+- Go to definition: The ability to navigate to the definition for a specific
   token
 
 The main entry point for the whole set of extensions is the

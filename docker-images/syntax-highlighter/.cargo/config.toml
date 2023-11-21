@@ -3,12 +3,3 @@ rustflags = ["-Clink-arg=-Wl,--dynamic-linker=/lib/ld-musl-aarch64.so.1"]
 
 [target.x86_64-unknown-linux-musl]
 rustflags = ["-Ctarget-feature=-crt-static"]
-
-[registry]
-default = "crates-io"
-
-[registries.crates-io]
-index = "https://crates.io"
-protocol = "sparse"
-# The sparse protocol cuts down on registry + crate fetching
-# time from about 1m30s to 21s.

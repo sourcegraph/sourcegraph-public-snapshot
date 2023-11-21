@@ -187,7 +187,7 @@ type fireworksResponse struct {
 		Text         string          `json:"text"`
 		Index        int             `json:"index"`
 		FinishReason string          `json:"finish_reason"`
-		Logprobs     *types.Logprobs `json:logprobs"`
+		Logprobs     *types.Logprobs `json:"logprobs"`
 	} `json:"choices"`
 	Usage struct {
 		PromptTokens     int `json:"prompt_tokens"`

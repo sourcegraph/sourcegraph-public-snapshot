@@ -150,6 +150,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 setSearchMode={setSearchMode}
                 navbarSearchQuery={queryState.query}
                 showSmartSearchButton={false}
+                showExtendedPicker={false}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
         </LazyV2SearchInput>

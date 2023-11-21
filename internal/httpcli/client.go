@@ -160,8 +160,13 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 // convenience for existing uses of http.DefaultClient.
 // WARN: This client caches entire responses for etag matching. Do not use it for
 // one-off requests if possible, and definitely not for larger payloads, like
-// downloading arbitrarily sized files! See UncachedExternalClient instead.
+// downloading arbitrarily sized files! See UncachedExternalDoer instead.
 var ExternalDoer, _ = ExternalClientFactory.Doer()
+
+// UncachedExternalDoer is a shared client for external communication. This is a
+// convenience for existing uses of http.DefaultClient.
+// This client does not cache responses. To cache responses see ExternalDoer instead.
+var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
 
 // ExternalClient returns a shared client for external communication. This is
 // a convenience for existing uses of http.DefaultClient.
@@ -169,6 +174,11 @@ var ExternalDoer, _ = ExternalClientFactory.Doer()
 // one-off requests if possible, and definitely not for larger payloads, like
 // downloading arbitrarily sized files! See UncachedExternalClient instead.
 var ExternalClient, _ = ExternalClientFactory.Client()
+
+// UncachedExternalClient returns a shared client for external communication. This is
+// a convenience for existing uses of http.DefaultClient.
+// WARN: This client does not cache responses. To cache responses see ExternalClient instead.
+var UncachedExternalClient, _ = UncachedExternalClientFactory.Client()
 
 // InternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services.

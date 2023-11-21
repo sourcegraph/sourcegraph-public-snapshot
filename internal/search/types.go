@@ -197,8 +197,7 @@ type ZoektParameters struct {
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
 
-	// EXPERIMENTAL: If true, use keyword-style scoring instead of Zoekt's default scoring formula.
-	KeywordScoring bool
+	PatternType query.SearchType
 }
 
 // ToSearchOptions converts the parameters to options for the Zoekt search API.
@@ -218,7 +217,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 		Trace:             policy.ShouldTrace(ctx),
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
-		UseKeywordScoring: o.KeywordScoring,
+		UseKeywordScoring: o.PatternType == query.SearchTypeKeyword,
 	}
 
 	// These are reasonable default amounts of work to do per shard and
@@ -229,7 +228,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 	// are evaluating to deliver a better keyword-based search experience. For now
 	// these are separate, but we might combine them in the future. Both profit from
 	// higher defaults.
-	if o.KeywordScoring || o.Features.UseZoektParser {
+	if searchOpts.UseKeywordScoring || o.PatternType == query.SearchTypeNewStandardRC1 {
 		// Keyword searches tends to match much more broadly than code searches, so we need to
 		// consider more candidates to ensure we don't miss highly-ranked documents
 		searchOpts.ShardMaxMatchCount *= 10
@@ -261,7 +260,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoek
 
 	// This enables our stream based ranking, where we wait a certain amount
 	// of time to collect results before ranking.
-	searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
+	searchOpts.FlushWallTime = conf.SearchFlushWallTime(searchOpts.UseKeywordScoring)
 
 	// Only use document ranks if the jobs to calculate the ranks are enabled. This
 	// is to make sure we don't use outdated ranks for scoring in Zoekt.
@@ -430,10 +429,6 @@ type Features struct {
 	// the content of the file, rather than just file name patterns. This is
 	// currently just supported by Zoekt.
 	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
-
-	// UseZoektParser when true will use a new way to interpret queries optimized for
-	// keyword search. This is currently just supported by Zoekt.
-	UseZoektParser bool `json:"search-new-keyword"`
 
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
