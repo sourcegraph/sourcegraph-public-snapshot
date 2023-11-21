@@ -103,7 +103,7 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 			enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, m.RepoName().Name)
 			if err != nil {
 				// If an error occurs while checking sub-repo perms, we omit it from the results
-				logger.Error("Could not determine if sub-repo permissions are enabled for repo, skipping", log.String("repoName", string(m.RepoName().Name)))
+				logger.Error("Could not determine if sub-repo permissions are enabled for repo, skipping", log.Error(err), log.String("repoName", string(m.RepoName().Name)))
 				errCache[m.RepoName().Name] = struct{}{}
 				continue
 			}
