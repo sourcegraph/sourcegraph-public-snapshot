@@ -101,12 +101,18 @@ To use embeddings with Azure OpenAI:
     "provider": "azure-openai",
     "model": "<deployment name of the model>",
     "endpoint": "<endpoint>",
-    "accessToken": "<key>",
+    "accessToken": "<See below>",
     "dimensions": 1536,
     "excludedFilePathPatterns": []
   }
 }
 ```
+
+For the access token, you can either:
+
+- Leave it empty and rely on Environmental, Workload Identity or Managed Identity credentials configured for the `frontend` service
+- Set it to `<API_KEY>` if directly configuring the credentials using the API key specified in the Azure portal
+
 
 <br>
 
