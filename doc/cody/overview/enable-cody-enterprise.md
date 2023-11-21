@@ -304,13 +304,13 @@ Once done, go to **Site admin > Site configuration** (`/site-admin/configuration
 
 <aside class="experimental">
 <p>
-<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> AWS Bedrock support is in the experimental stage.
+<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> AWS Bedrock support is in the experimental stage. You must have Sourcegraph 5.2.2 or higher.
 <br />
 For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
 </p>
 </aside>
 
-First, make sure you can access AWS Bedrock (currently in beta). Then, request access to the Anthropic Claude models in Bedrock.
+First, make sure you can access AWS Bedrock. Then, request access to the Anthropic Claude models in Bedrock.
 This may take some time to provision.
 
 Next, create an IAM user with programmatic access in your AWS account. Depending on your AWS setup, different ways may be required to provide access. All completion requests are made from the `frontend` service, so this service needs to be able to access AWS. You can use instance role bindings or directly configure the IAM user credentials in the configuration.

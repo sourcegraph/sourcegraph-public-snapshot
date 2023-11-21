@@ -187,7 +187,7 @@ PNPM,@graphql-codegen/schema-ast,2.6.0,MIT,"",Approved
 PNPM,@graphql-codegen/typescript,2.8.5,MIT,"",Approved
 PNPM,@graphql-codegen/typescript-apollo-client-helpers,2.2.6,MIT,"",Approved
 PNPM,@graphql-codegen/typescript-operations,2.5.10,MIT,"",Approved
-PNPM,@graphql-codegen/visitor-plugin-common,2.13.5,MIT,"",Approved
+PNPM,@graphql-codegen/visitor-plugin-common,2.13.1,MIT,"",Approved
 PNPM,@graphql-tools/apollo-engine-loader,7.3.21,MIT,"",Approved
 PNPM,@graphql-tools/batch-execute,8.5.14,MIT,"",Approved
 PNPM,@graphql-tools/code-file-loader,7.3.15,MIT,"",Approved
@@ -661,6 +661,8 @@ PNPM,@types/tough-cookie,2.3.5,MIT,"",Approved
 PNPM,@types/trusted-types,2.0.3,MIT,"",Approved
 PNPM,@types/unist,2.0.3,MIT,"",Approved
 PNPM,@types/uuid,8.0.1,MIT,"",Approved
+PNPM,@types/webidl-conversions,7.0.3,MIT,"",Approved
+PNPM,@types/whatwg-url,11.0.3,MIT,"",Approved
 PNPM,@types/ws,8.5.3,MIT,"",Approved
 PNPM,@types/yargs,15.0.3,MIT,"",Approved
 PNPM,@types/yargs-parser,21.0.0,MIT,"",Approved
@@ -795,7 +797,7 @@ PNPM,babel-plugin-syntax-trailing-function-commas,7.0.0-beta.0,MIT,"",Approved
 PNPM,babel-plugin-transform-flow-enums,0.0.2,MIT,"",Approved
 PNPM,babel-preset-fbjs,3.4.0,MIT,"",Approved
 PNPM,backbone,1.1.2,MIT,"",Approved
-PNPM,balanced-match,1.0.0,MIT,"",Approved
+PNPM,balanced-match,0.4.2,MIT,"",Approved
 PNPM,base64-js,1.5.1,MIT,"",Approved
 PNPM,basic-auth,2.0.1,MIT,"",Approved
 PNPM,before-after-hook,2.2.2,Apache 2.0,"",Approved
@@ -860,7 +862,7 @@ PNPM,chardet,0.7.0,MIT,"",Approved
 PNPM,check-error,1.0.3,MIT,"",Approved
 PNPM,cheerio,1.0.0-rc.12,MIT,"",Approved
 PNPM,cheerio-select,2.1.0,Simplified BSD,"",Approved
-PNPM,chokidar,3.5.3,MIT,"",Approved
+PNPM,chokidar,3.5.1,MIT,"",Approved
 PNPM,chokidar-cli,2.1.0,MIT,"",Approved
 PNPM,chownr,1.1.4,ISC,"",Approved
 PNPM,chromatic,7.2.3,MIT,"",Approved
@@ -927,7 +929,7 @@ PNPM,console-control-strings,1.1.0,ISC,"",Approved
 PNPM,constant-case,3.0.4,MIT,"",Approved
 PNPM,content-disposition,0.5.4,MIT,"",Approved
 PNPM,content-type,1.0.4,MIT,"",Approved
-PNPM,convert-source-map,1.7.0,MIT,"",Approved
+PNPM,convert-source-map,2.0.0,MIT,"",Approved
 PNPM,cookie,0.5.0,MIT,"",Approved
 PNPM,cookie-signature,1.0.6,MIT,"",Approved
 PNPM,cookiejar,2.1.3,MIT,"",Approved
@@ -937,7 +939,7 @@ PNPM,core-js-compat,3.32.0,MIT,"",Approved
 PNPM,core-js-pure,3.26.1,MIT,"",Approved
 PNPM,core-util-is,1.0.3,MIT,"",Approved
 PNPM,cors,2.8.5,MIT,"",Approved
-PNPM,cosmiconfig,7.0.1,MIT,"",Approved
+PNPM,cosmiconfig,5.2.1,MIT,"",Approved
 PNPM,cosmiconfig-toml-loader,1.0.0,MIT,"",Approved
 PNPM,cosmiconfig-typescript-loader,4.3.0,MIT,"",Approved
 PNPM,create-error-class,3.0.2,MIT,"",Approved
@@ -978,7 +980,7 @@ PNPM,dataloader,2.1.0,MIT,"",Approved
 PNPM,date-fns,2.29.3,MIT,"",Approved
 PNPM,dayjs,1.11.10,MIT,"",Approved
 PNPM,debounce,1.2.1,MIT,"",Approved
-PNPM,debug,4.3.4,MIT,"",Approved
+PNPM,debug,4.3.1,MIT,"",Approved
 PNPM,debuglog,1.0.1,MIT,"",Approved
 PNPM,decamelize,1.2.0,MIT,"",Approved
 PNPM,decamelize-keys,1.1.0,MIT,"",Approved
@@ -1050,7 +1052,7 @@ PNPM,encodeurl,1.0.2,MIT,"",Approved
 PNPM,end-of-stream,1.4.4,MIT,"",Approved
 PNPM,enhanced-resolve,5.15.0,MIT,"",Approved
 PNPM,enquirer,2.3.6,MIT,"",Approved
-PNPM,entities,2.2.0,Simplified BSD,"",Approved
+PNPM,entities,2.1.0,Simplified BSD,"",Approved
 PNPM,envalid,7.3.1,MIT,"",Approved
 PNPM,envinfo,7.10.0,MIT,"",Approved
 PNPM,error-ex,1.3.2,MIT,"",Approved
@@ -1075,7 +1077,7 @@ PNPM,esbuild-plugin-alias,0.2.1,MIT,"",Approved
 PNPM,esbuild-register,3.4.2,MIT,"",Approved
 PNPM,escalade,3.1.1,MIT,"",Approved
 PNPM,escape-html,1.0.3,MIT,"",Approved
-PNPM,escape-string-regexp,1.0.5,MIT,"",Approved
+PNPM,escape-string-regexp,2.0.0,MIT,"",Approved
 PNPM,escodegen,1.14.3,Simplified BSD,"",Approved
 PNPM,eslint,8.4.1,MIT,"",Approved
 PNPM,eslint-config-prettier,9.0.0,MIT,"",Approved
@@ -1154,7 +1156,7 @@ PNPM,fill-range,7.0.1,MIT,"",Approved
 PNPM,finalhandler,1.1.2,MIT,"",Approved
 PNPM,find-cache-dir,2.1.0,MIT,"",Approved
 PNPM,find-parent-dir,0.3.1,MIT,"",Approved
-PNPM,find-up,4.1.0,MIT,"",Approved
+PNPM,find-up,2.1.0,MIT,"",Approved
 PNPM,flat,5.0.2,New BSD,"",Approved
 PNPM,flat-cache,3.0.4,MIT,"",Approved
 PNPM,flatted,3.2.1,ISC,"",Approved
@@ -1190,7 +1192,7 @@ PNPM,gaxios,2.1.0,Apache 2.0,"",Approved
 PNPM,gcp-metadata,3.2.0,Apache 2.0,"",Approved
 PNPM,generic-names,4.0.0,MIT,"",Approved
 PNPM,gensync,1.0.0-beta.2,MIT,"",Approved
-PNPM,get-caller-file,2.0.5,ISC,"",Approved
+PNPM,get-caller-file,1.0.3,ISC,"",Approved
 PNPM,get-func-name,2.0.2,MIT,"",Approved
 PNPM,get-intrinsic,1.2.2,MIT,"",Approved
 PNPM,get-monorepo-packages,1.2.0,MIT,"",Approved
@@ -1530,7 +1532,7 @@ Go,github.com/sourcegraph/run,v0.12.0,Apache 2.0,github.com/sourcegraph/run,Appr
 Go,github.com/sourcegraph/scip,v0.3.1-0.20230627154934-45df7f6d33fc,Apache 2.0,github.com/sourcegraph/scip,Approved
 Go,github.com/sourcegraph/tiktoken-go,v0.0.0-20230905173153-caab340cf008,MIT,github.com/sourcegraph/tiktoken-go,Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,github.com/sourcegraph/yaml,Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20231110161813-2355607d5ff8,Apache 2.0,github.com/sourcegraph/zoekt,Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20231115091004-137eb8f22610,Apache 2.0,github.com/sourcegraph/zoekt,Approved
 Go,github.com/spf13/pflag,v1.0.5,New BSD,github.com/spf13/pflag,Approved
 Go,github.com/stretchr/testify,v1.8.4,MIT,github.com/stretchr/testify,Approved
 Go,github.com/throttled/throttled/v2,v2.12.0,New BSD,github.com/throttled/throttled,Approved
@@ -1563,7 +1565,7 @@ Go,github.com/yuin/goldmark-highlighting/v2,v2.0.0-20220924101305-151362477c87,M
 Go,github.com/yuin/gopher-lua,v0.0.0-20210529063254-f4c35e4016d9,MIT,github.com/yuin/gopher-lua,Approved
 Go,github.com/zeebo/xxh3,v1.0.2,Simplified BSD,github.com/zeebo/xxh3,Approved
 PNPM,glob,7.1.6,ISC,"",Approved
-PNPM,glob-parent,5.1.2,ISC,"",Approved
+PNPM,glob-parent,6.0.2,ISC,"",Approved
 PNPM,glob-promise,3.4.0,ISC,"",Approved
 PNPM,glob-to-regexp,0.4.1,Simplified BSD,"",Approved
 PNPM,global-modules,2.0.0,MIT,"",Approved
@@ -1855,7 +1857,7 @@ PNPM,json-stable-stringify,1.0.1,MIT,"",Approved
 PNPM,json-stable-stringify-without-jsonify,1.0.1,MIT,"",Approved
 PNPM,json-stringify-safe,5.0.1,ISC,"",Approved
 PNPM,json-to-pretty-yaml,1.2.2,Apache 2.0,"",Approved
-PNPM,json5,1.0.1,MIT,"",Approved
+PNPM,json5,2.2.3,MIT,"",Approved
 PNPM,jsonc-parser,3.2.0,MIT,"",Approved
 PNPM,jsonfile,4.0.0,MIT,"",Approved
 PNPM,jsonify,0.0.0,Public Domain,"",Approved
@@ -1899,7 +1901,7 @@ PNPM,loader-runner,4.3.0,MIT,"",Approved
 PNPM,loader-utils,3.2.1,MIT,"",Approved
 PNPM,local-pkg,0.4.3,MIT,"",Approved
 PNPM,locate-character,3.0.0,MIT,"",Approved
-PNPM,locate-path,5.0.0,MIT,"",Approved
+PNPM,locate-path,2.0.0,MIT,"",Approved
 PNPM,lodash,4.17.21,MIT,"",Approved
 PNPM,lodash-es,4.17.21,MIT,"",Approved
 PNPM,lodash.camelcase,4.3.0,MIT,"",Approved
@@ -1930,7 +1932,7 @@ PNPM,log-update,4.0.0,MIT,"",Approved
 PNPM,logkitty,0.7.1,MIT,"",Approved
 PNPM,loose-envify,1.4.0,MIT,"",Approved
 PNPM,loud-rejection,1.6.0,MIT,"",Approved
-PNPM,loupe,2.3.6,MIT,"",Approved
+PNPM,loupe,2.3.7,MIT,"",Approved
 PNPM,lower-case,2.0.2,MIT,"",Approved
 PNPM,lower-case-first,2.0.2,MIT,"",Approved
 PNPM,lowercase-keys,2.0.0,MIT,"",Approved
@@ -1942,7 +1944,7 @@ PNPM,lunr,2.3.9,MIT,"",Approved
 PNPM,luxon,3.2.1,MIT,"",Approved
 PNPM,lz-string,1.5.0,MIT,"",Approved
 PNPM,macos-release,2.3.0,MIT,"",Approved
-PNPM,magic-string,0.30.4,MIT,"",Approved
+PNPM,magic-string,0.30.5,MIT,"",Approved
 PNPM,make-dir,2.1.0,MIT,"",Approved
 PNPM,make-error,1.3.6,ISC,"",Approved
 PNPM,makeerror,1.0.12,New BSD,"",Approved
@@ -2092,12 +2094,12 @@ PNPM,p-defer,1.0.0,MIT,"",Approved
 PNPM,p-finally,1.0.0,MIT,"",Approved
 PNPM,p-is-promise,2.1.0,MIT,"",Approved
 PNPM,p-limit,4.0.0,MIT,"",Approved
-PNPM,p-locate,4.1.0,MIT,"",Approved
+PNPM,p-locate,2.0.0,MIT,"",Approved
 PNPM,p-map,4.0.0,MIT,"",Approved
 PNPM,p-queue,6.6.2,MIT,"",Approved
 PNPM,p-retry,4.6.0,MIT,"",Approved
 PNPM,p-timeout,4.1.0,MIT,"",Approved
-PNPM,p-try,2.2.0,MIT,"",Approved
+PNPM,p-try,1.0.0,MIT,"",Approved
 PNPM,pac-proxy-agent,5.0.0,MIT,"",Approved
 PNPM,pac-resolver,5.0.1,MIT,"",Approved
 PNPM,package-json,6.5.0,MIT,"",Approved
@@ -2105,7 +2107,7 @@ PNPM,param-case,3.0.4,MIT,"",Approved
 PNPM,parent-module,1.0.1,MIT,"",Approved
 PNPM,parse-entities,2.0.0,MIT,"",Approved
 PNPM,parse-filepath,1.0.2,MIT,"",Approved
-PNPM,parse-json,5.2.0,MIT,"",Approved
+PNPM,parse-json,2.2.0,MIT,"",Approved
 PNPM,parse-package-name,0.1.0,MIT,"",Approved
 PNPM,parse-semver,1.1.1,MIT,"",Approved
 PNPM,parse5,7.1.2,MIT,"",Approved
@@ -2124,7 +2126,7 @@ PNPM,path-root,0.1.1,MIT,"",Approved
 PNPM,path-root-regex,0.1.2,MIT,"",Approved
 PNPM,path-scurry,1.10.1,BlueOak-1.0.0,"",Approved
 PNPM,path-to-regexp,6.2.0,MIT,"",Approved
-PNPM,path-type,4.0.0,MIT,"",Approved
+PNPM,path-type,3.0.0,MIT,"",Approved
 PNPM,pathe,1.1.1,MIT,"",Approved
 PNPM,pathval,1.1.1,MIT,"",Approved
 PNPM,peek-stream,1.1.3,MIT,"",Approved
@@ -2185,7 +2187,7 @@ PNPM,psl,1.8.0,MIT,"",Approved
 PNPM,pstree.remy,1.1.8,MIT,"",Approved
 PNPM,pump,3.0.0,MIT,"",Approved
 PNPM,pumpify,1.5.1,MIT,"",Approved
-PNPM,punycode,1.3.2,MIT,"",Approved
+PNPM,punycode,2.3.1,MIT,"",Approved
 PNPM,puppeteer,13.7.0,Apache 2.0,"",Approved
 PNPM,puppeteer-core,2.1.1,Apache 2.0,"",Approved
 PNPM,pvtsutils,1.3.2,MIT,"",Approved
@@ -2246,7 +2248,7 @@ PNPM,read-pkg,1.1.0,MIT,"",Approved
 PNPM,read-pkg-up,1.0.1,MIT,"",Approved
 PNPM,readable-stream,3.6.2,MIT,"",Approved
 PNPM,readdir-scoped-modules,1.1.0,ISC,"",Approved
-PNPM,readdirp,3.6.0,MIT,"",Approved
+PNPM,readdirp,3.5.0,MIT,"",Approved
 PNPM,readline,1.3.0,BSD,"",Approved
 PNPM,recast,0.21.5,MIT,"",Approved
 PNPM,recharts,1.8.5,MIT,"",Approved
@@ -2260,7 +2262,7 @@ PNPM,reflect.getprototypeof,1.0.4,MIT,"",Approved
 PNPM,refractor,3.6.0,MIT,"",Approved
 PNPM,regenerate,1.4.2,MIT,"",Approved
 PNPM,regenerate-unicode-properties,10.1.0,MIT,"",Approved
-PNPM,regenerator-runtime,0.13.11,MIT,"",Approved
+PNPM,regenerator-runtime,0.14.0,MIT,"",Approved
 PNPM,regenerator-transform,0.15.1,MIT,"",Approved
 PNPM,regexp-tree,0.1.27,MIT,"",Approved
 PNPM,regexp.prototype.flags,1.5.1,MIT,"",Approved
@@ -2473,7 +2475,7 @@ PNPM,tiny-invariant,1.3.1,MIT,"",Approved
 PNPM,tiny-warning,1.0.3,MIT,"",Approved
 PNPM,tinybench,2.5.0,MIT,"",Approved
 PNPM,tinypool,0.6.0,MIT,"",Approved
-PNPM,tinyspy,2.1.1,MIT,"",Approved
+PNPM,tinyspy,2.2.0,MIT,"",Approved
 PNPM,title-case,3.0.3,MIT,"",Approved
 PNPM,titleize,3.0.0,MIT,"",Approved
 PNPM,tmp,0.2.1,MIT,"",Approved
@@ -2487,7 +2489,7 @@ PNPM,toidentifier,1.0.1,MIT,"",Approved
 PNPM,totalist,3.0.0,MIT,"",Approved
 PNPM,touch,3.1.0,ISC,"",Approved
 PNPM,tough-cookie,4.1.2,New BSD,"",Approved
-PNPM,tr46,0.0.3,MIT,"",Approved
+PNPM,tr46,5.0.0,MIT,"",Approved
 PNPM,tree-kill,1.2.2,MIT,"",Approved
 PNPM,treeify,1.1.0,MIT,"",Approved
 PNPM,trim-extra-html-whitespace,1.3.0,Apache 2.0,"",Approved
@@ -2528,7 +2530,7 @@ PNPM,unbox-primitive,1.0.2,MIT,"",Approved
 PNPM,unbzip2-stream,1.4.3,MIT,"",Approved
 PNPM,unc-path-regex,0.1.2,MIT,"",Approved
 PNPM,undefsafe,2.0.5,MIT,"",Approved
-PNPM,underscore,1.13.6,MIT,"",Approved
+PNPM,underscore,1.13.1,MIT,"",Approved
 PNPM,undici,5.22.1,MIT,"",Approved
 PNPM,unicode-canonical-property-names-ecmascript,2.0.0,MIT,"",Approved
 PNPM,unicode-match-property-ecmascript,2.0.0,MIT,"",Approved
@@ -2611,7 +2613,7 @@ PNPM,webpack-virtual-modules,0.5.0,MIT,"",Approved
 PNPM,whatwg-encoding,2.0.0,MIT,"",Approved
 PNPM,whatwg-fetch,3.6.19,MIT,"",Approved
 PNPM,whatwg-mimetype,3.0.0,MIT,"",Approved
-PNPM,whatwg-url,5.0.0,MIT,"",Approved
+PNPM,whatwg-url,14.0.0,MIT,"",Approved
 PNPM,which,1.3.1,ISC,"",Approved
 PNPM,which-boxed-primitive,1.0.2,MIT,"",Approved
 PNPM,which-builtin-type,1.1.3,MIT,"",Approved
@@ -2625,7 +2627,7 @@ PNPM,windows-release,3.2.0,MIT,"",Approved
 PNPM,word-wrap,1.2.3,MIT,"",Approved
 PNPM,wordwrap,1.0.0,MIT,"",Approved
 PNPM,workerpool,6.1.0,Apache 2.0,"",Approved
-PNPM,wrap-ansi,6.2.0,MIT,"",Approved
+PNPM,wrap-ansi,5.1.0,MIT,"",Approved
 PNPM,wrappy,1.0.2,ISC,"",Approved
 PNPM,write-file-atomic,4.0.2,ISC,"",Approved
 PNPM,write-json-file,2.3.0,MIT,"",Approved

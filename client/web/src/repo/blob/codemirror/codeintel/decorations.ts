@@ -17,7 +17,7 @@ export const ignoreDecorations = Facet.define<{ from: number; to: number } | nul
 
 /**
  * We can't add/remove any decorations inside the selected token, because
- * that causes the node to be recreated and loosing focus, which breaks
+ * that causes the node to be recreated and lose focus, which breaks
  * token keyboard navigation.
  * This facet should be used by all codeIntel extensions to ensure that any
  * conflicting decoration is removed.

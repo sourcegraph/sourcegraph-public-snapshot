@@ -38,7 +38,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
     })
 
     it('restarts hover call if a provider was added or removed', () => {
-        const typescriptFileUri = 'file:///f.ts'
+        const typescriptFileUri = 'git://repo#src/f.ts'
 
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
             { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },

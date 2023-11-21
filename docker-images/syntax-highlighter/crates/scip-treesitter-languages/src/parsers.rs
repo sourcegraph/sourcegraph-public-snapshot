@@ -122,7 +122,7 @@ impl BundledParser {
             }
         };
 
-        HashSet::from_iter(ar.into_iter())
+        HashSet::from_iter(ar)
     }
 
     // TODO(SuperAuguste): language detection library

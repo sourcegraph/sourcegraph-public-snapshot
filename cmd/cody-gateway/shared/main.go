@@ -61,8 +61,11 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 		// If a buffer is configured, wrap in events.BufferedLogger
 		if config.BigQuery.EventBufferSize > 0 {
-			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger,
+			eventLogger, err = events.NewBufferedLogger(obctx.Logger, eventLogger,
 				config.BigQuery.EventBufferSize, config.BigQuery.EventBufferWorkers)
+			if err != nil {
+				return errors.Wrap(err, "create buffered logger")
+			}
 		}
 	} else {
 		eventLogger = events.NewStdoutLogger(obctx.Logger)
@@ -70,11 +73,14 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		// Useful for testing event logging in a way that has latency that is
 		// somewhat similar to BigQuery.
 		if os.Getenv("CODY_GATEWAY_BUFFERED_LAGGY_EVENT_LOGGING_FUN_TIMES_MODE") == "true" {
-			eventLogger = events.NewBufferedLogger(
+			eventLogger, err = events.NewBufferedLogger(
 				obctx.Logger,
 				events.NewDelayedLogger(eventLogger),
 				config.BigQuery.EventBufferSize,
 				config.BigQuery.EventBufferWorkers)
+			if err != nil {
+				return errors.Wrap(err, "create buffered logger")
+			}
 		}
 	}
 

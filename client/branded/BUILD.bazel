@@ -135,6 +135,7 @@ ts_project(
         "src/search-ui/input/experimental/utils.ts",
         "src/search-ui/input/toggles/QueryInputToggle.tsx",
         "src/search-ui/input/toggles/SmartSearchToggle.tsx",
+        "src/search-ui/input/toggles/SmartSearchToggleExtended.tsx",
         "src/search-ui/input/toggles/Toggles.tsx",
         "src/search-ui/input/toggles/index.ts",
         "src/search-ui/results/AnnotatedSearchExample.tsx",
