@@ -16,10 +16,12 @@ import (
 )
 
 type Config struct {
-	Variable string
+	StatelessMode bool
+	Variable      string
 }
 
 func (c *Config) Load(env *service.Env) {
+	c.StatelessMode = env.GetBool("STATELESSMODE", "false", "if true, disable dependencies")
 	c.Variable = env.Get("VARIABLE", "13", "variable value")
 }
 
@@ -37,10 +39,12 @@ func (s Service) Initialize(
 ) (background.CombinedRoutine, error) {
 	logger.Info("starting service")
 
-	if err := initDB(ctx, contract); err != nil {
-		return nil, errors.Wrap(err, "initDB")
+	if !config.StatelessMode {
+		if err := initDB(ctx, contract); err != nil {
+			return nil, errors.Wrap(err, "initDB")
+		}
+		logger.Info("database configured")
 	}
-	logger.Info("database configured")
 
 	return background.CombinedRoutine{
 		&httpRoutine{
