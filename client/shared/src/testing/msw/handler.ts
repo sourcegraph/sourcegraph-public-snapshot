@@ -1,47 +1,48 @@
 import { addMocksToSchema, createMockStore } from '@graphql-tools/mock'
-// @graphql-tools seems to import the CommonJS version of graphql. We need to import the same version
-// otherwise we get errors like "Cannot use GraphQLSchema "[object Object]" from another module or realm."
-// eslint-disable-next-line import/extensions
 import { buildSchema, isObjectType, type GraphQLSchema } from 'graphql'
 import { merge } from 'lodash'
 import type { RequestHandler } from 'msw'
 
-import { defaultMocks } from '../graphql/defaultMocks'
+import type { TypeMocks } from '../../graphql-types'
 import { getDefaultResolvers } from '../graphql/resolvers'
 
 import { type MockGraphqlOptions, mockGraphql } from './graphql'
 
-interface MockRequestHandlerOptions {
+export type Mocks = Record<string, () => unknown>
+
+interface MockRequestHandlerOptions<T extends Mocks> {
     schema: GraphQLSchema
-    registerMocks: (mocks: Record<string, () => any>) => () => void
+    registerMocks: (mocks: T) => () => void
 }
 
-export type MockRequestHandler = (options: MockRequestHandlerOptions) => RequestHandler
+export type MockRequestHandler<T extends Mocks> = (options: MockRequestHandlerOptions<T>) => RequestHandler
 
-export interface HandlerSetupOptions {
+export interface HandlerSetupOptions<T extends Mocks> {
     typeDefs: string
+    defaultMocks?: T
 }
 
-interface MockHandler {
+export interface MockHandler<T extends Mocks> {
     store: ReturnType<typeof createMockStore>
-    mockGraphql(options: MockGraphqlOptions): RequestHandler
-    use(...handlers: MockRequestHandler[]): RequestHandler[]
+    mockGraphql(options: MockGraphqlOptions<T>): RequestHandler
+    use(...handlers: MockRequestHandler<T>[]): RequestHandler[]
 }
 
-export function setupHandlers(options: HandlerSetupOptions): MockHandler {
+export function setupHandlers<T extends Mocks>(options: HandlerSetupOptions<T>): MockHandler<T> {
     const schema = buildSchema(options.typeDefs)
     // Extract GraphQL type names from the schema.
     const typeNames = Object.values(schema.getTypeMap())
         .filter(type => !type.name.startsWith('__') && isObjectType(type))
         .map(type => type.name)
-    let requestMocks: Record<string, () => unknown> = {}
-    const mocks: Record<string, () => unknown> = { ...defaultMocks }
+    const defaultMocks = options.defaultMocks
+    let requestMocks: T | undefined
+    const mocks: TypeMocks = { ...defaultMocks }
     for (const typeName of typeNames) {
         mocks[typeName] = () => {
-            if (requestMocks[typeName]) {
+            if (requestMocks?.[typeName]) {
                 return requestMocks[typeName]()
             }
-            if (defaultMocks[typeName]) {
+            if (defaultMocks?.[typeName]) {
                 return defaultMocks[typeName]()
             }
             return {}
@@ -58,19 +59,19 @@ export function setupHandlers(options: HandlerSetupOptions): MockHandler {
         resolvers: store => merge(getDefaultResolvers(store)),
     })
 
-    function registerMocks(mocks: Record<string, () => unknown>): () => void {
+    function registerMocks(mocks: T): () => void {
         requestMocks = mocks
         return () => {
-            requestMocks = {}
+            requestMocks = undefined
         }
     }
 
     return {
         store,
-        mockGraphql(options: MockGraphqlOptions): RequestHandler {
-            return mockGraphql(options)({ schema: mockedSchema, registerMocks })
+        mockGraphql(options: MockGraphqlOptions<T>): RequestHandler {
+            return mockGraphql<T>(options)({ schema: mockedSchema, registerMocks })
         },
-        use(...handlers: MockRequestHandler[]) {
+        use(...handlers: MockRequestHandler<T>[]) {
             return handlers.map(handler => handler({ schema: mockedSchema, registerMocks }))
         },
     }

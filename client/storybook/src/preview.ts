@@ -39,6 +39,7 @@ export const parameters: Parameters = {
 export const loaders = [mswLoader]
 
 initialize({
+    // Without this there seems to be a huge performance impact when using msw with vite.
     onUnhandledRequest: 'bypass',
 })
 

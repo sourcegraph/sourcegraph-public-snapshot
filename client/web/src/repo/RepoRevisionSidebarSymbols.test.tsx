@@ -24,7 +24,7 @@ const sidebarProps: RepoRevisionSidebarSymbolsProps = {
     onHandleSymbolClick: () => {},
 }
 
-const mockServer = installMockServer({ inspect: true })
+const mockServer = installMockServer()
 const symbolsMock = mockServer.mockGraphql({
     query: SYMBOLS_QUERY,
     mocks: {

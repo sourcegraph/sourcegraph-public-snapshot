@@ -1,14 +1,12 @@
-// @graphql-tools seems to import the CommonJS version of graphql. We need to import the same version
-// otherwise we get errors like "Cannot use GraphQLSchema "[object Object]" from another module or realm."
-// eslint-disable-next-line import/extensions
+import { fakerEN as faker } from '@faker-js/faker'
 import { type DocumentNode, graphqlSync, type GraphQLError } from 'graphql'
 import { graphql as mswgraphql, HttpResponse } from 'msw'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
-import type { MockRequestHandler } from './vitest'
+import type { MockRequestHandler, Mocks } from './handler'
 
-export interface MockGraphqlOptions {
+export interface MockGraphqlOptions<T extends Mocks> {
     /**
      * The graphql query to mock. If this is not specified, the name option must be specified.
      */
@@ -26,18 +24,25 @@ export interface MockGraphqlOptions {
     /**
      * Additional mock generators to use.
      */
-    mocks?: Record<string, () => unknown>
+    mocks?: T
 
     /**
      * When set to true, the mock result will be logged to the console.
      */
     inspect?: boolean
+
+    /**
+     * Seed to use to initialze the random data generator. The default seed is
+     * 1. If you want to generate different data for each test run, you can
+     * set this to a random number or to undefined.
+     */
+    seed?: number
 }
 
 /**
  * Helper function for creating a graphql handler that mocks a specific operation/query.
  */
-export function mockGraphql(options: MockGraphqlOptions): MockRequestHandler {
+export function mockGraphql<T extends Mocks = Mocks>(options: MockGraphqlOptions<T>): MockRequestHandler<T> {
     return ({ schema, registerMocks }) => {
         let name: string | undefined = options.name
         if (options.query) {
@@ -63,6 +68,7 @@ export function mockGraphql(options: MockGraphqlOptions): MockRequestHandler {
                 let errors: readonly GraphQLError[] | undefined
 
                 try {
+                    faker.seed(options.seed ?? 1)
                     ;({ data, errors } = graphqlSync(schema, query, undefined, context, variables))
                 } catch (error) {
                     errors = [error]

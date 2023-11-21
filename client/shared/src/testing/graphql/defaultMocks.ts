@@ -1,6 +1,9 @@
 import { fakerEN as faker } from '@faker-js/faker'
+import { capitalize } from 'lodash'
 
-export const defaultMocks: Record<string, () => unknown> = {
+import type { TypeMocks } from '../../graphql-types'
+
+export const defaultMocks: TypeMocks = {
     // GraphQLs Int type is 32 bit so we need to set the max value.
     Int: () => faker.number.int(2 ** 31),
     String: () => faker.string.alpha(10),
@@ -22,9 +25,28 @@ export const defaultMocks: Record<string, () => unknown> = {
         }
     },
 
-    Person: () => ({
-        avatarURL: faker.image.avatar(),
-        email: faker.helpers.arrayElement([faker.internet.email(), faker.internet.email(), '']),
+    Person: () => {
+        const name = faker.internet.userName()
+        return {
+            name,
+            displayName: faker.helpers.maybe(() => faker.internet.displayName()) ?? '',
+            email: faker.helpers.maybe(() => faker.internet.email()) ?? '',
+            avatarURL: faker.helpers.maybe(() => faker.image.avatar()) ?? null,
+            user: {
+                username: name,
+            },
+        }
+    },
+
+    User: () => ({
+        username: faker.internet.userName(),
+    }),
+
+    Team: () => ({
+        name: `${faker.company.buzzNoun()}`,
+        displayName: `Team ${capitalize(faker.company.buzzNoun())}`,
+        url: faker.internet.url(),
+        avatarURL: faker.helpers.maybe(() => faker.image.avatar()) ?? null,
     }),
 
     UserEmail: () => ({

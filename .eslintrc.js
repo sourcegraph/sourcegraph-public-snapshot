@@ -8,6 +8,7 @@ const config = {
   root: true,
   ignorePatterns: [
     '**/graphql-operations.ts',
+    '**/graphql-types.ts',
     '**/node_modules/**',
     'out/',
     'dist/',

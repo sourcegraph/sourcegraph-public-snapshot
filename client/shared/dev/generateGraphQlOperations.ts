@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs'
 import path from 'path'
 
-import { CodegenConfig, generate } from '@graphql-codegen/cli'
+import { type CodegenConfig, generate } from '@graphql-codegen/cli'
 import { glob } from 'glob'
 import { GraphQLError } from 'graphql'
 
@@ -35,53 +35,58 @@ const VSCODE_DOCUMENTS_GLOB = [`${VSCODE_FOLDER}/src/**/*.{ts,tsx}`]
 
 const JETBRAINS_DOCUMENTS_GLOB = [`${JETBRAINS_FOLDER}/webview/src/**/*.{ts,tsx}`]
 
-const GLOBS: Record<string, string[]> = {
-    BrowserGraphQlOperations: BROWSER_DOCUMENTS_GLOB,
-    JetBrainsGraphQlOperations: JETBRAINS_DOCUMENTS_GLOB,
-    SharedGraphQlOperations: SHARED_DOCUMENTS_GLOB,
-    VSCodeGraphQlOperations: VSCODE_DOCUMENTS_GLOB,
-    WebGraphQlOperations: WEB_DOCUMENTS_GLOB,
-    SvelteKitGraphQlOperations: SVELTEKIT_DOCUMENTS_GLOB,
-}
-
-const EXTRA_PLUGINS: Record<string, string[]> = {
-    SharedGraphQlOperations: ['typescript-apollo-client-helpers'],
-}
-
 const SHARED_PLUGINS = [
     `${SHARED_FOLDER}/dev/extractGraphQlOperationCodegenPlugin.js`,
     'typescript',
     'typescript-operations',
 ]
-interface Input {
-    interfaceNameForOperations: string
+
+interface Input extends Record<string, unknown> {
     outputPath: string
+    globs: string[]
+    plugins?: string[]
 }
 
 export const ALL_INPUTS: Input[] = [
     {
-        interfaceNameForOperations: 'BrowserGraphQlOperations',
-        outputPath: path.join(BROWSER_FOLDER, './src/graphql-operations.ts'),
-    },
-    {
-        interfaceNameForOperations: 'WebGraphQlOperations',
-        outputPath: path.join(WEB_FOLDER, './src/graphql-operations.ts'),
-    },
-    {
-        interfaceNameForOperations: 'SvelteKitGraphQlOperations',
-        outputPath: path.join(SVELTEKIT_FOLDER, './src/lib/graphql-operations.ts'),
-    },
-    {
-        interfaceNameForOperations: 'SharedGraphQlOperations',
         outputPath: path.join(SHARED_FOLDER, './src/graphql-operations.ts'),
+        interfaceNameForOperations: 'SharedGraphQlOperations',
+        globs: SHARED_DOCUMENTS_GLOB,
+        plugins: ['typescript-apollo-client-helpers'],
+        onlyOperationTypes: false,
+        enumValues: undefined,
     },
     {
-        interfaceNameForOperations: 'VSCodeGraphQlOperations',
+        outputPath: path.join(SHARED_FOLDER, './src/graphql-types.ts'),
+        globs: [],
+        plugins: [`${SHARED_FOLDER}/dev/extractGraphQlTypesCodegenPlugin.js`],
+        onlyOperationTypes: false,
+        enumValues: './graphql-operations',
+    },
+    {
+        outputPath: path.join(BROWSER_FOLDER, './src/graphql-operations.ts'),
+        interfaceNameForOperations: 'BrowserGraphQlOperations',
+        globs: BROWSER_DOCUMENTS_GLOB,
+    },
+    {
+        outputPath: path.join(WEB_FOLDER, './src/graphql-operations.ts'),
+        interfaceNameForOperations: 'WebGraphQlOperations',
+        globs: WEB_DOCUMENTS_GLOB,
+    },
+    {
+        outputPath: path.join(SVELTEKIT_FOLDER, './src/lib/graphql-operations.ts'),
+        interfaceNameForOperations: 'SvelteKitGraphQlOperations',
+        globs: SVELTEKIT_DOCUMENTS_GLOB,
+    },
+    {
         outputPath: path.join(VSCODE_FOLDER, './src/graphql-operations.ts'),
+        interfaceNameForOperations: 'VSCodeGraphQlOperations',
+        globs: VSCODE_DOCUMENTS_GLOB,
     },
     {
-        interfaceNameForOperations: 'JetBrainsGraphQlOperations',
         outputPath: path.join(JETBRAINS_FOLDER, './webview/src/graphql-operations.ts'),
+        interfaceNameForOperations: 'JetBrainsGraphQlOperations',
+        globs: JETBRAINS_DOCUMENTS_GLOB,
     },
 ]
 
@@ -99,19 +104,16 @@ function resolveAndFilterGlobs(globs: string[]): string[] {
 
 function createCodegenConfig(operations: Input[]): CodegenConfig {
     const generates: CodegenConfig['generates'] = {}
-    for (const operation of operations) {
-        generates[operation.outputPath] = {
-            documents: resolveAndFilterGlobs(GLOBS[operation.interfaceNameForOperations]),
+    for (const { outputPath, globs, plugins = [], ...config } of operations) {
+        generates[outputPath] = {
+            documents: resolveAndFilterGlobs(globs),
             config: {
                 onlyOperationTypes: true,
                 noExport: false,
-                enumValues:
-                    operation.interfaceNameForOperations === 'SharedGraphQlOperations'
-                        ? undefined
-                        : '@sourcegraph/shared/src/graphql-operations',
-                interfaceNameForOperations: operation.interfaceNameForOperations,
+                enumValues: '@sourcegraph/shared/src/graphql-operations',
+                ...config,
             },
-            plugins: [...SHARED_PLUGINS, ...(EXTRA_PLUGINS[operation.interfaceNameForOperations] || [])],
+            plugins: [...SHARED_PLUGINS, ...plugins],
         }
     }
 
