@@ -89,8 +89,8 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                         )}
                     </H4>
                     {licenseInfo.codeScaleExceededLimit ? <>You're about to reach the 100GiB storage limit. </> : <></>}
-                    Upgrade to <Link to="https://sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for
-                    unlimited storage for your code.
+                    Upgrade to <Link to="https://sourcegraph.com/pricing">Sourcegraph Enterprise</Link> for unlimited
+                    storage for your code.
                 </Alert>
             )}
             <SiteAdminRepositoriesContainer />

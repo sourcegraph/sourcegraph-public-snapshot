@@ -68,8 +68,8 @@ export const OwnPage: React.FunctionComponent<{}> = () => {
                         <Text>
                             Code ownership is in a beta and is getting smarter fast. We’d love your feedback. You can
                             turn it on using the documentation below, or{' '}
-                            <Link to="https://sourcegraph.com/demo">contact us</Link> to get a demo and learn more
-                            about our roadmap.
+                            <Link to="https://sourcegraph.com/demo">contact us</Link> to get a demo and learn more about
+                            our roadmap.
                         </Text>
                         <H3 as="h4">Resources</H3>
                         <ul>

@@ -255,8 +255,8 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                                 <MeetCodySVG />
                             </div>
                             <Text className="ml-3">
-                                <Link to="https://sourcegraph.com/cody">Learn about Cody</Link>, Sourcegraph's AI
-                                coding assistant.
+                                <Link to="https://sourcegraph.com/cody">Learn about Cody</Link>, Sourcegraph's AI coding
+                                assistant.
                             </Text>
                         </div>
                     )}
