@@ -88,11 +88,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindBitbucketCloud,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
-			}
-
+			svc := typestest.MakeExternalService(t, extsvc.VariantBitbucketCloud, tc.conf)
 			bbcSrc, err := newBitbucketCloudSource(logtest.Scoped(t), svc, tc.conf, cf)
 			if err != nil {
 				t.Fatal(err)

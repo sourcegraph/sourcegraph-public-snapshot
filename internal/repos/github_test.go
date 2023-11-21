@@ -140,13 +140,10 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 	fixtureName := "GITHUB-ENTERPRISE/list-public-repos"
 	gheToken := prepareGheToken(t, fixtureName)
 
-	service := &types.ExternalService{
-		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://ghe.sgdev.org",
-			Token: gheToken,
-		})),
-	}
+	service := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+		Url:   "https://ghe.sgdev.org",
+		Token: gheToken,
+	})
 
 	factory, save := NewClientFactory(t, fixtureName)
 	defer save(t)
@@ -268,12 +265,9 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-					Url: "https://github.com",
-				})),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+				Url: "https://github.com",
+			})
 
 			ctx := context.Background()
 			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
@@ -371,13 +365,10 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 				t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
 			}
 
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://ghe.sgdev.org",
-					Token: gheToken,
-				})),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+				Url:   "https://ghe.sgdev.org",
+				Token: gheToken,
+			})
 
 			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
@@ -403,16 +394,13 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 
 			// Configure external service to mark internal repositories as public
 			// and sync again
-			svc = &types.ExternalService{
-				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-					Url:   "https://ghe.sgdev.org",
-					Token: gheToken,
-					Authorization: &schema.GitHubAuthorization{
-						MarkInternalReposAsPublic: true,
-					},
-				})),
-			}
+			svc = typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+				Url:   "https://ghe.sgdev.org",
+				Token: gheToken,
+				Authorization: &schema.GitHubAuthorization{
+					MarkInternalReposAsPublic: true,
+				},
+			})
 
 			githubSrc, err = NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
 			if err != nil {
@@ -789,10 +777,7 @@ func TestGithubSource_ListRepos(t *testing.T) {
 
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, tc.conf)
 
 			ctx := context.Background()
 			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
@@ -827,13 +812,10 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
 
-	svc := &types.ExternalService{
-		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
-		})),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+		Url:   "https://github.com",
+		Token: os.Getenv("GITHUB_TOKEN"),
+	})
 
 	ctx := context.Background()
 	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, nil)
@@ -861,13 +843,10 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	// We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
 
-	svc := &types.ExternalService{
-		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-			Url:   "https://github.com",
-			Token: os.Getenv("GITHUB_TOKEN"),
-		})),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+		Url:   "https://github.com",
+		Token: os.Getenv("GITHUB_TOKEN"),
+	})
 
 	ctx := context.Background()
 	githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, nil)
@@ -894,12 +873,9 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		// We need to clear the cache before we run the tests
 		rcache.SetupForTest(t)
 
-		svc := &types.ExternalService{
-			Kind: extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-				Url: "https://github.com",
-			})),
-		}
+		svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+			Url: "https://github.com",
+		})
 
 		ctx := context.Background()
 		githubSrc, err := NewGitHubSource(ctx, logger, dbmocks.NewMockDB(), svc, nil)
@@ -932,13 +908,10 @@ func TestGithubSource_GetVersion(t *testing.T) {
 		cf, save := NewClientFactory(t, fixtureName)
 		defer save(t)
 
-		svc := &types.ExternalService{
-			Kind: extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
-				Url:   "https://ghe.sgdev.org",
-				Token: gheToken,
-			})),
-		}
+		svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, &schema.GitHubConnection{
+			Url:   "https://ghe.sgdev.org",
+			Token: gheToken,
+		})
 
 		ctx := context.Background()
 		githubSrc, err := NewGitHubSource(ctx, logger, dbmocks.NewMockDB(), svc, cf)
@@ -1266,10 +1239,7 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, tc.conf)
 
 			ctx := context.Background()
 			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), dbmocks.NewMockDB(), svc, cf)
@@ -1402,10 +1372,7 @@ EyAO2RYQG7mSE6w6CtTFiCjjmELpvdD2s1ygvPdCO1MJlCX264E3og==
 
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
-			}
+			svc := typestest.MakeExternalService(t, extsvc.VariantGitHub, tc.conf)
 
 			ctx := context.Background()
 			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), db, svc, cf)

@@ -604,9 +604,7 @@ mod test {
                 extension: filepath.extension().unwrap().to_str().unwrap().to_string(),
                 filepath: filepath.to_str().unwrap().to_string(),
                 filetype: None,
-                css: false,
                 line_length_limit: None,
-                theme: "".to_string(),
                 code: contents.clone(),
             };
             let syntax_def = determine_language(&q, &ss).unwrap();

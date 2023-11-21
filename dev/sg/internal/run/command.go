@@ -2,7 +2,9 @@ package run
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"net"
 	"os/exec"
 
 	"github.com/sourcegraph/conc/pool"
@@ -160,6 +162,14 @@ func getSecrets(ctx context.Context, name string, extSecrets map[string]secrets.
 	return secretsEnv, errs
 }
 
+var sgConn net.Conn
+
+func OpenUnixSocket() error {
+	var err error
+	sgConn, err = net.Dial("unix", "/tmp/sg.sock")
+	return err
+}
+
 func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string]string) (*startedCmd, error) {
 	sc := &startedCmd{
 		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
@@ -182,17 +192,40 @@ func startCmd(ctx context.Context, dir string, cmd Command, parentEnv map[string
 
 	var stdoutWriter, stderrWriter io.Writer
 	logger := newCmdLogger(commandCtx, cmd.Name, std.Out.Output)
-	if cmd.IgnoreStdout {
-		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
-		stdoutWriter = sc.stdoutBuf
+
+	// TODO(JH) sgtail experiment going on, this is a bit ugly, that will do it
+	// for the demo day.
+	if sgConn != nil {
+		sink := func(data string) {
+			sgConn.Write([]byte(fmt.Sprintf("%s: %s\n", cmd.Name, data)))
+		}
+		sgConnLog := process.NewLogger(ctx, sink)
+
+		if cmd.IgnoreStdout {
+			std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+			stdoutWriter = sc.stdoutBuf
+		} else {
+			stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf, sgConnLog)
+		}
+		if cmd.IgnoreStderr {
+			std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+			stderrWriter = sc.stderrBuf
+		} else {
+			stderrWriter = io.MultiWriter(logger, sc.stderrBuf, sgConnLog)
+		}
 	} else {
-		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
-	}
-	if cmd.IgnoreStderr {
-		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
-		stderrWriter = sc.stderrBuf
-	} else {
-		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
+		if cmd.IgnoreStdout {
+			std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", cmd.Name))
+			stdoutWriter = sc.stdoutBuf
+		} else {
+			stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
+		}
+		if cmd.IgnoreStderr {
+			std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", cmd.Name))
+			stderrWriter = sc.stderrBuf
+		} else {
+			stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
+		}
 	}
 
 	if cmd.Preamble != "" {
