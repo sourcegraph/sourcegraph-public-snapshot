@@ -32,6 +32,7 @@ export const FEATURE_FLAGS = [
     'search-content-based-lang-detection',
     'search-new-keyword',
     'search-debug',
+    'signup-survey-enabled',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
