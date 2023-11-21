@@ -22,10 +22,6 @@ func (r *GitTreeEntryResolver) IsRoot() bool {
 type gitTreeEntryConnectionArgs struct {
 	graphqlutil.ConnectionArgs
 	Recursive bool
-	// If recurseSingleChild is true, we will return a flat list of every
-	// directory and file in a single-child nest.
-	// Only respected when Recursive is false.
-	RecursiveSingleChild bool
 	// If Ancestors is true and the tree is loaded from a subdirectory, we will
 	// return a flat list of all entries in all parent directories.
 	Ancestors bool
@@ -51,15 +47,7 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		return nil, errors.Newf("invalid argument for first, must be non-negative")
 	}
 
-	if args.Recursive && args.RecursiveSingleChild {
-		// No extra work needed, recursive includes all these.
-		args.RecursiveSingleChild = false
-	}
-
-	// If RecursiveSingleChild is true, we also get all files recursively. Otherwise, we would
-	// have to do a readdir for every single directory to see if it has only one child (and nested)
-	// dirs, too.
-	entries, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), args.Recursive || args.RecursiveSingleChild)
+	entries, err := r.gitserverClient.ReadDir(ctx, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), args.Recursive)
 	if err != nil {
 		if strings.Contains(err.Error(), "file does not exist") { // TODO proper error value
 			// empty tree is not an error
@@ -68,60 +56,35 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 		}
 	}
 
-	// If RecursiveSingleChild is true, we need to filter out non-single-childs
-	// again.
-	filteredEntries := entries
-	if args.RecursiveSingleChild {
-		// Reset filteredEntries.
-		filteredEntries = filteredEntries[:0]
-		// Convert the entries into a tree fs.
-		fs := entriesToFsTree(r.stat, entries)
-		// Keep all files in the current directory.
-		for _, entry := range entries {
-			if normalizePath(filepath.Dir(normalizePath(entry.Name()))) == normalizePath(r.Path()) {
-				filteredEntries = append(filteredEntries, entry)
-			}
-		}
-		// And now traverse all the children and check if there's at most 1 item
-		// in it.
-		var traverseFs func(*fsNode, int)
-		traverseFs = func(fs *fsNode, l int) {
-			if fs.IsDir() && len(fs.children) == 1 {
-				if l != 0 {
-					filteredEntries = append(filteredEntries, fs.node)
-				}
-				traverseFs(fs.children[0], l+1)
-				return
-			} else {
-				if !fs.IsDir() {
-					if l != 0 {
-						filteredEntries = append(filteredEntries, fs.node)
-					}
-				}
-			}
-		}
-		for _, c := range fs.children {
-			traverseFs(c, 0)
-		}
+	// When using recursive: true on gitserverClient.ReadDir, we get entries for
+	// all parent trees (directories) from git as well, so we filter those out.
+	// Ideally, we fix this in the ReadDir API, but this might have other unforseen
+	// side-effects so we will revisit that later.
+	// Example output from git for ls-tree cmd/gitserver with -r -t (recursive: true):
+	// cmd
+	// gitserver
+	// [...] files in cmd/gitserver and deeper.
+	// To drop those, we just have to drop as many entries as the level of nesting
+	// r.Path is at.
+	if args.Recursive && !r.IsRoot() {
+		entries = entries[len(strings.Split(strings.Trim(r.Path(), "/"), "/")):]
 	}
 
-	maxResolvers := len(filteredEntries)
+	maxResolvers := len(entries)
 	if args.First != nil && int(*args.First) < maxResolvers {
 		maxResolvers = int(*args.First)
 	}
 
-	sort.Sort(byDirectory(filteredEntries))
+	sort.Sort(byDirectory(entries))
 
 	resolvers := make([]*GitTreeEntryResolver, 0, maxResolvers)
-	seen := 0
-	for _, entry := range filteredEntries {
-		if seen == maxResolvers {
+	for _, entry := range entries {
+		if len(resolvers) >= maxResolvers {
 			break
 		}
 
 		// Apply any additional filtering
 		if filter == nil || filter(entry) {
-			seen++
 			opts := GitTreeEntryResolverOpts{
 				Commit: r.Commit(),
 				Stat:   entry,
@@ -170,53 +133,4 @@ func (s byDirectory) Less(i, j int) bool {
 	}
 
 	return s[i].Name() < s[j].Name()
-}
-
-type fsNode struct {
-	name     string
-	node     fs.FileInfo
-	children []*fsNode
-}
-
-func (n *fsNode) IsDir() bool {
-	return n.node.IsDir()
-}
-
-// entriesToFsTree takes a slice of fs.FileInfo entries and converts them into a
-// tree structure like a file system. This makes it easy to traverse the tree
-// for what would otherwise be a simple slice of strings basically.
-func entriesToFsTree(root fs.FileInfo, entries []fs.FileInfo) *fsNode {
-	// Make sure we order by length, this means that dirs are always inserted before files.
-	sort.Slice(entries, func(i, j int) bool {
-		return len(entries[i].Name()) < len(entries[j].Name())
-	})
-	normRoot := normalizePath(root.Name())
-	tree := &fsNode{name: normRoot, node: root}
-	for _, entry := range entries {
-		path := normalizePath(entry.Name())
-		path = strings.TrimPrefix(path, normRoot)
-		segments := strings.Split(path, "/")
-		curTree := tree
-		for i, s := range segments {
-			if i == len(segments)-1 {
-				node := &fsNode{name: s, node: entry}
-				curTree.children = append(curTree.children, node)
-			} else {
-				for _, c := range curTree.children {
-					if c.name == s {
-						curTree = c
-						break
-					}
-				}
-			}
-		}
-	}
-	return tree
-}
-
-func normalizePath(path string) string {
-	if path == "." || path == "/" {
-		path = ""
-	}
-	return strings.Trim(path, "/")
 }

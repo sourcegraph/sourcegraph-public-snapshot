@@ -74,8 +74,14 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
 
     const rootRef = useRef<HTMLDivElement>(null)
     const [isSuggestionOpen, setSuggestionOpen] = useState<boolean>(false)
-    const [searchTerm, setSearchTerm] = useState<string>('')
-    const debouncedSearchTerm = useDebounce(searchTerm, 500)
+    const [searchTerm, setSearchTerm] = useState<string>(getInitialSearchTerm(repositoryName))
+
+    // Still narrow down the repository picker search to prevent timeout
+    // on instance with big number of repositories.
+    const debouncedSearchTerm = useDebounce(
+        searchTerm.length === 0 ? getInitialSearchTerm(repositoryName) : searchTerm,
+        500
+    )
 
     const {
         data: currentData,
@@ -84,15 +90,14 @@ export const RepoLinkPicker: FC<RepoLinkPickerProps> = props => {
         loading,
     } = useQuery<RepositoriesSuggestionsResult, RepositoriesSuggestionsVariables>(REPOSITORIES_QUERY, {
         skip: !isSuggestionOpen,
-        variables: {
-            query: searchTerm.length === 0 ? getInitialSearchTerm(repositoryName) : debouncedSearchTerm,
-        },
+        variables: { query: debouncedSearchTerm },
         fetchPolicy: 'cache-first',
     })
 
     const handleSelect = (selectedValue: string): void => {
-        navigate(`/${selectedValue}`)
+        setSearchTerm(selectedValue)
         setSuggestionOpen(false)
+        navigate(`/${selectedValue}`)
     }
 
     const data = currentData ?? previousData

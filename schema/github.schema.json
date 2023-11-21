@@ -107,7 +107,9 @@
           { "required": ["id"] },
           { "required": ["pattern"] },
           { "required": ["forks"] },
-          { "required": ["archived"] }
+          { "required": ["archived"] },
+          { "required": ["stars"] },
+          { "required": ["size"] }
         ],
         "properties": {
           "archived": {
@@ -132,13 +134,26 @@
             "description": "Regular expression which matches against the name of a GitHub repository (\"owner/name\").",
             "type": "string",
             "format": "regex"
+          },
+          "size": {
+            "description": "If set, repositories with a size above the specified one will be excluded.",
+            "type": "string",
+            "minLength": 2,
+            "pattern": "^[<>]{1}[=]{0,1}\\s*\\d+\\s*\\w+$"
+          },
+          "stars": {
+            "description": "If set, repositories stars less than the specified number will be.",
+            "type": "string",
+            "minLength": 2,
+            "pattern": "^[<>]{1}[=]{0,1}\\s*\\d+$"
           }
         }
       },
       "examples": [
         [{ "forks": true }],
         [{ "name": "owner/name" }, { "id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg==" }],
-        [{ "name": "vuejs/vue" }, { "name": "php/php-src" }, { "pattern": "^topsecretorg/.*" }]
+        [{ "name": "vuejs/vue" }, { "name": "php/php-src" }, { "pattern": "^topsecretorg/.*" }],
+        [{ "size": ">= 1GB", "stars": "< 100" }]
       ]
     },
     "repositoryQuery": {

@@ -50,6 +50,18 @@ func Parse(data []byte) (*Spec, error) {
 
 func (s Spec) Validate() []error {
 	var errs []error
+
+	if s.Service.Kind.Is(ServiceKindJob) {
+		for _, e := range s.Environments {
+			if e.EnvironmentServiceSpec != nil {
+				errs = append(errs, errors.New("service specifications are not supported for 'kind: job'"))
+			}
+			if e.Instances.Scaling != nil {
+				errs = append(errs, errors.New("'environments.instances.scaling' not supported for 'kind: job'"))
+			}
+		}
+	}
+
 	errs = append(errs, s.Service.Validate()...)
 	errs = append(errs, s.Build.Validate()...)
 	for _, env := range s.Environments {

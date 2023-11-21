@@ -139,7 +139,7 @@ After a successful installation, follow these steps to complete the app setup:
 
 ## Rate limiting
 
-Several forms of rate limiting help us manage costs for free versions of Cody. We're working actively to relax these limits and facilitate users with [Cody Gateway](./../../core-concepts/cody_gateway.md).
+Several forms of rate limiting help us manage costs for free versions of Cody. We're working actively to relax these limits and facilitate users with [Cody Gateway](./../../core-concepts/cody-gateway.md).
 
 If you hit these limits, you can request an increased limit by visiting our [Discord](https://discord.com/servers/sourcegraph-969688426372825169) channel for both chats and completions. If you'd like to use your third-party LLM provider instead of Cody Gateway, create your key with Anthropic or OpenAI and [update your app configuration](app_configuration.md).
 

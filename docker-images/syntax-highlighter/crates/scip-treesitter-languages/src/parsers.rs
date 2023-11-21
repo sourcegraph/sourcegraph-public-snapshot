@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use tree_sitter::Language;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -110,6 +112,21 @@ impl BundledParser {
             BundledParser::Xlsg => "xlsg",
             BundledParser::Zig => "zig",
         }
+    }
+
+    pub fn get_language_extensions(&self) -> HashSet<&str> {
+        let ar = {
+            match self {
+                BundledParser::Go => vec!["go"],
+                BundledParser::Java => vec!["java"],
+                BundledParser::Javascript => vec!["js"],
+                BundledParser::Typescript => vec!["ts"],
+                BundledParser::Python => vec!["py"],
+                _ => vec![],
+            }
+        };
+
+        HashSet::from_iter(ar)
     }
 
     // TODO(SuperAuguste): language detection library

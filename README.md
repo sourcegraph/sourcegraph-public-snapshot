@@ -38,7 +38,6 @@
 
 ## Getting started
 
-- [**Download Sourcegraph**](https://about.sourcegraph.com/app) for macOS and Linux
 - [Use Sourcegraph on the cloud or self-hosted](https://docs.sourcegraph.com/)
 - [Sourcegraph.com public code search](https://sourcegraph.com/search)
 
@@ -64,6 +63,4 @@ The `doc` directory has additional documentation for developing and understandin
 
 ## License
 
-This repository contains primarily non-OSS-licensed files, and some OSS licensed files (for example, IDE extensions). We maintain one repository rather than two separate repositories mainly for development convenience.
-
-See the [LICENSE](LICENSE) for an explanation of how files are licensed.
+This repository contains primarily non-OSS-licensed files. See [LICENSE](LICENSE).

@@ -115,6 +115,11 @@ Cody supports a wide range of programming languages, including:
 
 JavaScript, TypeScript, PHP, Python, Java, C/C++, C#, Ruby, Go, SQL, Swift, Objective-C, Perl, Rust, Kotlin, Scala, Groovy, R, MATLAB, Dart, Lua, Julia, Cobol and Shell scripting languages (like Bash, PowerShell).
 
+### Can Cody answer non-programming questions?
+
+Cody is an expert in answering a wide range of coding-related questions on topics including questions about your codebase, general programming concepts, test cases, debugging, and more. Cody Chat is not designed to answer non-coding questions or provide general information on topics outside of coding or your codebase.
+
+
 ## Embeddings
 
 ### What are embeddings for?
@@ -162,7 +167,7 @@ Files may be skipped for the following reasons:
 
 ### What is the default `sourcegraph` provider for completions and embeddings?
 
-The default provider for completions and embeddings, specified as `"provider": "sourcegraph"` refers to the [Sourcegraph Cody Gateway](./core-concepts/cody_gateway.md). The Cody Gateway facilitates access to completions and embeddings for Sourcegraph enterprise instances by leveraging third-party services such as Anthropic and OpenAI.
+The default provider for completions and embeddings, specified as `"provider": "sourcegraph"` refers to the [Sourcegraph Cody Gateway](./core-concepts/cody-gateway.md). The Cody Gateway facilitates access to completions and embeddings for Sourcegraph enterprise instances by leveraging third-party services such as Anthropic and OpenAI.
 
 ### What third-party cloud services does Cody depend on?
 
@@ -170,7 +175,7 @@ Cody relies on one primary third-party dependency, i.e., Anthropic's Claude API.
 
 Additionally, Cody can optionally use OpenAI for generating embeddings, enhancing the quality of its context snippets, although this is not mandatory.
 
-It's worth noting that these dependencies remain consistent when utilizing the [default `sourcegraph` provider, Cody Gateway](./core-concepts/cody_gateway.md), which uses the same third-party providers.
+It's worth noting that these dependencies remain consistent when utilizing the [default `sourcegraph` provider, Cody Gateway](./core-concepts/cody-gateway.md), which uses the same third-party providers.
 
 ### What is the retention policy for Anthropic and OpenAI?
 

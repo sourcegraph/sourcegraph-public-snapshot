@@ -50,7 +50,7 @@ Supported time units are h (hours), m ( minutes), and s (seconds).
 
 ## Third-party embeddings provider
 
-Instead of [Sourcegraph Cody Gateway](./../cody_gateway.md), admins can also use a third-party embeddings provider like:
+Instead of [Sourcegraph Cody Gateway](./../cody-gateway.md), admins can also use a third-party embeddings provider like:
 
 - OpenAI
 - Azure OpenAI <span style="margin-left:0.25rem" class="badge badge-experimental">Experimental</span>

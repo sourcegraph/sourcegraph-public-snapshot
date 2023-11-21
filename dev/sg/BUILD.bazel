@@ -127,6 +127,11 @@ go_library(
 go_binary(
     name = "sg",
     embed = [":sg_lib"],
+    # keep
+    gotags = select({
+        "//:sg_msp_flag": ["msp"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
@@ -158,26 +163,4 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_urfave_cli_v2//:cli",
     ],
-)
-
-# Refer to /doc/dev/background-information/sg/BUILD.bazel to see how this target is used to copy the
-# reference.md to the correct directory.
-#
-# Alternatively, if you just want to generate the doc:
-# bazel run //doc/dev/background-information/sg:write_cli_reference_doc
-genrule(
-    name = "generate_reference_doc",
-    srcs = ["//:sg.config.yaml"],
-    outs = ["_reference.md"],
-    cmd = """
-    SG_FORCE_REPO_ROOT="$$(pwd)" $(location :sg) \
-            --no-dev-private \
-            --disable-overwrite \
-            --disable-analytics \
-            --skip-auto-update \
-            --config sg.config.yaml \
-            help --full --output $@
-    """,
-    tools = [":sg"],
-    visibility = ["//visibility:public"],
 )

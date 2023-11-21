@@ -1,5 +1,5 @@
-import { describe, expect, test } from '@jest/globals'
 import { BehaviorSubject, of } from 'rxjs'
+import { describe, expect, test } from 'vitest'
 
 import { EMPTY_SETTINGS_CASCADE, type SettingsCascadeOrError } from '../../settings/settings'
 import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'

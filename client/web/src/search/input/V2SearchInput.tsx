@@ -1,5 +1,6 @@
 import { type FC, type PropsWithChildren, useCallback, useEffect, useMemo, useRef } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { Prec } from '@codemirror/state'
 
 // This component makes the experimental search input accessible in the web app
@@ -7,14 +8,17 @@ import { Prec } from '@codemirror/state'
 // eslint-disable-next-line no-restricted-imports
 import {
     type Action,
-    CodeMirrorQueryInputWrapper,
-    type CodeMirrorQueryInputWrapperProps,
     type Example,
     exampleSuggestions,
     lastUsedContextSuggestion,
     searchHistoryExtension,
     selectionListener,
 } from '@sourcegraph/branded/src/search-ui/experimental'
+import {
+    CodeMirrorQueryInputWrapper,
+    type CodeMirrorQueryInputWrapperProps,
+} from '@sourcegraph/branded/src/search-ui/input/experimental/CodeMirrorQueryInputWrapper'
+import { getDocumentNode } from '@sourcegraph/http-client'
 import type { SearchContextProps, SubmitSearchParameters } from '@sourcegraph/shared/src/search'
 import { FILTERS, FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
@@ -90,7 +94,7 @@ export interface V2SearchInputProps
     extends Omit<CodeMirrorQueryInputWrapperProps, 'suggestionSource' | 'extensions' | 'placeholder'>,
         Pick<SearchContextProps, 'selectedSearchContextSpec'>,
         TelemetryProps,
-        Omit<SuggestionsSourceConfig, 'getSearchContext'> {
+        Pick<SuggestionsSourceConfig, 'authenticatedUser' | 'isSourcegraphDotCom'> {
     submitSearch(parameters: Partial<SubmitSearchParameters>): void
 }
 
@@ -100,14 +104,13 @@ export interface V2SearchInputProps
 export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
     children,
     telemetryService,
-    platformContext,
     authenticatedUser,
-    fetchSearchContexts,
-    getUserSearchContextNamespaces,
     isSourcegraphDotCom,
     submitSearch,
     selectedSearchContextSpec,
     visualMode,
+    onFocus,
+    onBlur,
     ...inputProps
 }) => {
     const { recentSearches } = useRecentSearches()
@@ -132,17 +135,18 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
         getSearchContextRef.current = () => selectedSearchContextSpec
     }, [selectedSearchContextSpec])
 
+    const client = useApolloClient()
+
     const suggestionSource = useMemo(
         () =>
             createSuggestionsSource({
-                platformContext,
+                graphqlQuery<T, V extends Record<string, any>>(query: string, variables: V): Promise<T> {
+                    return client.query<T, V>({ query: getDocumentNode(query), variables }).then(result => result.data)
+                },
                 authenticatedUser,
-                fetchSearchContexts,
-                getUserSearchContextNamespaces,
                 isSourcegraphDotCom,
-                getSearchContext: () => getSearchContextRef.current(),
             }),
-        [platformContext, authenticatedUser, fetchSearchContexts, getUserSearchContextNamespaces, isSourcegraphDotCom]
+        [client, authenticatedUser, isSourcegraphDotCom]
     )
 
     const extensions = useMemo(
@@ -181,16 +185,18 @@ export const V2SearchInput: FC<PropsWithChildren<V2SearchInputProps>> = ({
 
     return (
         <CodeMirrorQueryInputWrapper
-            patternType={inputProps.patternType}
             interpretComments={false}
-            queryState={inputProps.queryState}
-            onChange={inputProps.onChange}
-            onSubmit={inputProps.onSubmit}
             placeholder="Search for code or files..."
+            patternType={inputProps.patternType}
+            queryState={inputProps.queryState}
             suggestionSource={suggestionSource}
             extensions={extensions}
             visualMode={visualMode}
             className={inputProps.className}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            onChange={inputProps.onChange}
+            onSubmit={inputProps.onSubmit}
         >
             {children}
         </CodeMirrorQueryInputWrapper>

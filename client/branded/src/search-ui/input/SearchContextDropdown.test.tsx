@@ -1,8 +1,8 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import { spy, assert, useFakeTimers } from 'sinon'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'

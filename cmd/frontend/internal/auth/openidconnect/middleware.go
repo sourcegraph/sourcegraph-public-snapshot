@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
-	"github.com/gorilla/csrf"
 	"github.com/inconshreveable/log15"
+	"github.com/russellhaering/gosaml2/uuid"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
@@ -177,7 +177,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// if !idToken.Expiry.IsZero() {
 			// 	exp = time.Until(idToken.Expiry)
 			// }
-			if err = session.SetActor(w, r, sgactor.FromUser(result.User.ID), exp, result.User.CreatedAt); err != nil {
+			if _, err = session.SetActorFromUser(r.Context(), w, r, result.User, exp); err != nil {
 				log15.Error("Failed to authenticate with OpenID connect: could not initiate session.", "error", err)
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 				return
@@ -398,16 +398,21 @@ const stateCookieTimeout = time.Minute * 15
 // RedirectToAuthRequest redirects the user to the authentication endpoint on the
 // external authentication provider.
 func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, cookieName, returnToURL string) {
+	// NOTE: We do not have a valid screen at the root path (always gets redirected
+	// to "/search"), and it is a marketing page on Sourcegraph.com, so redirecting to
+	// "/search" is a safe default.
+	if returnToURL == "" || returnToURL == "/" {
+		returnToURL = "/search"
+	}
+
 	// The state parameter is an opaque value used to maintain state between the
-	// original Authentication Request and the callback. We do not record any state
-	// beyond a CSRF token used to defend against CSRF attacks against the callback.
-	// We use the CSRF token created by gorilla/csrf that is used for other app
-	// endpoints as the OIDC state parameter.
+	// original Authentication Request and the callback. We generate a random unique
+	// value as the OIDC state parameter.
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
 	state := (&AuthnState{
-		CSRFToken:  csrf.Token(r),
+		CSRFToken:  uuid.NewV4().String(), // NOTE: "CSRF" is misleading here as all we want is a unique random value in the state cookie
 		Redirect:   returnToURL,
 		ProviderID: p.ConfigID().ID,
 	}).Encode()

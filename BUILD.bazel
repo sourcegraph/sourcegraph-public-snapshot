@@ -83,58 +83,20 @@ copy_to_bin(
 )
 
 js_library(
-    name = "jest_config",
+    name = "vitest_config",
     testonly = True,
     srcs = [
-        "jest.config.base.js",
-    ],
-    data = [
-        "jest.snapshot-resolver.js",
+        "vitest.shared.ts",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":babel_config_jest",
         "//:node_modules/@testing-library/jest-dom",
         "//:node_modules/abort-controller",
-        "//:node_modules/babel-jest",
         "//:node_modules/core-js",
         "//:node_modules/identity-obj-proxy",
         "//:node_modules/message-port-polyfill",
         "//:node_modules/regenerator-runtime",
-        "//client/shared/dev:mock",
-    ],
-)
-
-js_library(
-    name = "babel_config_jest",
-    testonly = True,
-    srcs = [
-        "babel.config.jest.js",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@babel/preset-env",
-        "//:node_modules/@babel/runtime",
-        "//:node_modules/signale",
-    ],
-)
-
-js_library(
-    name = "babel_config",
-    srcs = [
-        "babel.config.js",
-    ],
-    data = [
-        ":package_json",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@babel/preset-env",
-        "//:node_modules/@babel/preset-react",
-        "//:node_modules/@babel/preset-typescript",
-        "//:node_modules/@babel/runtime",
-        "//:node_modules/semver",
-        "//:node_modules/signale",
+        "//client/testing:testing_lib",
     ],
 )
 
@@ -146,9 +108,9 @@ js_library(
     ],
     deps = [
         "//:node_modules/abort-controller",
-        "//client/shared/dev:fetch-mock",
         "//client/shared/dev:mocha-reporter",
         "//client/shared/dev:suppress-polly-errors",
+        "//client/testing:fetch-mock",
     ],
 )
 
@@ -339,3 +301,18 @@ exports_files([
     "CONTRIBUTING.md",
     ".swcrc",
 ])
+
+# sg msp settings
+
+bool_flag(
+    name = "sg_msp",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "sg_msp_flag",
+    flag_values = {
+        "//:sg_msp": "True",
+    },
+)

@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/internal/stack",
         "//dev/managedservicesplatform/internal/stack/cloudrun",
+        "//dev/managedservicesplatform/internal/stack/iam",
         "//dev/managedservicesplatform/internal/stack/options/terraformversion",
         "//dev/managedservicesplatform/internal/stack/options/tfcbackend",
         "//dev/managedservicesplatform/internal/stack/project",
@@ -19,6 +20,7 @@ go_library(
         "//dev/managedservicesplatform/terraformcloud",
         "//lib/errors",
         "//lib/pointers",
+        "@com_github_aws_jsii_runtime_go//:jsii-runtime-go",
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
         "@com_github_sourcegraph_conc//panics",
     ],

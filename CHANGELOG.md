@@ -19,17 +19,29 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The `has.topic` filter now supports filtering by Gitlab topics. [#57649](https://github.com/sourcegraph/sourcegraph/pull/57649)
 - Batch Changes now allows changesets to be exported in CSV and JSON format. [#56721](https://github.com/sourcegraph/sourcegraph/pull/56721)
+- Supports custom ChatCompletion models in Cody clients for dotcom users. [#58158](https://github.com/sourcegraph/sourcegraph/pull/58158)
 
 ### Changed
 
 - The setting `experimentalFeatures.searchQueryInput` now refers to the new query input as `v2` (not `experimental`). <!-- NOTE: If v2 becomes the default before this release is cut, then update this entry to mention that instead of adding a separate entry. -->
 - Search-based code intel doesn't include the currently selected search context anymore. It was possible to get into a situation where search-based code intel wouldn't find any information due to being restricted by the current search context. [#58010](https://github.com/sourcegraph/sourcegraph/pull/58010)
+- The last commit which changed a file/directory is now shown in the files panel on the repo and file pages. To avoid duplicating information and confusion, the commits panel was removed. [58328](https://github.com/sourcegraph/sourcegraph/pull/58328)
+- Clicking on a search result now opens the blob view at the same commit as the search result. Before, blob views were opened at the tip of the default branch, which sometimes caused inconsistencies in line numbers if the index was out of date. [#58381](https://github.com/sourcegraph/sourcegraph/pull/58381)
+- The `exclude` configuration for code host configuration has been updated to allow chaining multiple conditions together and filtering GitHub repositories based on their size or number of GitHub stars. [#58377](https://github.com/sourcegraph/sourcegraph/pull/58377) and [#58405](https://github.com/sourcegraph/sourcegraph/pull/58405)
+  - Multiple attributes on _a single_ `exclude` entry now have to be all true for a repository to be excluded. Example: `{"exclude": [{"name": "github.com/example/example"}, {"id": "my-id"}]}` will _only_ exclude repositories that have the name _and_ the id mentioned.
+  - GitHub code host connections can exclude by size and stars now: `{"exclude": [{"name": "github.com/example/example"}, {"stars": "< 100", "size": ">= 1GB"}]}`
+  - For `size` and `stars` the supported operators are `<`, `>`, `<=`, `>=`.
+  - For `size` the supported units are `B`, `b`, `kB`, `KB`, `kiB`, `KiB`, `MiB`, `MB`, `GiB`, `GB`. No decimals points are supported.
 
 ### Fixed
 
 - Site configuration edit history no longer breaks when the user that made the edit is deleted. [#57656](https://github.com/sourcegraph/sourcegraph/pull/57656)
 - Drilling down into an insights query no longer mangles `content:` fields in your query. [#57679](https://github.com/sourcegraph/sourcegraph/pull/57679)
 - The blame column now shows correct blame information when a hunk starts in a folded code section. [#58042](https://github.com/sourcegraph/sourcegraph/pull/58042)
+- Fixed a bug where typing in the GraphQL editor in the Site Admin API console could cause the cursor to jump to the start of the editor. [#57862](https://github.com/sourcegraph/sourcegraph/pull/57862)
+- The blame column no longer ignores whitespace-only changes by default. [#58134](https://github.com/sourcegraph/sourcegraph/pull/58134)
+- Long lines now wrap correctly in the diff view. [#58138](https://github.com/sourcegraph/sourcegraph/pull/58138)
+- Fixed an issue in the search input where pressing Enter after selecting a suggestion would sometimes insert another suggestions instead of submitting the query. [#58186](https://github.com/sourcegraph/sourcegraph/pull/58186)
 
 ### Removed
 
@@ -39,8 +51,31 @@ All notable changes to Sourcegraph are documented in this file.
 - The GitHub Proxy service is no longer required and has been removed from deployment options. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
 - The VSCode search extension "Sourcegraph for VS Code" has been sunset and removed from Sourcegraph
   repository. [#58023](https://github.com/sourcegraph/sourcegraph/pull/58023)
+- The `rateLimit` configuration for Perforce code host connections has been removed to avoid confusion, it was unused. [#58188](https://github.com/sourcegraph/sourcegraph/pull/58188)
+- The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
+- The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
 
-## Unreleased 5.2.3
+## Unreleased 5.2.4
+
+### Added
+
+### Fixed
+
+- Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
+
+### Changed
+
+### Removed
+
+## 5.2.3
+
+### Added
+
+- Added configurable GraphQL query cost limitations to prevent unintended resource exhaustion. Default values are now provided and enforced, replacing the previously unlimited behaviour. For more information, please refer to: [GraphQL Cost Limits Documentation](https://docs.sourcegraph.com/api/graphql#cost-limits). See details at [#58346](https://github.com/sourcegraph/sourcegraph/pull/58346).
+
+### Fixed
+
+- Defining file filters for embeddings jobs no longer causes all files to be skipped if `MaxFileSizeBytes` isn't defined. [#58262](https://github.com/sourcegraph/sourcegraph/pull/58262)
 
 ## 5.2.2
 
@@ -49,17 +84,9 @@ All notable changes to Sourcegraph are documented in this file.
 - Added a new authorization configuration options to GitLab code host connections: "markInternalReposAsPublic". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Additionally, when configuring a GitLab auth provider, you can specify "syncInternalRepoPermissions": false, which will remove the need to sync permissions for these internal repositories. [#57858](https://github.com/sourcegraph/sourcegraph/pull/57858)
 - Experimental support for OpenAI powered autocomplete has been added. [#57872](https://github.com/sourcegraph/sourcegraph/pull/57872)
 
-### Changed
-
--
-
 ### Fixed
 
 - Updated the endpoint used by the AWS Bedrock Claude provider. [#58028](https://github.com/sourcegraph/sourcegraph/pull/58028)
-
-### Removed
-
--
 
 ## 5.2.1
 
@@ -73,10 +100,6 @@ All notable changes to Sourcegraph are documented in this file.
   - Customers with a license key created before October 3, 2023 will export only Cody-related events recorded in the new system, as covered by the [Cody Usage and Privacy Notice](https://about.sourcegraph.com/terms/cody-notice).
   - If you have a previous agreement regarding telemetry sharing, you account representative will reach out with more details.
 
-### Changed
-
--
-
 ### Fixed
 
 - Fixed a user's Permissions page being inaccessible if the user has had no permission syncs with an external account connected. [#57372](https://github.com/sourcegraph/sourcegraph/pull/57372)
@@ -85,8 +108,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Updated the `curl` and `libcurl` dependencies to `8.4.0-r0` to fix [CVE-2023-38545](https://curl.se/docs/CVE-2023-38545.html). [#57533](https://github.com/sourcegraph/sourcegraph/pull/57533)
 - Fixed a bug where commit signing failed when creating a changeset if `batchChanges.enforceFork` is set to true. [#57520](https://github.com/sourcegraph/sourcegraph/pull/57520)
 - Fixed a regression in ranking of Go struct and interface in search results. [zoekt#655](https://github.com/sourcegraph/zoekt/pull/655)
-
-### Removed
 
 ## 5.2.0
 

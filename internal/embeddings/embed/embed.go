@@ -25,11 +25,11 @@ import (
 func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
 	switch config.Provider {
 	case conftypes.EmbeddingsProviderNameSourcegraph:
-		return sourcegraph.NewClient(httpcli.ExternalClient, config), nil
+		return sourcegraph.NewClient(httpcli.UncachedExternalClient, config), nil
 	case conftypes.EmbeddingsProviderNameOpenAI:
-		return openai.NewClient(httpcli.ExternalClient, config), nil
+		return openai.NewClient(httpcli.UncachedExternalClient, config), nil
 	case conftypes.EmbeddingsProviderNameAzureOpenAI:
-		return azureopenai.NewClient(httpcli.ExternalClient, config), nil
+		return azureopenai.NewClient(azureopenai.GetAPIClient, config)
 	default:
 		return nil, errors.Newf("invalid provider %q", config.Provider)
 	}

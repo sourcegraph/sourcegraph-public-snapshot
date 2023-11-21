@@ -1,11 +1,10 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
-# gazelle:exclude **/testGlobals.d.ts
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
@@ -25,7 +24,6 @@ eslint_test_with_types(
     ]),
     config = ":eslint_config",
     deps = [
-        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
     ],
 )
@@ -36,8 +34,6 @@ ts_config(
     visibility = ["//client:__subpackages__"],
     deps = [
         "//:tsconfig",
-        "//client/client-api:tsconfig",
-        "//client/codeintellify:tsconfig",
         "//client/common:tsconfig",
         "//client/extension-api-types:tsconfig",
         "//client/observability-client:tsconfig",
@@ -127,7 +123,6 @@ ts_project(
         "src/search-ui/input/experimental/CodeMirrorQueryInputWrapper.tsx",
         "src/search-ui/input/experimental/LazyCodeMirrorQueryInput.tsx",
         "src/search-ui/input/experimental/Suggestions.tsx",
-        "src/search-ui/input/experimental/SyntaxHighlightedSearchQuery.tsx",
         "src/search-ui/input/experimental/codemirror/example-suggestions.ts",
         "src/search-ui/input/experimental/codemirror/history.ts",
         "src/search-ui/input/experimental/codemirror/searchcontext.ts",
@@ -135,12 +130,12 @@ ts_project(
         "src/search-ui/input/experimental/filters.ts",
         "src/search-ui/input/experimental/index.ts",
         "src/search-ui/input/experimental/modes.ts",
-        "src/search-ui/input/experimental/optionRenderer.tsx",
+        "src/search-ui/input/experimental/placeholder.ts",
         "src/search-ui/input/experimental/suggestionsExtension.ts",
         "src/search-ui/input/experimental/utils.ts",
-        "src/search-ui/input/toggles/CopyQueryButton.tsx",
         "src/search-ui/input/toggles/QueryInputToggle.tsx",
         "src/search-ui/input/toggles/SmartSearchToggle.tsx",
+        "src/search-ui/input/toggles/SmartSearchToggleExtended.tsx",
         "src/search-ui/input/toggles/Toggles.tsx",
         "src/search-ui/input/toggles/index.ts",
         "src/search-ui/results/AnnotatedSearchExample.tsx",
@@ -170,7 +165,6 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":module_style_typings",
-        ":node_modules/@sourcegraph/codeintellify",  #keep
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/observability-client",
@@ -189,9 +183,7 @@ ts_project(
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
-        "//:node_modules/@types/react-dom",
         "//:node_modules/classnames",
-        "//:node_modules/comlink",  #keep
         "//:node_modules/copy-to-clipboard",
         "//:node_modules/date-fns",
         "//:node_modules/dompurify",
@@ -200,7 +192,6 @@ ts_project(
         "//:node_modules/lodash",
         "//:node_modules/mdi-react",
         "//:node_modules/react",
-        "//:node_modules/react-dom",
         "//:node_modules/react-router-dom",
         "//:node_modules/react-sticky-box",
         "//:node_modules/react-visibility-sensor",
@@ -241,7 +232,7 @@ ts_project(
         "src/search-ui/results/sidebar/SearchFilterSection.test.tsx",
         "src/search-ui/results/sidebar/helpers.test.ts",
         "src/search-ui/results/use-items-to-show.test.ts",
-        "src/testGlobals.d.ts",  #keep
+        "src/testSetup.test.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
@@ -251,7 +242,6 @@ ts_project(
         ":node_modules/@sourcegraph/wildcard",
         "//:node_modules/@codemirror/autocomplete",
         "//:node_modules/@codemirror/state",
-        "//:node_modules/@jest/globals",
         "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",
@@ -267,6 +257,7 @@ ts_project(
         "//:node_modules/react-dom",
         "//:node_modules/rxjs",
         "//:node_modules/sinon",
+        "//:node_modules/vitest",
     ],
 )
 
@@ -279,13 +270,17 @@ npm_package(
     ],
 )
 
-jest_test(
+filegroup(
+    name = "snapshots",
+    srcs = glob(["src/**/__snapshots__/*"]),
+)
+
+vitest_test(
     name = "test",
     timeout = "long",
     data = [
         ":branded_tests",
+        ":module_styles",
+        ":snapshots",
     ],
-    patch_node_fs = False,
-    shard_count = 6,
-    tags = ["no-sandbox"],
 )

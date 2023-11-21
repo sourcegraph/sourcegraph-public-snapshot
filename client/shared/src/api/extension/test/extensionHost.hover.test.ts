@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals'
 import { type ProxyMarked, proxyMarker, type Remote } from 'comlink'
 import { type Observer, of } from 'rxjs'
 import type { Hover } from 'sourcegraph'
+import { describe, expect, it } from 'vitest'
 
 import type { HoverMerged } from '@sourcegraph/client-api'
 import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
@@ -38,7 +38,7 @@ describe('getHover from ExtensionHost API, it aims to have more e2e feel', () =>
     })
 
     it('restarts hover call if a provider was added or removed', () => {
-        const typescriptFileUri = 'file:///f.ts'
+        const typescriptFileUri = 'git://repo#src/f.ts'
 
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
             { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },

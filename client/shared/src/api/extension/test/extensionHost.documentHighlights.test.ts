@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals'
 import { type ProxyMarked, proxyMarker, type Remote } from 'comlink'
 import { BehaviorSubject, type Observer } from 'rxjs'
 import type { DocumentHighlight } from 'sourcegraph'
+import { describe, expect, it } from 'vitest'
 
 import { Range } from '@sourcegraph/extension-api-classes'
 
@@ -37,7 +37,7 @@ describe('getDocumentHighlights from ExtensionHost API, it aims to have more e2e
     })
 
     it('restarts document highlights call if a provider was added or removed', () => {
-        const typescriptFileUri = 'file:///f.ts'
+        const typescriptFileUri = 'git://repo#src/f.ts'
 
         const { extensionHostAPI, extensionAPI } = initializeExtensionHostTest(
             { initialSettings, clientApplication: 'sourcegraph', sourcegraphURL: 'https://example.com/' },

@@ -285,8 +285,8 @@ func (c *Client) createMessageBlocks(info *BuildNotification, author string) []s
 				},
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,
-					URL:  "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake?"},
+					URL:  "https://buildkite.com/organizations/sourcegraph/analytics/suites/sourcegraph-bazel?branch=main",
+					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View test analytics"},
 				},
 			}...,
 		),

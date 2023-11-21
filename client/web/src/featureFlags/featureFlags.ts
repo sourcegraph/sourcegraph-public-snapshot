@@ -18,7 +18,6 @@ export const FEATURE_FLAGS = [
     'accessible-symbol-tree',
     'accessible-file-tree-always-load-ancestors',
     'enable-ownership-panels',
-    'search-ranking',
     'blob-page-switch-areas-shortcuts',
     'clone-progress-logging',
     'sourcegraph-operator-site-admin-hide-maintenance',

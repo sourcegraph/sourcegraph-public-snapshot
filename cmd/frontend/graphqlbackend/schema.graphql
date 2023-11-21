@@ -2676,6 +2676,7 @@ enum SearchPatternType {
     structural
     lucky
     keyword
+    newStandardRC1
 }
 
 """
@@ -5645,15 +5646,9 @@ type GitTree implements TreeEntry {
         """
         first: Int
         """
-        Recurse into sub-trees. If true, implies recursiveSingleChild.
+        Recurse into sub-trees.
         """
         recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories. If true, we return a flat list of
-        every directory that is a single child, and any directories or files that are
-        nested in a single child.
-        """
-        recursiveSingleChild: Boolean = false
         """
         Includes all parent directories and their entries. For example, if the path is
         `/client/web/something`, it will return the following entries in this order:
@@ -6031,7 +6026,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Blame the blob.
     """
-    blame(startLine: Int!, endLine: Int!): [Hunk!]!
+    blame(startLine: Int!, endLine: Int!, ignoreWhitespace: Boolean = false): [Hunk!]!
     """
     Highlight the blob contents.
     """

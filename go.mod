@@ -118,7 +118,6 @@ require (
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.3.1
 	github.com/gorilla/context v1.1.1
-	github.com/gorilla/csrf v1.7.1
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/schema v1.2.0
 	github.com/gorilla/securecookie v1.1.1
@@ -250,6 +249,9 @@ require (
 )
 
 require (
+	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.3.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.8.0
+	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
 	github.com/aws/constructs-go/constructs/v10 v10.2.69
 	github.com/aws/jsii-runtime-go v1.84.0
 	github.com/dghubble/gologin/v2 v2.4.0
@@ -271,6 +273,7 @@ require (
 	github.com/qdrant/go-client v1.4.1
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/cloudflare v0.0.0-20230822024612-edb48c530722
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/google v0.0.0-20230822024612-edb48c530722
+	github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta v0.0.0-20231106184355-f739cf8e1d49
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/random v0.0.0-20230822024612-edb48c530722
 	github.com/vektah/gqlparser/v2 v2.4.5
 	go.opentelemetry.io/collector/config/confighttp v0.81.0
@@ -283,6 +286,8 @@ require (
 require (
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/trace v1.10.1 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.3.0 // indirect
+	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.16.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.41.0 // indirect
 	github.com/Masterminds/semver/v3 v3.2.1 // indirect
@@ -309,6 +314,7 @@ require (
 	github.com/fullstorydev/grpcurl v1.8.6 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
+	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 	github.com/google/flatbuffers v2.0.8+incompatible // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/s2a-go v0.1.4 // indirect
@@ -328,6 +334,7 @@ require (
 	github.com/jackc/pgproto3/v2 v2.3.0 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
 	github.com/knadh/koanf/v2 v2.0.1 // indirect
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
@@ -442,7 +449,7 @@ require (
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
 	github.com/go-kit/log v0.2.1 // indirect
 	github.com/go-logfmt/logfmt v0.5.1 // indirect
-	github.com/go-logr/logr v1.2.4 // indirect
+	github.com/go-logr/logr v1.2.4
 	github.com/go-logr/stdr v1.2.2
 	github.com/go-openapi/analysis v0.21.4 // indirect
 	github.com/go-openapi/errors v0.20.3 // indirect
@@ -547,7 +554,7 @@ require (
 	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/mountinfo v0.0.0-20231018142932-e00da332dac5
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20231031173451-503302fe8ad1
+	github.com/sourcegraph/zoekt v0.0.0-20231115091004-137eb8f22610
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect

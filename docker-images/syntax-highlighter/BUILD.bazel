@@ -54,6 +54,27 @@ rust_binary(
 )
 
 pkg_tar(
+    name = "tar_scip-ctags",
+    srcs = [":scip-ctags"],
+)
+
+# We are shipping a minimal scip-ctags container, which is used for testing purposes
+# in the zoekt repository, so we can test it against it instead of scip-ctags,
+# reflecting better real production usage.
+oci_image(
+    name = "scip-ctags_image",
+    base = "@wolfi_base",
+    entrypoint = ["/scip-ctags"],
+    tars = [":tar_scip-ctags"],
+)
+
+oci_tarball(
+    name = "scip-ctags_image_tarball",
+    image = ":scip-ctags_image",
+    repo_tags = ["scip-ctags:candidate"],
+)
+
+pkg_tar(
     name = "tar_syntect_server",
     srcs = [":syntect_server"],
 )
@@ -117,4 +138,10 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     repository = image_repository("syntax-highlighter"),
+)
+
+oci_push(
+    name = "scip-ctags_candidate_push",
+    image = ":scip-ctags_image",
+    repository = image_repository("scip-ctags"),
 )

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/conc/pool"
@@ -77,13 +78,17 @@ sg start batches
 sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
 
 # View configuration for a commandset
-sg start -describe oss
+sg start -describe single-program
 `,
 		Category: category.Dev,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "describe",
 				Usage: "Print details about the selected commandset",
+			},
+			&cli.BoolFlag{
+				Name:  "sgtail",
+				Usage: "Connects to running sgtail instance",
 			},
 
 			&cli.StringSliceFlag{
@@ -173,6 +178,8 @@ func constructStartCmdLongHelp() string {
 	return out.String()
 }
 
+var sgOnce sync.Once
+
 func startExec(ctx *cli.Context) error {
 	config, err := getConfig()
 	if err != nil {
@@ -202,6 +209,12 @@ func startExec(ctx *cli.Context) error {
 	if exists {
 		std.Out.WriteAlertf("Found 'sg %s' already running with the same arguments. Process: %d", strings.Join(os.Args[1:], " "), pid)
 		return errors.New("no concurrent sg start with same arguments allowed")
+	}
+
+	if ctx.Bool("sgtail") {
+		if err := run.OpenUnixSocket(); err != nil {
+			return errors.Wrapf(err, "Did you forget to run sgtail first?")
+		}
 	}
 
 	commandset := args[0]
@@ -238,8 +251,7 @@ func startExec(ctx *cli.Context) error {
 		if !exists {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "If you're not a Sourcegraph teammate you probably want to run: sg start oss"))
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "If you're a Sourcegraph teammate, see the documentation for how to get set up: https://docs.sourcegraph.com/dev/setup/quickstart#run-sg-setup"))
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "See the documentation for how to get set up: https://docs.sourcegraph.com/dev/setup/quickstart#run-sg-setup"))
 
 			std.Out.Write("")
 			overwritePath := filepath.Join(repoRoot, "sg.config.overwrite.yaml")

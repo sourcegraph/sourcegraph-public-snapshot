@@ -1,7 +1,7 @@
 import * as assert from 'assert'
 
-import { describe, it } from '@jest/globals'
 import * as sinon from 'sinon'
+import { describe, it } from 'vitest'
 
 import * as sourcegraph from '../api'
 import type { QueryGraphQLFn } from '../util/graphql'

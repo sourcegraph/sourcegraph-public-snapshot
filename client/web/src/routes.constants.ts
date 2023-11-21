@@ -24,9 +24,6 @@ export enum PageRoutes {
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
     GetCody = '/get-cody',
-}
-
-export enum EnterprisePageRoutes {
     BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',

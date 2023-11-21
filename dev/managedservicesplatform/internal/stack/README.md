@@ -8,15 +8,23 @@ Each stack package must declare the following interface:
 ```go
 import (
   "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
+  "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 )
 
-type Output struct {}
+// CrossStackOutput allows programatic access to stack outputs across stacks.
+// For human reference outputs, use (stack.ExplicitStackOutputs).Add(...)
+type CrossStackOutput struct {}
 
 type Variables struct {}
 
 const StackName = "..."
 
-func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
+func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
+  stack, outputs := stacks.New(StackName,
+    googleprovider.With(vars.ProjectID),
+    // ... other stack-wide options
+  )
+
   // ...
 }
 ```

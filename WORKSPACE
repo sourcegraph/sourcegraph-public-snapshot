@@ -43,13 +43,6 @@ http_archive(
 )
 
 http_archive(
-    name = "aspect_rules_jest",
-    sha256 = "bf8f4a4d2a833e4f96f866c686c38bcee69d3bdae8a827b1c9d2fdf92212bc0b",
-    strip_prefix = "rules_jest-95d8f1961a9c6f3aee2929881b1b74461652e775",
-    url = "https://github.com/aspect-build/rules_jest/archive/95d8f1961a9c6f3aee2929881b1b74461652e775.tar.gz",
-)
-
-http_archive(
     name = "aspect_rules_swc",
     sha256 = "8eb9e42ed166f20cacedfdb22d8d5b31156352eac190fc3347db55603745a2d8",
     strip_prefix = "rules_swc-1.1.0",
@@ -197,22 +190,6 @@ load("@aspect_rules_ts//ts:repositories.bzl", "rules_ts_dependencies")
 
 rules_ts_dependencies(ts_version = "4.9.5")
 
-# rules_jest setup ==============================
-load("@aspect_rules_jest//jest:dependencies.bzl", "rules_jest_dependencies")
-
-rules_jest_dependencies()
-
-load("@aspect_rules_jest//jest:repositories.bzl", "jest_repositories")
-
-jest_repositories(
-    name = "jest",
-    jest_version = "v28.1.0",
-)
-
-load("@jest//:npm_repositories.bzl", jest_npm_repositories = "npm_repositories")
-
-jest_npm_repositories()
-
 # rules_swc setup ==============================
 load("@aspect_rules_swc//swc:dependencies.bzl", "rules_swc_dependencies")
 
@@ -328,7 +305,7 @@ load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_regi
 
 rules_rust_dependencies()
 
-rust_version = "1.68.0"
+rust_version = "1.73.0"
 
 rust_register_toolchains(
     edition = "2021",

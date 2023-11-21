@@ -1236,6 +1236,7 @@ export const toCSSClassName = (token: DecoratedToken): string => {
 }
 
 export interface Decoration {
+    token: DecoratedToken
     value: string
     key: number
     className: string
@@ -1252,6 +1253,7 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         case 'metaRegexp':
         case 'metaStructural': {
             return {
+                token,
                 value: token.value,
                 key: token.range.start + token.range.end,
                 className,
@@ -1259,6 +1261,7 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         }
         case 'openingParen': {
             return {
+                token,
                 value: '(',
                 key: token.range.start + token.range.end,
                 className,
@@ -1266,6 +1269,7 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         }
         case 'closingParen': {
             return {
+                token,
                 value: ')',
                 key: token.range.start + token.range.end,
                 className,
@@ -1274,6 +1278,7 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
 
         case 'metaFilterSeparator': {
             return {
+                token,
                 value: ':',
                 key: token.range.start + token.range.end,
                 className,
@@ -1282,6 +1287,7 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         case 'metaRepoRevisionSeparator':
         case 'metaContextPrefix': {
             return {
+                token,
                 value: '@',
                 key: token.range.start + token.range.end,
                 className,
@@ -1305,6 +1311,7 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
                 }
             }
             return {
+                token,
                 value,
                 key: token.range.start + token.range.end,
                 className,
@@ -1312,6 +1319,7 @@ export function toDecoration(query: string, token: DecoratedToken): Decoration {
         }
     }
     return {
+        token,
         value: query.slice(token.range.start, token.range.end),
         key: token.range.start + token.range.end,
         className,

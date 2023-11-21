@@ -478,6 +478,8 @@ type BranchChangesetSpec struct {
 	Body string `json:"body"`
 	// Commits description: The Git commits with the proposed changes. These commits are pushed to the head ref.
 	Commits []*GitCommitDescription `json:"commits"`
+	// Fork description: Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global `batches.enforceFork` setting is enabled. If set, this property will override any global setting.
+	Fork bool `json:"fork,omitempty"`
 	// HeadRef description: The full name of the Git ref that holds the changes proposed by this changeset. This ref will be created or updated with the commits.
 	HeadRef string `json:"headRef"`
 	// HeadRepository description: The GraphQL ID of the repository that contains the branch with this changeset's changes. Fork repositories and cross-repository changesets are not yet supported. Therefore, headRepository must be equal to baseRepository.
@@ -785,6 +787,10 @@ type ExcludedGitHubRepo struct {
 	Name string `json:"name,omitempty"`
 	// Pattern description: Regular expression which matches against the name of a GitHub repository ("owner/name").
 	Pattern string `json:"pattern,omitempty"`
+	// Size description: If set, repositories with a size above the specified one will be excluded.
+	Size string `json:"size,omitempty"`
+	// Stars description: If set, repositories stars less than the specified number will be.
+	Stars string `json:"stars,omitempty"`
 }
 type ExcludedGitLabProject struct {
 	// EmptyRepos description: Whether to exclude empty repositories.
@@ -1886,22 +1892,12 @@ type PerforceConnection struct {
 	P4Port string `json:"p4.port"`
 	// P4User description: The user to be authenticated for p4 CLI (P4USER).
 	P4User string `json:"p4.user"`
-	// RateLimit description: Rate limit applied when making background API requests to Perforce.
-	RateLimit *PerforceRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Perforce depot. In the pattern, the variable "{depot}" is replaced with the Perforce depot's path.
 	//
 	// For example, if your Perforce depot path is "//Sourcegraph/" and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "perforce/{depot}" would mean that the Perforce depot is available on Sourcegraph at https://src.example.com/perforce/Sourcegraph.
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-}
-
-// PerforceRateLimit description: Rate limit applied when making background API requests to Perforce.
-type PerforceRateLimit struct {
-	// Enabled description: true if rate limiting is enabled.
-	Enabled bool `json:"enabled"`
-	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
-	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
@@ -1990,6 +1986,14 @@ type Ranking struct {
 	MaxReorderQueueSize *int `json:"maxReorderQueueSize,omitempty"`
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
 	RepoScores map[string]float64 `json:"repoScores,omitempty"`
+}
+type RateLimits struct {
+	// GraphQLMaxAliases description: Maximum number of aliases allowed in a GraphQL query
+	GraphQLMaxAliases int `json:"graphQLMaxAliases,omitempty"`
+	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.
+	GraphQLMaxDepth int `json:"graphQLMaxDepth,omitempty"`
+	// GraphQLMaxFieldCount description: Maximum number of estimated fields allowed in a GraphQL response
+	GraphQLMaxFieldCount int `json:"graphQLMaxFieldCount,omitempty"`
 }
 
 // RepoPurgeWorker description: Configuration for repository purge worker.
@@ -2378,6 +2382,8 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinderSymbols *bool `json:"fuzzyFinderSymbols,omitempty"`
 	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
+	// NewSearchNavigationUI description: Enables new experimental search UI navigation
+	NewSearchNavigationUI *bool `json:"newSearchNavigationUI,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
@@ -2442,6 +2448,7 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "fuzzyFinderRepositories")
 	delete(m, "fuzzyFinderSymbols")
 	delete(m, "goCodeCheckerTemplates")
+	delete(m, "newSearchNavigationUI")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")
 	delete(m, "searchQueryInput")
@@ -2736,7 +2743,8 @@ type SiteConfiguration struct {
 	// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
-	ProductResearchPageEnabled *bool `json:"productResearchPage.enabled,omitempty"`
+	ProductResearchPageEnabled *bool       `json:"productResearchPage.enabled,omitempty"`
+	RateLimits                 *RateLimits `json:"rateLimits,omitempty"`
 	// RedactOutboundRequestHeaders description: Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.
 	RedactOutboundRequestHeaders *bool `json:"redactOutboundRequestHeaders,omitempty"`
 	// RepoConcurrentExternalServiceSyncers description: The number of concurrent external service syncers that can run.
@@ -2911,6 +2919,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "permissions.syncUsersMaxConcurrency")
 	delete(m, "permissions.userMapping")
 	delete(m, "productResearchPage.enabled")
+	delete(m, "rateLimits")
 	delete(m, "redactOutboundRequestHeaders")
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")

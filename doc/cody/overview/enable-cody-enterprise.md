@@ -119,7 +119,7 @@ Cody enhances your coding experience by providing intelligent code suggestions, 
 ### Prerequisites
 
 - You have Sourcegraph version 5.1.0 or above
-- A Sourcegraph enterprise subscription with [Cody Gateway access](./../core-concepts/cody_gateway.md) or [an account with a third-party LLM provider](#using-a-third-party-llm-provider-directly)
+- A Sourcegraph enterprise subscription with [Cody Gateway access](./../core-concepts/cody-gateway.md) or [an account with a third-party LLM provider](#using-a-third-party-llm-provider-directly)
 
 ### Enable Cody on your Sourcegraph instance
 
@@ -127,7 +127,7 @@ Cody uses one or more third-party LLM (Large Language Model) providers. Make sur
 
 This requires site-admin privileges. To do so,
 
-1. First, configure your desired LLM provider either by [Using Sourcegraph Cody Gateway](./../core-concepts/cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise) (recommended) or [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
+1. First, configure your desired LLM provider either by [Using Sourcegraph Cody Gateway](./../core-concepts/cody-gateway.md#using-cody-gateway-in-sourcegraph-enterprise) (recommended) or [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
 
     > NOTE: If you are a Sourcegraph Cloud customer, skip directly to step 3.
 
@@ -168,7 +168,7 @@ You're all set to use Cody on your self-hosted Sourcegraph instance. You can lea
 ## Cody on Sourcegraph Cloud
 
 - With [Sourcegraph Cloud](../../cloud/index.md), you get Cody as a managed service, and you **do not** need to [enable Cody as is required for self-hosted setup](#enable-cody-on-your-sourcegraph-instance)
-- However, by contacting your account manager, Cody can still be enabled on-demand on your Sourcegraph instance. The Sourcegraph team will refer to the [handbook](https://handbook.sourcegraph.com/departments/cloud/#managed-instance-requests)
+- However, by contacting your account manager, Cody can still be enabled on-demand on your Sourcegraph instance. The Sourcegraph team will refer to the [handbook](https://golinks.io/cloud-requests-cody)
 - Next, you can configure the [VS Code extension](#configure-the-vs-code-extension) by following the same steps as mentioned for the self-hosted environment
 - After which, you are all set to use Cody with Sourcegraph Cloud
 
@@ -224,7 +224,7 @@ To enable Cody only for some users, for example, when rolling out a Cody POC, fo
 
 ## Using a third-party LLM provider
 
-Instead of [Sourcegraph Cody Gateway](./../core-concepts/cody_gateway.md), you can also configure Sourcegraph to use a third-party provider directly, like:
+Instead of [Sourcegraph Cody Gateway](./../core-concepts/cody-gateway.md), you can also configure Sourcegraph to use a third-party provider directly, like:
 
 - Anthropic
 - OpenAI
@@ -304,13 +304,13 @@ Once done, go to **Site admin > Site configuration** (`/site-admin/configuration
 
 <aside class="experimental">
 <p>
-<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> AWS Bedrock support is in the experimental stage.
+<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> AWS Bedrock support is in the experimental stage. You must have Sourcegraph 5.2.2 or higher.
 <br />
 For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">tweet</a>.
 </p>
 </aside>
 
-First, make sure you can access AWS Bedrock (currently in beta). Then, request access to the Anthropic Claude models in Bedrock.
+First, make sure you can access AWS Bedrock. Then, request access to the Anthropic Claude models in Bedrock.
 This may take some time to provision.
 
 Next, create an IAM user with programmatic access in your AWS account. Depending on your AWS setup, different ways may be required to provide access. All completion requests are made from the `frontend` service, so this service needs to be able to access AWS. You can use instance role bindings or directly configure the IAM user credentials in the configuration.

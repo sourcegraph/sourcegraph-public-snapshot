@@ -29,7 +29,7 @@ impl<'a> PartialEq for Scope<'a> {
 
 impl<'a> PartialOrd for Scope<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.range.partial_cmp(&other.range)
+        Some(self.cmp(other))
     }
 }
 
@@ -195,7 +195,7 @@ impl<'a> Scope<'a> {
                 }
                 ReassignmentBehavior::OldestIsDefinition => {
                     if let Some(above) = declarations_above
-                        .into_iter()
+                        .iter_mut()
                         .rev()
                         .find(|x| x.contains_key(lvalue.identifier))
                     {
@@ -540,9 +540,9 @@ mod test {
 
     #[test]
     fn test_can_do_go() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
@@ -552,9 +552,9 @@ mod test {
 
     #[test]
     fn test_can_do_nested_locals() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals-nested.go");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
@@ -564,9 +564,9 @@ mod test {
 
     #[test]
     fn test_can_do_functions() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/funcs.go");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
@@ -576,9 +576,9 @@ mod test {
 
     #[test]
     fn test_can_do_perl() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
@@ -588,9 +588,9 @@ mod test {
 
     #[test]
     fn test_can_do_matlab() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
         let source_code = include_str!("../testdata/locals.m");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
@@ -600,9 +600,9 @@ mod test {
 
     #[test]
     fn test_can_do_java() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
         let source_code = include_str!("../testdata/locals.java");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);

@@ -60,7 +60,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         telemetryService,
         platformContext,
         searchContextsEnabled,
-        settingsCascade,
         selectedSearchContextSpec: dynamicSearchContextSpec,
         fetchSearchContexts,
         setSelectedSearchContextSpec,
@@ -136,10 +135,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             queryState={queryState}
             onChange={setQueryState}
             onSubmit={onSubmit}
-            platformContext={platformContext}
             authenticatedUser={authenticatedUser}
-            fetchSearchContexts={fetchSearchContexts}
-            getUserSearchContextNamespaces={getUserSearchContextNamespaces}
             isSourcegraphDotCom={isSourcegraphDotCom}
             submitSearch={submitSearchOnChange}
             selectedSearchContextSpec={selectedSearchContextSpec}
@@ -152,10 +148,9 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 setCaseSensitivity={setSearchCaseSensitivity}
                 searchMode={searchMode}
                 setSearchMode={setSearchMode}
-                settingsCascade={settingsCascade}
                 navbarSearchQuery={queryState.query}
-                showCopyQueryButton={false}
                 showSmartSearchButton={false}
+                showExtendedPicker={false}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
         </LazyV2SearchInput>
@@ -169,7 +164,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             telemetryService={telemetryService}
             authenticatedUser={authenticatedUser}
             isSourcegraphDotCom={isSourcegraphDotCom}
-            settingsCascade={settingsCascade}
             searchContextsEnabled={searchContextsEnabled}
             showSearchContext={searchContextsEnabled}
             showSearchContextManagement={true}

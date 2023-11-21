@@ -16,94 +16,60 @@ import { EditorSelection, EditorState, type Extension, Prec } from '@codemirror/
 import { EditorView } from '@codemirror/view'
 import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
-import inRange from 'lodash/inRange'
 import { useNavigate } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 
-import type { HistoryOrNavigate } from '@sourcegraph/common'
 import { type Editor, useCompartment, viewToEditor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
-import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { BaseCodeMirrorQueryInput } from '../BaseCodeMirrorQueryInput'
-import { placeholder as placeholderExtension } from '../codemirror'
 import { queryDiagnostic } from '../codemirror/diagnostics'
-import { tokens } from '../codemirror/parsedQuery'
+import { placeholder as placeholderExtension } from '../codemirror/placeholder'
 import { useUpdateInputFromQueryState } from '../codemirror/react'
 import { tokenInfo } from '../codemirror/token-info'
 
 import { overrideContextOnPaste } from './codemirror/searchcontext'
 import { filterDecoration } from './codemirror/syntax-highlighting'
 import { modeScope, useInputMode } from './modes'
-import { type Source, suggestions, startCompletion } from './suggestionsExtension'
+import { showWhenEmptyWithoutContext } from './placeholder'
+import { Suggestions } from './Suggestions'
+import {
+    type Source,
+    suggestions,
+    startCompletion,
+    getSuggestionsState,
+    type Option,
+    type Action,
+    applyAction,
+} from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
 
 interface ExtensionConfig {
     popoverID: string
     placeholder: string
-    suggestionsContainer: HTMLDivElement | null
     suggestionSource?: Source
-    historyOrNavigate: HistoryOrNavigate
-}
-
-// We want to show a placeholder also if the query only contains a context
-// filter.
-function showWhenEmptyWithoutContext(state: EditorState): boolean {
-    // Show placeholder when empty
-    if (state.doc.length === 0) {
-        return true
-    }
-
-    const queryTokens = tokens(state)
-
-    if (queryTokens.length > 2) {
-        return false
-    }
-    // Only show the placeholder if the cursor is at the end of the content
-    if (state.selection.main.from !== state.doc.length) {
-        return false
-    }
-
-    // If there are two tokens, only show the placeholder if the second one is a
-    // whitespace of length 1
-    if (queryTokens.length === 2 && (queryTokens[1].type !== 'whitespace' || getTokenLength(queryTokens[1]) !== 1)) {
-        return false
-    }
-
-    return (
-        queryTokens.length > 0 &&
-        queryTokens[0].type === 'filter' &&
-        queryTokens[0].field.value === 'context' &&
-        !inRange(state.selection.main.from, queryTokens[0].range.start, queryTokens[0].range.end + 1)
-    )
+    navigate: (destination: string) => void
 }
 
 // Helper function to update extensions dependent on props. Used when
 // creating the editor and to update it when the props change.
-function configureExtensions({
-    popoverID,
-    placeholder,
-    suggestionsContainer,
-    suggestionSource,
-    historyOrNavigate,
-}: ExtensionConfig): Extension {
+function configureExtensions({ popoverID, placeholder, suggestionSource, navigate }: ExtensionConfig): Extension {
     const extensions = []
 
     if (placeholder) {
         extensions.push(placeholderExtension(placeholder, showWhenEmptyWithoutContext))
     }
 
-    if (suggestionSource && suggestionsContainer) {
+    if (suggestionSource) {
         extensions.push(
             suggestions({
                 id: popoverID,
-                parent: suggestionsContainer,
                 source: suggestionSource,
-                historyOrNavigate,
+                navigate,
             })
         )
     }
@@ -145,7 +111,8 @@ const staticExtensions: Extension = [
     EditorView.theme({
         '&': {
             flex: 1,
-            backgroundColor: 'var(--input-bg)',
+            // To change code mirror input area color via CSS property
+            backgroundColor: 'var(--search-box-color)',
             borderRadius: 'var(--border-radius)',
             borderColor: 'var(--border-color)',
             // To ensure that the input doesn't overflow the parent
@@ -181,8 +148,6 @@ export enum QueryInputVisualMode {
 
 export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
-    onChange: (queryState: QueryState) => void
-    onSubmit: () => void
     interpretComments: boolean
     patternType: SearchPatternType
     placeholder: string
@@ -190,14 +155,16 @@ export interface CodeMirrorQueryInputWrapperProps {
     extensions?: Extension
     visualMode?: QueryInputVisualMode | `${QueryInputVisualMode}`
     className?: string
+    onChange: (queryState: QueryState) => void
+    onSubmit: () => void
+    onFocus?: (editor: EditorView) => void
+    onBlur?: (editor: EditorView) => void
 }
 
 export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<CodeMirrorQueryInputWrapperProps>>(
     (
         {
             queryState,
-            onChange,
-            onSubmit,
             interpretComments,
             patternType,
             placeholder,
@@ -206,6 +173,10 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             visualMode = QueryInputVisualMode.Standard,
             className,
             children,
+            onChange,
+            onSubmit,
+            onFocus,
+            onBlur,
         },
         ref
     ) => {
@@ -219,7 +190,7 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
 
         // Local state
         const [mode, setMode, modeNotifierExtension] = useInputMode()
-        const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
+        const [suggestionsState, setSuggestionsState] = useState<ReturnType<typeof getSuggestionsState>>()
 
         // Handlers
         const onSubmitRef = useMutableValue(onSubmit)
@@ -250,11 +221,10 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     configureExtensions({
                         popoverID,
                         placeholder,
-                        suggestionsContainer,
                         suggestionSource,
-                        historyOrNavigate: navigate,
+                        navigate,
                     }),
-                [popoverID, placeholder, suggestionsContainer, suggestionSource, navigate]
+                [popoverID, placeholder, suggestionSource, navigate]
             )
         )
 
@@ -274,6 +244,9 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                     'aria-controls': popoverID,
                     'aria-haspopup': 'grid',
                     'aria-label': 'Search query',
+                }),
+                EditorView.updateListener.of(update => {
+                    setSuggestionsState(getSuggestionsState(update.state))
                 }),
                 staticExtensions,
             ],
@@ -302,6 +275,18 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             }
         }, [setMode])
 
+        const onSelect = useCallback(
+            (option: Option, action: Action) => {
+                const view = editorRef.current
+                if (view) {
+                    applyAction(view, action ?? option.action, option, 'mouse')
+                    // This is needed because clicking on an option removes focus from the query input
+                    window.requestAnimationFrame(() => view.focus())
+                }
+            },
+            [editorRef]
+        )
+
         const { ref: inputContainerRef, height = 0 } = useResizeObserver({ box: 'border-box' })
 
         return (
@@ -325,15 +310,26 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
                         onEnter={onSubmitHandler}
                         onChange={onChangeHandler}
                         multiLine={false}
+                        onFocus={onFocus}
+                        onBlur={onBlur}
                     />
                     {!mode && children}
                 </div>
                 <div
-                    ref={setSuggestionsContainer}
                     className={styles.suggestions}
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{ paddingTop: height }}
-                />
+                >
+                    {suggestionsState && (
+                        <Suggestions
+                            id={popoverID}
+                            open={suggestionsState.open}
+                            activeRowIndex={suggestionsState.selectedOption}
+                            results={suggestionsState.result.groups}
+                            onSelect={onSelect}
+                        />
+                    )}
+                </div>
                 <Shortcut ordered={['/']} onMatch={focus} />
             </div>
         )

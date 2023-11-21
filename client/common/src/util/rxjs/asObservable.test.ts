@@ -1,7 +1,7 @@
 import assert from 'assert'
 
-import { describe, it } from '@jest/globals'
 import { of } from 'rxjs'
+import { describe, it } from 'vitest'
 
 import { asObservable } from './asObservable'
 

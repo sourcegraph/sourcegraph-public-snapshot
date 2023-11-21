@@ -241,9 +241,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (code in
 	var resp *http.Response
 	sleepTime := 10 * time.Second
 	for {
-		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth, func(r *http.Request) (*http.Response, error) {
-			return c.httpClient.Do(r)
-		})
+		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
 		if resp != nil {
 			code = resp.StatusCode
 		}

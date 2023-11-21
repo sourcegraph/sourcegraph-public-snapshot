@@ -177,7 +177,6 @@ export function replaceValue(view: EditorView, newValue: string): ChangeSpec | u
  * )
  * const editor = useCodeMirror(..., ..., extension)
  *
- *
  * @param editorRef - Ref object to the editor instance
  * @param extension - the dynamic extension(s) to add to the editor
  * @returns a compartmentalized extension

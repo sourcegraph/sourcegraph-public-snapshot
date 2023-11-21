@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`GlobalNavbar default 1`] = `
+exports[`GlobalNavbar > default 1`] = `
 <DocumentFragment>
   <nav
     aria-label="Main"
@@ -21,7 +21,7 @@ exports[`GlobalNavbar default 1`] = `
       class="divider"
     />
     <div
-      class="menu"
+      class="menu list"
     >
       <ul
         class="list"

@@ -15,7 +15,7 @@ var sentryDSN = env.Get("PINGS_SENTRY_DSN", "", "Sentry DSN")
 
 func main() {
 	sanitycheck.Pass()
-	svcmain.SingleServiceMainWithoutConf(shared.Service, svcmain.Config{}, svcmain.OutOfBandConfiguration{
+	svcmain.SingleServiceMainWithoutConf(shared.Service, svcmain.OutOfBandConfiguration{
 		Logging: func() conf.LogSinksSource {
 			if sentryDSN == "" {
 				return nil

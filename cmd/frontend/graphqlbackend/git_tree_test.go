@@ -122,6 +122,7 @@ func TestGitTree_Entries(t *testing.T) {
 		case "folder/", "folder":
 			if recursive {
 				return []fs.FileInfo{
+					CreateFileInfo("folder/", true),
 					CreateFileInfo("folder/nestedfile", false),
 					CreateFileInfo("folder/subfolder/", true),
 					CreateFileInfo("folder/subfolder/deeplynestedfile", false),
@@ -138,6 +139,7 @@ func TestGitTree_Entries(t *testing.T) {
 		case ".aspect/", ".aspect":
 			if recursive {
 				return []fs.FileInfo{
+					CreateFileInfo(".aspect/", true),
 					CreateFileInfo(".aspect/rules/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/file", false),
@@ -153,6 +155,8 @@ func TestGitTree_Entries(t *testing.T) {
 		case ".aspect/rules/", ".aspect/rules":
 			if recursive {
 				return []fs.FileInfo{
+					CreateFileInfo(".aspect/", true),
+					CreateFileInfo(".aspect/rules/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
 					CreateFileInfo(".aspect/rules/external_repository_action_cache/file", false),
 				}, nil
@@ -161,24 +165,61 @@ func TestGitTree_Entries(t *testing.T) {
 				CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
 			}, nil
 		case ".aspect/rules/external_repository_action_cache/", ".aspect/rules/external_repository_action_cache":
+			if recursive {
+				return []fs.FileInfo{
+					CreateFileInfo(".aspect/", true),
+					CreateFileInfo(".aspect/rules/", true),
+					CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
+					CreateFileInfo(".aspect/rules/external_repository_action_cache/file", false),
+				}, nil
+			}
 			return []fs.FileInfo{
 				CreateFileInfo(".aspect/rules/external_repository_action_cache/file", false),
 			}, nil
 		case ".aspect/cli/", ".aspect/cli":
+			if recursive {
+				return []fs.FileInfo{
+					CreateFileInfo(".aspect/", true),
+					CreateFileInfo(".aspect/cli/", true),
+					CreateFileInfo(".aspect/cli/file1", false),
+					CreateFileInfo(".aspect/cli/file2", false),
+				}, nil
+			}
 			return []fs.FileInfo{
 				CreateFileInfo(".aspect/cli/file1", false),
 				CreateFileInfo(".aspect/cli/file2", false),
 			}, nil
 		case "folder/subfolder/", "folder/subfolder":
+			if recursive {
+				return []fs.FileInfo{
+					CreateFileInfo("folder/", true),
+					CreateFileInfo("folder/subfolder/", true),
+					CreateFileInfo("folder/subfolder/deeplynestedfile", false),
+				}, nil
+			}
 			return []fs.FileInfo{
 				CreateFileInfo("folder/subfolder/deeplynestedfile", false),
 			}, nil
 		case "folder/subfolder2/", "folder/subfolder2":
+			if recursive {
+				return []fs.FileInfo{
+					CreateFileInfo("folder/", true),
+					CreateFileInfo("folder/subfolder2/", true),
+					CreateFileInfo("folder/subfolder2/file", false),
+					CreateFileInfo("folder/subfolder2/file2", false),
+				}, nil
+			}
 			return []fs.FileInfo{
 				CreateFileInfo("folder/subfolder2/file", false),
 				CreateFileInfo("folder/subfolder2/file2", false),
 			}, nil
 		case "folder2/", "folder2":
+			if recursive {
+				return []fs.FileInfo{
+					CreateFileInfo("folder2/", true),
+					CreateFileInfo("folder2/file", false),
+				}, nil
+			}
 			return []fs.FileInfo{
 				CreateFileInfo("folder2/file", false),
 			}, nil
@@ -326,43 +367,6 @@ func TestGitTree_Entries(t *testing.T) {
 			CreateFileInfo("folder/subfolder/", true),
 			CreateFileInfo("folder/subfolder2/", true),
 			CreateFileInfo("folder2/", true),
-		}, entries)
-	})
-
-	t.Run("RecursiveSingleChild", func(t *testing.T) {
-		opts := GitTreeEntryResolverOpts{
-			Commit: &GitCommitResolver{
-				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
-			},
-			Stat: CreateFileInfo(".aspect/", true),
-		}
-		gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
-
-		entries, err := gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{RecursiveSingleChild: true})
-		require.NoError(t, err)
-		assertEntries(t, []fs.FileInfo{
-			CreateFileInfo(".aspect/cli/", true),
-			CreateFileInfo(".aspect/rules/", true),
-			CreateFileInfo(".aspect/rules/external_repository_action_cache/", true),
-			CreateFileInfo(".aspect/rules/external_repository_action_cache/file", false),
-		}, entries)
-
-		opts = GitTreeEntryResolverOpts{
-			Commit: &GitCommitResolver{
-				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
-			},
-			Stat: CreateFileInfo(wantPath, true),
-		}
-		gitTree = NewGitTreeEntryResolver(db, gitserverClient, opts)
-
-		entries, err = gitTree.Entries(context.Background(), &gitTreeEntryConnectionArgs{RecursiveSingleChild: true})
-		require.NoError(t, err)
-		assertEntries(t, []fs.FileInfo{
-			CreateFileInfo(".aspect/", true),
-			CreateFileInfo("folder/", true),
-			CreateFileInfo("folder2/", true),
-			CreateFileInfo("file", false),
-			CreateFileInfo("folder2/file", false),
 		}, entries)
 	})
 

@@ -11,9 +11,12 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"github.com/throttled/throttled/v2"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -23,6 +26,40 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const costEstimationMetricActorTypeLabel = "actor_type"
+
+var (
+	costHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_graphql_cost_distribution",
+		Help:    "The maximum cost seen from a GraphQL query",
+		Buckets: prometheus.ExponentialBucketsRange(1, 500_000, 8),
+	}, []string{costEstimationMetricActorTypeLabel})
+)
+
+func actorTypeLabel(isInternal, anonymous bool, requestSource trace.SourceType) string {
+	if isInternal {
+		return "internal"
+	}
+	if anonymous {
+		return "anonymous"
+	}
+	if requestSource != "" {
+		return string(requestSource)
+	}
+	return "unknown"
+}
+
+func writeViolationError(w http.ResponseWriter, message string) error {
+	w.WriteHeader(http.StatusBadRequest) // 400 because retrying won't help
+	return writeJSON(w, graphql.Response{
+		Errors: []*gqlerrors.QueryError{
+			{
+				Message: message,
+			},
+		},
+	})
+}
 
 func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.LimitWatcher, isInternal bool) func(w http.ResponseWriter, r *http.Request) (err error) {
 	return func(w http.ResponseWriter, r *http.Request) (err error) {
@@ -87,27 +124,45 @@ func serveGraphQL(logger log.Logger, schema *graphql.Schema, rlw graphqlbackend.
 			if costErr != nil {
 				logger.Debug("failed to estimate GraphQL cost",
 					log.Error(costErr))
-			}
-			traceData.costError = costErr
-			traceData.cost = cost
+				traceData.costError = costErr
+			} else if cost != nil {
+				traceData.cost = cost
 
-			if rl, enabled := rlw.Get(); enabled && cost != nil {
-				limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
-					IsIP:          isIP,
-					Anonymous:     anonymous,
-					RequestName:   requestName,
-					RequestSource: requestSource,
-				})
-				if err != nil {
-					logger.Error("checking GraphQL rate limit", log.Error(err))
-					traceData.limitError = err
-				} else {
-					traceData.limited = limited
-					traceData.limitResult = result
-					if limited {
-						w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
-						w.WriteHeader(http.StatusTooManyRequests)
-						return nil
+				// Track the cost distribution of requests in a histogram.
+				costHistogram.WithLabelValues(actorTypeLabel(isInternal, anonymous, requestSource)).Observe(float64(cost.FieldCount))
+
+				rl := conf.RateLimits()
+
+				if !isInternal && (cost.AliasCount > rl.GraphQLMaxAliases) {
+					return writeViolationError(w, "query exceeds maximum query cost")
+				}
+
+				if !isInternal && (cost.FieldCount > rl.GraphQLMaxFieldCount) {
+					if envvar.SourcegraphDotComMode() { // temporarily logging queries that exceed field count limit on Sourcegraph.com
+						logger.Warn("GQL cost limit exceeded", log.String("query", params.Query))
+					}
+
+					return writeViolationError(w, "query exceeds maximum query cost")
+				}
+
+				if rl, enabled := rlw.Get(); enabled {
+					limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
+						IsIP:          isIP,
+						Anonymous:     anonymous,
+						RequestName:   requestName,
+						RequestSource: requestSource,
+					})
+					if err != nil {
+						logger.Error("checking GraphQL rate limit", log.Error(err))
+						traceData.limitError = err
+					} else {
+						traceData.limited = limited
+						traceData.limitResult = result
+						if limited {
+							w.Header().Set("Retry-After", strconv.Itoa(int(result.RetryAfter.Seconds())))
+							w.WriteHeader(http.StatusTooManyRequests)
+							return nil
+						}
 					}
 				}
 			}

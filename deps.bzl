@@ -561,25 +561,33 @@ def go_dependencies():
         version = "v65.0.0+incompatible",
     )
     go_repository(
+        name = "com_github_azure_azure_sdk_for_go_sdk_ai_azopenai",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai",
+        sum = "h1:x7fb22Q43h2DRFCvp9rAua8PoV3gwtl1bK5+pihnihA=",
+        version = "v0.3.0",
+    )
+
+    go_repository(
         name = "com_github_azure_azure_sdk_for_go_sdk_azcore",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/Azure/azure-sdk-for-go/sdk/azcore",
-        sum = "h1:Ut0ZGdOwJDw0npYEg+TLlPls3Pq6JiZaP2/aGKir7Zw=",
-        version = "v1.1.0",
+        sum = "h1:9kDVnTz3vbfweTqAUmk/a/pH5pWFCHtvRpHYC0G/dcA=",
+        version = "v1.8.0",
     )
     go_repository(
         name = "com_github_azure_azure_sdk_for_go_sdk_azidentity",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/Azure/azure-sdk-for-go/sdk/azidentity",
-        sum = "h1:QkAcEIAKbNL4KoFr4SathZPhDhF4mVwpBMFlYjyAqy8=",
-        version = "v1.1.0",
+        sum = "h1:BMAjVKJM0U/CYF27gA0ZMmXGkOcvfFtD0oHVZ1TIPRI=",
+        version = "v1.4.0",
     )
     go_repository(
         name = "com_github_azure_azure_sdk_for_go_sdk_internal",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/Azure/azure-sdk-for-go/sdk/internal",
-        sum = "h1:jp0dGvZ7ZK0mgqnTSClMxa5xuRL7NZgHameVYF6BurY=",
-        version = "v1.0.0",
+        sum = "h1:sXr+ck84g/ZlZUOZiNELInmMgOsuGwdjjVkEIde0OtY=",
+        version = "v1.3.0",
     )
     go_repository(
         name = "com_github_azure_azure_sdk_for_go_sdk_storage_azblob",
@@ -672,8 +680,8 @@ def go_dependencies():
         name = "com_github_azuread_microsoft_authentication_library_for_go",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/AzureAD/microsoft-authentication-library-for-go",
-        sum = "h1:XMEdVDFxgulDDl0lQmAZS6j8gRQ/0pJ+ZpXH2FHVtDc=",
-        version = "v0.6.0",
+        sum = "h1:WpB/QDNLpMw72xHJc34BNNykqSOeEJDAWkhf0u12/Jk=",
+        version = "v1.1.1",
     )
 
     go_repository(
@@ -2718,6 +2726,14 @@ def go_dependencies():
         version = "v4.5.0",
     )
     go_repository(
+        name = "com_github_golang_jwt_jwt_v5",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/golang-jwt/jwt/v5",
+        sum = "h1:1n1XNM9hk7O9mnQoNBGolZvzebBQ7p93ULHRc28XJUE=",
+        version = "v5.0.0",
+    )
+
+    go_repository(
         name = "com_github_golang_lint",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/golang/lint",
@@ -3074,13 +3090,6 @@ def go_dependencies():
         importpath = "github.com/gorilla/context",
         sum = "h1:AWwleXJkX/nhcU9bZSnZoi3h/qGYqQAGhq6zZe/aQW8=",
         version = "v1.1.1",
-    )
-    go_repository(
-        name = "com_github_gorilla_csrf",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/gorilla/csrf",
-        sum = "h1:Ir3o2c1/Uzj6FBxMlAUB6SivgVMy1ONXwYgXn+/aHPE=",
-        version = "v1.7.1",
     )
 
     go_repository(
@@ -4746,8 +4755,8 @@ def go_dependencies():
         name = "com_github_montanaflynn_stats",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/montanaflynn/stats",
-        sum = "h1:iruDEfMl2E6fbMZ9s0scYfZQ84/6SPL6zC8ACM2oIL0=",
-        version = "v0.0.0-20171201202039-1bf9dbcd8cbe",
+        sum = "h1:r3y12KyNxj/Sb/iOE46ws+3mS1+MZca1wlHQFPsY/JU=",
+        version = "v0.7.0",
     )
 
     go_repository(
@@ -5919,6 +5928,13 @@ def go_dependencies():
         sum = "h1:oc+BUJi+WYypX8i7vnxz4D4z/99b/H0u5Oc+b1rA5fI=",
         version = "v0.0.0-20230822024612-edb48c530722",
     )
+    go_repository(
+        name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_google_beta",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/managed-services-platform-cdktf/gen/google_beta",
+        sum = "h1:3rJiF4VGyStWXrqJtVlXBJnpe82Q1k9k74dElVPolR8=",
+        version = "v0.0.0-20231106184355-f739cf8e1d49",
+    )
 
     go_repository(
         name = "com_github_sourcegraph_managed_services_platform_cdktf_gen_random",
@@ -5963,8 +5979,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:LaCvp0g8ICT9+O5lHxT52bE4qsMymZR+PQDW8ANJXzg=",
-        version = "v0.0.0-20231031173451-503302fe8ad1",
+        sum = "h1:Px4kf1DfoJIlQR1oog0+GJoDEm7lHw9qKDdT90xaaH0=",
+        version = "v0.0.0-20231115091004-137eb8f22610",
     )
 
     go_repository(

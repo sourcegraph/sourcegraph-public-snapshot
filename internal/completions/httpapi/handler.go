@@ -30,7 +30,7 @@ func newCompletionsHandler(
 	feature types.CompletionsFeature,
 	rl RateLimiter,
 	traceFamily string,
-	getModel func(types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) (string, error),
+	getModel func(context.Context, types.CodyCompletionRequestParameters, *conftypes.CompletionsConfig) (string, error),
 ) http.Handler {
 	responseHandler := newSwitchingResponseHandler(logger, feature)
 
@@ -61,7 +61,7 @@ func newCompletionsHandler(
 
 		// TODO: Model is not configurable but technically allowed in the request body right now.
 		var err error
-		requestParams.Model, err = getModel(requestParams, completionsConfig)
+		requestParams.Model, err = getModel(ctx, requestParams, completionsConfig)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

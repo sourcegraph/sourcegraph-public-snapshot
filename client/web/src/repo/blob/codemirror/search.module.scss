@@ -1,0 +1,23 @@
+.bgroup-left {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.bgroup-right {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: none;
+}
+
+.close-button {
+    border-radius: 100%;
+    padding: 0.2rem;
+}
+
+.close-button:hover {
+    background-color: var(--subtle-bg);
+}
+
+.x {
+    color: var(--text-muted);
+}

@@ -7,7 +7,7 @@ This document describes the TypeScript projects in this repository and how they 
 We use TypeScript for two products:
 
 - [`web`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web): The main Sourcegraph web application
-- 2 different entrypoints: [formerly-OSS `main.tsx`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/main.tsx) and [Enterprise `main.tsx`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/enterprise/main.tsx)
+  - Entrypoint: [`main.tsx`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/enterprise/main.tsx)
 - [`browser`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/brower): The Sourcegraph browser extension
 
 These both use shared TypeScript code in [`../shared`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/shared). Each product has its own separate esbuild configuration.
