@@ -1,3 +1,5 @@
+import { at } from 'lodash'
+
 import { type GitCommitFields, RepositoryType } from '../graphql-operations'
 
 import { CodeHostType, FileExtension } from './constants'
@@ -46,9 +48,9 @@ export const stringToCodeHostType = (codeHostType: string): CodeHostType => {
     }
 }
 
-const contains = (arr: string[], target: string): boolean => {
-    for (let i = 0; i < arr.length; i++) {
-        if (arr[i] === target) {
+export const contains = (arr: string[], target: string): boolean => {
+    for (const i of arr) {
+        if (i === target) {
             return true
         }
     }
@@ -56,7 +58,7 @@ const contains = (arr: string[], target: string): boolean => {
 }
 
 export const getExtension = (file: string): { extension: FileExtension; isTest: boolean } => {
-    let e = { extension: '' as FileExtension, isTest: false }
+    const e = { extension: '' as FileExtension, isTest: false }
     const f = file.split('.')
     if (contains(f, 'test')) {
         e.isTest = true
@@ -66,7 +68,8 @@ export const getExtension = (file: string): { extension: FileExtension; isTest: 
     if (contains(s, 'mod') || contains(s, 'sum')) {
         e.extension = 'go' as FileExtension
     } else {
-        e.extension = s[s.length - 1] as FileExtension
+        // This is what the linter wants *shrugs*
+        e.extension = at(s, -1) as unknown as FileExtension
     }
     return e
 }

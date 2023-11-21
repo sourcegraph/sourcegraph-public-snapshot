@@ -1,3 +1,5 @@
+import { ComponentType } from 'react'
+
 import { CiSettings, CiTextAlignLeft } from 'react-icons/ci'
 import { FaJava, FaSass } from 'react-icons/fa'
 import { GoDatabase, GoTerminal } from 'react-icons/go'
@@ -39,8 +41,6 @@ import {
     SiZig,
 } from 'react-icons/si'
 import { VscJson } from 'react-icons/vsc'
-
-import { CustomIcon } from '@sourcegraph/wildcard/src/components/Icon'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
 
@@ -114,6 +114,7 @@ export enum FileExtension {
     ZIG = 'zig',
 }
 
+type CustomIcon = ComponentType<{ className?: string }>
 /*
  * We use the react-icons package instead of material design icons for two reasons:
  * 1) Many of mdi's programming language icons will be deprecated soon.

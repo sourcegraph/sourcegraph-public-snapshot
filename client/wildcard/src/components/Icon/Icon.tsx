@@ -10,7 +10,7 @@ import type { ICON_SIZES } from './constants'
 import styles from './Icon.module.scss'
 
 type PathIcon = string
-export type CustomIcon = ComponentType<{ className?: string }>
+type CustomIcon = ComponentType<{ className?: string }>
 export type IconType = PathIcon | CustomIcon
 
 interface BaseIconProps extends SVGProps<SVGSVGElement> {
