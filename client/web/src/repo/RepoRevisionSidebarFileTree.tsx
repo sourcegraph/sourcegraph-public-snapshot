@@ -392,6 +392,7 @@ function renderNode({
     const url = entry?.url
     const { icon, iconClass } = getIcon(name, isBranch)
     const extension = getExtension(name)
+    console.log(icon.toString())
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -474,11 +475,13 @@ function renderNode({
             }}
         >
             {/* Icon should be dynamically populated based on what kind of file type */}
-            <Icon
-                as={icon}
-                className={classNames('mr-1', styles.icon, iconClass)}
-                aria-hidden={true}
-            />
+            {icon &&
+                <Icon
+                    as={icon}
+                    className={classNames('mr-1', styles.icon, iconClass)}
+                    aria-hidden={true}
+                />
+            }
             <span className={extension === "test" ? styles.gray : styles.defaultIcon}>
                 {name}
             </span>
