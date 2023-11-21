@@ -646,19 +646,17 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 
 func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSource, resp *protocol.CreateCommitFromPatchResponse, remoteRepo *types.Repo, opts protocol.CreateCommitFromPatchRequest) (err error) {
 	rejectUnverifiedCommit := conf.RejectUnverifiedCommit()
-	fmt.Println("gege ===>>", rejectUnverifiedCommit)
 
 	// If we're pushing to a GitHub code host, we should check if a GitHub App is
 	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
-		fmt.Println("changeset is GitHub Source")
 		// Attempt to get a ChangesetSource authenticated with a GitHub App.
 		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp, e.remote)
 		if err != nil {
 			switch err {
 			case sources.ErrNoGitHubAppConfigured:
 				if rejectUnverifiedCommit {
-					return errors.Wrap(err, "no GitHub App configured to sign commit, rejecting unverified commit")
+					return errors.New("no GitHub App configured to sign commit, rejecting unverified commit")
 				}
 				// If we didn't find any GitHub Apps configured for this code host, it's a
 				// noop; commit signing is not set up for this code host.
@@ -701,7 +699,6 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 			}
 		}
 	}
-	fmt.Println("wraps ---->>")
 	return nil
 }
 
