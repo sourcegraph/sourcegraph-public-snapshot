@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -49,7 +48,7 @@ func NewRepositoryPurgeWorker(ctx context.Context, logger log.Logger, db databas
 
 			timeToNextPurge = time.Duration(purgeConfig.IntervalMinutes) * time.Minute
 			purgeLogger.Debug("running repository purge", log.Duration("timeToNextPurge", timeToNextPurge))
-			if err := purge(ctx, purgeLogger, db, database.IteratePurgableReposOptions{
+			if err := purge(ctx, purgeLogger, db, database.ListPurgableReposOptions{
 				Limit:         5000,
 				Limiter:       limiter,
 				DeletedBefore: deletedBefore,
@@ -79,7 +78,7 @@ func PurgeOldestRepos(logger log.Logger, db database.DB, limit int, perSecond fl
 	go func() {
 		limiter := ratelimit.NewInstrumentedLimiter("PurgeOldestRepos", rate.NewLimiter(rate.Limit(perSecond), 1))
 		// Use a background routine so that we don't time out based on the http context.
-		if err := purge(context.Background(), logger, db, database.IteratePurgableReposOptions{
+		if err := purge(context.Background(), logger, db, database.ListPurgableReposOptions{
 			Limit:   limit,
 			Limiter: limiter,
 		}); err != nil {
@@ -90,7 +89,7 @@ func PurgeOldestRepos(logger log.Logger, db database.DB, limit int, perSecond fl
 }
 
 // purge purges repos, returning the number of repos that were successfully purged
-func purge(ctx context.Context, logger log.Logger, db database.DB, options database.IteratePurgableReposOptions) error {
+func purge(ctx context.Context, logger log.Logger, db database.DB, options database.ListPurgableReposOptions) error {
 	start := time.Now()
 	gitserverClient := gitserver.NewClient("repos.purgeworker")
 	var (
@@ -99,7 +98,12 @@ func purge(ctx context.Context, logger log.Logger, db database.DB, options datab
 		failed  int
 	)
 
-	err := db.GitserverRepos().IteratePurgeableRepos(ctx, options, func(repo api.RepoName) error {
+	repos, err := db.GitserverRepos().ListPurgeableRepos(ctx, options)
+	if err != nil {
+		return errors.Wrap(err, "listing purgeable repos")
+	}
+
+	for _, repo := range repos {
 		if options.Limiter != nil {
 			if err := options.Limiter.Wait(ctx); err != nil {
 				// A rate limit failure is fatal
@@ -112,19 +116,19 @@ func purge(ctx context.Context, logger log.Logger, db database.DB, options datab
 			logger.Warn("failed to remove repository", log.String("repo", string(repo)), log.Error(err))
 			purgeFailed.Inc()
 			failed++
-			return nil
+			continue
 		}
 		success++
 		purgeSuccess.Inc()
-		return nil
-	})
+	}
+
 	// If we did something we log with a higher level.
 	statusLogger := logger.Debug
 	if failed > 0 {
 		statusLogger = logger.Warn
 	}
 	statusLogger("repository purge finished", log.Int("total", total), log.Int("removed", success), log.Int("failed", failed), log.Duration("duration", time.Since(start)))
-	return errors.Wrap(err, "iterating purgeable repos")
+	return nil
 }
 
 // randSleepDuration will sleep for an expected d duration with a jitter in [-jitter /

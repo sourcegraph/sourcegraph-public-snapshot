@@ -108,7 +108,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	})
 }
 
-func TestIteratePurgeableRepos(t *testing.T) {
+func TestListPurgeableRepos(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
@@ -145,12 +145,12 @@ func TestIteratePurgeableRepos(t *testing.T) {
 
 	for _, tt := range []struct {
 		name      string
-		options   IteratePurgableReposOptions
+		options   ListPurgableReposOptions
 		wantRepos []api.RepoName
 	}{
 		{
 			name: "zero deletedBefore",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Time{},
 				Limit:         0,
 			},
@@ -158,7 +158,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 		{
 			name: "deletedBefore now",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Now(),
 				Limit:         0,
 			},
@@ -167,7 +167,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 		{
 			name: "deletedBefore 5 minutes ago",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Now().Add(-5 * time.Minute),
 				Limit:         0,
 			},
@@ -175,7 +175,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 		{
 			name: "test limit",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Time{},
 				Limit:         1,
 			},
@@ -183,13 +183,8 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			var have []api.RepoName
-			if err := db.GitserverRepos().IteratePurgeableRepos(ctx, tt.options, func(repo api.RepoName) error {
-				have = append(have, repo)
-				return nil
-			}); err != nil {
-				t.Fatal(err)
-			}
+			have, err := db.GitserverRepos().ListPurgeableRepos(ctx, tt.options)
+			require.NoError(t, err)
 
 			sort.Slice(have, func(i, j int) bool { return have[i] < have[j] })
 
