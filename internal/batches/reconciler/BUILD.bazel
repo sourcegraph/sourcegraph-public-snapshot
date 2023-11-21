@@ -79,8 +79,6 @@ go_test(
         "//lib/batches/git",
         "//lib/errors",
         "//lib/pointers",
-        "//schema",
-        "@com_github_aws_smithy_go//ptr",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
