@@ -74,7 +74,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 			}},
 
 			// 🚨SECURITY🚨 SOC2/CI-79
-			// Production disks for managed instances are configured with daily snapshots and retention set at ninety days,
+			// Production disks for MSP are configured with daily snapshots and retention set at ninety days,
 			// so we do the same.
 			BackupConfiguration: &sqldatabaseinstance.SqlDatabaseInstanceSettingsBackupConfiguration{
 				Enabled:                     pointers.Ptr(true),
@@ -155,7 +155,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 	databaseResources = append(databaseResources,
 		workloadUser)
 
-	// Share CA certificate for connecting to Redis over TLS as a GSM secret
+	// Share CA certificate for connecting to Cloud SQL over TLS as a GSM secret
 	instanceCACert := gsmsecret.New(scope, id.Group("ca-cert"), gsmsecret.Config{
 		ProjectID: config.ProjectID,
 		ID:        strings.ToUpper(id.DisplayName()) + "_CA_CERT",
