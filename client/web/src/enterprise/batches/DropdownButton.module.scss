@@ -14,15 +14,15 @@
     padding: 0.5rem 1rem;
     cursor: pointer;
 
-    &[data-reach-menu-item][aria-disabled="false"]:active {
+    &[data-reach-menu-item][aria-disabled='false']:active {
         --text-muted: var(--white);
     }
 
-    &[data-reach-menu-item][aria-disabled="true"]:hover {
+    &[data-reach-menu-item][aria-disabled='true']:hover {
         background-color: transparent;
     }
 
-    &[data-reach-menu-item][aria-disabled="true"] {
+    &[data-reach-menu-item][aria-disabled='true'] {
         cursor: not-allowed;
         opacity: 0.7;
     }
