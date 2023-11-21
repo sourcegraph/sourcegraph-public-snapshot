@@ -169,7 +169,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	// Services Platform environment.
 	cloudRunBuilder.AddEnv("MSP", "true")
 
-	// For SSL_CERT_DIR
+	// For SSL_CERT_DIR, configure right before final build
 	sslCertDirs := []string{"/etc/ssl/certs"}
 
 	// redisInstance is only created and non-nil if Redis is configured for the
@@ -232,19 +232,9 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		// can correctly use the database instance
 		cloudRunBuilder.AddDependency(sqlInstance.WorkloadSuperuserGrant)
 
-		// Mount the custom cert and add it to SSL_CERT_DIR
-		caCertVolumeName := "cloudsql-ca-cert"
-		cloudRunBuilder.AddSecretVolume(
-			caCertVolumeName,
-			"cloudsql-ca-cert.pem",
-			builder.SecretRef{
-				Name:    sqlInstance.Certificate.ID,
-				Version: sqlInstance.Certificate.Version,
-			},
-			292, // 0444 read-only
-		)
-		cloudRunBuilder.AddVolumeMount(caCertVolumeName, "/etc/ssl/cloudsql-certs")
-		sslCertDirs = append(sslCertDirs, "/etc/ssl/cloudsql-certs")
+		// NOTE: https://pkg.go.dev/cloud.google.com/go/cloudsqlconn#section-readme
+		// magically handles certs for us, so we don't need to mount certs in
+		// Cloud Run.
 	}
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
