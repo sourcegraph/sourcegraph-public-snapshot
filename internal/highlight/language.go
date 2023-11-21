@@ -135,7 +135,7 @@ var baseEngineConfig = syntaxEngineConfig{
 		// Languages enabled for advanced syntax features
 		"perl":   EngineScipSyntax,
 		"matlab": EngineScipSyntax,
-		"java": EngineScipSyntax,
+		"java":   EngineScipSyntax,
 	},
 }
 
