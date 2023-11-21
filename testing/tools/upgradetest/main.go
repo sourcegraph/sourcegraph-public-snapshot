@@ -25,6 +25,7 @@ func main() {
 
 	ctx := context.Background()
 
+	// Get init versions to use for initializing upgrade environments for tests
 	latestMinorVersion, latestVersion, randomVersion, err := getVersions(ctx)
 	if err != nil {
 		fmt.Println("🚨 Error: could not get latest major or minor releases: ", err)
@@ -162,11 +163,19 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 	}
 
 	// Handle for old postgres image which may be an init version in multiversion test
+	// In v3.38+ we use image postgres-12-alpine,
+	// in v3.37-v3.30 we use postgres-12.6-alpine,
+	// in v3.29-v3.27 we use postgres-12.6
+	// in v3.26 and earliar we use postgres:11.4
 	var postgresImage string
 	if initVersion.GreaterThan(semver.MustParse("v3.37")) {
 		postgresImage = "postgres-12-alpine"
+	} else if initVersion.LessThan(semver.MustParse("v3.38")) && initVersion.GreaterThan(semver.MustParse("v3.29")) {
+		postgresImage = "postgres-12.6-alpine"
+	} else if initVersion.LessThan(semver.MustParse("v3.30")) && initVersion.GreaterThan(semver.MustParse("v3.26")) {
+		postgresImage = "postgres-12.6"
 	} else {
-		postgresImage = "sourcegraph/postgres-12.6"
+		postgresImage = "postgres-11.4"
 	}
 
 	dbs = []testDB{
@@ -187,23 +196,30 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 	// Here we create the three databases using docker run.
 	wgInit := pool.New().WithErrors()
 	for _, db := range dbs {
-		fmt.Printf("🐋 creating %s\n", db.HashName)
-		wgInit.Go(func() error {
-			db := db
-			cmd := run.Cmd(ctx, "docker", "run", "--rm",
-				"--detach",
-				"--platform", "linux/amd64",
-				"--name", db.HashName,
-				"--network", networkName,
-				"-p", fmt.Sprintf("%s:5432", db.ContainerHostPort),
-				fmt.Sprintf("sourcegraph/%s:%s", db.Image, initVersion),
-			)
-			return cmd.Run().Wait()
-		})
+		// Codeinsights-db is introduced in v3.25 and moves from timescaleDB to in v3.39.0, so we skip it for earlier versions
+		if initVersion.LessThan(semver.MustParse("v3.25")) && db.Name == "codeinsight-db" {
+			fmt.Println("🐋 skipped codeinsights-db creation for version ", initVersion)
+			continue
+		} else {
+			fmt.Printf("🐋 creating %s, with db image %s:%s\n", db.HashName, db.Image, initVersion)
+			wgInit.Go(func() error {
+				db := db
+				cmd := run.Cmd(ctx, "docker", "run", "--rm",
+					"--detach",
+					"--platform", "linux/amd64",
+					"--name", db.HashName,
+					"--network", networkName,
+					"-p", fmt.Sprintf("%s:5432", db.ContainerHostPort),
+					fmt.Sprintf("sourcegraph/%s:%s", db.Image, initVersion),
+				)
+				return cmd.Run().Wait()
+			})
+		}
 	}
 	if err := wgInit.Wait(); err != nil {
 		fmt.Printf("🚨 failed to create test databases: %s", err)
 	}
+	run.Cmd(ctx, "docker", "ps").Run().Stream(os.Stdout)
 
 	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*20)
 	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
@@ -213,6 +229,7 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 	for _, db := range dbs {
 		db := db // this closure locks the index for the inner for loop
 		wgDbPing.Go(func(ctx context.Context) error {
+			// TODO only ping codeinsights after timescaleDB is deprecated in v3.39
 			dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", db.ContainerHostPort))
 			if err != nil {
 				fmt.Printf("🚨 failed to connect to %s: %s\n", db.Name, err)
@@ -243,12 +260,15 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 		fmt.Println("🚨 containerized database startup error: ", err)
 	}
 
-	// Initialize the databases by running migrator with the `up` command.
-	fmt.Println("-- 🏗️  initializing database schemas with migrator")
-	if err := run.Cmd(ctx,
-		dockerMigratorBaseString("up", fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, hash, dbs)...).
-		Run().Stream(os.Stdout); err != nil {
-		fmt.Println("🚨 failed to initialize database: ", err)
+	// Migrator isn;t introduced
+	if initVersion.GreaterThan(semver.MustParse("v3.37")) {
+		// Initialize the databases by running migrator with the `up` command.
+		fmt.Println("-- 🏗️  initializing database schemas with migrator")
+		if err := run.Cmd(ctx,
+			dockerMigratorBaseString("up", fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, hash, dbs)...).
+			Run().Stream(os.Stdout); err != nil {
+			fmt.Println("🚨 failed to initialize database: ", err)
+		}
 	}
 
 	// Verify that the databases are initialized.
@@ -337,6 +357,7 @@ func validateDBs(ctx context.Context, version, migratorImage, networkName string
 	fmt.Println("✅ versions.version set: ", testVersion)
 
 	// Check for any failed migrations in the migration logs tables
+	// TODO migration_logs table is introduced in v3.36.0
 	for _, db := range dbs {
 		fmt.Printf("🔎 checking %s migration_logs\n", db.HashName)
 		var numFailedMigrations int
@@ -499,6 +520,7 @@ func newContainerHash() ([]byte, error) {
 }
 
 // getLatestVersions returns the latest minor semver version, as well as the latest full semver version.
+// It also returns a random version greater than v3.20, this is the range of versions MVU should work over.
 func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *semver.Version, err error) {
 	tags, err := run.Cmd(ctx, "git",
 		"for-each-ref",
