@@ -1,0 +1,12 @@
+.dropdown-menu {
+    min-width: 12rem;
+}
+
+.menu-button {
+    position: relative;
+    padding: 0.25rem;
+}
+
+input[type='radio'] + label {
+    vertical-align: sub;
+}

@@ -48,7 +48,8 @@ import { useCodySidebar, useSidebarSize, CODY_SIDEBAR_SIZES } from '../cody/side
 import type { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { BrainDot } from '../enterprise/codeintel/dashboard/components/BrainDot'
+import { SCIPDebugMenu } from '../enterprise/codeintel/dashboard/components/SCIPDebugMenu'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
@@ -441,11 +442,14 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
     const repo = isError ? undefined : repoOrError
     const resolvedRevision = isError ? undefined : resolvedRevisionOrError
-    const isBrainDotVisible = getIsBrainDotVisible({
-        location,
-        revision,
-        repoName,
-    })
+
+    const showSCIPDebug =
+        useFeatureFlag('scip-debug', false)[0] &&
+        getIsSCIPDebugVisible({
+            location,
+            revision,
+            repoName,
+        })
 
     const repoRevisionContainerContext: RepoRevisionContainerContext = {
         ...props,
@@ -529,17 +533,17 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 )}
             </RepoHeaderContributionPortal>
 
-            {isBrainDotVisible && (
+            {showSCIPDebug && (
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={110}
-                    id="code-intelligence-status"
+                    id="scip-debug"
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>
                         actionType === 'nav' ? (
-                            <BrainDot
-                                key="code-intelligence-status"
+                            <SCIPDebugMenu
+                                key="scip-debug"
                                 repoName={repoName}
                                 path={filePath}
                                 commit={resolvedRevision?.commitID ?? ''}
@@ -612,7 +616,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
     )
 }
 
-function getIsBrainDotVisible({
+function getIsSCIPDebugVisible({
     location,
     repoName,
     revision,
@@ -622,7 +626,7 @@ function getIsBrainDotVisible({
     revision: string | undefined
 }): boolean {
     // Remove leading repository name and possible leading revision, then compare the remaining routes to
-    // see if we should display the braindot badge for this route. We want this to be visible on the repo
+    // see if we should display the SCIP debug badge for this route. We want this to be visible on the repo
     // root page, as well as directory and code views, but not administrative/non-code views.
     //
     // + 1 for the leading `/` in the pathname

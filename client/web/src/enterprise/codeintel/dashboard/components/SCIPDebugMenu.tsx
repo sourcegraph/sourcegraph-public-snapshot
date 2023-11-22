@@ -21,41 +21,37 @@ import {
 
 import { useVisibleIndexes } from '../hooks/useVisibleIndexes'
 
-import styles from './BrainDot.module.scss'
+import styles from './SCIPDebugMenu.module.scss'
 
-export interface BrainDotProps {
+interface Props {
     repoName: string
     commit: string
     path?: string
 }
 
-export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, commit, path }) => (
+export const SCIPDebugMenu: React.FunctionComponent<Props> = ({ repoName, commit, path }) => (
     <Menu>
         <Tooltip content="View code intelligence summary">
-            <MenuButton className={classNames('text-decoration-none', styles.braindot)} aria-label="Code graph">
+            <MenuButton className={classNames('text-decoration-none', styles.menuButton)} aria-label="Code graph">
                 <Icon aria-hidden={true} svgPath={mdiBrain} />
             </MenuButton>
         </Tooltip>
         <MenuList position={Position.bottomEnd} className={styles.dropdownMenu}>
             <MenuHeader>
-                Click to view code intelligence summary
-                <span className="float-right">
-                    <Tooltip content="View code intelligence summary">
-                        <Link to={`/${repoName}/-/code-graph/dashboard`}>
-                            <Icon aria-hidden={true} svgPath={mdiArrowRightThin} />
-                        </Link>
-                    </Tooltip>
-                </span>
+                <Link to={`/${repoName}/-/code-graph/dashboard`}>
+                    View details
+                    <Icon aria-hidden={true} svgPath={mdiArrowRightThin} />
+                </Link>
             </MenuHeader>
 
             <MenuDivider />
 
-            <BrainDotContent repoName={repoName} commit={commit} path={path} />
+            <SCIPDebugContent repoName={repoName} commit={commit} path={path} />
         </MenuList>
     </Menu>
 )
 
-const BrainDotContent: React.FunctionComponent<BrainDotProps> = ({ repoName, commit, path }) => {
+const SCIPDebugContent: React.FunctionComponent<Props> = ({ repoName, commit, path }) => {
     const { data: visibleIndexes, loading: visibleIndexesLoading } = useVisibleIndexes({
         repository: repoName,
         commit,
