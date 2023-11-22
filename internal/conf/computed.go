@@ -1119,13 +1119,10 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-2.0" || model == "claude-v2" {
+	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" {
 		// TODO: Technically, v2 also uses a 100k window, but we should validate
 		// that returning 100k here is the right thing to do.
 		return 12_000
-	}
-	if model == "claude-2.1" {
-		return 200_000
 	}
 	// For now, all other claude models have a 9k token window.
 	return 9_000
