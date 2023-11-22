@@ -2,7 +2,7 @@ import { at } from 'lodash'
 
 import { type GitCommitFields, RepositoryType } from '../graphql-operations'
 
-import { CodeHostType, FileExtension } from './constants'
+import { CodeHostType, FileNameOrExtension } from './constants'
 
 export const isPerforceChangelistMappingEnabled = (): boolean =>
     window.context.experimentalFeatures.perforceChangelistMapping === 'enabled'
@@ -57,19 +57,18 @@ export const contains = (arr: string[], target: string): boolean => {
     return false
 }
 
-export const getExtension = (file: string): { extension: FileExtension; isTest: boolean } => {
-    const e = { extension: '' as FileExtension, isTest: false }
-    const f = file.split('.')
-    if (contains(f, 'test')) {
-        e.isTest = true
-    }
-
-    const s = f.slice(1)
-    if (contains(s, 'mod') || contains(s, 'sum')) {
-        e.extension = 'go' as FileExtension
-    } else {
-        // This is what the linter wants *shrugs*
-        e.extension = at(s, -1) as unknown as FileExtension
+export const getExtension = (
+    file: string
+): { name: FileNameOrExtension; extension: FileNameOrExtension; isTest: boolean } => {
+    const e = {
+        name: file as FileNameOrExtension,
+        extension: file.split('.').pop() as FileNameOrExtension,
+        isTest:
+            file.endsWith('.test.js') ||
+            file.endsWith('.test.jsx') ||
+            file.endsWith('.test.ts') ||
+            file.endsWith('.test.tsx') ||
+            file.endsWith('_test.go'),
     }
     return e
 }

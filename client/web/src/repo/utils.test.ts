@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { FileExtension } from './constants'
+import { FileNameOrExtension } from './constants'
 import { contains, getExtension, getInitialSearchTerm } from './utils'
 
 describe('contains', () => {
@@ -47,38 +47,32 @@ describe('getExtension', () => {
     const tests: {
         name: string
         file: string
-        expectedExtension: FileExtension
+        expectedExtension: FileNameOrExtension
         expectedIsTest: boolean
     }[] = [
         {
             name: 'works with simple file name',
             file: 'my-file.js',
-            expectedExtension: 'js' as FileExtension,
+            expectedExtension: 'js' as FileNameOrExtension,
             expectedIsTest: false,
         },
         {
             name: 'works with complex file name',
             file: 'my-file.module.scss',
-            expectedExtension: 'scss' as FileExtension,
+            expectedExtension: 'scss' as FileNameOrExtension,
             expectedIsTest: false,
         },
         {
             name: 'returns isTest as true if file name contains test',
             file: 'my-file.test.tsx',
-            expectedExtension: 'tsx' as FileExtension,
+            expectedExtension: 'tsx' as FileNameOrExtension,
             expectedIsTest: true,
         },
         {
-            name: "go.mod file returns 'go'",
-            file: 'go.mod',
-            expectedExtension: 'go' as FileExtension,
-            expectedIsTest: false,
-        },
-        {
-            name: "go.sum file returns 'go'",
-            file: 'go.sum',
-            expectedExtension: 'go' as FileExtension,
-            expectedIsTest: false,
+            name: 'returns isTest as true if file name contains test',
+            file: 'foobar_test.go',
+            expectedExtension: 'go' as FileNameOrExtension,
+            expectedIsTest: true,
         },
     ]
 

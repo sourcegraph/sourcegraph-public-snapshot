@@ -392,7 +392,7 @@ function renderNode({
     const submodule = entry?.submodule
     const url = entry?.url
     const fExtension = getExtension(name)
-    const fIcon = FILE_ICONS.get(fExtension.extension)
+    const fIcon = FILE_ICONS.get(fExtension.name) || FILE_ICONS.get(fExtension.extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
