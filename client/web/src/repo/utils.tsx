@@ -49,15 +49,15 @@ export const stringToCodeHostType = (codeHostType: string): CodeHostType => {
 }
 
 export interface FileInfo {
-    extension: FileExtension
+    extension?: FileExtension
     isTest: boolean
 }
 
 export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
-    const fileInfo = { extension: '' as FileExtension, isTest: false }
+    const fileInfo: FileInfo = { isTest: false }
     fileInfo.isTest = isDirectory ? false : containsTest(file)
 
-    if (file.split('.').length === 1) {
+    if (isDirectory) {
         return fileInfo
     }
 
@@ -71,11 +71,12 @@ export const containsTest = (file: string): boolean => {
     const f = file.split('.')
     const matchTest1 = '_test'
     const matchTest2 = 'test_'
+    const matchTest3 = '_spec'
     for (const i of f) {
         if (i === 'test') {
             return true
         }
-        if (includes(i, matchTest1) || includes(i, matchTest2)) {
+        if (includes(i, matchTest1) || includes(i, matchTest2) || includes(i, matchTest3)) {
             return true
         }
     }
