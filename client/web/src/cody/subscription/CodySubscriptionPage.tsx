@@ -30,7 +30,7 @@ import styles from './CodySubscriptionPage.module.scss'
 
 interface CodySubscriptionPageProps {
     isSourcegraphDotCom: boolean
-    authenticatedUser?: AuthenticatedUser
+    authenticatedUser?: AuthenticatedUser | null
 }
 
 export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageProps> = ({

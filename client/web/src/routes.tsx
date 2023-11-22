@@ -197,11 +197,11 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.CodyManagement,
-        element: <LegacyRoute render={props => <CodyManagementPage {...props} context={window.context} />} />,
+        element: <LegacyRoute render={props => <CodyManagementPage {...props} />} />,
     },
     {
         path: PageRoutes.CodySubscription,
-        element: <LegacyRoute render={props => <CodySubscriptionPage {...props} context={window.context} />} />,
+        element: <LegacyRoute render={props => <CodySubscriptionPage {...props} />} />,
     },
     {
         path: PageRoutes.Own,

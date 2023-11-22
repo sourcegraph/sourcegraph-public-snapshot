@@ -1,15 +1,17 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { mdiMicrosoftVisualStudioCode, mdiChevronRight, mdiApple, mdiLinux, mdiMicrosoftWindows } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Badge, H2, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
+import { Badge, H2, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
 
 import { ExternalsAuth } from '../auth/components/ExternalsAuth'
 import { CodyLetsWorkIcon } from '../cody/chat/CodyPageIcon'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
@@ -45,9 +47,24 @@ const logEvent = (eventName: string, type?: string, source?: string): void =>
 const logPageView = (pageTitle: string): void => eventLogger.logPageView(pageTitle)
 
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
+    const navigate = useNavigate()
+    const location = useLocation()
+    const [search] = useState(location.search)
+    const [isCodyProEnabled, ffStatus] = useFeatureFlag('cody-pro', false)
+
+    useEffect(() => {
+        if (authenticatedUser && isCodyProEnabled) {
+            navigate(`/cody/manage${search || ''}`)
+        }
+    }, [authenticatedUser, navigate, search, isCodyProEnabled])
+
     useEffect(() => {
         logPageView(EventName.VIEW_GET_CODY)
     }, [])
+
+    if (authenticatedUser && (ffStatus !== 'loaded' || isCodyProEnabled)) {
+        return null
+    }
 
     return (
         <div className={styles.pageWrapper}>

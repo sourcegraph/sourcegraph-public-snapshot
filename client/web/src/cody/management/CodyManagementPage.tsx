@@ -180,11 +180,57 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             })}
                         >
                             {group.map((editor, index) => (
-                                <>
+                                <div
+                                    key={index}
+                                    className={classNames('d-flex flex-column flex-1 p-3', {
+                                        'border-left': index !== 0,
+                                    })}
+                                >
+                                    <div className="d-flex mb-3">
+                                        <div>
+                                            <img
+                                                alt={editor.name}
+                                                src={`https://storage.googleapis.com/sourcegraph-assets/cody-ide-icons/${editor.icon}.png`}
+                                                width={34}
+                                                className="mr-2"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Text className="text-muted mb-0" size="small">
+                                                {editor.publisher}
+                                            </Text>
+                                            <Text className={classNames('mb-0', styles.ideName)}>{editor.name}</Text>
+                                        </div>
+                                    </div>
+                                    <Link
+                                        to="#"
+                                        className={!editor.instructions ? 'text-muted' : ''}
+                                        onClick={() => {
+                                            setSelectedEditor(editor)
+                                            setSelectedEditorStep(0)
+                                        }}
+                                    >
+                                        <Text size="small" className="mb-2">
+                                            <Icon svgPath={mdiDownload} aria-hidden={true} /> How to install
+                                        </Text>
+                                    </Link>
+                                    <Link
+                                        to="#"
+                                        className={!editor.instructions ? 'text-muted' : ''}
+                                        onClick={() => {
+                                            setSelectedEditor(editor)
+                                            setSelectedEditorStep(1)
+                                        }}
+                                    >
+                                        <Text size="small">
+                                            <Icon svgPath={mdiInformation} aria-hidden={true} /> How to use
+                                        </Text>
+                                    </Link>
                                     {selectedEditor?.name === editor.name &&
                                         selectedEditorStep !== null &&
                                         editor.instructions && (
                                             <Modal
+                                                key={index + '-modal'}
                                                 isOpen={true}
                                                 aria-label={`${editor.name} Info`}
                                                 className={styles.modal}
@@ -199,56 +245,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                                 />
                                             </Modal>
                                         )}
-                                    <div
-                                        key={index}
-                                        className={classNames('d-flex flex-column flex-1 p-3', {
-                                            'border-left': index !== 0,
-                                        })}
-                                    >
-                                        <div className="d-flex mb-3">
-                                            <div>
-                                                <img
-                                                    alt={editor.name}
-                                                    src={`https://storage.googleapis.com/sourcegraph-assets/cody-ide-icons/${editor.icon}.png`}
-                                                    width={34}
-                                                    className="mr-2"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Text className="text-muted mb-0" size="small">
-                                                    {editor.publisher}
-                                                </Text>
-                                                <Text className={classNames('mb-0', styles.ideName)}>
-                                                    {editor.name}
-                                                </Text>
-                                            </div>
-                                        </div>
-                                        <Link
-                                            to="#"
-                                            className={!editor.instructions ? 'text-muted' : ''}
-                                            onClick={() => {
-                                                setSelectedEditor(editor)
-                                                setSelectedEditorStep(0)
-                                            }}
-                                        >
-                                            <Text size="small" className="mb-2">
-                                                <Icon svgPath={mdiDownload} aria-hidden={true} /> How to install
-                                            </Text>
-                                        </Link>
-                                        <Link
-                                            to="#"
-                                            className={!editor.instructions ? 'text-muted' : ''}
-                                            onClick={() => {
-                                                setSelectedEditor(editor)
-                                                setSelectedEditorStep(1)
-                                            }}
-                                        >
-                                            <Text size="small">
-                                                <Icon svgPath={mdiInformation} aria-hidden={true} /> How to use
-                                            </Text>
-                                        </Link>
-                                    </div>
-                                </>
+                                </div>
                             ))}
                             {group.length < 4
                                 ? [...new Array(4 - group.length)].map((_, index) => (
