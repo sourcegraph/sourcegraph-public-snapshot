@@ -28,14 +28,14 @@ func main() {
 	// Get init versions to use for initializing upgrade environments for tests
 	latestMinorVersion, latestVersion, randomVersion, err := getVersions(ctx)
 	if err != nil {
-		fmt.Println("🚨 Error: could not get latest major or minor releases: ", err)
+		fmt.Println("🚨 Error: could not get latest major or minor releases: ", err, randomVersion)
 		os.Exit(1)
 	}
-	fmt.Println(randomVersion)
 
 	// Get the release candidate image tarball
 	args := os.Args
-	fmt.Println(args)
+	fmt.Println(args[1])
+	fmt.Println(args[2])
 
 	if err := standardUpgradeTest(ctx, latestMinorVersion, latestVersion); err != nil {
 		fmt.Println("--- 🚨 Standard Upgrade Test Failed: ", err)
@@ -83,7 +83,7 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 		return err
 	}
 
-	// create hash for new migrator job, migrator runs in env setup, we want a new hash for each run
+	// create hash for new frontend job
 	hash, err := newContainerHash()
 	if err != nil {
 		fmt.Println("🚨 failed to generate hash during standard upgrade test: ", err)
@@ -116,7 +116,8 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 func multiversionUpgradeTest(ctx context.Context, randomVersion, latestVersion *semver.Version) error {
 	fmt.Println("--- 🕵️  multiversion upgrade test")
 
-	// initialize a random version of Sourcegraph greater than v3.2.0
+	// initialize a random version of Sourcegraph greater than v3.38.0
+	fmt.Printf("-- 🐋 Testing multiversion upgrade from initial version %s to release candidate.\n", randomVersion.String())
 	initHash, networkName, dbs, cleanup, err := setupTestEnv(ctx, randomVersion)
 	if err != nil {
 		fmt.Println("failed to setup env: ", err)
@@ -125,12 +126,54 @@ func multiversionUpgradeTest(ctx context.Context, randomVersion, latestVersion *
 	}
 	defer cleanup()
 
-	fmt.Println(initHash)
-
 	// ensure env correctly initialized, always use latest migrator for drift check,
 	// this allows us to avoid issues from changes in migrators invocation
 	if err := validateDBs(ctx, randomVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestVersion.String()), networkName, dbs, false); err != nil {
 		fmt.Println("🚨 Initializing env in multiversion test failed: ", err)
+		return err
+	}
+
+	// Run multiversion upgrade using candidate image
+	// TODO: target the schema of the candidate version rather than latest released tag on branch
+	if err := run.Cmd(ctx,
+		dockerMigratorBaseString(fmt.Sprintf("upgrade --from %s --to %s", randomVersion.String(), latestVersion.String()), "migrator:candidate", networkName, initHash, dbs)...).
+		Run().Stream(os.Stdout); err != nil {
+		fmt.Println("🚨 failed to upgrade: ", err)
+		cleanup()
+		return err
+	}
+
+	// Run migrator up with migrator candidate to apply any patch migrations defined on the candidate version
+	if err := run.Cmd(ctx,
+		dockerMigratorBaseString("up", "migrator:candidate", networkName, initHash, dbs)...).
+		Run().Stream(os.Stdout); err != nil {
+		fmt.Println("🚨 failed to upgrade: ", err)
+		cleanup()
+		return err
+	}
+
+	// create hash for new frontend job
+	hash, err := newContainerHash()
+	if err != nil {
+		fmt.Println("🚨 failed to generate hash during standard upgrade test: ", err)
+		cleanup()
+		return err
+	}
+
+	// Start frontend with candidate
+	var cleanFrontend func()
+	cleanFrontend, err = startFrontend(ctx, "frontend", "candidate", networkName, hash, dbs)
+	if err != nil {
+		fmt.Println("🚨 failed to start candidate frontend: ", err)
+		cleanFrontend()
+		return err
+	}
+	defer cleanFrontend()
+
+	fmt.Println("-- ⚙️  post upgrade validation")
+	// Validate the upgrade
+	if err := validateDBs(ctx, "0.0.0+dev", "migrator:candidate", networkName, dbs, true); err != nil {
+		fmt.Println("🚨 Upgrade failed: ", err)
 		return err
 	}
 
@@ -162,24 +205,16 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 		return nil, "", nil, nil, err
 	}
 
-	// Handle for old postgres image which may be an init version in multiversion test
+	// Note that we changed postgres versions in very early versions of Sourcegraph,
 	// In v3.38+ we use image postgres-12-alpine,
 	// in v3.37-v3.30 we use postgres-12.6-alpine,
 	// in v3.29-v3.27 we use postgres-12.6
 	// in v3.26 and earliar we use postgres:11.4
-	var postgresImage string
-	if initVersion.GreaterThan(semver.MustParse("v3.37")) {
-		postgresImage = "postgres-12-alpine"
-	} else if initVersion.LessThan(semver.MustParse("v3.38")) && initVersion.GreaterThan(semver.MustParse("v3.29")) {
-		postgresImage = "postgres-12.6-alpine"
-	} else if initVersion.LessThan(semver.MustParse("v3.30")) && initVersion.GreaterThan(semver.MustParse("v3.26")) {
-		postgresImage = "postgres-12.6"
-	} else {
-		postgresImage = "postgres-11.4"
-	}
-
+	//
+	// This isn't relevant since this test will only ever initialize instances v3.38+
+	// worth noting in case this changes in the future.
 	dbs = []testDB{
-		{"pgsql", fmt.Sprintf("wg_pgsql_%x", hash), postgresImage, "5433"},
+		{"pgsql", fmt.Sprintf("wg_pgsql_%x", hash), "postgres-12-alpine", "5433"},
 		{"codeintel-db", fmt.Sprintf("wg_codeintel-db_%x", hash), "codeintel-db", "5434"},
 		{"codeinsights-db", fmt.Sprintf("wg_codeinsights-db_%x", hash), "codeinsights-db", "5435"},
 	}
@@ -196,30 +231,23 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 	// Here we create the three databases using docker run.
 	wgInit := pool.New().WithErrors()
 	for _, db := range dbs {
-		// Codeinsights-db is introduced in v3.25 and moves from timescaleDB to in v3.39.0, so we skip it for earlier versions
-		if initVersion.LessThan(semver.MustParse("v3.25")) && db.Name == "codeinsight-db" {
-			fmt.Println("🐋 skipped codeinsights-db creation for version ", initVersion)
-			continue
-		} else {
-			fmt.Printf("🐋 creating %s, with db image %s:%s\n", db.HashName, db.Image, initVersion)
-			wgInit.Go(func() error {
-				db := db
-				cmd := run.Cmd(ctx, "docker", "run", "--rm",
-					"--detach",
-					"--platform", "linux/amd64",
-					"--name", db.HashName,
-					"--network", networkName,
-					"-p", fmt.Sprintf("%s:5432", db.ContainerHostPort),
-					fmt.Sprintf("sourcegraph/%s:%s", db.Image, initVersion),
-				)
-				return cmd.Run().Wait()
-			})
-		}
+		fmt.Printf("🐋 creating %s, with db image %s:%s\n", db.HashName, db.Image, initVersion)
+		wgInit.Go(func() error {
+			db := db
+			cmd := run.Cmd(ctx, "docker", "run", "--rm",
+				"--detach",
+				"--platform", "linux/amd64",
+				"--name", db.HashName,
+				"--network", networkName,
+				"-p", fmt.Sprintf("%s:5432", db.ContainerHostPort),
+				fmt.Sprintf("sourcegraph/%s:%s", db.Image, initVersion),
+			)
+			return cmd.Run().Wait()
+		})
 	}
 	if err := wgInit.Wait(); err != nil {
 		fmt.Printf("🚨 failed to create test databases: %s", err)
 	}
-	run.Cmd(ctx, "docker", "ps").Run().Stream(os.Stdout)
 
 	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*20)
 	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
@@ -260,15 +288,12 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 		fmt.Println("🚨 containerized database startup error: ", err)
 	}
 
-	// Migrator isn;t introduced
-	if initVersion.GreaterThan(semver.MustParse("v3.37")) {
-		// Initialize the databases by running migrator with the `up` command.
-		fmt.Println("-- 🏗️  initializing database schemas with migrator")
-		if err := run.Cmd(ctx,
-			dockerMigratorBaseString("up", fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, hash, dbs)...).
-			Run().Stream(os.Stdout); err != nil {
-			fmt.Println("🚨 failed to initialize database: ", err)
-		}
+	// Initialize the databases by running migrator with the `up` command.
+	fmt.Println("-- 🏗️  initializing database schemas with migrator")
+	if err := run.Cmd(ctx,
+		dockerMigratorBaseString("up", fmt.Sprintf("sourcegraph/migrator:%s", initVersion), networkName, hash, dbs)...).
+		Run().Stream(os.Stdout); err != nil {
+		fmt.Println("🚨 failed to initialize database: ", err)
 	}
 
 	// Verify that the databases are initialized.
@@ -357,7 +382,7 @@ func validateDBs(ctx context.Context, version, migratorImage, networkName string
 	fmt.Println("✅ versions.version set: ", testVersion)
 
 	// Check for any failed migrations in the migration logs tables
-	// TODO migration_logs table is introduced in v3.36.0
+	// migration_logs table is introduced in v3.36.0
 	for _, db := range dbs {
 		fmt.Printf("🔎 checking %s migration_logs\n", db.HashName)
 		var numFailedMigrations int
@@ -520,7 +545,12 @@ func newContainerHash() ([]byte, error) {
 }
 
 // getLatestVersions returns the latest minor semver version, as well as the latest full semver version.
-// It also returns a random version greater than v3.20, this is the range of versions MVU should work over.
+// It also returns a random version greater than v3.38, this is the range of versions MVU should work over.
+//
+// Technically MVU is supported v3.20 and forward, but in older versions codeinsights-db didnt exist and postgres was using version 11.4
+// so we reduced the scope of the test.
+//
+// randomVersion will only be versions v3.39 and greater, see comments inside function for more details.
 func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *semver.Version, err error) {
 	tags, err := run.Cmd(ctx, "git",
 		"for-each-ref",
@@ -548,7 +578,7 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 		}
 	}
 
-	// Get random tag version greater than v3.20
+	// Get random tag version greater than v3.38
 	var randomVersions []*semver.Version
 	for _, tag := range tags {
 		v, err := semver.NewVersion(tag)
@@ -564,7 +594,13 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 			continue
 		}
 
-		if v.GreaterThan(semver.MustParse("v3.20")) {
+		// To simplify this testing range we'll only select a random version tag from versions greater than v3.38
+		// In v3.39 many things were normalized in the dbs:
+		// - codeinsights-db moved from timescaleDB to posgres-12
+		// - our image for codeintel-db and pgsql was normalized to postgres-12-alpine
+		// - the migration_logs table exists, this was renamed from schema_migrations in v3.36.0
+		// - migrator is introduced in v3.38.0
+		if v.GreaterThan(semver.MustParse("v3.38")) {
 			randomVersions = append(randomVersions, v)
 		}
 	}
