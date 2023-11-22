@@ -353,6 +353,9 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 					log.String("resp.headers", headers.String()))
 				resolvedStatusCode = http.StatusServiceUnavailable
 			}
+
+			// This handles upstream 429 responses as well, since they get
+			// resolved to http.StatusServiceUnavailable.
 			if resolvedStatusCode == http.StatusServiceUnavailable {
 				// Propagate retry-after in case it is handle-able by the client,
 				// or write our default. 503 errors can have retry-after as well.
