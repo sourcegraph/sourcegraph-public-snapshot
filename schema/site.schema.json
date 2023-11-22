@@ -16,6 +16,12 @@
       "group": "Search",
       "examples": [true]
     },
+    "search.index.shardConcurrency": {
+      "description": "The number of threads each indexserver should use to index shards. If not set, indexserver will use the number of available CPUs. This is exposed as a safeguard and should usually not require being set.",
+      "type": "integer",
+      "group": "Search",
+      "examples": [["10"]]
+    },
     "search.largeFiles": {
       "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.",
       "type": "array",
