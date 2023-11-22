@@ -6,6 +6,8 @@ package fileutil
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RenameAndSync will do an os.Rename followed by fsync to ensure the rename
@@ -13,7 +15,7 @@ import (
 func RenameAndSync(oldpath, newpath string) error {
 	err := os.Rename(oldpath, newpath)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to rename %q to %q", errors.Safe(oldpath), errors.Safe(newpath))
 	}
 
 	oldparent, newparent := filepath.Dir(oldpath), filepath.Dir(newpath)
