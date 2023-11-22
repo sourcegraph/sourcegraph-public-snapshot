@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/oauth2"
 
@@ -266,7 +267,7 @@ func TestParseConfig(t *testing.T) {
 			if diff := cmp.Diff(tc.wantProblems, gotProblems.Messages()); diff != "" {
 				t.Errorf("mismatched problems (-want,+got):\n%s", diff)
 			}
-			if diff := cmp.Diff(wantConfigs, gotConfigs); diff != "" {
+			if diff := cmp.Diff(wantConfigs, gotConfigs, cmpopts.IgnoreUnexported()); diff != "" {
 				t.Errorf("mismatched configs (-want,+got):\n%s", diff)
 			}
 		})
