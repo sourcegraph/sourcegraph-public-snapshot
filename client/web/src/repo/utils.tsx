@@ -69,7 +69,8 @@ export const getExtension = (file: string): { extension: FileExtension; isTest: 
         e.extension = 'go' as FileExtension
     } else {
         // This is what the linter wants *shrugs*
-        e.extension = at(s, -1) as unknown as FileExtension
+        e.extension = s[s.length - 1] as FileExtension
     }
+    console.log(file, e)
     return e
 }
