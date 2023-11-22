@@ -22,14 +22,14 @@ Sourcegraph offers multiple deployment options to suit different needs. The appr
 
 Carefully consider your organization's needs and technical expertise when selecting a Sourcegraph deployment method. The method you choose cannot be changed for a running instance, so make an informed decision. The available methods have different capabilities, and the following sections provide recommendations to help you choose.
 
-### [Sourcegraph Cloud](https://signup.sourcegraph.com/)
+### [Sourcegraph Cloud](https://about.sourcegraph.com/get-started?t=enterprise)
 
 **For Enterprises looking for a Cloud solution.**
 
 A cloud instance hosted and maintained by Sourcegraph
 
 <div>
-  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
+  <a class="cloud-cta" href="https://about.sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>
@@ -84,11 +84,8 @@ We highly recommend deploying Sourcegraph on Kubernetes with Kustomize due to th
 
 **For setting up non-production environments on local machines.**
 
-  - <span class="badge badge-experimental">Experimental</span> [Sourcegraph App](../../app/index.md) - A standalone Desktop application
   - [Docker Compose](docker-compose/index.md) - Install Sourcegraph on Docker Compose
   - [Docker Single Container](docker-single-container/index.md) - Install Sourcegraph using a single Docker container
-  - [Minikube](single-node/minikube.md) - Install Sourcegraph with Minikube
-  - [k3s](single-node/k3s.md) - Set up a k3s single-node cluster with Sourcegraph installed
 
 ### ARM / ARM64 support
 

@@ -3,16 +3,17 @@ import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { of } from 'rxjs'
 import sinon from 'sinon'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import {
-    FetchCodeMonitorResult,
-    MonitorEditInput,
-    MonitorEditTriggerInput,
-    MonitorEditActionInput,
+    type FetchCodeMonitorResult,
+    type MonitorEditInput,
+    type MonitorEditTriggerInput,
+    type MonitorEditActionInput,
     MonitorEmailPriority,
 } from '../../graphql-operations'
 
@@ -92,7 +93,7 @@ describe('ManageCodeMonitorPage', () => {
             props.updateCodeMonitor,
             {
                 id: 'test-monitor-id',
-                update: { namespace: 'userID', description: 'Test updated', enabled: true },
+                update: { namespace: 'test-id', description: 'Test updated', enabled: true },
             },
             { id: 'test-0', update: { query: 'test' } },
             [

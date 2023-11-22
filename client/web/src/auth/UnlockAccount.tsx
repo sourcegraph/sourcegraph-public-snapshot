@@ -2,18 +2,17 @@ import React, { useEffect, useState } from 'react'
 
 import { Navigate, useLocation, useParams } from 'react-router-dom'
 
-import { Alert, Link, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+import { Alert, Link, LoadingSpinner, ErrorAlert, Container } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { HeroPage } from '../components/HeroPage'
+import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 
-import { SourcegraphIcon } from './icons'
+import { AuthPageWrapper } from './AuthPageWrapper'
 import { getReturnTo } from './SignInSignUpCommon'
 
-import unlockAccountStyles from './SignInSignUpCommon.module.scss'
+import styles from './UnlockAccount.module.scss'
 
 interface UnlockAccountPageProps {
     authenticatedUser: AuthenticatedUser | null
@@ -21,6 +20,8 @@ interface UnlockAccountPageProps {
         SourcegraphContext,
         'allowSignup' | 'authProviders' | 'sourcegraphDotComMode' | 'xhrHeaders' | 'resetPasswordEnabled'
     >
+    /** Used for testing only. */
+    mockSuccess?: boolean
 }
 
 export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<UnlockAccountPageProps>> = props => {
@@ -74,35 +75,30 @@ export const UnlockAccountPage: React.FunctionComponent<React.PropsWithChildren<
         return <Navigate to={returnTo} replace={true} />
     }
 
-    const body = (
-        <div>
-            {loading && <LoadingSpinner />}
-            {error && <ErrorAlert className="mt-2" error={error} />}
-            {!loading && !error && (
-                <>
-                    <Alert variant="success">
-                        Your account was unlocked. Please try to <Link to="/sign-in">sign in</Link> to continue.
-                    </Alert>
-                </>
-            )}
-        </div>
-    )
-
     return (
-        <div className={unlockAccountStyles.signinSignupPage}>
+        <>
             <PageTitle title="Unlock account" />
-            <HeroPage
-                icon={SourcegraphIcon}
-                iconLinkTo={props.context.sourcegraphDotComMode ? '/search' : undefined}
-                iconClassName="bg-transparent"
-                lessPadding={true}
+            <AuthPageWrapper
                 title={
                     props.context.sourcegraphDotComMode
                         ? 'Unlock your Sourcegraph.com account'
                         : 'Unlock your Sourcegraph Server account'
                 }
-                body={body}
-            />
-        </div>
+                sourcegraphDotComMode={props.context.sourcegraphDotComMode}
+                className={styles.wrapper}
+            >
+                <Container>
+                    {!props.mockSuccess && loading && <LoadingSpinner />}
+                    {!props.mockSuccess && error && <ErrorAlert className="mb-0" error={error} />}
+                    {((!loading && !error) || props.mockSuccess) && (
+                        <>
+                            <Alert variant="success" className="mb-0">
+                                Your account was unlocked. Please try to <Link to="/sign-in">sign in</Link> to continue.
+                            </Alert>
+                        </>
+                    )}
+                </Container>
+            </AuthPageWrapper>
+        </>
     )
 }

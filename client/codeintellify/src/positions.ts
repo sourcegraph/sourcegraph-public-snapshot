@@ -1,7 +1,7 @@
-import { from, fromEvent, merge, Observable, Subscribable } from 'rxjs'
+import { from, fromEvent, merge, type Observable, type Subscribable } from 'rxjs'
 import { filter, map, switchMap, tap } from 'rxjs/operators'
 
-import { convertCodeElementIdempotent, DOMFunctions, HoveredToken, locateTarget } from './tokenPosition'
+import { convertCodeElementIdempotent, type DOMFunctions, type HoveredToken, locateTarget } from './tokenPosition'
 import { isPosition } from './types'
 
 export type SupportedMouseEvent = 'click' | 'mousemove' | 'mouseover'

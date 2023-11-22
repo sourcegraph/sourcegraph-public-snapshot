@@ -33,17 +33,17 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { Duration } from '../../components/time/Duration'
-import {
+import type {
     BatchSpecListFields,
     Scalars,
     PartialBatchSpecWorkspaceFileFields,
     BatchSpecWorkspaceFileResult,
     BatchSpecWorkspaceFileVariables,
 } from '../../graphql-operations'
+import { humanizeSize } from '../../util/size'
 
 import { BATCH_SPEC_WORKSPACE_FILE, generateFileDownloadLink } from './backend'
 import { BatchSpec } from './BatchSpec'
-import { humanizeSize } from './utils/size'
 
 import styles from './BatchSpecNode.module.scss'
 
@@ -321,7 +321,7 @@ const StateIcon: React.FunctionComponent<
         )
     }
     switch (state) {
-        case BatchSpecState.COMPLETED:
+        case BatchSpecState.COMPLETED: {
             return (
                 <Icon
                     aria-hidden={true}
@@ -329,9 +329,10 @@ const StateIcon: React.FunctionComponent<
                     svgPath={mdiCheckCircle}
                 />
             )
+        }
 
         case BatchSpecState.PROCESSING:
-        case BatchSpecState.QUEUED:
+        case BatchSpecState.QUEUED: {
             return (
                 <Icon
                     aria-hidden={true}
@@ -339,9 +340,10 @@ const StateIcon: React.FunctionComponent<
                     svgPath={mdiTimerSand}
                 />
             )
+        }
 
         case BatchSpecState.CANCELED:
-        case BatchSpecState.CANCELING:
+        case BatchSpecState.CANCELING: {
             return (
                 <Icon
                     aria-hidden={true}
@@ -349,8 +351,9 @@ const StateIcon: React.FunctionComponent<
                     svgPath={mdiCancel}
                 />
             )
+        }
 
-        case BatchSpecState.FAILED:
+        case BatchSpecState.FAILED: {
             return (
                 <Icon
                     aria-hidden={true}
@@ -358,7 +361,8 @@ const StateIcon: React.FunctionComponent<
                     svgPath={mdiAlertCircle}
                 />
             )
-        case BatchSpecState.PENDING:
+        }
+        case BatchSpecState.PENDING: {
             return (
                 <Icon
                     aria-hidden={true}
@@ -366,5 +370,6 @@ const StateIcon: React.FunctionComponent<
                     svgPath={mdiPencil}
                 />
             )
+        }
     }
 }

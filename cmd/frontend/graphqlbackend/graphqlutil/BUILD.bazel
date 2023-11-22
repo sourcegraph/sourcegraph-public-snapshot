@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "graphqlutil",
@@ -9,6 +10,7 @@ go_library(
         "doc.go",
         "offset.go",
         "page_info.go",
+        "slice_connection_resolver.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil",
     visibility = ["//visibility:public"],
@@ -21,7 +23,10 @@ go_library(
 go_test(
     name = "graphqlutil_test",
     timeout = "short",
-    srcs = ["connection_resolver_test.go"],
+    srcs = [
+        "connection_resolver_test.go",
+        "slice_connection_resolver_test.go",
+    ],
     embed = [":graphqlutil"],
     deps = [
         "//internal/database",

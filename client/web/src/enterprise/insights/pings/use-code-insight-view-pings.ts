@@ -2,9 +2,9 @@ import { useCallback, useRef } from 'react'
 
 import { useDebouncedCallback } from 'use-debounce'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { CodeInsightTrackType } from './types'
+import type { CodeInsightTrackType } from './types'
 
 interface UseCodeInsightViewPingsInput extends TelemetryProps {
     /**

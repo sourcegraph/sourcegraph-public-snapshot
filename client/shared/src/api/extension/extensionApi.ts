@@ -1,19 +1,18 @@
-import { proxy, Remote } from 'comlink'
+import { proxy, type Remote } from 'comlink'
 import { noop, sortBy } from 'lodash'
-import { BehaviorSubject, EMPTY, Unsubscribable } from 'rxjs'
-import { debounceTime, mapTo } from 'rxjs/operators'
-import * as sourcegraph from 'sourcegraph'
+import { BehaviorSubject, EMPTY, type Unsubscribable } from 'rxjs'
+import { mapTo } from 'rxjs/operators'
+import type * as sourcegraph from 'sourcegraph'
 
 import { logger } from '@sourcegraph/common'
 import { Location, MarkupKind, Position, Range, Selection } from '@sourcegraph/extension-api-classes'
 
-import { ClientAPI } from '../client/api/api'
+import type { ClientAPI } from '../client/api/api'
 import { syncRemoteSubscription } from '../util'
 
 import { DocumentHighlightKind } from './api/documentHighlights'
-import { InitData, updateContext } from './extensionHost'
-import { PanelViewData } from './extensionHostApi'
-import { ExtensionHostState } from './extensionHostState'
+import { type InitData, updateContext } from './extensionHost'
+import type { ExtensionHostState } from './extensionHostState'
 import { addWithRollback } from './util'
 
 export interface InitResult {
@@ -106,72 +105,6 @@ export function createExtensionAPIFactory(
         activeWindowChanges: new BehaviorSubject(window).asObservable(),
         get windows() {
             return [window]
-        },
-        createPanelView: id => {
-            const panelViewData = new BehaviorSubject<PanelViewData>({
-                id,
-                title: '',
-                content: '',
-                component: null,
-                priority: 0,
-                selector: null,
-            })
-
-            const panelView: sourcegraph.PanelView = {
-                get title() {
-                    return panelViewData.value.title
-                },
-                set title(title: string) {
-                    panelViewData.next({ ...panelViewData.value, title })
-                },
-                get content() {
-                    return panelViewData.value.content
-                },
-                set content(content: string) {
-                    panelViewData.next({ ...panelViewData.value, content })
-                },
-                get component() {
-                    return panelViewData.value.component
-                },
-                set component(component: { locationProvider: string } | null) {
-                    panelViewData.next({ ...panelViewData.value, component })
-                },
-                get priority() {
-                    return panelViewData.value.priority
-                },
-                set priority(priority: number) {
-                    panelViewData.next({ ...panelViewData.value, priority })
-                },
-                get selector() {
-                    return panelViewData.value.selector
-                },
-                set selector(selector: sourcegraph.DocumentSelector | null) {
-                    panelViewData.next({ ...panelViewData.value, selector })
-                },
-                unsubscribe: () => {
-                    subscription.unsubscribe()
-                },
-            }
-
-            // Batch updates from same tick
-            const subscription = addWithRollback(state.panelViews, panelViewData.pipe(debounceTime(0)))
-
-            return panelView
-        },
-        registerViewProvider: (id, provider) => {
-            switch (provider.where) {
-                case 'insightsPage':
-                    return addWithRollback(state.insightsPageViewProviders, { id, viewProvider: provider })
-
-                case 'directory':
-                    return addWithRollback(state.directoryViewProviders, { id, viewProvider: provider })
-
-                case 'global/page':
-                    return addWithRollback(state.globalPageViewProviders, { id, viewProvider: provider })
-
-                case 'homepage':
-                    return addWithRollback(state.homepageViewProviders, { id, viewProvider: provider })
-            }
         },
         // `log` is implemented on extension activation
         log: noop,

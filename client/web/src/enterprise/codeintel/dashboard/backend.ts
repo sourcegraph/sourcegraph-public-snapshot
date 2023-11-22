@@ -20,6 +20,7 @@ export const globalCodeIntelStatusQuery = gql`
             repositoriesWithErrors {
                 nodes {
                     repository {
+                        id
                         name
                         url
                         externalRepository {
@@ -33,6 +34,7 @@ export const globalCodeIntelStatusQuery = gql`
             repositoriesWithConfiguration {
                 nodes {
                     repository {
+                        id
                         name
                         url
                         externalRepository {
@@ -101,6 +103,7 @@ export const repoCodeIntelStatusSummaryFragment = gql`
 export const repoCodeIntelStatusQuery = gql`
     query RepoCodeIntelStatus($repository: String!) {
         repository(name: $repository) {
+            id
             codeIntelSummary {
                 ...RepoCodeIntelStatusSummaryFields
             }
@@ -112,4 +115,26 @@ export const repoCodeIntelStatusQuery = gql`
 
     ${repoCodeIntelStatusSummaryFragment}
     ${repoCodeIntelStatusCommitGraphFragment}
+`
+
+export const visibleIndexesQuery = gql`
+    query VisibleIndexes($repository: String!, $commit: String!, $path: String!) {
+        repository(name: $repository) {
+            commit(rev: $commit) {
+                blob(path: $path) {
+                    lsif {
+                        visibleIndexes {
+                            id
+                            uploadedAt
+                            inputCommit
+                            indexer {
+                                name
+                                url
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 `

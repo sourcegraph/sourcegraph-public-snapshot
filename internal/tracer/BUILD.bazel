@@ -1,13 +1,14 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "tracer",
     srcs = [
+        "conf.go",
         "doc.go",
-        "logged_ot.go",
         "logged_otel.go",
         "otel.go",
-        "otel_should_trace.go",
+        "policy_sampler.go",
         "tracer.go",
         "watch.go",
     ],
@@ -19,17 +20,15 @@ go_library(
         "//internal/env",
         "//internal/hostname",
         "//internal/trace/policy",
-        "//internal/tracer/internal/exporters",
+        "//internal/tracer/oteldefaults",
+        "//internal/tracer/oteldefaults/exporters",
         "//internal/version",
         "//lib/errors",
-        "@com_github_opentracing_opentracing_go//:opentracing-go",
+        "//schema",
+        "@com_github_go_logr_logr//:logr",
         "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_contrib_propagators_jaeger//:jaeger",
-        "@io_opentelemetry_go_contrib_propagators_ot//:ot",
         "@io_opentelemetry_go_otel//:otel",
-        "@io_opentelemetry_go_otel//propagation",
         "@io_opentelemetry_go_otel//semconv/v1.4.0:v1_4_0",
-        "@io_opentelemetry_go_otel_bridge_opentracing//:opentracing",
         "@io_opentelemetry_go_otel_sdk//resource",
         "@io_opentelemetry_go_otel_sdk//trace",
         "@io_opentelemetry_go_otel_sdk//trace/tracetest",
@@ -41,10 +40,12 @@ go_library(
 go_test(
     name = "tracer_test",
     timeout = "short",
-    srcs = ["watch_test.go"],
+    srcs = [
+        "policy_sampler_test.go",
+        "watch_test.go",
+    ],
     embed = [":tracer"],
     deps = [
-        "//internal/conf/conftypes",
         "//internal/trace/policy",
         "//schema",
         "@com_github_sourcegraph_log//:log",
@@ -52,5 +53,6 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@io_opentelemetry_go_otel_sdk//trace",
         "@io_opentelemetry_go_otel_sdk//trace/tracetest",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )

@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Nominal type for the ID of a tree-sitter node.
+// NodeId is a nominal type for the ID of a tree-sitter node.
 type NodeId string
 
 // walk walks every node in the tree-sitter tree, calling f(node) on each node.
@@ -62,14 +62,14 @@ func tabsToSpaces(s string) string {
 	return strings.ReplaceAll(s, "\t", "    ")
 }
 
-const TAB_SIZE = 4
+const tabSize = 4
 
-// lengthInSpaces returns the length of the string in spaces (using TAB_SIZE).
+// lengthInSpaces returns the length of the string in spaces (using tabSize).
 func lengthInSpaces(s string) int {
 	total := 0
 	for i := 0; i < len(s); i++ {
 		if s[i] == '\t' {
-			total += TAB_SIZE
+			total += tabSize
 		} else {
 			total++
 		}
@@ -86,7 +86,7 @@ func spacesToColumn(s string, column int) int {
 		}
 
 		if s[i] == '\t' {
-			total += TAB_SIZE
+			total += tabSize
 		} else {
 			total++
 		}
@@ -134,7 +134,7 @@ func withQuery(query string, node Node, f func(query *sitter.Query, cursor *sitt
 
 // forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
 // each capture.
-func forEachCapture(query string, node Node, f func(map[string]Node)) error {
+func forEachCapture(query string, node Node, f func(map[string]Node)) {
 	withQuery(query, node, func(sitterQuery *sitter.Query, cursor *sitter.QueryCursor) {
 		match, _, hasCapture := cursor.NextCapture()
 		for hasCapture {
@@ -152,11 +152,9 @@ func forEachCapture(query string, node Node, f func(map[string]Node)) error {
 			match, _, hasCapture = cursor.NextCapture()
 		}
 	})
-
-	return nil
 }
 
-func allCaptures(query string, node Node) ([]Node, error) {
+func allCaptures(query string, node Node) []Node {
 	var captures []Node
 	withQuery(query, node, func(sitterQuery *sitter.Query, cursor *sitter.QueryCursor) {
 		match, _, hasCapture := cursor.NextCapture()
@@ -173,18 +171,7 @@ func allCaptures(query string, node Node) ([]Node, error) {
 		}
 	})
 
-	return captures, nil
-}
-
-func firstCapture(query string, node Node) (*Node, error) {
-	captures, err := allCaptures(query, node)
-	if err != nil {
-		return nil, err
-	}
-	if len(captures) == 0 {
-		return nil, nil
-	}
-	return &captures[0], nil
+	return captures
 }
 
 // nodeToRange returns the range of the node.
@@ -227,7 +214,7 @@ func contains(slice []string, str string) bool {
 	return false
 }
 
-// A sitter.Node plus convenient info.
+// Node is a sitter.Node plus convenient info.
 type Node struct {
 	RepoCommitPath types.RepoCommitPath
 	*sitter.Node
@@ -249,19 +236,32 @@ func swapNodePtr(other Node, newNode *sitter.Node) *Node {
 	return &ret
 }
 
-var unrecognizedFileExtensionError = errors.New("unrecognized file extension")
+// CAUTION: These error messages are checked by client-side code,
+// so make sure to update clients if changing them.
+var UnrecognizedFileExtensionError = errors.New("unrecognized file extension")
 var UnsupportedLanguageError = errors.New("unsupported language")
 
 // Parses a file and returns info about it.
 func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
 	ext := filepath.Base(repoCommitPath.Path)
-	if strings.Index(ext, ".") >= 0 {
+	if strings.Contains(ext, ".") {
 		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
 	}
 
 	langName, ok := extToLang[ext]
 	if !ok {
-		return nil, unrecognizedFileExtensionError
+		// It is not uncommon to have files with upper-case extensions
+		// like .C, .H, .CPP etc., especially for code developed on
+		// case-insensitive filesystems. So check if lower-casing helps.
+		//
+		// It might be tempting to refactor this code to store all the
+		// extensions in lower-case and do one lookup instead of two,
+		// but that would be incorrect as we want to distinguish files
+		// named 'build' (a common name for shell scripts) vs BUILD
+		//// (file extension for Bazel).
+		if langName, ok = extToLang[strings.ToLower(ext)]; !ok {
+			return nil, UnrecognizedFileExtensionError
+		}
 	}
 
 	langSpec, ok := langToLangSpec[langName]
@@ -293,7 +293,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil
 }
 
-func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) {
+func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.RepoCommitPath) (result.Symbols, error) { //nolint:unparam
 	root, err := s.parse(context.Background(), repoCommitPath)
 	if err != nil {
 		return nil, err
@@ -306,10 +306,7 @@ func (s *SquirrelService) getSymbols(ctx context.Context, repoCommitPath types.R
 		return nil, nil
 	}
 
-	captures, err := allCaptures(query, *root)
-	if err != nil {
-		return nil, err
-	}
+	captures := allCaptures(query, *root)
 	for _, capture := range captures {
 		symbols = append(symbols, result.Symbol{
 			Name:        capture.Node.Content(root.Contents),
@@ -394,7 +391,7 @@ func lazyNodeStringer(node **Node) func() fmt.Stringer {
 			if (*node).Node != nil {
 				return String(fmt.Sprintf("%s ...%s...", (*node).Type(), snippet(*node)))
 			} else {
-				return String(fmt.Sprintf("%s", (*node).RepoCommitPath.Path))
+				return String((*node).RepoCommitPath.Path)
 			}
 		} else {
 			return String("<nil>")
@@ -425,7 +422,7 @@ func (s *SquirrelService) symbolSearchOne(ctx context.Context, repo string, comm
 		Commit: commit,
 		Path:   symbol.Path,
 	})
-	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, unrecognizedFileExtensionError) {
+	if errors.Is(err, UnsupportedLanguageError) || errors.Is(err, UnrecognizedFileExtensionError) {
 		return nil, nil
 	}
 	if err != nil {

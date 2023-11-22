@@ -4,27 +4,41 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var frontendInternal = env.Get("SRC_FRONTEND_INTERNAL", defaultFrontendInternal(), "HTTP address for internal frontend HTTP API.")
+var frontendInternal = func() *url.URL {
+	rawURL := env.Get("SRC_FRONTEND_INTERNAL", defaultFrontendInternal(), "HTTP address for internal frontend HTTP API.")
+	return mustParseSourcegraphInternalURL(rawURL)
+}()
+
+// NOTE: this intentionally does not use the site configuration option because we need to make the decision
+// about whether or not to use gRPC to fetch the site configuration in the first place.
+var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
 
 func defaultFrontendInternal() string {
-	if deploy.IsApp() {
+	if deploy.IsSingleBinary() {
 		return "localhost:3090"
 	}
 	return "sourcegraph-frontend-internal"
@@ -33,44 +47,27 @@ func defaultFrontendInternal() string {
 type internalClient struct {
 	// URL is the root to the internal API frontend server.
 	URL string
+
+	getConfClient func() (proto.ConfigServiceClient, error)
 }
 
-var Client = &internalClient{URL: "http://" + frontendInternal}
+var Client = &internalClient{
+	URL: frontendInternal.String(),
+	getConfClient: syncx.OnceValues(func() (proto.ConfigServiceClient, error) {
+		logger := log.Scoped("internalapi")
+		conn, err := defaults.Dial(frontendInternal.Host, logger)
+		if err != nil {
+			return nil, err
+		}
+		return proto.NewConfigServiceClient(conn), nil
+	}),
+}
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_frontend_internal_request_duration_seconds",
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
-
-// TODO(slimsag): In the future, once we're no longer using environment
-// variables to build ExternalURL, remove this in favor of services just reading it
-// directly from the configuration file.
-//
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
-	var externalURL string
-	err := c.postInternal(ctx, "app-url", nil, &externalURL)
-	if err != nil {
-		return "", err
-	}
-	return externalURL, nil
-}
-
-// SendEmail issues a request to send an email. All services outside the frontend should
-// use this to send emails.  Source is used to categorize metrics, and should indicate the
-// product feature that is sending this email.
-//
-// 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
-// the email should be verified or not, and conduct the appropriate checks before sending.
-// This helps reduce the chance that we damage email sender reputations when attempting to
-// send emails to nonexistent email addresses.
-func (c *internalClient) SendEmail(ctx context.Context, source string, message txtypes.Message) error {
-	return c.postInternal(ctx, "send-email", &txtypes.InternalAPIMessage{
-		Source:  source,
-		Message: message,
-	}, nil)
-}
 
 // MockClientConfiguration mocks (*internalClient).Configuration.
 var MockClientConfiguration func() (conftypes.RawUnified, error)
@@ -79,26 +76,24 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	if MockClientConfiguration != nil {
 		return MockClientConfiguration()
 	}
+
+	if enableGRPC {
+		cc, err := c.getConfClient()
+		if err != nil {
+			return conftypes.RawUnified{}, err
+		}
+		resp, err := cc.GetConfig(ctx, &proto.GetConfigRequest{})
+		if err != nil {
+			return conftypes.RawUnified{}, err
+		}
+		var raw conftypes.RawUnified
+		raw.FromProto(resp.RawUnified)
+		return raw, nil
+	}
+
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err
-}
-
-var MockExternalServiceConfigs func(kind string, result any) error
-
-// ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
-// which should be a slice of the expected config type.
-func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result any) error {
-	if MockExternalServiceConfigs != nil {
-		return MockExternalServiceConfigs(kind, result)
-	}
-	return c.postInternal(ctx, "external-services/configs", api.ExternalServiceConfigsRequest{
-		Kind: kind,
-	}, &result)
-}
-
-func (c *internalClient) LogTelemetry(ctx context.Context, reqBody any) error {
-	return c.postInternal(ctx, "telemetry", reqBody, nil)
 }
 
 // postInternal sends an HTTP post request to the internal route.
@@ -178,4 +173,104 @@ func checkAPIResponse(resp *http.Response) error {
 		return errors.Errorf("internal API response error code %d (%s)", resp.StatusCode, resp.Request.URL)
 	}
 	return nil
+}
+
+// mustParseSourcegraphInternalURL parses a frontend internal URL string and panics if it is invalid.
+//
+// The URL will be parsed with a default scheme of "http" and a default port of "80" if no scheme or port is specified.
+func mustParseSourcegraphInternalURL(rawURL string) *url.URL {
+	u, err := parseAddress(rawURL)
+	if err != nil {
+		panic(fmt.Sprintf("failed to parse frontend internal URL %q: %s", rawURL, err))
+	}
+
+	u = addDefaultScheme(u, "http")
+	u = addDefaultPort(u)
+
+	return u
+}
+
+// parseAddress parses rawAddress into a URL object. It accommodates cases where the rawAddress is a
+// simple host:port pair without a URL scheme (e.g., "example.com:8080").
+//
+// This function aims to provide a flexible way to parse addresses that may or may not strictly adhere to the URL format.
+func parseAddress(rawAddress string) (*url.URL, error) {
+	addedScheme := false
+
+	// Temporarily prepend "http://" if no scheme is present
+	if !strings.Contains(rawAddress, "://") {
+		rawAddress = "http://" + rawAddress
+		addedScheme = true
+	}
+
+	parsedURL, err := url.Parse(rawAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	// If we added the "http://" scheme, remove it from the final URL
+	if addedScheme {
+		parsedURL.Scheme = ""
+	}
+
+	return parsedURL, nil
+}
+
+// addDefaultScheme adds a default scheme to a URL if one is not specified.
+//
+// The original URL is not mutated. A copy is modified and returned.
+func addDefaultScheme(original *url.URL, scheme string) *url.URL {
+	if original == nil {
+		return nil // don't panic
+	}
+
+	if original.Scheme != "" {
+		return original
+	}
+
+	u := cloneURL(original)
+	u.Scheme = scheme
+
+	return u
+}
+
+// addDefaultPort adds a default port to a URL if one is not specified.
+//
+// If the URL scheme is "http" and no port is specified, "80" is used.
+// If the scheme is "https", "443" is used.
+//
+// The original URL is not mutated. A copy is modified and returned.
+func addDefaultPort(original *url.URL) *url.URL {
+	if original == nil {
+		return nil // don't panic
+	}
+
+	if original.Scheme == "http" && original.Port() == "" {
+		u := cloneURL(original)
+		u.Host = net.JoinHostPort(u.Host, "80")
+		return u
+	}
+
+	if original.Scheme == "https" && original.Port() == "" {
+		u := cloneURL(original)
+		u.Host = net.JoinHostPort(u.Host, "443")
+		return u
+	}
+
+	return original
+}
+
+// cloneURL returns a copy of the URL. It is safe to mutate the returned URL.
+// This is copied from net/http/clone.go
+func cloneURL(u *url.URL) *url.URL {
+	if u == nil {
+		return nil
+	}
+	u2 := new(url.URL)
+	*u2 = *u
+	if u.User != nil {
+		u2.User = new(url.Userinfo)
+		*u2.User = *u.User
+	}
+	return u2
 }

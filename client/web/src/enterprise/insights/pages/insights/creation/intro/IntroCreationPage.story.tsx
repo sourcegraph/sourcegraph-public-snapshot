@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -23,22 +23,22 @@ export default config
 
 const API = new CodeInsightsGqlBackend({} as any)
 
-export const IntroPageLicensed: Story = () => {
+export const IntroPageLicensed: StoryFn = () => {
     useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
 
     return (
         <CodeInsightsBackendContext.Provider value={API}>
-            <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} isSourcegraphApp={false} />
+            <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
         </CodeInsightsBackendContext.Provider>
     )
 }
 
-export const IntroPageUnLicensed: Story = () => {
+export const IntroPageUnLicensed: StoryFn = () => {
     useCodeInsightsLicenseState.setState({ licensed: false, insightsLimit: 2 })
 
     return (
         <CodeInsightsBackendContext.Provider value={API}>
-            <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} isSourcegraphApp={false} />
+            <IntroCreationPage telemetryService={NOOP_TELEMETRY_SERVICE} />
         </CodeInsightsBackendContext.Provider>
     )
 }

@@ -89,11 +89,11 @@ func (r *schemaResolver) CreateAccessToken(ctx context.Context, args *createAcce
 
 	uid := actor.FromContext(ctx).UID
 	id, token, err := r.db.AccessTokens().Create(ctx, userID, args.Scopes, args.Note, uid)
-	logger := r.logger.Scoped("CreateAccessToken", "access token creation").
+	logger := r.logger.Scoped("CreateAccessToken").
 		With(log.Int32("userID", uid))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, userID, "created an access token"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, userID, args.Note, false); err != nil {
 			logger.Warn("Failed to send email to inform user of access token creation", log.Error(err))
 		}
 	}
@@ -122,32 +122,53 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		return nil, errors.New("exactly one of byID or byToken must be specified")
 	}
 
-	var subjectUserID int32
+	var token *database.AccessToken
 	switch {
 	case args.ByID != nil:
 		accessTokenID, err := unmarshalAccessTokenID(*args.ByID)
 		if err != nil {
 			return nil, err
 		}
-		token, err := r.db.AccessTokens().GetByID(ctx, accessTokenID)
+		t, err := r.db.AccessTokens().GetByID(ctx, accessTokenID)
 		if err != nil {
 			return nil, err
 		}
+		token = t
 
 		// 🚨 SECURITY: Only site admins and the user can delete a user's access token.
 		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
+		// 🚨 SECURITY: Only Sourcegraph Operator (SOAP) users can delete a
+		// Sourcegraph Operator's access token. If actor is not token owner,
+		// and they aren't a SOAP user, make sure the token owner is not a
+		// SOAP user.
+		if a := actor.FromContext(ctx); a.UID != token.SubjectUserID && !a.SourcegraphOperator {
+			tokenOwnerExtAccounts, err := r.db.UserExternalAccounts().List(ctx,
+				database.ExternalAccountsListOptions{UserID: token.SubjectUserID})
+			if err != nil {
+				return nil, errors.Wrap(err, "list external accounts for token owner")
+			}
+			for _, acct := range tokenOwnerExtAccounts {
+				// If the delete target is a SOAP user, then this non-SOAP user
+				// cannot delete its tokens.
+				if acct.ServiceType == auth.SourcegraphOperatorProviderType {
+					return nil, errors.Newf("%[1]q user %[2]d's token cannot be deleted by a non-%[1]q user",
+						auth.SourcegraphOperatorProviderType, token.SubjectUserID)
+				}
+			}
+		}
+
 		if err := r.db.AccessTokens().DeleteByID(ctx, token.ID); err != nil {
 			return nil, err
 		}
 
 	case args.ByToken != nil:
-		token, err := r.db.AccessTokens().GetByToken(ctx, *args.ByToken)
+		t, err := r.db.AccessTokens().GetByToken(ctx, *args.ByToken)
 		if err != nil {
 			return nil, err
 		}
-		subjectUserID = token.SubjectUserID
+		token = t
 
 		// 🚨 SECURITY: This is easier than the ByID case because anyone holding the access token's
 		// secret value is assumed to be allowed to delete it.
@@ -157,11 +178,11 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 
 	}
 
-	logger := r.logger.Scoped("DeleteAccessToken", "access token deletion").
-		With(log.Int32("userID", subjectUserID))
+	logger := r.logger.Scoped("DeleteAccessToken").
+		With(log.Int32("userID", token.SubjectUserID))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, subjectUserID, "deleted an access token"); err != nil {
+		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnAccessTokenChange(ctx, token.SubjectUserID, token.Note, true); err != nil {
 			logger.Warn("Failed to send email to inform user of access token deletion", log.Error(err))
 		}
 	}

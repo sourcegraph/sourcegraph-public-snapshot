@@ -1,14 +1,14 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "keyword",
     srcs = [
         "keyword_search_job.go",
-        "keywords.go",
-        "match_groups.go",
         "query_transformer.go",
         "stop_words.go",
         "string_set.go",
+        "term_utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/keyword",
     visibility = ["//:__subpackages__"],
@@ -16,26 +16,20 @@ go_library(
         "//internal/search",
         "//internal/search/job",
         "//internal/search/query",
-        "//internal/search/result",
         "//internal/search/streaming",
-        "//internal/trace",
-        "@com_github_go_enry_go_enry_v2//:go-enry",
+        "//lib/errors",
         "@com_github_kljensen_snowball//:snowball",
-        "@com_github_opentracing_opentracing_go//log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
 go_test(
     name = "keyword_test",
     timeout = "short",
-    srcs = [
-        "match_groups_test.go",
-        "query_transformer_test.go",
-    ],
+    srcs = ["query_transformer_test.go"],
     embed = [":keyword"],
     deps = [
         "//internal/search/query",
-        "//internal/search/result",
         "@com_github_hexops_autogold_v2//:autogold",
     ],
 )

@@ -1,0 +1,22 @@
+{
+  "ID": "R_kgDOJ3f04w",
+  "DatabaseID": 662172899,
+  "NameWithOwner": "sgtest/sourcegraph",
+  "Description": "Code Intelligence Platform",
+  "URL": "https://github.com/sgtest/sourcegraph",
+  "IsPrivate": false,
+  "IsFork": true,
+  "IsArchived": false,
+  "IsLocked": false,
+  "IsDisabled": false,
+  "ViewerPermission": "READ",
+  "RepositoryTopics": {
+   "Nodes": []
+  },
+  "visibility": "public",
+  "Parent": {
+   "NameWithOwner": "sourcegraph/sourcegraph",
+   "IsFork": false
+  },
+  "DiskUsage": 1073588
+ }

@@ -4,7 +4,7 @@ import { mdiImport } from '@mdi/js'
 
 import { Icon, H3, H4, LinkOrSpan } from '@sourcegraph/wildcard'
 
-import { UseShowMorePaginationResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
+import type { UseShowMorePaginationResult } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
     ConnectionContainer,
     ConnectionList,
@@ -13,9 +13,9 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../../../../components/FilteredConnection/ui'
-import { BatchSpecImportingChangesetsResult } from '../../../../../graphql-operations'
+import type { BatchSpecImportingChangesetsResult } from '../../../../../graphql-operations'
 
-import { ImportingChangesetFields } from './useImportingChangesets'
+import type { ImportingChangesetFields } from './useImportingChangesets'
 
 import styles from './ImportingChangesetsPreviewList.module.scss'
 

@@ -2,17 +2,31 @@
 
 Site admins can sync Git repositories hosted on [Azure DevOps](https://dev.azure.com) with Sourcegraph so that users can search and navigate the repositories.
 
-To connect Azure DevOps to Sourcegraph, create a personal access token from your user settings page. Ensure that you select the following scopes:
+To connect Azure DevOps to Sourcegraph, create a personal access token from your user settings page by following the below steps:
 
-- Code (Read)
-- Project and Team
-- User Profile
+1. Navigate to the `Personal Access Tokens` page from the user settings.
 
-Additionally, under the `Organization` menu, select `All accessible organizations` to allow access to all organizations. This is required to be able to sync repositories from multiple organizations. Alternatively, site admins may also create a unique user that has access to only the selective organizations that they would like to sync with Sourcegraph.
+![Visit the Personal Access Tokens page](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-personal-access-token-step-1.png)
+
+2. Click on `New Token`.
+
+![Click on New Token](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-personal-access-token-step-2.png)
+
+3. Under the `Organization` menu, select `All accessible organizations` to allow access to all organizations. This is required to be able to perform connection checks from the code host page and to sync repositories from multiple organizations. Alternatively, site admins may also create a unique user that has access to only the selective organizations that they would like to sync with Sourcegraph. However the token being created **must** have access to `All accessible organizations` as shown below.
+
+![Select All accessible organizations](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-personal-access-token-step-3.png)
+
+4. Select the following scopes:
+
+   - Code (Read)
+   - Project and Team
+   - User Profile
+
+Next, configure the code host connection by following the next steps:
 
 1. Go to **Site admin > Manage code hosts > Add repositories**.
-2. Select **Azure DevOps**.
-3. Provide a [configuration](#configuration) for the Azure DevOps code host connection. Here is an example configuration:
+1. Select **Azure DevOps**.
+1. Provide a [configuration](#configuration) for the Azure DevOps code host connection. Here is an example configuration:
 
    ```json
    {
@@ -24,7 +38,7 @@ Additionally, under the `Organization` menu, select `All accessible organization
    }
    ```
 
-4. Press **Add repositories**.
+1. Select **Add repositories**.
 
 ## Repository syncing
 
@@ -65,6 +79,10 @@ Please consult [this page](../config/webhooks/incoming.md) in order to configure
 
 ![Enable Third-party application access via OAuth](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-organization-enable-oauth-access.png)
 
-**Note:** We do not support preemptive permissions syncing at this point. Once a user signs up / logins to Sourcegraph with their Azure DevOps account, Sourcegraph uses the authenticated `access_token` to calculate permissions by listing the organizations and projects that the user has access to. As a result, immediately after signing up user level permissions may not be 100% up to date. Users are advised to wait for an initial permissions sync to complete, whose status they may check from the `Permissions` tab under their account settings page. Alternatively they may also trigger a permissions sync for their account from the same page.
+> NOTE: We do not support preemptive permissions syncing at this point. Once a user signs up / logins to Sourcegraph with their Azure DevOps account, Sourcegraph uses the authenticated `access_token` to calculate permissions by listing the organizations and projects that the user has access to. As a result, immediately after signing up user level permissions may not be 100% up to date. Users are advised to wait for an initial permissions sync to complete, whose status they may check from the `Permissions` tab under their account settings page. Alternatively they may also trigger a permissions sync for their account from the same page.
 
 Since permissions are already enforced by setting `enforcePermission` in the code host configuration, even though user permissions may not have synced completely, users will not have access to any repositories that they cannot access on Azure DevOps. As the user permissions sync progresses and eventually completes, they will be able to access the complete set of repositories on Sourcegraph that they can already access on Azure DevOps.
+
+## Rate limits
+
+When Sourcegraph hits a rate limit imposed by Azure DevOps, Sourcegraph waits the appropriate amount of time specified by the code host before retrying the request. You can read more about how Azure DevOps imposes rate limits [here](https://learn.microsoft.com/en-us/azure/devops/integrate/concepts/rate-limits).

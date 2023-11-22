@@ -1,12 +1,12 @@
 import { fromEvent } from 'rxjs'
 import { map, startWith } from 'rxjs/operators'
 
-import { LineOrPositionOrRange } from '@sourcegraph/common'
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { querySelectorOrSelf } from '../../util/dom'
-import { CodeHost } from '../shared/codeHost'
-import { CodeView } from '../shared/codeViews'
-import { ViewResolver } from '../shared/views'
+import type { CodeHost } from '../shared/codeHost'
+import type { CodeView } from '../shared/codeViews'
+import type { ViewResolver } from '../shared/views'
 
 import { getContext } from './context'
 import { commitDOMFunctions, pullRequestDOMFunctions, singleFileDOMFunctions } from './domFunctions'

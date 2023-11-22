@@ -1,23 +1,27 @@
-import { FC, useEffect, useState } from 'react'
+import { type FC, useEffect, useState } from 'react'
 
-import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
-import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { useV2QueryInput } from '../../../search/useV2QueryInput'
+import { GettingStartedTour } from '../../../tour/GettingStartedTour'
+import { useShowOnboardingTour } from '../../../tour/hooks'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { SearchPageFooter } from './SearchPageFooter'
 import { SearchPageInput } from './SearchPageInput'
+import { TryCodyCtaSection } from './TryCodyCtaSection'
+import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
 
@@ -28,13 +32,11 @@ interface SearchPageContentProps {
 export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const { shouldShowAddCodeHostWidget } = props
 
-    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser, ownEnabled } =
+    const { telemetryService, selectedSearchContextSpec, isSourcegraphDotCom, authenticatedUser } =
         useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
-    const [experimentalQueryInput] = useExperimentalQueryInput()
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
-    const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
+    const [v2QueryInput] = useV2QueryInput()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -48,7 +50,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         // we need properly "translate" the queries when switching between the both versions
         if (selectedSearchContextSpec) {
             setQueryState(state => {
-                if (experimentalQueryInput) {
+                if (v2QueryInput) {
                     return { query: appendContextFilter(state.query, selectedSearchContextSpec) }
                 }
                 const contextFilter = getGlobalSearchContextFilter(state.query)?.filter
@@ -58,30 +60,42 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 return state
             })
         }
-    }, [experimentalQueryInput, selectedSearchContextSpec])
+    }, [v2QueryInput, selectedSearchContextSpec])
+
+    const defaultSimpleSearchToggle = true
+    const [simpleSearch, setSimpleSearch] = useLocalStorage('simple.search.toggle', defaultSimpleSearchToggle)
+    const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
+
+    const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
+    const showCodyCTA = !showOnboardingTour
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
             {isSourcegraphDotCom && (
-                <div className="d-sm-flex flex-row text-center">
-                    <div className={classNames(styles.slogan, 'text-muted mt-3 mr-sm-2 pr-2')}>
-                        Searching millions of public repositories
-                    </div>
-                    <div className="mt-3">
-                        <Link
-                            to="https://about.sourcegraph.com"
-                            onClick={() =>
-                                telemetryService.log('ClickedOnEnterpriseCTA', { location: 'HomeAboveSearch' })
-                            }
-                        >
-                            Get Sourcegraph Enterprise <Icon svgPath={mdiArrowRight} aria-hidden={true} />
-                        </Link>
-                    </div>
+                <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">
+                    Code search and an AI assistant with the context of the code graph.
                 </div>
             )}
 
             <div className={styles.searchContainer}>
+                {simpleSearchEnabled && (
+                    <div className="mb-2">
+                        <Label htmlFor="simpleSearchToggle" className="mr-2">
+                            Simple search
+                        </Label>
+                        <Toggle
+                            id="simpleSearchToggle"
+                            value={simpleSearch}
+                            onToggle={val => {
+                                const arg = { state: val }
+                                telemetryService.log('SimpleSearchToggle', arg, arg)
+                                setSimpleSearch(val)
+                            }}
+                        />
+                    </div>
+                )}
+
                 {shouldShowAddCodeHostWidget ? (
                     <>
                         <Tooltip
@@ -89,27 +103,55 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             placement="top"
                         >
                             <div className={styles.translucent}>
-                                <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                                <SearchPageInput
+                                    simpleSearch={false}
+                                    queryState={queryState}
+                                    setQueryState={setQueryState}
+                                />
                             </div>
                         </Tooltip>
                         <AddCodeHostWidget className="mb-4" />
                     </>
                 ) : (
-                    <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                    <>
+                        <SearchPageInput
+                            simpleSearch={simpleSearch && simpleSearchEnabled}
+                            queryState={queryState}
+                            setQueryState={setQueryState}
+                        />
+                        {authenticatedUser && showOnboardingTour && (
+                            <GettingStartedTour
+                                className="mt-5"
+                                telemetryService={telemetryService}
+                                variant="horizontal"
+                                authenticatedUser={authenticatedUser}
+                            />
+                        )}
+                        {showCodyCTA ? (
+                            authenticatedUser ? (
+                                <TryCodyCtaSection
+                                    className="mx-auto my-5"
+                                    telemetryService={telemetryService}
+                                    isSourcegraphDotCom={isSourcegraphDotCom}
+                                />
+                            ) : (
+                                <TryCodySignUpCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
+                            )
+                        ) : null}
+                    </>
                 )}
             </div>
-            <div className={classNames(styles.panelsContainer)}>
-                {(!!authenticatedUser || isSourcegraphDotCom) && (
-                    <QueryExamples
-                        selectedSearchContextSpec={selectedSearchContextSpec}
-                        telemetryService={telemetryService}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                        isSourcegraphDotCom={isSourcegraphDotCom}
-                        enableOwnershipSearch={enableOwnershipSearch}
-                    />
-                )}
-            </div>
+            {(!simpleSearchEnabled || !simpleSearch) && (
+                <div className={classNames(styles.panelsContainer)}>
+                    {(!!authenticatedUser || isSourcegraphDotCom) && (
+                        <QueryExamples
+                            selectedSearchContextSpec={selectedSearchContextSpec}
+                            telemetryService={telemetryService}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                        />
+                    )}
+                </div>
+            )}
 
             <SearchPageFooter />
         </div>

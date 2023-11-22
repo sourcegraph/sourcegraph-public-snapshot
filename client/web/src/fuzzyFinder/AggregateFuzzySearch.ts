@@ -1,4 +1,4 @@
-import { FuzzySearch, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
+import { FuzzySearch, type FuzzySearchParameters, type FuzzySearchResult } from './FuzzySearch'
 
 export class AggregateFuzzySearch extends FuzzySearch {
     public totalFileCount: number

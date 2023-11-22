@@ -4,7 +4,7 @@ import { asError, isErrorLike } from '@sourcegraph/common'
 import { Button, Modal, H3, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
-import { Scalars } from '../../../../graphql-operations'
+import type { Scalars } from '../../../../graphql-operations'
 import { closeChangesets as _closeChangesets } from '../backend'
 
 export interface CloseChangesetsModalProps {

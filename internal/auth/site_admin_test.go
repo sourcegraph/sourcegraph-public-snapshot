@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/require"
@@ -14,8 +15,8 @@ import (
 var usersMap = map[int32]*types.User{1: {ID: 1, SiteAdmin: true}, 100: {ID: 100, SiteAdmin: false}}
 
 func TestCheckCurrentUserIsSiteAdmin(t *testing.T) {
-	db := database.NewMockDB()
-	users := database.NewMockUserStore()
+	db := dbmocks.NewMockDB()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		userID := actor.FromContext(ctx).UID
 		if user, ok := usersMap[userID]; ok {
@@ -73,8 +74,8 @@ func TestCheckCurrentUserIsSiteAdmin(t *testing.T) {
 }
 
 func TestCheckUserIsSiteAdmin(t *testing.T) {
-	db := database.NewMockDB()
-	users := database.NewMockUserStore()
+	db := dbmocks.NewMockDB()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		if user, ok := usersMap[id]; ok {
 			return user, nil
@@ -131,8 +132,8 @@ func TestCheckUserIsSiteAdmin(t *testing.T) {
 }
 
 func TestCheckSiteAdminOrSameUser(t *testing.T) {
-	db := database.NewMockDB()
-	users := database.NewMockUserStore()
+	db := dbmocks.NewMockDB()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		if user, ok := usersMap[id]; ok {
 			return user, nil
@@ -205,8 +206,8 @@ func TestCheckSiteAdminOrSameUser(t *testing.T) {
 }
 
 func TestCheckSameUser(t *testing.T) {
-	db := database.NewMockDB()
-	users := database.NewMockUserStore()
+	db := dbmocks.NewMockDB()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		userID := actor.FromContext(ctx).UID
 		if user, ok := usersMap[userID]; ok {
@@ -260,8 +261,8 @@ func TestCheckSameUser(t *testing.T) {
 }
 
 func TestCurrentUser(t *testing.T) {
-	db := database.NewMockDB()
-	users := database.NewMockUserStore()
+	db := dbmocks.NewMockDB()
+	users := dbmocks.NewMockUserStore()
 	sampleError := errors.New("oops")
 	users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		userID := actor.FromContext(ctx).UID

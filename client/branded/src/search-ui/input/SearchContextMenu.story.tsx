@@ -1,7 +1,7 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
-import { Observable, of } from 'rxjs'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
+import { type Observable, of } from 'rxjs'
 
-import { ListSearchContextsResult } from '@sourcegraph/shared/src/graphql-operations'
+import type { ListSearchContextsResult } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     mockFetchSearchContexts,
@@ -10,9 +10,9 @@ import {
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { SearchContextMenu, SearchContextMenuProps } from './SearchContextMenu'
+import { SearchContextMenu, type SearchContextMenuProps } from './SearchContextMenu'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="dropdown-menu show" style={{ position: 'static' }}>
         {story()}
     </div>
@@ -58,19 +58,19 @@ const emptySearchContexts = {
         }),
 }
 
-export const Default: Story = () => <BrandedStory>{() => <SearchContextMenu {...defaultProps} />}</BrandedStory>
+export const Default: StoryFn = () => <BrandedStory>{() => <SearchContextMenu {...defaultProps} />}</BrandedStory>
 
-export const Empty: Story = () => (
+export const Empty: StoryFn = () => (
     <BrandedStory>{() => <SearchContextMenu {...defaultProps} {...emptySearchContexts} />}</BrandedStory>
 )
 
-export const WithManageLink: Story = () => (
+export const WithManageLink: StoryFn = () => (
     <BrandedStory>{() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} />}</BrandedStory>
 )
 
 WithManageLink.storyName = 'with manage link'
 
-export const WithCTALink: Story = () => (
+export const WithCTALink: StoryFn = () => (
     <BrandedStory>
         {() => <SearchContextMenu {...defaultProps} showSearchContextManagement={true} isSourcegraphDotCom={true} />}
     </BrandedStory>

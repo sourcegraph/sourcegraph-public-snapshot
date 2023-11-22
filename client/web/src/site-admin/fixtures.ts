@@ -1,8 +1,8 @@
 import { formatRFC3339, subMinutes } from 'date-fns'
 
-import { ExternalServiceKind, ExternalServiceSyncJobState } from '@sourcegraph/shared/src/graphql-operations'
+import { type ExternalServiceKind, ExternalServiceSyncJobState } from '@sourcegraph/shared/src/graphql-operations'
 
-import { ListExternalServiceFields, WebhookFields } from '../graphql-operations'
+import type { ListExternalServiceFields, WebhookFields } from '../graphql-operations'
 
 export const TIMESTAMP_MOCK = new Date(2021, 10, 8, 16, 40, 30)
 
@@ -20,8 +20,18 @@ export function createExternalService(kind: ExternalServiceKind, url: string): L
         nextSyncAt: null,
         updatedAt: '2021-03-15T19:39:11Z',
         createdAt: '2021-03-15T19:39:11Z',
+        rateLimiterState: {
+            __typename: 'RateLimiterState',
+            currentCapacity: 10,
+            burst: 10,
+            limit: 5000,
+            interval: 1,
+            lastReplenishment: '2021-03-15T19:39:11Z',
+            infinite: false,
+        },
         webhookURL: null,
         hasConnectionCheck: true,
+        unrestricted: false,
         syncJobs: {
             totalCount: 1,
             pageInfo: { endCursor: null, hasNextPage: false },

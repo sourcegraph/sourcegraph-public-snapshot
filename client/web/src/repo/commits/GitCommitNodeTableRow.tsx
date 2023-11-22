@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
-import { mdiDotsHorizontal } from '@mdi/js'
+import { mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -9,8 +9,9 @@ import { Button, Link, Icon, Code } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { Linkified } from '../linkifiy/Linkified'
+import { isPerforceChangelistMappingEnabled } from '../utils'
 
-import { GitCommitNodeProps } from './GitCommitNode'
+import type { GitCommitNodeProps } from './GitCommitNode'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 
 import styles from './GitCommitNode.module.scss'
@@ -33,11 +34,16 @@ export const GitCommitNodeTableRow: React.FC<
         setShowCommitMessageBody(!showCommitMessageBody)
     }, [showCommitMessageBody])
 
+    const canonicalURL =
+        isPerforceChangelistMappingEnabled() && node.perforceChangelist?.canonicalURL
+            ? node.perforceChangelist.canonicalURL
+            : node.canonicalURL
+
     const messageElement = (
         <div className={classNames(styles.message, styles.messageSmall)} data-testid="git-commit-node-message">
             <span className={classNames('mr-2', styles.messageSubject)}>
                 <CommitMessageWithLinks
-                    to={node.canonicalURL}
+                    to={canonicalURL}
                     className={classNames(messageSubjectClassName, styles.messageLink)}
                     message={node.subject}
                     externalURLs={node.externalURLs}
@@ -51,7 +57,7 @@ export const GitCommitNodeTableRow: React.FC<
                     size="sm"
                     aria-label={showCommitMessageBody ? 'Hide commit message body' : 'Show commit message body'}
                 >
-                    <Icon aria-hidden={true} svgPath={mdiDotsHorizontal} />
+                    <Icon aria-hidden={true} svgPath={showCommitMessageBody ? mdiChevronUp : mdiChevronDown} />
                 </Button>
             )}
 
@@ -63,12 +69,14 @@ export const GitCommitNodeTableRow: React.FC<
 
     const commitMessageBody =
         expandCommitMessageBody || showCommitMessageBody ? (
-            <tr className={classNames(styles.tableRow, className)}>
-                <td colSpan={3}>
-                    <pre className={styles.messageBody}>
+            <tr className={classNames(styles.commitMessage, className)}>
+                <td className={classNames(styles.colByline)} />
+                <td>
+                    <div className={`${styles.messageBody} flex-1`}>
                         {node.body && <Linkified input={node.body} externalURLs={node.externalURLs} />}
-                    </pre>
+                    </div>
                 </td>
+                <td className={classNames(styles.spacer)} />
             </tr>
         ) : undefined
 
@@ -89,8 +97,10 @@ export const GitCommitNodeTableRow: React.FC<
                 />
                 <td className="flex-1 overflow-hidden">{messageElement}</td>
                 <td className="text-right">
-                    <Link to={node.canonicalURL}>
-                        <Code data-testid="git-commit-node-oid">{node.abbreviatedOID}</Code>
+                    <Link to={canonicalURL}>
+                        <Code data-testid="git-commit-node-oid">
+                            {node.perforceChangelist?.cid ?? node.abbreviatedOID}
+                        </Code>
                     </Link>
                 </td>
             </tr>

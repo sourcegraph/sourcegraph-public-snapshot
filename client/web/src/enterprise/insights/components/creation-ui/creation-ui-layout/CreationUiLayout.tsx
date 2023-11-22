@@ -2,7 +2,7 @@ import { forwardRef } from 'react'
 
 import classNames from 'classnames'
 
-import { Container, ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { Container, type ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 import styles from './CreationUiLayout.module.scss'
 

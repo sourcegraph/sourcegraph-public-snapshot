@@ -1,8 +1,10 @@
+import { describe, expect, it } from 'vitest'
+
 import { ExternalServiceKind } from '../graphql-operations'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { buildEditorUrl, buildRepoBaseNameAndPath } from './build-url'
-import { EditorSettings } from './editor-settings'
+import type { EditorSettings } from './editor-settings'
 
 function buildSettings(props: EditorSettings = {}): EditorSettings {
     return {

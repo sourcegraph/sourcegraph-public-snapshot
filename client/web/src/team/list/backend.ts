@@ -1,12 +1,12 @@
-import { MutationTuple } from '@apollo/client'
+import type { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     DeleteTeamResult,
     DeleteTeamVariables,
     ListTeamFields,
@@ -40,7 +40,7 @@ const LIST_TEAM_FIELDS = gql`
     }
 `
 
-const LIST_TEAMS = gql`
+export const LIST_TEAMS = gql`
     query ListTeams($first: Int, $after: String, $search: String) {
         teams(first: $first, after: $after, search: $search) {
             totalCount
@@ -57,7 +57,7 @@ const LIST_TEAMS = gql`
     ${LIST_TEAM_FIELDS}
 `
 
-const LIST_TEAMS_OF_PARENT = gql`
+export const LIST_TEAMS_OF_PARENT = gql`
     query ListTeamsOfParent($first: Int, $after: String, $search: String, $teamName: String!) {
         team(name: $teamName) {
             childTeams(first: $first, after: $after, search: $search) {

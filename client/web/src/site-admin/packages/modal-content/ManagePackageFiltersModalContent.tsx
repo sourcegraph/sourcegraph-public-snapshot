@@ -8,9 +8,9 @@ import { LoadingSpinner, ErrorAlert, Badge, Input, Label, Button, Icon, Alert } 
 
 import {
     PackageMatchBehaviour,
-    PackageRepoFilterFields,
-    PackageRepoFiltersResult,
-    PackageRepoFiltersVariables,
+    type PackageRepoFilterFields,
+    type PackageRepoFiltersResult,
+    type PackageRepoFiltersVariables,
 } from '../../../graphql-operations'
 import { packageRepoFiltersQuery, deletePackageRepoFilterMutation } from '../backend'
 import { PackageExternalServiceMap } from '../constants'

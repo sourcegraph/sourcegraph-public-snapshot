@@ -1,21 +1,21 @@
 import * as React from 'react'
 
 import { Navigate } from 'react-router-dom'
-import { concat, Observable, Subject, Subscription } from 'rxjs'
+import { concat, type Observable, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, distinctUntilKeyChanged, map, mapTo, tap, withLatestFrom } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { OrganizationInvitationResponseType } from '@sourcegraph/shared/src/graphql-operations'
 import { LoadingSpinner, Button, Link, Alert, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { orgURL } from '..'
-import { refreshAuthenticatedUser, AuthenticatedUser } from '../../auth'
+import { refreshAuthenticatedUser, type AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { requestGraphQL } from '../../backend/graphql'
 import { ModalPage } from '../../components/ModalPage'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     RespondToOrganizationInvitationResult,
     RespondToOrganizationInvitationVariables,
 } from '../../graphql-operations'
@@ -23,7 +23,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { userURL } from '../../user'
 import { OrgAvatar } from '../OrgAvatar'
 
-import { OrgAreaRouteContext } from './OrgArea'
+import type { OrgAreaRouteContext } from './OrgArea'
 
 interface Props extends OrgAreaRouteContext {
     authenticatedUser: AuthenticatedUser

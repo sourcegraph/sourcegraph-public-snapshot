@@ -1,11 +1,11 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { useLocation } from 'react-router-dom'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { LegacyLayoutRouteContext } from '../LegacyRouteContext'
+import type { LegacyLayoutRouteContext } from '../LegacyRouteContext'
 
 import { parseSearchURLQuery } from '.'
 

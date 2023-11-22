@@ -1,8 +1,8 @@
-import React, { FunctionComponent } from 'react'
+import React, { type FunctionComponent } from 'react'
 
 import { Badge, Link } from '@sourcegraph/wildcard'
 
-import { PreciseIndexFields } from '../../../../graphql-operations'
+import type { PreciseIndexFields } from '../../../../graphql-operations'
 
 export interface ProjectDescriptionProps {
     index: PreciseIndexFields

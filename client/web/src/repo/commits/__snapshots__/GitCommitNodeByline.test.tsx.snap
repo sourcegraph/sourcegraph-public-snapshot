@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`GitCommitNodeByline author (compact) 1`] = `
+exports[`GitCommitNodeByline > author (compact) 1`] = `
 <DocumentFragment>
   <div
     class=""
@@ -34,7 +34,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
 </DocumentFragment>
 `;
 
-exports[`GitCommitNodeByline author 1`] = `
+exports[`GitCommitNodeByline > author 1`] = `
 <DocumentFragment>
   <div
     class=""
@@ -68,7 +68,7 @@ exports[`GitCommitNodeByline author 1`] = `
 </DocumentFragment>
 `;
 
-exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
+exports[`GitCommitNodeByline > different author and committer (compact) 1`] = `
 <DocumentFragment>
   <div
     class=""
@@ -99,7 +99,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
       >
         Alice Zhao
       </span>
-       authored and commited by 
+       authored and committed by 
       <a
         class="font-weight-bold"
         href="https://example.com/bobyang"
@@ -117,7 +117,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
 </DocumentFragment>
 `;
 
-exports[`GitCommitNodeByline different author and committer 1`] = `
+exports[`GitCommitNodeByline > different author and committer 1`] = `
 <DocumentFragment>
   <div
     class=""
@@ -148,7 +148,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
       >
         Alice Zhao
       </span>
-       authored and commited by 
+       authored and committed by 
       <a
         class="font-weight-bold"
         href="https://example.com/bobyang"
@@ -166,7 +166,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
 </DocumentFragment>
 `;
 
-exports[`GitCommitNodeByline omit GitHub committer 1`] = `
+exports[`GitCommitNodeByline > omit GitHub committer 1`] = `
 <DocumentFragment>
   <div
     class=""
@@ -200,7 +200,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
 </DocumentFragment>
 `;
 
-exports[`GitCommitNodeByline same author and committer 1`] = `
+exports[`GitCommitNodeByline > same author and committer 1`] = `
 <DocumentFragment>
   <div
     class=""

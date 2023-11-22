@@ -20,7 +20,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/otlpadapter"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -47,7 +46,7 @@ func addNoK8sClientHandler(r *mux.Router, db database.DB) {
 		fmt.Fprintf(w, `Cluster information not available`)
 		fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
 	})
-	r.Handle("/", adminOnly(noHandler, db))
+	r.Handle("/", debugproxies.AdminOnly(db, noHandler))
 }
 
 // addDebugHandlers registers the reverse proxies to each services debug
@@ -82,7 +81,7 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 		addNoK8sClientHandler(r, db)
 	}
 
-	rph.AddToRouter(r, db)
+	rph.AddToRouter(r, db) // todo
 }
 
 // PreMountGrafanaHook (if set) is invoked as a hook prior to mounting a
@@ -96,14 +95,14 @@ func addNoGrafanaHandler(r *mux.Router, db database.DB) {
 	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
 	})
-	r.Handle("/grafana", adminOnly(noGrafana, db))
+	r.Handle("/grafana", debugproxies.AdminOnly(db, noGrafana))
 }
 
 func addGrafanaNotLicensedHandler(r *mux.Router, db database.DB) {
 	notLicensed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errMonitoringNotLicensed, http.StatusUnauthorized)
 	})
-	r.Handle("/grafana", adminOnly(notLicensed, db))
+	r.Handle("/grafana", debugproxies.AdminOnly(db, notLicensed))
 }
 
 // addReverseProxyForService registers a reverse proxy for the specified service.
@@ -123,7 +122,7 @@ func addGrafana(r *mux.Router, db database.DB) {
 		} else {
 			prefix := "/grafana"
 			// 🚨 SECURITY: Only admins have access to Grafana dashboard
-			r.PathPrefix(prefix).Handler(adminOnly(&httputil.ReverseProxy{
+			r.PathPrefix(prefix).Handler(debugproxies.AdminOnly(db, &httputil.ReverseProxy{
 				Director: func(req *http.Request) {
 					// if set, grafana will fail with an authentication error, so don't allow passthrough
 					req.Header.Del("Authorization")
@@ -133,8 +132,7 @@ func addGrafana(r *mux.Router, db database.DB) {
 						req.URL.Path = req.URL.Path[i+len(prefix):]
 					}
 				},
-				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "grafana"), log.LstdFlags),
-			}, db))
+			}))
 		}
 	} else {
 		addNoGrafanaHandler(r, db)
@@ -147,7 +145,7 @@ func addGrafana(r *mux.Router, db database.DB) {
 // The route only forwards known project ids, so a DSN must be defined in siteconfig.Log.Sentry.Dsn
 // to allow events to be forwarded. Sentry responses are ignored.
 func addSentry(r *mux.Router) {
-	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
+	logger := sglog.Scoped("sentryTunnel")
 
 	// Helper to fetch Sentry configuration from siteConfig.
 	getConfig := func() (string, string, error) {
@@ -245,7 +243,7 @@ func addNoJaegerHandler(r *mux.Router, db database.DB) {
 	noJaeger := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `Jaeger endpoint proxying: Please set env var JAEGER_SERVER_URL`)
 	})
-	r.Handle("/jaeger", adminOnly(noJaeger, db))
+	r.Handle("/jaeger", debugproxies.AdminOnly(db, noJaeger))
 }
 
 func addJaeger(r *mux.Router, db database.DB) {
@@ -257,13 +255,12 @@ func addJaeger(r *mux.Router, db database.DB) {
 		} else {
 			prefix := "/jaeger"
 			// 🚨 SECURITY: Only admins have access to Jaeger dashboard
-			r.PathPrefix(prefix).Handler(adminOnly(&httputil.ReverseProxy{
+			r.PathPrefix(prefix).Handler(debugproxies.AdminOnly(db, &httputil.ReverseProxy{
 				Director: func(req *http.Request) {
 					req.URL.Scheme = "http"
 					req.URL.Host = jaegerURL.Host
 				},
-				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "jaeger"), log.LstdFlags),
-			}, db))
+			}))
 		}
 
 	} else {
@@ -288,7 +285,7 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 		ctx      = context.Background()
 		endpoint = otlpenv.GetEndpoint()
 		protocol = otlpenv.GetProtocol()
-		logger   = sglog.Scoped("otlpAdapter", "OpenTelemetry protocol adapter and forwarder").
+		logger   = sglog.Scoped("otlpAdapter").
 				With(sglog.String("endpoint", endpoint), sglog.String("protocol", string(protocol)))
 	)
 
@@ -313,18 +310,6 @@ func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 
 	// Register adapter endpoints
 	otlpadapter.Register(ctx, logger, protocol, endpoint, r, clientEnabled)
-}
-
-// adminOnly is a HTTP middleware which only allows requests by admins.
-func adminOnly(next http.Handler, db database.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }
 
 // newPrometheusValidator renders problems with the Prometheus deployment and relevant site configuration

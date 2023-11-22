@@ -36,6 +36,7 @@ const (
 	SearchTypeLucky
 	SearchTypeStandard
 	SearchTypeKeyword
+	SearchTypeNewStandardRC1
 )
 
 func (s SearchType) String() string {
@@ -52,6 +53,8 @@ func (s SearchType) String() string {
 		return "lucky"
 	case SearchTypeKeyword:
 		return "keyword"
+	case SearchTypeNewStandardRC1:
+		return "newStandardRC1"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
@@ -441,6 +444,15 @@ type RepoKVPFilter struct {
 }
 
 func (p Parameters) RepoHasKVPs() (res []RepoKVPFilter) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoHasMetaPredicate) {
+		res = append(res, RepoKVPFilter{
+			Key:     pred.Key,
+			Value:   pred.Value,
+			Negated: pred.Negated,
+			KeyOnly: pred.KeyOnly,
+		})
+	})
+
 	VisitTypedPredicate(toNodes(p), func(pred *RepoHasKVPPredicate) {
 		res = append(res, RepoKVPFilter{
 			Key:     pred.Key,
@@ -480,6 +492,17 @@ func (p Parameters) FileHasOwner() (include, exclude []string) {
 			exclude = append(exclude, pred.Owner)
 		} else {
 			include = append(include, pred.Owner)
+		}
+	})
+	return include, exclude
+}
+
+func (p Parameters) FileHasContributor() (include []string, exclude []string) {
+	VisitTypedPredicate(toNodes(p), func(pred *FileHasContributorPredicate) {
+		if pred.Negated {
+			exclude = append(exclude, pred.Contributor)
+		} else {
+			include = append(include, pred.Contributor)
 		}
 	})
 	return include, exclude

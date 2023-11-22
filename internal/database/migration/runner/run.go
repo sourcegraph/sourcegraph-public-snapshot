@@ -491,7 +491,7 @@ pollIndexStatusLoop:
 		// of the index.
 
 		var (
-			pgErr        pgconn.PgError
+			pgErr        *pgconn.PgError
 			raceDetected bool
 
 			errorFilter = func(err error) error {

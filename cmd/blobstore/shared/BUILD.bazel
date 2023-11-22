@@ -12,6 +12,7 @@ go_library(
         "//cmd/blobstore/internal/blobstore",
         "//internal/actor",
         "//internal/conf",
+        "//internal/conf/deploy",
         "//internal/debugserver",
         "//internal/env",
         "//internal/goroutine",

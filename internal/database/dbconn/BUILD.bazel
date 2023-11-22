@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "dbconn",
@@ -22,6 +23,7 @@ go_library(
         "//internal/env",
         "//internal/lazyregexp",
         "//lib/errors",
+        "//lib/output",
         "@com_github_jackc_pgx_v4//:pgx",
         "@com_github_jackc_pgx_v4//stdlib",
         "@com_github_lib_pq//:pq",

@@ -1,36 +1,17 @@
 package linters
 
 import (
-	"bytes"
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/run"
-	"go.bobheadxi.dev/streamline/pipeline"
-
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
-	goFmt          = runScript("Go format", "dev/check/gofmt.sh")
 	goDBConnImport = runScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh")
 )
-
-func goLint() *linter {
-	check := runCheck("Go lint", func(ctx context.Context, out *std.Output, args *repo.State) error {
-		return root.Run(run.Bash(ctx, "dev/check/go-lint.sh")).
-			Pipeline(pipeline.Filter(func(line []byte) bool {
-				// Ignore go mod download stuff
-				return !bytes.HasPrefix(line, []byte("go: downloading "))
-			})).
-			StreamLines(out.Write)
-	})
-	check.LegacyAnnotations = true
-	return check
-}
 
 func lintSGExit() *linter {
 	return runCheck("Lint dev/sg exit signals", func(ctx context.Context, out *std.Output, s *repo.State) error {
@@ -81,7 +62,7 @@ func lintLoggingLibraries() *linter {
 		},
 		AllowedFiles: []string{
 			// Let everything in dev use whatever they want
-			"dev", "enterprise/dev",
+			"dev",
 			// Banned imports will match on the linter here
 			"dev/sg/linters",
 			// We allow one usage of a direct zap import here
@@ -90,6 +71,8 @@ func lintLoggingLibraries() *linter {
 			"internal/logging/main.go",
 			// Dependencies require direct usage of zap
 			"cmd/frontend/internal/app/otlpadapter",
+			// Legacy and special case handling of panics in background routines
+			"lib/background/goroutine.go",
 		},
 		ErrorFunc: func(bannedImport string) error {
 			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,

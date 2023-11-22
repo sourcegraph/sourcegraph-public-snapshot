@@ -1,11 +1,11 @@
-import { FC, useEffect } from 'react'
+import { type FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Card,
@@ -20,7 +20,7 @@ import {
     getDefaultInputProps,
 } from '@sourcegraph/wildcard'
 
-import { GetExampleRepositoryResult, GetExampleRepositoryVariables } from '../../../../../../../graphql-operations'
+import type { GetExampleRepositoryResult, GetExampleRepositoryVariables } from '../../../../../../../graphql-operations'
 import { InsightQueryInput, RepositoriesField, insightRepositoriesValidator } from '../../../../../components'
 import { getQueryPatternTypeFilter } from '../../../../insights/creation/search-insight'
 import { CodeInsightsDescription } from '../code-insights-description/CodeInsightsDescription'
@@ -39,12 +39,10 @@ const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
     query: 'TODO',
 }
 
-interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {
-    isSourcegraphApp?: boolean
-}
+interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
 export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = props => {
-    const { telemetryService, isSourcegraphApp, ...otherProps } = props
+    const { telemetryService, ...otherProps } = props
 
     const { repositoryUrl, loading: repositoryValueLoading } = useExampleRepositoryUrl()
 
@@ -138,7 +136,7 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
             </form>
 
             <div>
-                <CodeInsightsDescription isSourcegraphApp={isSourcegraphApp} />
+                <CodeInsightsDescription />
                 <footer className={styles.footer}>
                     <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight

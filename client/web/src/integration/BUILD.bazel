@@ -1,5 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:defs.bzl", "ts_project")
+load("//dev:mocha.bzl", "mocha_test")
 
 # integration/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
@@ -9,6 +10,7 @@ load("//dev:defs.bzl", "ts_project")
 ts_config(
     name = "tsconfig",
     src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
     deps = [
         "//client/shared/src/testing:tsconfig",
         "//client/web:tsconfig",
@@ -19,7 +21,6 @@ ts_project(
     name = "integration",
     srcs = [
         "context.ts",
-        "environment.ts",
         "graphQlResponseHelpers.ts",
         "graphQlResults.ts",
         "insights/utils/override-insights-graphql-api.ts",
@@ -27,18 +28,18 @@ ts_project(
         "temporarySettingsContext.ts",
         "utils.ts",
     ],
-    module = "commonjs",
     tsconfig = ":tsconfig",
-    # TODO(bazel): type-only imports
     deps = [
+        "//:node_modules/@codemirror/view",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/pollyjs__core",  #keep
+        "//:node_modules/@types/puppeteer",
         "//:node_modules/lodash",
-        "//:node_modules/puppeteer",  #keep
+        "//:node_modules/puppeteer",
         "//client/web:graphql_operations",
         "//client/web:node_modules/@sourcegraph/common",
         "//client/web:node_modules/@sourcegraph/shared",
-        "//client/web:web_lib",  #keep
+        "//client/web:web_lib",
         "//client/web/dev",
     ],
 )
@@ -48,7 +49,6 @@ ts_project(
     testonly = True,
     srcs = [
         "batches.test.ts",
-        "blob-viewer.test.ts",
         "code-monitoring.test.ts",
         "codemirror-blob-view.test.ts",
         "commit-page.test.ts",
@@ -88,14 +88,38 @@ ts_project(
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mocha",
         "//:node_modules/@types/node",
+        "//:node_modules/@types/puppeteer",
         "//:node_modules/date-fns",
         "//:node_modules/delay",
         "//:node_modules/expect",
         "//:node_modules/lodash",
         "//:node_modules/mocha",
+        "//:node_modules/puppeteer",
         "//:node_modules/ts-key-enum",
         "//client/web:graphql_operations",
         "//client/web:node_modules/@sourcegraph/common",
         "//client/web:node_modules/@sourcegraph/shared",
+        "//client/web:web_lib",
     ],
+)
+
+mocha_test(
+    name = "integration-tests",
+    timeout = "moderate",
+    args = [
+        "--parallel",
+        "--jobs 16",
+    ],
+    data = ["//client/web:app"],
+    env = {
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
+    },
+    flaky = True,
+    is_percy_enabled = True,
+    tags = [
+        "no-sandbox",
+        "requires-network",
+    ],
+    tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    deps = [":integration_tests"],
 )

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "dbtest",
@@ -14,6 +15,7 @@ go_library(
         "//internal/database/postgresdsn",
         "@com_github_lib_pq//:pq",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
     ],
 )
 

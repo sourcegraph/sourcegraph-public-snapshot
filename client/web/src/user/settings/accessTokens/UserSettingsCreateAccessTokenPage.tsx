@@ -6,7 +6,7 @@ import { concat, Subject } from 'rxjs'
 import { catchError, concatMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     PageHeader,
@@ -25,8 +25,8 @@ import {
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { PageTitle } from '../../../components/PageTitle'
-import { CreateAccessTokenResult } from '../../../graphql-operations'
-import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
+import type { CreateAccessTokenResult } from '../../../graphql-operations'
+import type { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 
@@ -52,7 +52,8 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
     }, [telemetryService])
 
     /** The contents of the note input field. */
-    const [note, setNote] = useState<string>('')
+    const defaultNoteValue = new URLSearchParams(location.search).get('description') || undefined
+    const [note, setNote] = useState<string>(defaultNoteValue ?? '')
     /** The selected scopes checkboxes. */
     const [scopes, setScopes] = useState<string[]>([AccessTokenScopes.UserAll])
 
@@ -106,6 +107,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         required={true}
                         autoFocus={true}
                         placeholder="What's this token for?"
+                        defaultValue={defaultNoteValue}
                         className="form-group"
                         label="Token description"
                     />
@@ -164,7 +166,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         )}{' '}
                         Generate token
                     </Button>
-                    <Button className="ml-2 test-create-access-token-cancel" to="." variant="secondary" as={Link}>
+                    <Button className="ml-2 test-create-access-token-cancel" to=".." variant="secondary" as={Link}>
                         Cancel
                     </Button>
                 </div>

@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, type FC } from 'react'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import { Button, Link, H3 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { AuthProvider } from '../../../jscontext'
+import type { AuthProvider } from '../../../jscontext'
 
 import { AddGerritAccountModal } from './AddGerritAccountModal'
 import type { NormalizedExternalAccount } from './ExternalAccountsSignIn'
@@ -36,51 +36,18 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
         }
         setIsLoading(true)
 
+        const authURL = new URL(authProvider.authenticationURL, window.location.origin)
+        authURL.searchParams.set('connect', 'true')
+
         if (authProvider.serviceType === 'saml') {
-            window.location.assign(authProvider.authenticationURL)
+            window.location.assign(authURL.toString())
         } else {
-            window.location.assign(`${authProvider.authenticationURL}&redirect=${window.location.href}`)
+            authURL.searchParams.set('redirect', window.location.href)
+            window.location.assign(authURL.toString())
         }
     }, [authProvider.serviceType, authProvider.authenticationURL])
 
     const { icon: AccountIcon } = account
-
-    let accountConnection: JSX.Element | string
-    switch (authProvider.serviceType) {
-        case 'openidconnect':
-        case 'saml':
-        case 'gerrit':
-            accountConnection = account.external?.displayName || 'Not connected'
-        case 'azuredevops':
-            accountConnection = (
-                <>
-                    {account.external?.displayName ? (
-                        <>
-                            {account.external.displayName} (@{account.external?.login})
-                        </>
-                    ) : (
-                        'Not connected'
-                    )}
-                </>
-            )
-            break
-        default:
-            accountConnection = (
-                <>
-                    {account.external?.url ? (
-                        <>
-                            {account.external.displayName} (
-                            <Link to={account.external.url} target="_blank" rel="noopener noreferrer">
-                                @{account.external.login}
-                            </Link>
-                            )
-                        </>
-                    ) : (
-                        'Not connected'
-                    )}
-                </>
-            )
-    }
 
     return (
         <div className="d-flex align-items-start">
@@ -97,21 +64,25 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                     isOpen={isRemoveAccountModalOpen}
                 />
             )}
-            <AddGerritAccountModal
-                serviceID={authProvider.serviceID}
-                onDidAdd={() => {
-                    onDidAdd()
-                    setIsGerritAccountModalOpen(false)
-                }}
-                onDismiss={() => setIsGerritAccountModalOpen(false)}
-                isOpen={isAddGerritAccountModalOpen}
-            />
+            {isAddGerritAccountModalOpen && (
+                <AddGerritAccountModal
+                    serviceID={authProvider.serviceID}
+                    onDidAdd={() => {
+                        onDidAdd()
+                        setIsGerritAccountModalOpen(false)
+                    }}
+                    onDismiss={() => setIsGerritAccountModalOpen(false)}
+                    isOpen={isAddGerritAccountModalOpen}
+                />
+            )}
             <div className="align-self-center">
                 <AccountIcon className="mb-0 mr-2" />
             </div>
             <div className="flex-1 flex-column">
                 <H3 className="m-0">{authProvider.displayName}</H3>
-                <div className="text-muted">{accountConnection}</div>
+                <div className="text-muted">
+                    <ExternalAccountConnectionDetails account={account} serviceType={authProvider.serviceType} />
+                </div>
             </div>
             <div className="align-self-center">
                 {account.external ? (
@@ -134,4 +105,52 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
             </div>
         </div>
     )
+}
+
+interface ExternalAccountConnectionDetailsProps {
+    account: NormalizedExternalAccount
+    serviceType: AuthProvider['serviceType']
+}
+
+export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetailsProps> = ({
+    account,
+    serviceType,
+}) => {
+    switch (serviceType) {
+        case 'openidconnect':
+        case 'saml':
+        case 'gerrit': {
+            return <span>{account.external?.displayName || 'Not connected'}</span>
+        }
+        case 'azuredevops': {
+            return (
+                <>
+                    {account.external?.displayName ? (
+                        <>
+                            {account.external.displayName} (@{account.external?.login})
+                        </>
+                    ) : (
+                        'Not connected'
+                    )}
+                </>
+            )
+        }
+        default: {
+            return (
+                <>
+                    {account.external?.url ? (
+                        <>
+                            {account.external.displayName} (
+                            <Link to={account.external.url} target="_blank" rel="noopener noreferrer">
+                                @{account.external.login}
+                            </Link>
+                            )
+                        </>
+                    ) : (
+                        'Not connected'
+                    )}
+                </>
+            )
+        }
+    }
 }

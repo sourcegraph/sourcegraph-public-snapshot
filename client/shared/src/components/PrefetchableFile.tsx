@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 
-import { Observable, Subscription } from 'rxjs'
+import type { Observable, Subscription } from 'rxjs'
 
-import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import type { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 interface FilePrefetcherParams {
     revision: string

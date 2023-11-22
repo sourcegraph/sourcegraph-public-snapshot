@@ -1,9 +1,8 @@
-import { MockedProviderProps } from '@apollo/client/testing'
-import { Meta } from '@storybook/react'
+import type { MockedProviderProps } from '@apollo/client/testing'
+import type { Meta } from '@storybook/react'
 
-import { RevisionsProps, TabIndex } from '@sourcegraph/branded'
+import { type RevisionsProps, TabIndex } from '@sourcegraph/branded'
 import sidebarStyles from '@sourcegraph/branded/src/search-ui/results/sidebar/SearchSidebar.module.scss'
-// eslint-disable-next-line no-restricted-imports
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { H2 } from '@sourcegraph/wildcard'
 
@@ -22,14 +21,16 @@ import {
     GRAPHQL_ERROR_MOCKS,
 } from './Revisions.mocks'
 
-export default {
+const meta: Meta = {
     title: 'web/search/results/sidebar/Revisions',
     component: Revisions,
     argTypes: { onFilterClick: { action: 'onFilterClick' } },
     parameters: {
         chromatic: { disableSnapshot: false },
     },
-} as Meta
+}
+
+export default meta
 
 const examples: (RevisionsProps & Partial<Pick<MockedProviderProps, 'mocks'>> & { title: string })[] = [
     TabIndex.BRANCHES,

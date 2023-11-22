@@ -1,8 +1,8 @@
 import * as util from 'util'
 
-import chalk, { Chalk } from 'chalk'
+import chalk, { type Chalk } from 'chalk'
 import { identity } from 'lodash'
-import { ConsoleMessage, ConsoleMessageType, Page } from 'puppeteer'
+import type { ConsoleMessage, ConsoleMessageType, Page } from 'puppeteer'
 import stringWidth from 'string-width'
 import terminalSize from 'term-size'
 

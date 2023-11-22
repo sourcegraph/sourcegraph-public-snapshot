@@ -1,17 +1,19 @@
 import { subDays } from 'date-fns'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
 import {
     DiffHunkLineType,
     ExternalServiceKind,
-    SharedGraphQlOperations,
+    RepositoryType,
+    type SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
@@ -24,11 +26,13 @@ describe('RepositoryCommitPage', () => {
         RepositoryCommit: () => ({
             node: {
                 __typename: 'Repository',
+                sourceType: RepositoryType.GIT_REPOSITORY,
                 commit: {
                     __typename: 'GitCommit',
                     id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3pOamd3T1RJMU1BPT0iLCJjIjoiMWU3YmQwMDBlNzhjZjM1YzZlMWJlMWI5ZjE1MTBiNGFhZGZhYTQxNiJ9',
                     oid: '1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                     abbreviatedOID: '1e7bd00',
+                    perforceChangelist: null,
                     message: 'Signup copy adjustment (#43435)\n\nCopy adjustment',
                     subject: 'Signup copy adjustment (#43435)',
                     body: 'Copy adjustment',
@@ -67,6 +71,7 @@ describe('RepositoryCommitPage', () => {
                             __typename: 'GitCommit',
                             oid: '56ab377d94fe96c87bc8c5e26675c585f9312e64',
                             abbreviatedOID: '56ab377',
+                            perforceChangelist: null,
                             url: '/github.com/sourcegraph/sourcegraph/-/commit/56ab377d94fe96c87bc8c5e26675c585f9312e64',
                         },
                     ],
@@ -109,6 +114,7 @@ describe('RepositoryCommitPage', () => {
                                 mostRelevantFile: {
                                     __typename: 'GitBlob',
                                     url: '/github.com/sourcegraph/sourcegraph@1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416/-/blob/client/web/src/auth/CloudSignUpPage.tsx',
+                                    changelistURL: '',
                                 },
                                 hunks: [
                                     {
@@ -184,6 +190,7 @@ describe('RepositoryCommitPage', () => {
                                 mostRelevantFile: {
                                     __typename: 'GitBlob',
                                     url: '/github.com/sourcegraph/sourcegraph@1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416/-/blob/client/web/src/auth/__snapshots__/SignUpPage.test.tsx.snap',
+                                    changelistURL: '',
                                 },
                                 hunks: [
                                     {
@@ -263,6 +270,7 @@ describe('RepositoryCommitPage', () => {
                 id: 'UmVwb3NpdG9yeTozNjgwOTI1MA==',
                 name: 'github.com/sourcegraph/sourcegraph',
                 url: '/github.com/sourcegraph/sourcegraph',
+                sourceType: RepositoryType.GIT_REPOSITORY,
                 externalURLs: [
                     {
                         url: 'https://github.com/sourcegraph/sourcegraph',
@@ -285,12 +293,15 @@ describe('RepositoryCommitPage', () => {
                     cloned: true,
                 },
                 commit: {
+                    __typename: 'GitCommit',
                     oid: '1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                     tree: {
                         url: '/github.com/sourcegraph/sourcegraph',
                     },
                 },
+                changelist: null,
                 isFork: false,
+                metadata: [],
             },
         }),
     }

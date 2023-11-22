@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -74,7 +75,7 @@ func TestQueryToGitQuery(t *testing.T) {
 }
 
 func TestExpandUsernamesToEmails(t *testing.T) {
-	users := database.NewStrictMockUserStore()
+	users := dbmocks.NewStrictMockUserStore()
 	users.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, username string) (*types.User, error) {
 		if want := "alice"; username != want {
 			t.Errorf("got %q, want %q", username, want)
@@ -82,7 +83,7 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 		return &types.User{ID: 123}, nil
 	})
 
-	userEmails := database.NewStrictMockUserEmailsStore()
+	userEmails := dbmocks.NewStrictMockUserEmailsStore()
 	userEmails.ListByUserFunc.SetDefaultHook(func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 		if want := int32(123); opt.UserID != want {
 			t.Errorf("got %v, want %v", opt.UserID, want)
@@ -94,7 +95,7 @@ func TestExpandUsernamesToEmails(t *testing.T) {
 		}, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := dbmocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 

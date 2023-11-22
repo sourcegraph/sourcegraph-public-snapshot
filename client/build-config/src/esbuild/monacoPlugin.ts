@@ -2,12 +2,12 @@ import path from 'path'
 
 import * as esbuild from 'esbuild'
 // eslint-disable-next-line no-restricted-imports
-import { EditorFeature, featuresArr } from 'monaco-editor-webpack-plugin/out/features'
+import { type EditorFeature, featuresArr } from 'monaco-editor-webpack-plugin/out/features'
 // eslint-disable-next-line no-restricted-imports
-import { EditorLanguage, languagesArr } from 'monaco-editor-webpack-plugin/out/languages'
+import { type EditorLanguage, languagesArr } from 'monaco-editor-webpack-plugin/out/languages'
 
+import type { MONACO_LANGUAGES_AND_FEATURES } from '../monaco-editor'
 import { ROOT_PATH } from '../paths'
-import { MONACO_LANGUAGES_AND_FEATURES } from '../webpack/monaco-editor'
 
 const monacoModulePath = (modulePath: string): string =>
     require.resolve(path.join('monaco-editor/esm', modulePath), {
@@ -54,9 +54,7 @@ export const monacoPlugin = ({
         // https://github.com/microsoft/monaco-editor-webpack-plugin does it. The
         // monaco-editor-webpack-plugin approach relies on injecting a different central module
         // file, rather than zeroing out each feature/language module. Our approach necessitates the
-        // ALWAYS_ENABLED_FEATURES hack above. Our approach is fine for when esbuild is still an
-        // optional prototype build method for local dev, but this implementation should be fixed if
-        // we switch to esbuild by default.
+        // ALWAYS_ENABLED_FEATURES hack above.
         build.onLoad({ filter }, () => ({ contents: '', loader: 'js' }))
     },
 })

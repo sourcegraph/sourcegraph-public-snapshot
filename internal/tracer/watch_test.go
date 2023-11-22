@@ -11,18 +11,17 @@ import (
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type mockConfig struct {
-	get func() schema.SiteConfiguration
+	get func() Configuration
 }
 
-var _ conftypes.SiteConfigQuerier = &mockConfig{}
+var _ ConfigurationSource = &mockConfig{}
 
-func (m *mockConfig) SiteConfig() schema.SiteConfiguration { return m.get() }
+func (m *mockConfig) Config() Configuration { return m.get() }
 
 func TestConfigWatcher(t *testing.T) {
 	var (
@@ -33,7 +32,7 @@ func TestConfigWatcher(t *testing.T) {
 		noopProcessor = oteltracesdk.NewBatchSpanProcessor(tracetest.NewNoopExporter())
 	)
 
-	otTracer, otelTracerProvider := newBridgeTracers(logger, provider, debugMode)
+	otelTracerProvider := newLoggedOtelTracerProvider(logger, provider, debugMode)
 	// otelTracer represents a tracer a caller might hold. All tracers should be updated
 	// by updating the underlying provider.
 	otelTracer := otelTracerProvider.Tracer(t.Name())
@@ -43,8 +42,8 @@ func TestConfigWatcher(t *testing.T) {
 		doUpdate := newConfWatcher(
 			logger,
 			&mockConfig{
-				get: func() schema.SiteConfiguration {
-					return schema.SiteConfiguration{
+				get: func() Configuration {
+					return Configuration{
 						ObservabilityTracing: nil,
 					}
 				},
@@ -67,8 +66,8 @@ func TestConfigWatcher(t *testing.T) {
 
 	t.Run("enable tracing with 'observability.tracing: {}'", func(t *testing.T) {
 		mockConfig := &mockConfig{
-			get: func() schema.SiteConfiguration {
-				return schema.SiteConfiguration{
+			get: func() Configuration {
+				return Configuration{
 					ObservabilityTracing: &schema.ObservabilityTracing{},
 				}
 			},
@@ -102,12 +101,6 @@ func TestConfigWatcher(t *testing.T) {
 
 		// span recorder must be registered, and spans from both tracers must go to it
 		var spanCount int
-		t.Run("ot bridge spans go to new processor", func(t *testing.T) {
-			span := otTracer.StartSpan("foo")
-			span.Finish()
-			spanCount++
-			assert.Len(t, spansRecorder.Ended(), spanCount)
-		})
 		t.Run("otel tracer spans go to new processor", func(t *testing.T) {
 			_, span := otelTracer.Start(policy.WithShouldTrace(ctx, true), "foo")
 			span.End()
@@ -123,8 +116,8 @@ func TestConfigWatcher(t *testing.T) {
 		})
 
 		t.Run("disable tracing after enabling it", func(t *testing.T) {
-			mockConfig.get = func() schema.SiteConfiguration {
-				return schema.SiteConfiguration{
+			mockConfig.get = func() Configuration {
+				return Configuration{
 					ObservabilityTracing: &schema.ObservabilityTracing{Sampling: "none"},
 				}
 			}
@@ -134,11 +127,6 @@ func TestConfigWatcher(t *testing.T) {
 			doUpdate()
 
 			// no new spans should register
-			t.Run("ot bridge spans not go to processor", func(t *testing.T) {
-				span := otTracer.StartSpan("foo")
-				span.Finish()
-				assert.Len(t, spansRecorder.Ended(), spanCount)
-			})
 			t.Run("otel tracer spans not go to processor", func(t *testing.T) {
 				_, span := otelTracer.Start(policy.WithShouldTrace(ctx, true), "foo")
 				span.End()
@@ -155,8 +143,8 @@ func TestConfigWatcher(t *testing.T) {
 
 	t.Run("update tracing with debug and sampling all", func(t *testing.T) {
 		mockConf := &mockConfig{
-			get: func() schema.SiteConfiguration {
-				return schema.SiteConfiguration{
+			get: func() Configuration {
+				return Configuration{
 					ObservabilityTracing: &schema.ObservabilityTracing{
 						Debug:    true,
 						Sampling: "all",
@@ -182,12 +170,6 @@ func TestConfigWatcher(t *testing.T) {
 		// span recorder must be registered, and spans from both tracers must go to it
 		var spanCount1 int
 		{
-			span := otTracer.StartSpan("foo")
-			span.Finish()
-			spanCount1++
-			assert.Len(t, spansRecorder1.Ended(), spanCount1)
-		}
-		{
 			_, span := otelTracer.Start(ctx, "foo") // does not need ShouldTrace due to policy
 			span.End()
 			spanCount1++
@@ -195,8 +177,7 @@ func TestConfigWatcher(t *testing.T) {
 		}
 
 		// should have debug set
-		assert.True(t, otTracer.(*loggedOTTracer).debug.Load())
-		assert.True(t, otelTracerProvider.(*loggedOtelTracerProvider).debug.Load())
+		assert.True(t, otelTracerProvider.debug.Load())
 
 		// should set global policy
 		assert.Equal(t, policy.TraceAll, policy.GetTracePolicy())
@@ -204,8 +185,8 @@ func TestConfigWatcher(t *testing.T) {
 		t.Run("sanity check - swap existing processor with another", func(t *testing.T) {
 			spansRecorder2 := tracetest.NewSpanRecorder()
 			updatedSpanProcessor = spansRecorder2
-			mockConf.get = func() schema.SiteConfiguration {
-				return schema.SiteConfiguration{
+			mockConf.get = func() Configuration {
+				return Configuration{
 					ObservabilityTracing: &schema.ObservabilityTracing{
 						Debug:    true,
 						Sampling: "all",
@@ -218,12 +199,6 @@ func TestConfigWatcher(t *testing.T) {
 
 			// span recorder must be registered, and spans from both tracers must go to it
 			var spanCount2 int
-			{
-				span := otTracer.StartSpan("foo")
-				span.Finish()
-				spanCount2++
-				assert.Len(t, spansRecorder2.Ended(), spanCount2)
-			}
 			{
 				_, span := otelTracer.Start(ctx, "foo")
 				span.End()

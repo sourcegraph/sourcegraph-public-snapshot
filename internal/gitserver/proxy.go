@@ -6,7 +6,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // DefaultReverseProxy is the default ReverseProxy. It uses the same transport and HTTP
@@ -36,15 +37,15 @@ type ReverseProxy struct {
 // to gitserver. The director must rewrite the request to the correct gitserver address, which
 // should be obtained via a gitserver client's AddrForRepo method.
 func (p *ReverseProxy) ServeHTTP(repo api.RepoName, method, op string, director func(req *http.Request), res http.ResponseWriter, req *http.Request) {
-	span, _ := ot.StartSpanFromContext(req.Context(), "ReverseProxy.ServeHTTP") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		span.LogKV("repo", string(repo), "method", method, "op", op)
-		span.Finish()
-	}()
+	tr, _ := trace.New(req.Context(), "ReverseProxy.ServeHTTP",
+		repo.Attr(),
+		attribute.String("method", method),
+		attribute.String("op", op))
+	defer tr.End()
 
 	p.HTTPLimiter.Acquire()
 	defer p.HTTPLimiter.Release()
-	span.LogKV("event", "Acquired HTTP limiter")
+	tr.AddEvent("Acquired HTTP limiter")
 
 	proxy := &httputil.ReverseProxy{
 		Director:  director,

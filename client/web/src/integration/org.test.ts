@@ -1,16 +1,18 @@
 import assert from 'assert'
 
+import { afterEach, beforeEach, describe, it } from 'mocha'
+
 import { subtypeOf } from '@sourcegraph/common'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { emptyResponse } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
-import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
+import type { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
@@ -165,6 +167,9 @@ describe('Organizations', () => {
                 await driver.page.goto(driver.sourcegraphBaseUrl + `/organizations/${testOrg.name}/settings`)
                 const updatedSettings = '// updated'
                 const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
+
+                // Take snapshot before updating text in the editor to avoid flakiness.
+                await percySnapshotWithVariants(driver.page, 'Organization settings page')
                 await editor.replace(updatedSettings, 'paste')
 
                 const variables = await testContext.waitForGraphQLRequest(async () => {
@@ -177,7 +182,6 @@ describe('Organizations', () => {
                     contents: updatedSettings,
                 })
 
-                await percySnapshotWithVariants(driver.page, 'Organization settings page')
                 await accessibilityAudit(driver.page)
             })
         })

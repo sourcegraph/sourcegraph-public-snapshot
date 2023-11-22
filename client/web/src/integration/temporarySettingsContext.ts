@@ -1,9 +1,9 @@
-import {
+import type {
     EditTemporarySettingsResult,
     GetTemporarySettingsResult,
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 
 const defaultSettings: TemporarySettings = {
     'user.daysActiveCount': 1,
@@ -40,7 +40,7 @@ export class TemporarySettingsContext {
 
     private editTemporarySettings(contents: string): EditTemporarySettingsResult {
         // This parsing is safe in integration tests
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         this.settings = { ...this.settings, ...JSON.parse(contents) }
 
         return {

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -10,7 +10,7 @@ import { mockRoles } from '../mock'
 
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/src/site-admin/rbac',
@@ -24,7 +24,7 @@ const mockOnConfirm = (event: React.FormEvent) => {
 }
 const batchChangeAdminRole = mockRoles.roles.nodes[1]
 
-export const ConfirmDeleteRoleModalStory: Story = () => (
+export const ConfirmDeleteRoleModalStory: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider>

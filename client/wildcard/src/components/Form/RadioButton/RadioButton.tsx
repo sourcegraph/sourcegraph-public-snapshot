@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { BaseControlInput, ControlInputProps } from '../internal/BaseControlInput'
+import { BaseControlInput, type ControlInputProps } from '../internal/BaseControlInput'
 
 export type RadioButtonProps = {
     /**

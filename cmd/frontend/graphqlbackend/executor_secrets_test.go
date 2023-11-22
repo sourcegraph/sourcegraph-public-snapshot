@@ -17,11 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := &schemaResolver{logger: logger, db: db}
 	ctx := context.Background()
 
@@ -32,8 +33,6 @@ func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 	if err := db.Users().SetIsSiteAdmin(ctx, user.ID, true); err != nil {
 		t.Fatal(err)
 	}
-
-	gqlIDPtr := func(id graphql.ID) *graphql.ID { return &id }
 
 	tts := []struct {
 		name    string
@@ -86,7 +85,7 @@ func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 				Key:       "GITHUB_TOKEN",
 				Value:     "1234",
 				Scope:     ExecutorSecretScopeBatches,
-				Namespace: gqlIDPtr(MarshalUserID(user.ID)),
+				Namespace: pointers.Ptr(MarshalUserID(user.ID)),
 			},
 			actor: actor.FromUser(user.ID),
 		},
@@ -113,7 +112,7 @@ func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 
 func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := &schemaResolver{logger: logger, db: db}
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
@@ -203,7 +202,7 @@ func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
 
 func TestSchemaResolver_DeleteExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := &schemaResolver{logger: logger, db: db}
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
@@ -280,7 +279,7 @@ func TestSchemaResolver_DeleteExecutorSecret(t *testing.T) {
 
 func TestSchemaResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	r := &schemaResolver{logger: logger, db: db}
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
@@ -350,7 +349,7 @@ func TestSchemaResolver_ExecutorSecrets(t *testing.T) {
 
 func TestUserResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
 
@@ -424,7 +423,7 @@ func TestUserResolver_ExecutorSecrets(t *testing.T) {
 
 func TestOrgResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
 
@@ -508,7 +507,7 @@ func TestOrgResolver_ExecutorSecrets(t *testing.T) {
 
 func TestExecutorSecretsIntegration(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})

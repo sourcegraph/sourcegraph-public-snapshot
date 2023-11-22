@@ -1,19 +1,19 @@
-import React, { FC } from 'react'
+import React, { type FC } from 'react'
 
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Routes, Route } from 'react-router-dom'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
-import { OrgAreaOrganizationFields } from '../../graphql-operations'
-import { RouteV6Descriptor } from '../../util/contributions'
-import { OrgAreaRouteContext } from '../area/OrgArea'
+import type { OrgAreaOrganizationFields } from '../../graphql-operations'
+import type { RouteV6Descriptor } from '../../util/contributions'
+import type { OrgAreaRouteContext } from '../area/OrgArea'
 
-import { OrgSettingsSidebar, OrgSettingsSidebarItems } from './OrgSettingsSidebar'
+import { OrgSettingsSidebar, type OrgSettingsSidebarItems } from './OrgSettingsSidebar'
 
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage

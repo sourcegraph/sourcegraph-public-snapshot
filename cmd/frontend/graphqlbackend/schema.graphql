@@ -77,11 +77,24 @@ A mutation.
 """
 type Mutation {
     """
+    INTERNAL ONLY: Sets the value of versions.auto_upgrade in the frontend db.
+    Determines behavior of multiversion upgrades.
+
+    Only site admins may perform this mutation.
+    """
+    setAutoUpgrade(enable: Boolean!): EmptyResponse!
+    """
     Updates the user profile information for the user with the given ID.
 
     Only the user and site admins may perform this mutation.
     """
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
+    """
+    Upgrades the user to Cody Pro.
+
+    Only the user may perform this mutation.
+    """
+    upgradeToCodyPro(user: ID!): User!
     """
     Creates an organization. The caller is added as a member of the newly created organization.
 
@@ -142,12 +155,7 @@ type Mutation {
         """
         The ID of the existing repository whose mirror to check.
         """
-        repository: ID
-        """
-        The name of a repository whose mirror to check. If the name is provided, the repository need not be added
-        to the site (but the site configuration must define a code host that knows how to handle the name).
-        """
-        name: String
+        repository: ID!
     ): CheckMirrorRepositoryConnectionResult!
     """
     Schedule the mirror repository to be updated from its original source repository. Updating
@@ -177,6 +185,9 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createUser(
         """
         The new user's username.
@@ -198,6 +209,9 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     randomizeUserPassword(user: ID!): RandomizeUserPasswordResult!
     """
     Adds an email address to the user's account. The email address will be marked as unverified until the user
@@ -270,9 +284,12 @@ type Mutation {
     """
     setTosAccepted(userID: ID): EmptyResponse!
     """
-    Current user opt in/out from being searchable in the users picker.
+    Sets the user to have completed the post-signup flow.
+    If the ID is omitted, the current user is assumed.
+
+    Only the user or site admins may perform this mutation.
     """
-    setSearchable(searchable: Boolean!): EmptyResponse!
+    setCompletedPostSignup(userID: ID): EmptyResponse!
     """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
@@ -286,6 +303,9 @@ type Mutation {
 
     Only the user or site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
     """
     Deletes and immediately revokes the specified access token, specified by either its ID or by the token
@@ -293,6 +313,9 @@ type Mutation {
 
     Only site admins or the user who owns the token may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     deleteAccessToken(byID: ID, byToken: String): EmptyResponse!
     """
     Deletes the association between an external account and its Sourcegraph user. It does NOT delete the external
@@ -306,22 +329,17 @@ type Mutation {
     must correspond to a valid auth provider on the site. The account details must be a stringified
     JSON object that contains valid credentials for the provided service type.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     addExternalAccount(serviceType: String!, serviceID: String!, accountDetails: String!): EmptyResponse!
-    """
-    Sends an invitation to join Sourcegraph to the given email address.
-
-    Returns instantly regardless of whether or not an invitation email was actually sent. For example, the email
-    may fail to send if there is a typo or it is invalid, or Sourcegraph may refuse to send it due to spam concerns
-    or if the user has been invited too recently.
-    """
-    inviteEmailToSourcegraph(email: String!): EmptyResponse!
     """
     Invite the user with the given username to join the organization. The invited user account must already
     exist.
 
     Only site admins and any organization member may perform this mutation.
     """
-    inviteUserToOrganization(organization: ID!, username: String, email: String): InviteUserToOrganizationResult!
+    inviteUserToOrganization(organization: ID!, username: String!): InviteUserToOrganizationResult!
     """
     Accept or reject an existing organization invitation.
 
@@ -338,31 +356,6 @@ type Mutation {
         responseType: OrganizationInvitationResponseType!
     ): EmptyResponse!
     """
-    Resend the notification about an organization invitation to the recipient.
-
-    Only site admins and any member of the organization may perform this mutation.
-    """
-    resendOrganizationInvitationNotification(
-        """
-        The organization invitation.
-        """
-        organizationInvitation: ID!
-    ): EmptyResponse!
-    """
-    Revoke an existing organization invitation.
-
-    If the invitation has been accepted or rejected, it may no longer be revoked. After an
-    invitation is revoked, the recipient may not accept or reject it. Both cases yield an error.
-
-    Only site admins and any member of the organization may perform this mutation.
-    """
-    revokeOrganizationInvitation(
-        """
-        The organization invitation.
-        """
-        organizationInvitation: ID!
-    ): EmptyResponse!
-    """
     Immediately add a user as a member to the organization, without sending an invitation email.
 
     Only site admins may perform this mutation. Organization members may use the inviteUserToOrganization
@@ -375,31 +368,6 @@ type Mutation {
     Only site admins and any member of the organization may perform this mutation.
     """
     removeUserFromOrganization(user: ID!, organization: ID!): EmptyResponse
-    """
-    Adds or removes a tag on a user.
-
-    Tags are used internally by Sourcegraph as feature flags for experimental features.
-
-    Only site admins may perform this mutation.
-    """
-    setTag(
-        """
-        The ID of the user whose tags to set.
-
-        (This parameter is named "node" to make it easy to support tagging other types of nodes
-        other than users in the future.)
-        """
-        node: ID!
-        """
-        The tag to set.
-        """
-        tag: String!
-        """
-        The desired state of the tag on the user (whether to add or remove): true to add, false to
-        remove.
-        """
-        present: Boolean!
-    ): EmptyResponse!
     """
     Adds a Phabricator repository to Sourcegraph.
     """
@@ -542,6 +510,26 @@ type Mutation {
         Used on Sourcegraph Cloud only.
         """
         insertID: String
+        """
+        The client that this event is being sent from.
+        """
+        client: String
+        """
+        The product category for the event, used for billing purposes.
+        """
+        billingProductCategory: String
+        """
+        The billing ID for the event, used for tagging user events for billing aggregation purposes.
+        """
+        billingEventID: String
+        """
+        The site ID that the client was connected to when the event was logged.
+        """
+        connectedSiteID: String
+        """
+        The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
+        """
+        hashedLicenseKey: String
     ): EmptyResponse
     """
     Logs a batch of events.
@@ -568,6 +556,9 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     updateSiteConfiguration(
         """
         The last ID of the site configuration that is known by the client, to
@@ -586,10 +577,13 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
-    # SECURITY: Only trusted users should be given site admin permissions.
+    # 🚨 SECURITY: Only trusted users should be given site admin permissions.
     # Site admins have full access to the site configuration and other
     # sensitive data, and they can perform destructive actions such as
     # restarting the site.
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
     Invalidates all sessions belonging to a user.
@@ -671,8 +665,11 @@ type Mutation {
     setMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 
     """
-    (experimental) Create a new feature flag
+    EXPERIMENTAL: Create a new feature flag
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createFeatureFlag(
         """
         The name of the feature flag
@@ -694,8 +691,11 @@ type Mutation {
     ): FeatureFlag!
 
     """
-    (experimental) Delete a feature flag
+    EXPERIMENTAL: Delete a feature flag
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     deleteFeatureFlag(
         """
         The name of the feature flag
@@ -704,8 +704,11 @@ type Mutation {
     ): EmptyResponse!
 
     """
-    (experimental) Update a feature flag
+    EXPERIMENTAL: Update a feature flag
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     updateFeatureFlag(
         """
         The name of the feature flag
@@ -726,7 +729,7 @@ type Mutation {
     ): FeatureFlag!
 
     """
-    (experimental) Create a new feature flag override for the given org or user
+    EXPERIMENTAL: Create a new feature flag override for the given org or user
     """
     createFeatureFlagOverride(
         """
@@ -799,6 +802,9 @@ type Mutation {
 
     Only administrators can use this API.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     sendTestEmail(to: String!): String!
 
     """
@@ -819,16 +825,40 @@ type Mutation {
     Associate a new key-value pair with a repo.
     """
     addRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+        @deprecated(
+            reason: "Use addRepoMetadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    Associate a new key-value pair metadata with a repo.
+    """
+    addRepoMetadata(repo: ID!, key: String!, value: String): EmptyResponse!
 
     """
     Update a key-value pair associated with a repo.
     """
     updateRepoKeyValuePair(repo: ID!, key: String!, value: String): EmptyResponse!
+        @deprecated(
+            reason: "Use updateRepoMetadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    Update metadata value for a given metadata key for associated with a repo.
+    """
+    updateRepoMetadata(repo: ID!, key: String!, value: String): EmptyResponse!
 
     """
     Delete a key-value pair associated with a repo.
     """
     deleteRepoKeyValuePair(repo: ID!, key: String!): EmptyResponse!
+        @deprecated(
+            reason: "Use deleteRepoMetadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    Delete a key-value pair metadata associated with a repo.
+    """
+    deleteRepoMetadata(repo: ID!, key: String!): EmptyResponse!
 
     """
     INTERNAL ONLY: Reclone a repository from the gitserver. This involves deleting
@@ -887,6 +917,21 @@ type Mutation {
     Deletes a package repo reference filter.
     """
     deletePackageRepoFilter(id: ID!): EmptyResponse!
+
+    """
+    Sets the completions requests quota for the user per day. Quota: Null means
+    use the default quota.
+    """
+    setUserCompletionsQuota(user: ID!, quota: Int): User!
+    """
+    Sets the code completions requests quota for the user per day. Quota: Null means
+    use the default quota.
+    """
+    setUserCodeCompletionsQuota(user: ID!, quota: Int): User!
+    """
+    Submits a post-signup user survey about intended Cody usage.
+    """
+    submitCodySurvey(isForWork: Boolean!, isForPersonal: Boolean!): EmptyResponse!
 }
 
 """
@@ -968,6 +1013,26 @@ input Event {
     Used on Sourcegraph Cloud only.
     """
     insertID: String
+    """
+    The client that this event is being sent from.
+    """
+    client: String
+    """
+    The product category for the event, used for billing purposes.
+    """
+    billingProductCategory: String
+    """
+    The billing ID for the event, used for tagging user events for billing aggregation purposes.
+    """
+    billingEventID: String
+    """
+    The site ID that the client was connected to when the event was logged.
+    """
+    connectedSiteID: String
+    """
+    The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
+    """
+    hashedLicenseKey: String
 }
 
 """
@@ -1030,6 +1095,79 @@ enum EventSource {
     BACKEND
     STATICWEB
     IDEEXTENSION
+    """
+    DEPRECATED
+    """
+    CODY
+}
+
+"""
+The product client where events come from.
+
+Future additions include:
+- BITBUCKET_NATIVE_INTEGRATION
+- GITLAB_NATIVE_INTEGRATION
+- CHROME_SOURCEGRAPH_EXTENSION
+- FIREFOX_SOURCEGRAPH_EXTENSION
+- EDGE_SOURCEGRAPH_EXTENSION
+- VSCODE_SOURCEGRAPH_EXTENSION (for https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
+- EMACS_CODY_EXTENSION
+"""
+enum EventClient {
+    SERVER_WEB
+    APP_WEB
+    DOTCOM_WEB
+    MARKETING_WEB
+    DOTCOM_BACKEND
+    APP_BACKEND
+    SERVER_BACKEND
+    VSCODE_CODY_EXTENSION
+    JETBRAINS_CODY_EXTENSION
+    NEOVIM_CODY_EXTENSION
+}
+
+"""
+The product categories for events, used for billing purposes.
+"""
+enum EventBillingProductCategory {
+    """
+    Used for all events related to non-billable, non-product usage (e.g. marketing, CTAs, signed out
+    events, etc.)
+    """
+    NOT_BILLABLE
+    """
+    Used for all billable but shared user interface events, such as administration, authentication, user
+    profile and settings, shared landing pages, etc.
+    """
+    SHARED
+    """
+    Used for all events primarily related to the Code Search product, including file and repo pageviews,
+    search actions, code navigation, batch changes, code insights, etc.
+    """
+    CODE_SEARCH
+    """
+    Used for all events primarily related to the Cody product, including chats, recipes, completions, web
+    chat views, etc.
+    """
+    CODY
+}
+
+"""
+Billing IDs for events, used for tagging user events for billing aggregation purposes.
+"""
+enum EventBillingID {
+    """
+    A billable Cody chat event, including manual chats, recipes, and more.
+    """
+    CodyChat
+    """
+    A billable Cody completion (aka suggestion or autocomplete) event.
+    """
+    CodyCompletion
+    """
+    A billable Cody embedding/code graph creation or search event.
+    """
+    CodyEmbedding
 }
 
 """
@@ -1037,6 +1175,9 @@ Input for Mutation.settingsMutation, which contains fields that all settings (gl
 settings) mutations need.
 """
 input SettingsMutationGroupInput {
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     """
     The subject whose settings to mutate (organization, user, etc.).
     """
@@ -1300,10 +1441,10 @@ type Query {
         uri: String
     ): Repository
     """
-    Looks up a repository by either name or cloneURL or hashedName. When the repository does not exist on the server
-    and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
-    an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
-    null.
+    Looks up a repository by either name or cloneURL or hashedName. When the
+    repository does not exist on the server, it returns a Redirect to an
+    external Sourcegraph URL that may have this repository instead. Otherwise,
+    this query returns null.
     """
     repositoryRedirect(
         """
@@ -1336,6 +1477,10 @@ type Query {
         Opaque pagination cursor.
         """
         after: String
+        """
+        If provided, fetch external services which contain a repo with the given ID.
+        """
+        repo: ID
     ): ExternalServiceConnection!
     """
     Lists all namespaces for a given external service connection.
@@ -1446,6 +1591,14 @@ type Query {
         Include repositories that do not have a text search index.
         """
         notIndexed: Boolean = true
+        """
+        Include repositories that have embeddings.
+        """
+        embedded: Boolean = true
+        """
+        Include repositories that don't have embeddings.
+        """
+        notEmbedded: Boolean = true
         """
         Include only repositories that have encountered errors when cloning or fetching
         """
@@ -1579,10 +1732,6 @@ type Query {
         """
         query: String
         """
-        Return only users with the given tag.
-        """
-        tag: String
-        """
         Returns users who have been active in a given period of time.
         """
         activePeriod: UserActivePeriod
@@ -1686,7 +1835,7 @@ type Query {
         before: String
     ): SavedSearchesConnection!
     """
-    (experimental) Return the parse tree of a search query.
+    EXPERIMENTAL: Return the parse tree of a search query.
     """
     parseSearchQuery(
         """
@@ -1877,8 +2026,7 @@ type Query {
     ): BackgroundJobConnection!
 
     """
-    (experimental)
-    Get invitation based on the JWT in the invitation URL
+    EXPERIMENTAL: Get invitation based on the JWT in the invitation URL
     """
     invitationByToken(
         """
@@ -1886,16 +2034,6 @@ type Query {
         """
         token: String!
     ): OrganizationInvitation!
-
-    """
-    Get pending invitations for the specific organization
-    """
-    pendingInvitations(
-        """
-        The organization ID
-        """
-        organization: ID!
-    ): [OrganizationInvitation!]!
 
     """
     Search for users that opt-in to search autocomplete.
@@ -1994,6 +2132,56 @@ type Query {
         """
         before: String
     ): PermissionConnection!
+
+    """
+    Returns information pertaining to all gitserver instances associated with this Sourcegraph instance.
+
+    Site-admin only.
+    """
+    gitservers: GitserverInstanceConnection!
+}
+
+"""
+A list of gitserver instances.
+"""
+type GitserverInstanceConnection {
+    """
+    A list of gitserver instances.
+    """
+    nodes: [GitserverInstance!]!
+    """
+    The total count of gitserver instances in the connection.
+    """
+    totalCount: Int!
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+GitserverInfo contains information about a gitserver instance.
+"""
+type GitserverInstance implements Node {
+    """
+    The unique identifier of the gitserver instance.
+    """
+    id: ID!
+
+    """
+    The address of the gitserver instance.
+    """
+    address: String!
+
+    """
+    The amount of free space available on the gitserver instance, in bytes.
+    """
+    freeDiskSpaceBytes: BigInt!
+
+    """
+    The total amount of storage space on the gitserver instance, in bytes.
+    """
+    totalDiskSpaceBytes: BigInt!
 }
 
 """
@@ -2283,6 +2471,15 @@ type FeatureFlagBoolean {
     Overrides that apply to the feature flag
     """
     overrides: [FeatureFlagOverride!]!
+    """
+    When the feature flag was created.
+    """
+    createdAt: DateTime!
+
+    """
+    When the feature flag was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """
@@ -2304,6 +2501,15 @@ type FeatureFlagRollout {
     Overrides that apply to the feature flag
     """
     overrides: [FeatureFlagOverride!]!
+    """
+    When the feature flag was created.
+    """
+    createdAt: DateTime!
+
+    """
+    When the feature flag was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """
@@ -2470,6 +2676,7 @@ enum SearchPatternType {
     structural
     lucky
     keyword
+    newStandardRC1
 }
 
 """
@@ -3004,12 +3211,48 @@ enum ExternalServiceKind {
     JVMPACKAGES
     NPMPACKAGES
     OTHER
+    LOCALGIT
     PAGURE
     PERFORCE
     PHABRICATOR
     PYTHONPACKAGES
     RUSTPACKAGES
     RUBYPACKAGES
+}
+
+"""
+The current state of a rate limiter.
+"""
+type RateLimiterState {
+    """
+    The number of tokens in the bucket.
+    """
+    burst: Int!
+
+    """
+    The current capacity of the rate limiter.
+    """
+    currentCapacity: Int!
+
+    """
+    If infinite is true, the rate limiter is functionally disabled.
+    """
+    infinite: Boolean!
+
+    """
+    The amount of time in seconds it takes for the rate limiter to refill the number of tokens specified by limit.
+    """
+    interval: Int!
+
+    """
+    The last time at which the rate limiter refilled tokens.
+    """
+    lastReplenishment: DateTime!
+
+    """
+    The number of tokens the rate limiter refills in the specified amount of time.
+    """
+    limit: Int!
 }
 
 """
@@ -3030,6 +3273,11 @@ type ExternalService implements Node {
     The display name of the external service.
     """
     displayName: String!
+
+    """
+    The current rate limiter state for the external service.
+    """
+    rateLimiterState: RateLimiterState
 
     """
     The JSON configuration of the external service.
@@ -3140,6 +3388,11 @@ type ExternalService implements Node {
     True if this external service configuration supports `exclude` parameter.
     """
     supportsRepoExclusion: Boolean!
+
+    """
+    True if this external service is unrestricted and marks all repositories added by it as publicly accessible.
+    """
+    unrestricted: Boolean!
 }
 
 """
@@ -3422,6 +3675,15 @@ type RepositoryConnection {
 }
 
 """
+All possible types of currently supported repositories, even though they may be stored
+as a git repository on disk.
+"""
+enum RepositoryType {
+    GIT_REPOSITORY
+    PERFORCE_DEPOT
+}
+
+"""
 A repository is a Git source control repository that is mirrored from some origin code host.
 """
 type Repository implements Node & GenericSearchResultInterface {
@@ -3442,6 +3704,10 @@ type Repository implements Node & GenericSearchResultInterface {
     DEPRECATED: Use name.
     """
     uri: String! @deprecated(reason: "Use name.")
+    """
+    The source of this repository from where it was imported / converted.
+    """
+    sourceType: RepositoryType!
     """
     The repository's description.
     """
@@ -3475,6 +3741,13 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         inputRevspec: String
     ): GitCommit
+
+    """
+    EXPERIMENTAL: Returns infomration about the given changelist of the perforce depot, or null if
+    no changelist exists with the given cid or it is not a perforce depot.
+    """
+    changelist(cid: String!): PerforceChangelist
+
     """
     The first commit inside the repo
     """
@@ -3672,11 +3945,103 @@ type Repository implements Node & GenericSearchResultInterface {
     A set of user-defined key-value pairs associated with the repo.
     """
     keyValuePairs: [KeyValuePair!]!
+        @deprecated(
+            reason: "Use repo.metadata instead. This field is a deprecated and will be removed in a future release."
+        )
+
+    """
+    A set of user-defined key-value pairs metadata associated with the repo.
+    """
+    metadata: [KeyValuePair!]!
 
     """
     The size of repo when cloned on disk
     """
     diskSizeBytes: BigInt
+
+    """
+    Returns true if embeddings for the repo are generated.
+    """
+    embeddingExists: Boolean!
+
+    """
+    Returns true if command executed on the repo are recorded.
+    """
+    isRecordingEnabled: Boolean!
+
+    """
+    Returns a list of all recorded commands for given repository.
+    """
+    recordedCommands(
+        """
+        Maximum number of recorded commands returned.
+        If a query specifies a limit higher than 40, it will be capped at 40.
+        The default value is 40. This prevents returning an excessive number
+        of recorded commands for performance reasons.
+        """
+        limit: Int = 40
+        """
+        Skips initial "offset" number of recorded commands.
+        (Default: 0)
+        """
+        offset: Int = 0
+    ): RecordedCommandConnection!
+}
+
+"""
+RecordedCommandConnection is a connection containing a list of RecordedCommand nodes.
+"""
+type RecordedCommandConnection {
+    """
+    A list of recorded commands for given repository.
+    """
+    nodes: [RecordedCommand!]!
+
+    """
+    The total number of recorded commands for given repository in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+Recorded command is a Git command and its metadata which was run for particular repo.
+"""
+type RecordedCommand {
+    """
+    When the command started its execution.
+    """
+    start: DateTime!
+    """
+    Command run time in seconds.
+    """
+    duration: Float!
+    """
+    The command itself (e.g. "git fetch").
+    """
+    command: String!
+    """
+    Directory in which the command has been run.
+    """
+    dir: String!
+    """
+    Path to command executable (git executable in most cases).
+    """
+    path: String!
+
+    """
+    Output of the command.
+    """
+    output: String!
+
+    """
+    Indicates whether the command execution was successful.
+    """
+    isSuccess: Boolean!
 }
 
 """
@@ -4030,6 +4395,10 @@ type MirrorRepositoryInfo {
     The last error message, if any, returned when fetching or cloning the repo
     """
     lastError: String
+    """
+    The output of the most recent repo sync job
+    """
+    lastSyncOutput: String
     """
     The byte size of the repo.
     """
@@ -4892,6 +5261,10 @@ type GitCommit implements Node {
     """
     abbreviatedOID: String!
     """
+    EXPERIMENTAL: The perforce changelist ID if this git commit was originally converted from a perforce depot.
+    """
+    perforceChangelist: PerforceChangelist
+    """
     This commit's author.
     """
     author: Signature!
@@ -4944,12 +5317,6 @@ type GitCommit implements Node {
         The path of the tree.
         """
         path: String = ""
-        """
-        Whether to recurse into sub-trees. If true, it overrides the value of the "recursive" parameter on all of
-        GitTree's fields.
-        DEPRECATED: Use the "recursive" parameter on GitTree's fields instead.
-        """
-        recursive: Boolean = false
     ): GitTree
     """
     A list of file names in this repository.
@@ -5164,20 +5531,35 @@ interface TreeEntry {
     """
     Whether this tree entry is a single child
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): TreeEntryConnection!
+    """
+    The Git commit containing this tree entry was reached through.
+    Note that a tree entry can exist in multiple commits.
+    """
+    commit: GitCommit!
+}
+
+"""
+A list of TreeEntry
+"""
+type TreeEntryConnection {
+    """
+    A list of TreeEntry.
+    """
+    nodes: [TreeEntry!]!
+    """
+    The total count of TreeEntry in the connection. This total count may be larger
+    than the number of nodes in this object when the result is paginated.
+    """
+    totalCount: Int
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -5234,7 +5616,7 @@ type GitTree implements TreeEntry {
     """
     directories(
         """
-        Returns the first n files in the tree.
+        Returns the first n directories in the tree.
         """
         first: Int
         """
@@ -5264,15 +5646,9 @@ type GitTree implements TreeEntry {
         """
         first: Int
         """
-        Recurse into sub-trees. If true, implies recursiveSingleChild.
+        Recurse into sub-trees.
         """
         recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories. If true, we return a flat list of
-        every directory that is a single child, and any directories or files that are
-        nested in a single child.
-        """
-        recursiveSingleChild: Boolean = false
         """
         Includes all parent directories and their entries. For example, if the path is
         `/client/web/something`, it will return the following entries in this order:
@@ -5302,20 +5678,11 @@ type GitTree implements TreeEntry {
     """
     Whether this tree entry is a single child
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): TreeEntryConnection!
 }
 
 """
@@ -5406,6 +5773,10 @@ interface File2 {
     The canonical URL to this file (using an immutable revision specifier).
     """
     canonicalURL: String!
+    """
+    The URL to this file using the changelist ID if this file is inside a perforce depot.
+    """
+    changelistURL: String
     """
     The URLs to this file on external services.
     """
@@ -5505,6 +5876,10 @@ type VirtualFile implements File2 {
     Not implemented.
     """
     canonicalURL: String!
+    """
+    Not impleemented.
+    """
+    changelistURL: String
     """
     Not implemented.
     """
@@ -5638,6 +6013,12 @@ type GitBlob implements TreeEntry & File2 {
     The canonical URL to this blob (using an immutable revision specifier).
     """
     canonicalURL: String!
+
+    """
+    The URL to this file using the changelist ID if this file is inside a perforce depot.
+    """
+    changelistURL: String
+
     """
     The URLs to this blob on its repository's external services.
     """
@@ -5645,7 +6026,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Blame the blob.
     """
-    blame(startLine: Int!, endLine: Int!): [Hunk!]!
+    blame(startLine: Int!, endLine: Int!, ignoreWhitespace: Boolean = false): [Hunk!]!
     """
     Highlight the blob contents.
     """
@@ -5693,7 +6074,7 @@ type GitBlob implements TreeEntry & File2 {
         query: String
     ): SymbolConnection!
     """
-    (Experimental) Symbol defined in this blob at the specific line number and character offset.
+    EXPERIMENTAL: Symbol defined in this blob at the specific line number and character offset.
     """
     symbol(
         """
@@ -5708,24 +6089,15 @@ type GitBlob implements TreeEntry & File2 {
     """
     Always false, since a blob is a file, not directory.
     """
-    isSingleChild(
-        """
-        Returns the first n files in the tree.
-        """
-        first: Int
-        """
-        Recurse into sub-trees.
-        """
-        recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories
-        """
-        recursiveSingleChild: Boolean = false
-    ): Boolean!
+    isSingleChild: Boolean!
     """
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
+    """
+    The revision history for this file
+    """
+    history(first: Int, after: String): TreeEntryConnection!
 }
 
 """
@@ -6025,18 +6397,9 @@ type User implements Node & SettingsSubject & Namespace {
     """
     organizationMemberships: OrganizationMembershipConnection!
     """
-    Tags associated with the user. These are used for internal site management and feature selection.
-    Only the user and site admins can access this field.
-    """
-    tags: [String!]!
-    """
     Whether the user has already accepted the terms of service or not.
     """
     tosAccepted: Boolean!
-    """
-    Whether the user accepted to be searched in the users picker or not.
-    """
-    searchable: Boolean!
     """
     The user's usage statistics on Sourcegraph.
     """
@@ -6059,6 +6422,16 @@ type User implements Node & SettingsSubject & Namespace {
     Only the user and site admins can access this field.
     """
     emails: [UserEmail!]!
+    """
+    Whether the user has a verified email or not.
+    Only the user and site admins can access this field.
+    """
+    hasVerifiedEmail: Boolean!
+    """
+    Whether the user has completed the post-signup flow.
+    Only the user and site admins can access this field.
+    """
+    completedPostSignup: Boolean!
     """
     The user's verified primary email address (if any).
     On dotcom only the user and site admins can access this field.
@@ -6123,11 +6496,6 @@ type User implements Node & SettingsSubject & Namespace {
     scimControlled: Boolean!
 
     """
-    EXPERIMENTAL: Collaborators who can be invited to Sourcegraph. This typically comes from a few
-    repositories this user has access to, and is derived from recent commit history of those.
-    """
-    invitableCollaborators: [Person!]!
-    """
     The list of all roles assigned to this user.
     """
     roles(
@@ -6152,6 +6520,25 @@ type User implements Node & SettingsSubject & Namespace {
     The list of permissions granted to this user based on their roles.
     """
     permissions: PermissionConnection!
+    """
+    The configured override for the user to the completions request quota per day.
+    Null, if not overwritten.
+    """
+    completionsQuotaOverride: Int
+    """
+    The configured override for the user to the code completions request quota
+    per day.
+    Null, if not overwritten.
+    """
+    codeCompletionsQuotaOverride: Int
+    """
+    Whether the user has enrolled for Cody Pro.
+    """
+    codyProEnabled: Boolean!
+    """
+    The date when the user enrolled for Cody Pro.
+    """
+    codyProEnabledAt: DateTime
 }
 
 """
@@ -6736,8 +7123,11 @@ type Site implements SettingsSubject {
     siteID: String!
     """
     The site's configuration. Only visible to site admins.
+
+    If returnSafeConfigsOnly is true, returns a subset of the configuration classified
+    as safe config.
     """
-    configuration: SiteConfiguration!
+    configuration(returnSafeConfigsOnly: Boolean): SiteConfiguration!
     """
     The site's latest site-wide settings (which are the second-lowest-precedence
     in the configuration cascade for a user).
@@ -6836,7 +7226,7 @@ type Site implements SettingsSubject {
     allowEditExternalServicesWithFile: Boolean!
     """
     The number of external services distinguished by local repositories and remote repositories.
-    Local repository code host connections are only supported in Sourcegraph App.
+    Local repository code host connections are only supported in Cody App.
     """
     externalServicesCounts: ExternalServicesCounts!
     """
@@ -6947,16 +7337,123 @@ type Site implements SettingsSubject {
     FOR INTERNAL USE ONLY: Returns information about instance upgrade readiness.
     """
     upgradeReadiness: UpgradeReadiness!
+    """
+    FOR INTERNAL USE ONLY: The state of readiness to auto upgrade the Sourcegraph instance via migrator commands.
+    """
+    autoUpgradeEnabled: Boolean!
 
     """
     Wether the current App installation has a connected Sourcegraph.com account.
     """
     appHasConnectedDotComAccount: Boolean!
+
+    """
+    The quota of completions requests allowed per user in a day. Null, if unlimited.
+    """
+    perUserCompletionsQuota: Int
+
+    """
+    The quota of code completions requests allowed per user in a day. Null, if unlimited.
+    """
+    perUserCodeCompletionsQuota: Int
+
+    """
+    Whether users are required to have a verified email in order to access Cody.
+    """
+    requiresVerifiedEmailForCody: Boolean!
+
+    """
+    Whether Cody is enabled for this site.
+    """
+    isCodyEnabled: Boolean!
+
+    """
+    If Cody is enabled, this returns how Cody is configured to talk to the LLM.
+    """
+    codyLLMConfiguration: CodyLLMConfiguration
+
+    """
+    Returns the status of the Cody Rate limits when using the `sourcegraph` provider.
+    If the instance is not using the Cody Gateway there will be no rate limits.
+
+    Site-admin only.
+    """
+    codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
+}
+
+"""
+Cody LLM configuration contains information about how the main LLM used by Cody
+is configured.
+"""
+type CodyLLMConfiguration {
+    """
+    Name of the model being used for chat.
+    """
+    chatModel: String!
+    """
+    Maximum number of tokens client should use when talking to the chatModel.
+    """
+    chatModelMaxTokens: Int
+    """
+    Name of the model being used for fast chat.
+    """
+    fastChatModel: String!
+    """
+    Maximum number of tokens client should use when talking to the fastChatModel.
+    """
+    fastChatModelMaxTokens: Int
+    """
+    Name of the model being used for code completions.
+    """
+    completionModel: String!
+    """
+    Maximum number of tokens client should use when talking to the completionModel.
+    """
+    completionModelMaxTokens: Int
+    """
+    Name of the provider being used for LLM interactions.
+    """
+    provider: String!
+}
+
+"""
+CodyGatewayRateLimitStatus current status of a rate limit.
+"""
+type CodyGatewayRateLimitStatus {
+    """
+    The feature that the rate limit applies to.
+    """
+    feature: String!
+
+    """
+    The limit allowed.
+    """
+    limit: BigInt!
+
+    """
+    The number of usages in current period.
+    """
+    usage: BigInt!
+
+    """
+    The percentage of the rate limit used.
+    """
+    percentUsed: Int!
+
+    """
+    The time interval for the rate limit.
+    """
+    interval: String!
+
+    """
+    When the rate limit next resets if an interval has already started.
+    """
+    nextLimitReset: DateTime
 }
 
 """
 External services count information includes a count of services for remote code host connections and a count of services
-for local code host connections (local is only supported for Sourcegraph App).
+for local code host connections (local is only supported for Cody App).
 """
 type ExternalServicesCounts {
     """
@@ -6976,11 +7473,41 @@ type UpgradeReadiness {
     """
     The schema drift details.
     """
-    schemaDrift: String!
+    schemaDrift: [SchemaDriftSummary!]!
     """
     The list of deprecated-but-unfinished out-of-band migrations.
     """
     requiredOutOfBandMigrations: [OutOfBandMigration!]!
+}
+
+"""
+A summary of a schema drift.
+"""
+type SchemaDriftSummary {
+    """
+    Name of the table that contains the drift
+    """
+    name: String!
+    """
+    The problem that was found
+    """
+    problem: String!
+    """
+    The suggested solution to the problem
+    """
+    solution: String!
+    """
+    The diff of the schema drift
+    """
+    diff: String
+    """
+    The SQL to fix the schema drift
+    """
+    statements: [String!]
+    """
+    The Sourcegraph URL that contains the potential fix
+    """
+    urlHint: String
 }
 
 """
@@ -7030,10 +7557,34 @@ type SiteConfiguration {
         """
         before: String
     ): SiteConfigurationChangeConnection
+    """
+    License information from license key. Available only to site-admins.
+    """
+    licenseInfo: LicenseInfo!
 }
 
 """
-A list of site config diffs.
+License information extracted from license key.
+"""
+type LicenseInfo {
+    """
+    Tags of the license.
+    """
+    tags: [String!]!
+    """
+    The number of users that can use the license.
+    """
+    userCount: Int!
+    """
+    The expiration date of the license.
+    """
+    expiresAt: DateTime!
+}
+
+"""
+A list of site config diffs. Diff generation may not be available from the very
+start depending on when the value of redacted_contents is available in the
+database.
 """
 type SiteConfigurationChangeConnection implements Connection {
     """
@@ -7066,17 +7617,9 @@ type SiteConfigurationChange implements Node {
     author: User
 
     """
-    A flag to indicate if the diff of changes to the previous site configuration
-    was reproduced or not. Sometimes it may not be possible to generate a diff
-    (for example the redacted contents are not available) in which case the
-    value of the flag will be false.
+    The diff string when diffed against the previous site config.
     """
-    reproducedDiff: Boolean!
-
-    """
-    The diff string when diffed against the previous site config. When this is null there was no diff to the previous change.
-    """
-    diff: String
+    diff: String!
     """
     The timestamp when this change in the site config was applied.
     """
@@ -8071,6 +8614,29 @@ type ProductLicenseInfo {
     The date when this license expires.
     """
     expiresAt: DateTime!
+    """
+    The Salesforce subscription ID associated with this license.
+    """
+    salesforceSubscriptionID: String
+    """
+    The Salesforce opportunity ID associated with this license.
+    """
+    salesforceOpportunityID: String
+    """
+    This indicates if the current license is valid. It will be false if:
+    - The license key has expired
+    - The license key is in use on another instance
+    - The license key was revoked
+    """
+    isValid: Boolean!
+    """
+    This indicates the reason the license is invalid. It'll be null if `isValid` is true.
+    """
+    licenseInvalidityReason: String
+    """
+    The license key, hashed using sha256.
+    """
+    hashedKey: String
 }
 
 """
@@ -8078,6 +8644,26 @@ FOR INTERNAL USE ONLY: A status message produced when disableAutoGitUpdates is
 set to true in the site configuration
 """
 type GitUpdatesDisabled {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
+FOR INTERNAL USE ONLY: A status message produced when the disk threshold for gitserver is reached.
+"""
+type GitserverDiskThresholdReached {
+    """
+    The message of this status message
+    """
+    message: String!
+}
+
+"""
+FOR INTERNAL USE ONLY: A status message produced when there are no repositories and no sync jobs in process
+"""
+type NoRepositoriesDetected {
     """
     The message of this status message
     """
@@ -8139,7 +8725,14 @@ type IndexingProgress {
 """
 FOR INTERNAL USE ONLY: A status message
 """
-union StatusMessage = GitUpdatesDisabled | CloningProgress | ExternalServiceSyncError | SyncError | IndexingProgress
+union StatusMessage =
+      GitUpdatesDisabled
+    | NoRepositoriesDetected
+    | CloningProgress
+    | ExternalServiceSyncError
+    | SyncError
+    | IndexingProgress
+    | GitserverDiskThresholdReached
 
 """
 An arbitrarily large integer encoded as a decimal string.
@@ -8189,6 +8782,10 @@ type RepositoryStats {
     The number of repositories that are currently corrupt
     """
     corrupted: Int!
+    """
+    The number of repositories that have embeddings
+    """
+    embedded: Int!
 }
 
 """
@@ -8221,7 +8818,7 @@ type EventLog {
     """
     The source of the event.
     """
-    source: EventSource!
+    source: String!
     """
     The additional argument information.
     """
@@ -8882,7 +9479,12 @@ type Executor implements Node {
     """
     The queue name that the executor polls for work.
     """
-    queueName: String!
+    queueName: String
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueNames: [String!]
 
     """
     Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.
@@ -9163,6 +9765,12 @@ type Team implements Node {
     The creator of this team. Null, if the user was deleted.
     """
     creator: User
+
+    """
+    True, if the team is external, i.e. not found in our database.
+    Example: CODEOWNERS files can contain references to GitHub teams which are not the part of Sourcegraph teams.
+    """
+    external: Boolean!
 }
 
 """
@@ -9541,6 +10149,75 @@ extend type Query {
     ): AccessRequestConnection!
 }
 
+"""
+Repo metadata key or value connection result`
+"""
+type RepoMetadataKeyOrValueConnection {
+    """
+    Total count of repo key-value pair metadata
+    """
+    totalCount: Int!
+    """
+    A list of repo key-value pair metadata
+    """
+    nodes: [String!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+"""
+Repo metadata key result
+"""
+type RepoMetadataKeyResult {
+    """
+    Returns paginated list of repo metadata distinct values matching a query
+    """
+    values(
+        query: String
+        """
+        Pagination paramters
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataKeyOrValueConnection!
+}
+
+"""
+Repo key-value pair metadata
+"""
+type RepoMetadata {
+    """
+    Returns paginated list of repo metadata distinct keys matching a query
+    """
+    keys(
+        query: String
+        """
+        Pagination paramters
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataKeyOrValueConnection!
+
+    """
+    Repo metadata key
+    """
+    key(key: String!): RepoMetadataKeyResult
+}
+
+extend type Query {
+    """
+    Repository key-value pair metadata
+    """
+    repoMeta: RepoMetadata
+}
+
 extend type Mutation {
     """
     Marks access_request as rejected
@@ -9636,6 +10313,17 @@ enum PermissionNamespace {
     This represents the Batch Changes namespace.
     """
     BATCH_CHANGES
+    """
+    Code ownership namespace used for permitting to assign ownership
+    within Sourcegraph.
+    """
+    OWNERSHIP
+
+    """
+    Repo Metadata namespace used for permitting to edit repository
+    key-value pair metadata.
+    """
+    REPO_METADATA
 }
 
 """
@@ -9964,4 +10652,103 @@ type CodeIntelCommit {
     The repository that contains this commit.
     """
     repository: CodeIntelRepository!
+}
+
+"""
+EXPERIMENTAL: A Perforce changelist.
+"""
+type PerforceChangelist {
+    """
+    The changelist ID.
+    """
+    cid: String!
+    """
+    The canonical URL to this changelist.
+    """
+    canonicalURL: String!
+    """
+    The corresponding git commit of this changelist.
+    """
+    commit: GitCommit!
+}
+
+extend type Query {
+    """
+    List of all configured code hosts on this instance.
+
+    Site-admin only.
+    """
+    codeHosts(first: Int = 50, after: String, search: String): CodeHostConnection!
+}
+
+"""
+A list of code hosts.
+"""
+type CodeHostConnection {
+    """
+    Only when this flag is true, the connection can be trusted to be complete.
+    This will stop existing in Sourcegraph 5.3 when the migration is ensured
+    to be complete.
+    """
+    isMigrationDone: Boolean!
+
+    """
+    A list of code hosts.
+    """
+    nodes: [CodeHost!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+
+    """
+    The total number of records in this result set.
+    """
+    totalCount: Int!
+}
+
+"""
+A specific code host, like github.com.
+"""
+type CodeHost implements Node {
+    """
+    The id of the code host.
+    """
+    id: ID!
+
+    """
+    The type of code host, e.g. GITHUB.
+    """
+    kind: ExternalServiceKind!
+
+    """
+    The url for the code host, e.g. github.com.
+    """
+    url: String!
+
+    """
+    A amount of API requests Sourcegraph can send to the code host.
+    """
+    apiRateLimitQuota: Int
+
+    """
+    How often API rate limits get reset. Defined in seconds.
+    """
+    apiRateLimitIntervalSeconds: Int
+
+    """
+    A amount of git requests Sourcegraph can send to the code host.
+    """
+    gitRateLimitQuota: Int
+
+    """
+    How often git rate limits get reset. Defined in seconds.
+    """
+    gitRateLimitIntervalSeconds: Int
+
+    """
+    All external services that refer to this code host.
+    """
+    externalServices(first: Int = 50, after: String): ExternalServiceConnection!
 }

@@ -1,8 +1,11 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package", "ts_project")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
 
 ts_config(
     name = "tsconfig",
@@ -26,12 +29,12 @@ ts_project(
         "src/textDocument.ts",
     ],
     tsconfig = ":tsconfig",
-    # TODO(bazel): "#keep"s required for type-only imports
     deps = [
-        ":node_modules/@sourcegraph/extension-api-types",  #keep
-        ":node_modules/@sourcegraph/template-parser",  #keep
+        ":node_modules/@sourcegraph/extension-api-types",
+        ":node_modules/@sourcegraph/template-parser",
+        ":node_modules/sourcegraph",
         "//:node_modules/@sourcegraph/extension-api-classes",
-        "//:node_modules/utility-types",  #keep
+        "//:node_modules/utility-types",
     ],
 )
 
@@ -42,7 +45,9 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":client-api_lib",
+        ":node_modules/@sourcegraph/extension-api-types",
         "//:node_modules/@sourcegraph/extension-api-classes",
+        "//:node_modules/vitest",
     ],
 )
 

@@ -4,8 +4,8 @@ import classNames from 'classnames'
 
 import { FlexTextArea, H4, Input } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { UseCaseFeedbackModifiers, UseCaseFeedbackState } from '../toast/SurveyUseCaseToast'
+import type { AuthenticatedUser } from '../../auth'
+import type { UseCaseFeedbackModifiers, UseCaseFeedbackState } from '../toast/SurveyUseCaseToast'
 
 import styles from './SurveyUseCaseForm.module.scss'
 

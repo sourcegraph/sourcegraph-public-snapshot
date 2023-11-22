@@ -27,6 +27,7 @@ changesetTemplate:
   commit:
     message: Append Hello World to all README.md files
   published: false
+  fork: false
 `
 
 		_, err := ParseBatchSpec([]byte(spec))

@@ -1,29 +1,30 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "auth",
-    srcs = [
-        "config.go",
-        "forbid_all.go",
-    ],
+    srcs = ["init.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/external/app",
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/internal/auth/authutil",
+        "//cmd/frontend/internal/auth/azureoauth",
+        "//cmd/frontend/internal/auth/bitbucketcloudoauth",
+        "//cmd/frontend/internal/auth/confauth",
+        "//cmd/frontend/internal/auth/gerrit",
+        "//cmd/frontend/internal/auth/githubappauth",
+        "//cmd/frontend/internal/auth/githuboauth",
+        "//cmd/frontend/internal/auth/gitlaboauth",
+        "//cmd/frontend/internal/auth/httpheader",
+        "//cmd/frontend/internal/auth/openidconnect",
+        "//cmd/frontend/internal/auth/saml",
+        "//cmd/frontend/internal/auth/sourcegraphoperator",
+        "//internal/auth",
         "//internal/conf",
-        "//internal/conf/conftypes",
-    ],
-)
-
-go_test(
-    name = "auth_test",
-    timeout = "short",
-    srcs = [
-        "config_test.go",
-        "forbid_all_test.go",
-    ],
-    embed = [":auth"],
-    deps = [
-        "//internal/conf",
-        "//schema",
+        "//internal/database",
+        "//internal/licensing",
+        "@com_github_sourcegraph_log//:log",
     ],
 )

@@ -1,12 +1,15 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package", "sass", "ts_project")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
 
 ts_config(
     name = "tsconfig",
@@ -39,63 +42,32 @@ ts_project(
         "src/decorators/withChromaticThemes/ChromaticRoot/index.ts",
         "src/decorators/withChromaticThemes/index.ts",
         "src/decorators/withChromaticThemes/withChromaticThemes.tsx",
-        "src/dllPlugin/ensureDllBundleIsReady.ts",
-        "src/dllPlugin/getVendorModules.ts",
-        "src/dllPlugin/getWebpackStats.ts",
-        "src/dllPlugin/index.ts",
+        "src/dummyEventSourcePolyfill.ts",
         "src/environment-config.ts",
         "src/main.ts",
         "src/preview.ts",
         "src/themes.ts",
-        "src/webpack.config.common.ts",
-        "src/webpack.config.dll.ts",
     ],
     tsconfig = ":tsconfig",
-    # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":module_style_typings",
         ":node_modules/@sourcegraph/build-config",
         ":node_modules/@sourcegraph/wildcard",
         "//:node_modules/@storybook/addon-actions",
         "//:node_modules/@storybook/addon-console",
-        "//:node_modules/@storybook/addons",  #keep
-        "//:node_modules/@storybook/core-common",  #keep
-        "//:node_modules/@storybook/react",  #keep
+        "//:node_modules/@storybook/builder-vite",
+        "//:node_modules/@storybook/react",
+        "//:node_modules/@storybook/react-vite",
         "//:node_modules/@storybook/theming",
-        "//:node_modules/@types/case-sensitive-paths-webpack-plugin",
+        "//:node_modules/@storybook/types",
         "//:node_modules/@types/classnames",
-        "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
-        "//:node_modules/@types/signale",
-        "//:node_modules/@types/speed-measure-webpack-plugin",
-        "//:node_modules/case-sensitive-paths-webpack-plugin",
         "//:node_modules/classnames",
         "//:node_modules/focus-visible",
-        "//:node_modules/jsonc-parser",
-        "//:node_modules/lodash",
         "//:node_modules/open-color",
         "//:node_modules/react",
-        "//:node_modules/signale",
-        "//:node_modules/speed-measure-webpack-plugin",
-        "//:node_modules/storybook-addon-designs",
-        "//:node_modules/webpack",
-        "//:node_modules/webpack-manifest-plugin",
-    ],
-)
-
-ts_project(
-    name = "storybook_tests",
-    testonly = True,
-    srcs = ["src/coverage.test.ts"],
-    tsconfig = ":tsconfig",
-    # TODO(bazel): "#keep"s required for type-only imports
-    deps = [
-        ":node_modules/@sourcegraph/shared",
-        "//:node_modules/@storybook/addon-storyshots",
-        "//:node_modules/@storybook/addon-storyshots-puppeteer",
-        "//:node_modules/@types/node",
-        "//:node_modules/url",
+        "//:node_modules/vite-plugin-turbosnap",
     ],
 )
 

@@ -1,9 +1,14 @@
 import { CaseInsensitiveFuzzySearch } from '../../fuzzyFinder/CaseInsensitiveFuzzySearch'
-import { FuzzySearch, IndexingFSM, SearchIndexing } from '../../fuzzyFinder/FuzzySearch'
-import { SearchValue } from '../../fuzzyFinder/SearchValue'
+import type {
+    FuzzySearch,
+    FuzzySearchConstructorParameters,
+    IndexingFSM,
+    SearchIndexing,
+} from '../../fuzzyFinder/FuzzySearch'
+import type { SearchValue } from '../../fuzzyFinder/SearchValue'
 
-import { FuzzyFSM } from './FuzzyFsm'
-import { FuzzyLocalCache, PersistableQueryResult } from './FuzzyLocalCache'
+import type { FuzzyFSM } from './FuzzyFsm'
+import type { FuzzyLocalCache, PersistableQueryResult } from './FuzzyLocalCache'
 
 export abstract class FuzzyQuery {
     private isStaleResultsDeleted = false
@@ -11,7 +16,11 @@ export abstract class FuzzyQuery {
     protected doneQueries: Set<string> = new Set()
     protected queryResults: Map<string, PersistableQueryResult> = new Map()
 
-    constructor(private readonly onNamesChanged: () => void, private readonly cache: FuzzyLocalCache) {
+    constructor(
+        private readonly onNamesChanged: () => void,
+        private readonly cache: FuzzyLocalCache,
+        private readonly fuzzySearchParams?: FuzzySearchConstructorParameters
+    ) {
         this.addQueryResults(this.cache.initialValues())
     }
 
@@ -61,7 +70,7 @@ export abstract class FuzzyQuery {
         return this.queries.has(query) || this.doneQueries.has(query)
     }
     protected fuzzySearch(): FuzzySearch {
-        return new CaseInsensitiveFuzzySearch(this.searchValues(), undefined)
+        return new CaseInsensitiveFuzzySearch(this.searchValues(), this.fuzzySearchParams)
     }
 
     public fuzzyFSM(): FuzzyFSM {

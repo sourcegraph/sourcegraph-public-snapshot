@@ -2,10 +2,15 @@ import { createContext, useContext, useMemo } from 'react'
 
 import { cloneDeep, isFunction } from 'lodash'
 
-import { createAggregateError, ErrorLike, isErrorLike, logger, parseJSONCOrError } from '@sourcegraph/common'
+import { createAggregateError, type ErrorLike, isErrorLike, logger, parseJSONCOrError } from '@sourcegraph/common'
 
-import { DefaultSettingFields, OrgSettingFields, SiteSettingFields, UserSettingFields } from '../graphql-operations'
-import { Settings as GeneratedSettingsType, SettingsExperimentalFeatures } from '../schema/settings.schema'
+import type {
+    DefaultSettingFields,
+    OrgSettingFields,
+    SiteSettingFields,
+    UserSettingFields,
+} from '../graphql-operations'
+import type { Settings as GeneratedSettingsType, SettingsExperimentalFeatures } from '../schema/settings.schema'
 
 /**
  * A dummy type to represent the "subject" for client settings (i.e., settings stored in the client application,
@@ -278,7 +283,7 @@ export const useSettingsCascade = (): SettingsCascadeOrError => {
     const { settingsCascade } = useContext(SettingsContext)
     if (
         settingsCascade === EMPTY_SETTINGS_CASCADE &&
-        (typeof globalThis.process === 'undefined' || process.env.JEST_WORKER_ID === undefined)
+        (globalThis.process === undefined || process.env.VITEST_WORKER_ID === undefined)
     ) {
         logger.error(
             'useSettingsCascade must be used within a SettingsProvider, falling back to an empty settings object'
@@ -306,9 +311,8 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     codeInsightsCompute: false,
     editor: 'codemirror6',
     codeInsightsRepoUI: 'search-query-or-strict-list',
-    applySearchQuerySuggestionOnEnter: false,
     isInitialized: true,
-    searchQueryInput: 'experimental',
+    searchQueryInput: 'v2',
 }
 
 /**

@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -60,7 +60,8 @@ func sendPasswordResetURLToPrimaryEmail(ctx context.Context, db database.DB, use
 
 func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct {
 	User graphql.ID
-}) (*randomizeUserPasswordResult, error) {
+},
+) (*randomizeUserPasswordResult, error) {
 	if !userpasswd.ResetPasswordEnabled() {
 		return nil, errors.New("resetting passwords is not enabled")
 	}
@@ -80,7 +81,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 		return nil, errors.Wrap(err, "cannot parse user ID")
 	}
 
-	logger := r.logger.Scoped("randomizeUserPassword", "endpoint for resetting user passwords").
+	logger := r.logger.Scoped("randomizeUserPassword").
 		With(log.Int32("userID", userID))
 
 	logger.Info("resetting user password")

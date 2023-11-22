@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -35,9 +35,9 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 		},
 	})
 
-	svc := types.ExternalService{
-		Kind: extsvc.KindPythonPackages,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.PythonPackagesConnection{
+	svc := typestest.MakeExternalService(t,
+		extsvc.VariantPythonPackages,
+		&schema.PythonPackagesConnection{
 			Urls: []string{
 				"https://pypi.org/simple",
 			},
@@ -47,20 +47,19 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 				"randio==0.1.1",
 				"pytimeparse==1.1.8",
 			},
-		})),
-	}
+		})
 
-	cf, save := newClientFactory(t, t.Name())
+	cf, save := NewClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewPythonPackagesSource(ctx, &svc, cf)
+	src, err := NewPythonPackagesSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	src.SetDependenciesService(depsSvc)
 
-	repos, err := listAll(ctx, src)
+	repos, err := ListAll(ctx, src)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,5 +68,5 @@ func TestPythonPackagesSource_ListRepos(t *testing.T) {
 		return repos[i].Name < repos[j].Name
 	})
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
 }

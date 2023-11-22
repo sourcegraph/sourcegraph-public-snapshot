@@ -2,9 +2,10 @@ import { cleanup, getAllByTestId, getByTestId } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import FileIcon from 'mdi-react/FileIcon'
 import sinon from 'sinon'
+import { afterAll, describe, expect, it } from 'vitest'
 
-import { ContentMatch } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
+import type { ContentMatch } from '@sourcegraph/shared/src/search/stream'
+import type { SettingsCascade } from '@sourcegraph/shared/src/settings/settings'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     HIGHLIGHTED_FILE_LINES_REQUEST,

@@ -1,12 +1,12 @@
 import * as path from 'path'
 import * as util from 'util'
 
-import { MODE, Polly, PollyServer } from '@pollyjs/core'
+import { type MODE, Polly, type PollyServer } from '@pollyjs/core'
 import FSPersister from '@pollyjs/persister-fs'
-import { GraphQLError } from 'graphql'
+import type { GraphQLError } from 'graphql'
 import { snakeCase } from 'lodash'
 import * as mime from 'mime-types'
-import { Test } from 'mocha'
+import type { Test } from 'mocha'
 import { readFile, mkdir } from 'mz/fs'
 import pTimeout from 'p-timeout'
 import * as prettier from 'prettier'
@@ -15,14 +15,13 @@ import { first, timeoutWith } from 'rxjs/operators'
 
 import { STATIC_ASSETS_PATH } from '@sourcegraph/build-config'
 import { logger, asError, keyExistsIn } from '@sourcegraph/common'
-import { ErrorGraphQLResult, GraphQLResult } from '@sourcegraph/http-client'
+import type { ErrorGraphQLResult, GraphQLResult } from '@sourcegraph/http-client'
 
 import { getConfig } from '../config'
-import { recordCoverage } from '../coverage'
-import { Driver } from '../driver'
+import type { Driver } from '../driver'
 import { readEnvironmentString } from '../utils'
 
-import { CdpAdapter, CdpAdapterOptions } from './polly/CdpAdapter'
+import { CdpAdapter, type CdpAdapterOptions } from './polly/CdpAdapter'
 
 // Reduce log verbosity
 util.inspect.defaultOptions.depth = 0
@@ -308,11 +307,6 @@ export const createSharedIntegrationTestContext = async <
             }
 
             subscriptions.unsubscribe()
-            await pTimeout(
-                recordCoverage(driver.browser),
-                DISPOSE_ACTION_TIMEOUT,
-                new Error('Recording coverage timed out')
-            )
 
             if (driver.page.url() !== 'about:blank') {
                 await pTimeout(
@@ -328,7 +322,18 @@ export const createSharedIntegrationTestContext = async <
                 )
             }
 
-            await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT, new Error('Closing Puppeteer page timed out'))
+            /**
+             * We close the browser instance on every test completion via `after(() => driver?.close())`
+             * See the implementation details here: `client/shared/src/testing/driver.ts`.
+             *
+             * So it's OK to continue running tests even if `page.close()` times out.
+             * The issue of `page.close()` timing out is tracked here without a resolution:
+             * 1. https://github.com/puppeteer/puppeteer/issues/4882
+             * 2. https://github.com/puppeteer/puppeteer/issues/4104
+             */
+            await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT, () =>
+                logger.warn('Closing Puppeteer page timed out')
+            )
             await pTimeout(polly.stop(), DISPOSE_ACTION_TIMEOUT, new Error('Stopping Polly timed out'))
         },
     }

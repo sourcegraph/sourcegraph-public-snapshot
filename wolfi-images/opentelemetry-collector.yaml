@@ -1,0 +1,19 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## opentelemetry-collector packages
+    - opentelemetry-collector@sourcegraph
+
+paths:
+  - path: /otel-collector
+    type: directory
+    permissions: 0o755
+
+work-dir: /otel-collector
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

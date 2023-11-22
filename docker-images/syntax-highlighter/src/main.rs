@@ -3,7 +3,12 @@
 #[macro_use]
 extern crate rocket;
 
+use std::path;
+
+use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
+use scip_treesitter_languages::parsers::BundledParser;
+use serde::Deserialize;
 use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};
 
 #[post("/", format = "application/json", data = "<q>")]
@@ -38,6 +43,54 @@ fn scip(q: Json<ScipHighlightQuery>) -> JsonValue {
     }
 }
 
+#[derive(Deserialize, Default, Debug)]
+pub struct SymbolQuery {
+    filename: String,
+    content: String,
+}
+
+pub fn jsonify_err(e: impl ToString) -> JsonValue {
+    json!({"error": e.to_string()})
+}
+
+#[post("/symbols", format = "application/json", data = "<q>")]
+fn symbols(q: Json<SymbolQuery>) -> JsonValue {
+    let path = path::Path::new(&q.filename);
+    let extension = match match path.extension() {
+        Some(vals) => vals,
+        None => {
+            return json!({"error": "Extensionless file"});
+        }
+    }
+    .to_str()
+    {
+        Some(vals) => vals,
+        None => {
+            return json!({"error": "Invalid codepoint"});
+        }
+    };
+    let parser = match BundledParser::get_parser_from_extension(extension) {
+        Some(parser) => parser,
+        None => return json!({"error": "Could not infer parser from extension"}),
+    };
+
+    let document = match scip_syntax::get_symbols(parser, q.content.as_bytes()) {
+        Ok(vals) => vals,
+        Err(err) => {
+            return jsonify_err(err);
+        }
+    };
+
+    let encoded = match document.write_to_bytes() {
+        Ok(vals) => vals,
+        Err(err) => {
+            return jsonify_err(err);
+        }
+    };
+
+    json!({"scip": base64::encode(encoded), "plaintext": false})
+}
+
 #[get("/health")]
 fn health() -> &'static str {
     "OK"
@@ -50,6 +103,25 @@ fn not_found() -> JsonValue {
 
 #[launch]
 fn rocket() -> _ {
+    // Exits with a code zero if the environment variable SANITY_CHECK equals
+    // to "true". This enables testing that the current program is in a runnable
+    // state against the platform it's being executed on.
+    //
+    // See https://github.com/GoogleContainerTools/container-structure-test
+    match std::env::var("SANITY_CHECK") {
+        Ok(v) if v == "true" => {
+            println!("Sanity check passed, exiting without error");
+            std::process::exit(0)
+        }
+        _ => {}
+    };
+
+    // load configurations on-startup instead of on-first-request.
+    // TODO: load individual languages lazily on-request instead, currently
+    // CONFIGURATIONS.get will load every configured configuration together.
+    scip_treesitter_languages::highlights::CONFIGURATIONS
+        .get(&scip_treesitter_languages::parsers::BundledParser::Go);
+
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {
         Ok(v) if v == "true" => {}
@@ -57,6 +129,6 @@ fn rocket() -> _ {
     };
 
     rocket::build()
-        .mount("/", routes![syntect, lsif, scip, health])
+        .mount("/", routes![syntect, lsif, scip, symbols, health])
         .register("/", catchers![not_found])
 }

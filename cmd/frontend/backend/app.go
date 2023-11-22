@@ -30,7 +30,7 @@ func NewAppExternalServices(db database.DB) AppExternalServicesService {
 
 func (a *appExternalServices) LocalExternalServices(ctx context.Context) ([]*types.ExternalService, error) {
 	opt := database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindOther},
+		Kinds: []string{extsvc.VariantOther.AsKind(), extsvc.VariantLocalGit.AsKind()},
 	}
 
 	services, err := a.db.ExternalServices().List(ctx, opt)
@@ -45,14 +45,20 @@ func (a *appExternalServices) LocalExternalServices(ctx context.Context) ([]*typ
 			return nil, err
 		}
 
-		var otherConfig schema.OtherExternalServiceConnection
-		if err = jsonc.Unmarshal(serviceConfig, &otherConfig); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal service config JSON")
+		switch svc.Kind {
+		case extsvc.VariantLocalGit.AsKind():
+			localExternalServices = append(localExternalServices, svc)
+		case extsvc.VariantOther.AsKind():
+			var otherConfig schema.OtherExternalServiceConnection
+			if err = jsonc.Unmarshal(serviceConfig, &otherConfig); err != nil {
+				return nil, errors.Wrap(err, "failed to unmarshal service config JSON")
+			}
+
+			if len(otherConfig.Repos) == 1 && otherConfig.Repos[0] == "src-serve-local" {
+				localExternalServices = append(localExternalServices, svc)
+			}
 		}
 
-		if len(otherConfig.Repos) == 1 && otherConfig.Repos[0] == "src-serve-local" {
-			localExternalServices = append(localExternalServices, svc)
-		}
 	}
 
 	return localExternalServices, nil

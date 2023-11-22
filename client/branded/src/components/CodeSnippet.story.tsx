@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { Container, Text, Code } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = () => (
+export const Simple: StoryFn = () => (
     <Container>
         <Text>
             Highlighted code pieces should go in a panel separating it from the surrounding content. Use{' '}

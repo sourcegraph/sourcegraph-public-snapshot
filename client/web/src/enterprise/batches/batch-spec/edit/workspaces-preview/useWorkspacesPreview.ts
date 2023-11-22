@@ -4,18 +4,18 @@ import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
 import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import {
-    CreateBatchSpecFromRawResult,
-    CreateBatchSpecFromRawVariables,
-    ReplaceBatchSpecInputResult,
-    ReplaceBatchSpecInputVariables,
-    Scalars,
+    type CreateBatchSpecFromRawResult,
+    type CreateBatchSpecFromRawVariables,
+    type ReplaceBatchSpecInputResult,
+    type ReplaceBatchSpecInputVariables,
+    type Scalars,
     BatchSpecWorkspaceResolutionState,
-    WorkspaceResolutionStatusVariables,
-    WorkspaceResolutionStatusResult,
-    BatchSpecWorkspacesPreviewResult,
-    BatchSpecWorkspacesPreviewVariables,
-    BatchSpecImportingChangesetsVariables,
-    BatchSpecImportingChangesetsResult,
+    type WorkspaceResolutionStatusVariables,
+    type WorkspaceResolutionStatusResult,
+    type BatchSpecWorkspacesPreviewResult,
+    type BatchSpecWorkspacesPreviewVariables,
+    type BatchSpecImportingChangesetsVariables,
+    type BatchSpecImportingChangesetsResult,
 } from '../../../../../graphql-operations'
 import {
     CREATE_BATCH_SPEC_FROM_RAW,
@@ -26,7 +26,7 @@ import {
 } from '../../../create/backend'
 
 import { CHANGESETS_PER_PAGE_COUNT } from './useImportingChangesets'
-import { WORKSPACES_PER_PAGE_COUNT, WorkspacePreviewFilters } from './useWorkspaces'
+import { WORKSPACES_PER_PAGE_COUNT, type WorkspacePreviewFilters } from './useWorkspaces'
 
 export type ResolutionState = BatchSpecWorkspaceResolutionState | 'UNSTARTED' | 'CANCELED'
 

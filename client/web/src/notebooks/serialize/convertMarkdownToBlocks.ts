@@ -1,6 +1,6 @@
 import { markdownLexer } from '@sourcegraph/common'
 
-import { BlockInput } from '..'
+import type { BlockInput } from '..'
 import { parseBrowserRepoURL } from '../../util/url'
 
 import { deserializeBlockInput } from '.'

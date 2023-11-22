@@ -1,10 +1,9 @@
 import React from 'react'
 
-import { JSONSchemaType } from 'ajv'
+import type { JSONSchemaType } from 'ajv'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
-// eslint-disable-next-line import/order
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
+import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
 import 'monaco-yaml'
 
@@ -16,7 +15,7 @@ import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
 
 import batchSpecSchemaJSON from '../../../../../../../../schema/batch_spec.schema.json'
 import { requestGraphQL } from '../../../../../backend/graphql'
-import {
+import type {
     Scalars,
     BatchSpecExecutionAvailableSecretKeysResult,
     BatchSpecExecutionAvailableSecretKeysVariables,

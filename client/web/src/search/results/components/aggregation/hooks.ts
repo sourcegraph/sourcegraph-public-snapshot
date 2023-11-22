@@ -3,14 +3,14 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { gql, useQuery } from '@apollo/client'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import {
-    GetSearchAggregationResult,
-    GetSearchAggregationVariables,
+    type GetSearchAggregationResult,
+    type GetSearchAggregationVariables,
     SearchAggregationMode,
     NotAvailableReasonType,
-    SearchPatternType,
+    type SearchPatternType,
 } from '../../../../graphql-operations'
 
 import { AGGREGATION_MODE_URL_KEY, AGGREGATION_UI_MODE_URL_KEY } from './constants'
@@ -64,21 +64,28 @@ function useSyncedWithURLState<State, SerializedState>(
     return [queryParameter, setNextState]
 }
 
-type SerializedAggregationMode = 'repo' | 'path' | 'author' | 'group' | ''
+type SerializedAggregationMode = 'repo' | 'path' | 'author' | 'group' | 'repo-metadata' | ''
 
 const aggregationModeSerializer = (mode: SearchAggregationMode | null): SerializedAggregationMode => {
     switch (mode) {
-        case SearchAggregationMode.REPO:
+        case SearchAggregationMode.REPO: {
             return 'repo'
-        case SearchAggregationMode.PATH:
+        }
+        case SearchAggregationMode.PATH: {
             return 'path'
-        case SearchAggregationMode.AUTHOR:
+        }
+        case SearchAggregationMode.AUTHOR: {
             return 'author'
-        case SearchAggregationMode.CAPTURE_GROUP:
+        }
+        case SearchAggregationMode.CAPTURE_GROUP: {
             return 'group'
-
-        default:
+        }
+        case SearchAggregationMode.REPO_METADATA: {
+            return 'repo-metadata'
+        }
+        default: {
             return ''
+        }
     }
 }
 
@@ -86,17 +93,25 @@ const aggregationModeDeserializer = (
     serializedValue: SerializedAggregationMode | null
 ): SearchAggregationMode | null => {
     switch (serializedValue) {
-        case 'repo':
+        case 'repo': {
             return SearchAggregationMode.REPO
-        case 'path':
+        }
+        case 'path': {
             return SearchAggregationMode.PATH
-        case 'author':
+        }
+        case 'author': {
             return SearchAggregationMode.AUTHOR
-        case 'group':
+        }
+        case 'group': {
             return SearchAggregationMode.CAPTURE_GROUP
+        }
+        case 'repo-metadata': {
+            return SearchAggregationMode.REPO_METADATA
+        }
 
-        default:
+        default: {
             return null
+        }
     }
 }
 
@@ -126,21 +141,25 @@ type SerializedAggregationUIMode = '' | null
 
 const aggregationUIModeSerializer = (uiMode: AggregationUIMode): SerializedAggregationUIMode => {
     switch (uiMode) {
-        case AggregationUIMode.SearchPage:
+        case AggregationUIMode.SearchPage: {
             return ''
+        }
         // Null means here that we will delete uiMode query param from the URL
-        case AggregationUIMode.Sidebar:
+        case AggregationUIMode.Sidebar: {
             return null
+        }
     }
 }
 
 const aggregationUIModeDeserializer = (serializedValue: SerializedAggregationUIMode | null): AggregationUIMode => {
     switch (serializedValue) {
-        case '':
+        case '': {
             return AggregationUIMode.SearchPage
+        }
 
-        default:
+        default: {
             return AggregationUIMode.Sidebar
+        }
     }
 }
 

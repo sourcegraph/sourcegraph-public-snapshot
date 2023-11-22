@@ -1,4 +1,4 @@
-import { Duration } from 'date-fns'
+import type { Duration } from 'date-fns'
 
 import { isDefined } from '@sourcegraph/common'
 import { TimeIntervalStepUnit } from '@sourcegraph/shared/src/graphql-operations'
@@ -11,16 +11,21 @@ export function getStepInterval(step: Duration): [TimeIntervalStepUnit, number] 
     const castUnits = (Object.keys(step) as (keyof Duration)[])
         .map<[TimeIntervalStepUnit, number] | null>(key => {
             switch (key) {
-                case 'hours':
+                case 'hours': {
                     return [TimeIntervalStepUnit.HOUR, step[key] ?? 0]
-                case 'days':
+                }
+                case 'days': {
                     return [TimeIntervalStepUnit.DAY, step[key] ?? 0]
-                case 'weeks':
+                }
+                case 'weeks': {
                     return [TimeIntervalStepUnit.WEEK, step[key] ?? 0]
-                case 'months':
+                }
+                case 'months': {
                     return [TimeIntervalStepUnit.MONTH, step[key] ?? 0]
-                case 'years':
+                }
+                case 'years': {
                     return [TimeIntervalStepUnit.YEAR, step[key] ?? 0]
+                }
             }
 
             return null

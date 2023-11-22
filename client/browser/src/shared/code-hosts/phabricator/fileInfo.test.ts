@@ -1,13 +1,14 @@
 import { readFile } from 'mz/fs'
-import { Observable, throwError, of } from 'rxjs'
+import { type Observable, throwError, of } from 'rxjs'
+import { beforeEach, describe, expect, test } from 'vitest'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { DiffOrBlobInfo } from '../shared/codeHost'
-import { GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
+import type { DiffOrBlobInfo } from '../shared/codeHost'
+import { type GraphQLResponseMap, mockRequestGraphQL } from '../shared/testHelpers'
 
-import { QueryConduitHelper } from './backend'
+import type { QueryConduitHelper } from './backend'
 import { resolveDiffusionFileInfo, resolveRevisionFileInfo, resolveDiffFileInfo } from './fileInfo'
 
 interface ConduitResponseMap {
@@ -122,7 +123,8 @@ function mockQueryConduit(responseMap?: ConduitResponseMap): QueryConduitHelper<
 type Resolver = (
     codeView: HTMLElement,
     requestGraphQL: PlatformContext['requestGraphQL'],
-    queryConduit: QueryConduitHelper<any>
+    queryConduit: QueryConduitHelper<any>,
+    windowLocation__testingOnly: Location | URL
 ) => Observable<DiffOrBlobInfo>
 
 interface Fixture {
@@ -139,7 +141,6 @@ const resolveFileInfoFromFixture = async (
 ): Promise<DiffOrBlobInfo> => {
     const fixtureContent = await readFile(`${__dirname}/__fixtures__/pages/${htmlFixture}`, 'utf-8')
     document.body.innerHTML = fixtureContent
-    jsdom.reconfigure({ url })
     const codeView = document.querySelector(codeViewSelector)
     if (!codeView) {
         throw new Error(`Code view matching selector ${codeViewSelector} not found`)
@@ -150,7 +151,8 @@ const resolveFileInfoFromFixture = async (
             ...DEFAULT_GRAPHQL_RESPONSES,
             ...graphQLResponseMap,
         }),
-        mockQueryConduit(conduitResponseMap)
+        mockQueryConduit(conduitResponseMap),
+        new URL(url)
     ).toPromise()
 }
 

@@ -1,4 +1,4 @@
-import { FC, useContext, useMemo } from 'react'
+import { type FC, useContext, useMemo } from 'react'
 
 import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
@@ -11,7 +11,7 @@ import {
     PageHeader,
     useObservable,
     Link,
-    SubmissionErrors,
+    type SubmissionErrors,
 } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../components/HeroPage'
@@ -20,8 +20,8 @@ import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon, CodeInsightsPage } from '../../../components'
 import {
     CodeInsightsBackendContext,
-    CustomInsightDashboard,
-    InsightsDashboardOwner,
+    type CustomInsightDashboard,
+    type InsightsDashboardOwner,
     InsightsDashboardOwnerType,
     isGlobalOwner,
     isPersonalOwner,
@@ -29,20 +29,16 @@ import {
     useInsightDashboard,
 } from '../../../core'
 import {
-    DashboardCreationFields,
+    type DashboardCreationFields,
     InsightsDashboardCreationContent,
 } from '../creation/components/InsightsDashboardCreationContent'
 
 import styles from './EditDashboardPage.module.scss'
 
-interface Props {
-    isSourcegraphApp: boolean
-}
-
 /**
  * Displays the edit (configure) dashboard page.
  */
-export const EditDashboardPage: FC<Props> = props => {
+export const EditDashboardPage: FC = props => {
     const navigate = useNavigate()
     const { dashboardId } = useParams()
 
@@ -88,7 +84,7 @@ export const EditDashboardPage: FC<Props> = props => {
     const handleCancel = (): void => navigate(-1)
 
     return (
-        <CodeInsightsPage className={classNames('col-8', styles.page)} isSourcegraphApp={props.isSourcegraphApp}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)}>
             <PageTitle title={`Configure ${dashboard.title} - Code Insights`} />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Configure dashboard' }]} />
@@ -105,7 +101,6 @@ export const EditDashboardPage: FC<Props> = props => {
                     initialValues={getDashboardInitialValues(dashboard, owners)}
                     owners={owners}
                     onSubmit={handleSubmit}
-                    isSourcegraphApp={props.isSourcegraphApp}
                 >
                     {formAPI => (
                         <>

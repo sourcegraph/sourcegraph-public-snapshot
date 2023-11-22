@@ -4,10 +4,10 @@ import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { Filter } from '@sourcegraph/shared/src/search/stream'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { Filter } from '@sourcegraph/shared/src/search/stream'
+import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery, CodeHostIcon } from '../../components'

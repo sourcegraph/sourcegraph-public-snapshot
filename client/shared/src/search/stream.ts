@@ -1,11 +1,19 @@
 import { fetchEventSource } from '@microsoft/fetch-event-source'
-import { Observable, fromEvent, Subscription, OperatorFunction, pipe, Subscriber, Notification } from 'rxjs'
+import {
+    Observable,
+    fromEvent,
+    Subscription,
+    type OperatorFunction,
+    pipe,
+    type Subscriber,
+    type Notification,
+} from 'rxjs'
 import { defaultIfEmpty, map, materialize, scan, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 
 import type { AggregableBadge } from '../codeintel/legacy-extensions/api'
-import { SearchPatternType, SymbolKind } from '../graphql-operations'
+import type { SearchPatternType, SymbolKind } from '../graphql-operations'
 
 import { SearchMode } from './searchQueryState'
 
@@ -153,6 +161,7 @@ export interface RepositoryMatch {
     private?: boolean
     branches?: string[]
     descriptionMatches?: Range[]
+    metadata?: Record<string, string | undefined>
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch
@@ -279,7 +288,7 @@ interface Alert {
 // Same key values from internal/search/alert.go
 export type AnnotationName = 'ResultCount'
 
-interface ProposedQuery {
+export interface ProposedQuery {
     description?: string | null
     annotations?: { name: AnnotationName; value: string }[]
     query: string
@@ -330,35 +339,40 @@ export const switchAggregateSearchResults: OperatorFunction<SearchEvent, Aggrega
             switch (newEvent.kind) {
                 case 'N': {
                     switch (newEvent.value?.type) {
-                        case 'matches':
+                        case 'matches': {
                             return {
                                 ...results,
                                 // Matches are additive
                                 results: results.results.concat(newEvent.value.data),
                             }
+                        }
 
-                        case 'progress':
+                        case 'progress': {
                             return {
                                 ...results,
                                 // Progress updates replace
                                 progress: newEvent.value.data,
                             }
+                        }
 
-                        case 'filters':
+                        case 'filters': {
                             return {
                                 ...results,
                                 // New filter results replace all previous ones
                                 filters: newEvent.value.data,
                             }
+                        }
 
-                        case 'alert':
+                        case 'alert': {
                             return {
                                 ...results,
                                 alert: newEvent.value.data,
                             }
+                        }
 
-                        default:
+                        default: {
                             return results
+                        }
                     }
                 }
                 case 'E': {
@@ -380,13 +394,15 @@ export const switchAggregateSearchResults: OperatorFunction<SearchEvent, Aggrega
                         state: 'error',
                     }
                 }
-                case 'C':
+                case 'C': {
                     return {
                         ...results,
                         state: 'complete',
                     }
-                default:
+                }
+                default: {
                     return results
+                }
             }
         },
         emptyAggregateResults
@@ -471,10 +487,10 @@ export interface StreamSearchOptions {
     featureOverrides?: string[]
     searchMode?: SearchMode
     sourcegraphURL?: string
-    decorationKinds?: string[]
-    decorationContextLines?: number
     displayLimit?: number
     chunkMatches?: boolean
+    enableRepositoryMetadata?: boolean
+    zoektSearchOptions?: string
 }
 
 function initiateSearchStream(
@@ -484,9 +500,8 @@ function initiateSearchStream(
         patternType,
         caseSensitive,
         trace,
+        zoektSearchOptions,
         featureOverrides,
-        decorationKinds,
-        decorationContextLines,
         searchMode = SearchMode.Precise,
         displayLimit = 1500,
         sourcegraphURL = '',
@@ -502,9 +517,6 @@ function initiateSearchStream(
             ['v', version],
             ['t', patternType as string],
             ['sm', searchMode.toString()],
-            ['dl', '0'],
-            ['dk', (decorationKinds || ['html']).join('|')],
-            ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
             ['cm', chunkMatches ? 't' : 'f'],
         ]
@@ -513,6 +525,10 @@ function initiateSearchStream(
         }
         for (const value of featureOverrides || []) {
             parameters.push(['feat', value])
+        }
+
+        if (zoektSearchOptions) {
+            parameters.push(['zoekt-search-opts', zoektSearchOptions])
         }
         const parameterEncoded = parameters.map(([key, value]) => key + '=' + encodeURIComponent(value)).join('&')
 
@@ -563,22 +579,21 @@ export function getRepositoryUrl(repository: string, branches?: string[]): strin
 }
 
 export function getRevision(branches?: string[], version?: string): string {
-    let revision = ''
-    if (branches) {
-        const branch = branches[0]
-        if (branch !== '') {
-            revision = branch
-        }
-    } else if (version) {
-        revision = version
+    if (branches && branches.length > 0) {
+        return branches[0]
     }
-
-    return revision
+    if (version) {
+        return version
+    }
+    return ''
 }
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
-    const revision = getRevision(fileMatch.branches, fileMatch.commit)
-    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.path}`
+    // We are not using getRevision here, because we want to flip the logic from
+    // "branches first" to "revsion first"
+    const revision = fileMatch.commit ?? fileMatch.branches?.[0]
+    const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
+    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }
 
 export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {
@@ -623,15 +638,19 @@ export function getMatchUrl(match: SearchMatch): string {
     switch (match.type) {
         case 'path':
         case 'content':
-        case 'symbol':
+        case 'symbol': {
             return getFileMatchUrl(match)
-        case 'commit':
+        }
+        case 'commit': {
             return getCommitMatchUrl(match)
-        case 'repo':
+        }
+        case 'repo': {
             return getRepoMatchUrl(match)
+        }
         case 'person':
-        case 'team':
+        case 'team': {
             return getOwnerMatchUrl(match)
+        }
     }
 }
 

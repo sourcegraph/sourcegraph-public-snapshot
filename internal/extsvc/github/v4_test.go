@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -18,11 +19,13 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -95,6 +98,7 @@ func TestGetAuthenticatedUserV4(t *testing.T) {
 
 func TestV4Client_RateLimitRetry(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	ctx := context.Background()
 
@@ -120,65 +124,130 @@ func TestV4Client_RateLimitRetry(t *testing.T) {
 		},
 	}
 
-	// Test both a GET and POST request to make sure retrying is working correctly
-	methodTests := []string{"GET", "POST"}
-	for _, methodTest := range methodTests {
-		for name, tt := range tests {
-			t.Run(methodTest+"_"+name, func(t *testing.T) {
-				numRequests := 0
-				succeeded := false
-				srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					numRequests++
-					if tt.secondaryLimitWasHit {
-						w.Header().Add("retry-after", "1")
-						w.WriteHeader(http.StatusForbidden)
-						w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
-
-						tt.secondaryLimitWasHit = false
-						return
-					}
-
-					if tt.primaryLimitWasHit {
-						w.Header().Add("x-ratelimit-remaining", "0")
-						w.Header().Add("x-ratelimit-limit", "5000")
-						resetTime := time.Now().Add(time.Second)
-						w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
-						w.WriteHeader(http.StatusForbidden)
-						w.Write([]byte(`{"message": "Primary rate limit hit"}`))
-
-						tt.primaryLimitWasHit = false
-						return
-					}
-
-					succeeded = true
-					w.Write([]byte(`{"message": "Very nice"}`))
-				}))
-
-				t.Cleanup(srv.Close)
-
-				srvURL, err := url.Parse(srv.URL)
-				require.NoError(t, err)
-
-				transport := http.DefaultTransport.(*http.Transport).Clone()
-				transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
-				cli := &http.Client{Transport: transport}
-				client := NewV4Client("test", srvURL, nil, cli)
-				client.githubDotCom = true // Otherwise it will make an extra request to determine GH version
-				if methodTest == "POST" {
-					_, err = client.SearchRepos(ctx, SearchReposParams{Query: "test"})
-				} else {
-					_, err = client.GetAuthenticatedUser(ctx)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			numRequests := 0
+			succeeded := false
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				numRequests++
+				if tt.secondaryLimitWasHit {
+					simulateGitHubSecondaryRateLimitHit(w)
+					tt.secondaryLimitWasHit = false
+					return
 				}
-				require.NoError(t, err)
 
-				assert.Equal(t, tt.numRequests, numRequests)
-				assert.Equal(t, tt.succeeded, succeeded)
-			})
-		}
+				if tt.primaryLimitWasHit {
+					simulateGitHubPrimaryRateLimitHit(w)
+					tt.primaryLimitWasHit = false
+					return
+				}
+
+				succeeded = true
+				w.Write([]byte(`{"message": "Very nice"}`))
+			}))
+
+			t.Cleanup(srv.Close)
+
+			srvURL, err := url.Parse(srv.URL)
+			require.NoError(t, err)
+
+			transport := http.DefaultTransport.(*http.Transport).Clone()
+			transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
+			cli := &http.Client{Transport: transport}
+			client := NewV4Client("test", srvURL, nil, cli)
+			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv4", rate.NewLimiter(100, 10))
+			client.githubDotCom = true // Otherwise it will make an extra request to determine GH version
+			_, err = client.SearchRepos(ctx, SearchReposParams{Query: "test"})
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.numRequests, numRequests)
+			assert.Equal(t, tt.succeeded, succeeded)
+		})
 	}
 }
 
+func simulateGitHubSecondaryRateLimitHit(w http.ResponseWriter) {
+	w.Header().Add("retry-after", "1")
+	w.WriteHeader(http.StatusForbidden)
+	w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+}
+
+func simulateGitHubPrimaryRateLimitHit(w http.ResponseWriter) {
+	w.Header().Add("x-ratelimit-remaining", "0")
+	w.Header().Add("x-ratelimit-limit", "5000")
+	resetTime := time.Now().Add(time.Second)
+	w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
+	w.WriteHeader(http.StatusForbidden)
+	w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+}
+
+func TestV4Client_RequestGraphQL_RequestUnmutated(t *testing.T) {
+	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
+
+	query := `query Foobar { foobar }`
+	vars := map[string]any{}
+	result := struct{}{}
+
+	ctx := context.Background()
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
+	cli := &http.Client{Transport: transport}
+
+	numRequests := 0
+	requestPaths := []string{}
+	requestBodies := []string{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		numRequests++
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		requestPaths = append(requestPaths, r.URL.Path)
+		requestBodies = append(requestBodies, string(body))
+
+		if numRequests == 1 {
+			simulateGitHubPrimaryRateLimitHit(w)
+			return
+		}
+
+		w.Write([]byte(`{"message": "Very nice"}`))
+	}))
+
+	t.Cleanup(srv.Close)
+
+	srvURL, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+
+	// Now, this is IMPORTANT: we use `APIRoot` to simulate a real setup in which
+	// we append the "API path" to the base URL configured by an admin.
+	apiURL, _ := APIRoot(srvURL)
+
+	// Now we create a client to talk to our test server with the API path
+	// appended.
+	client := NewV4Client("test", apiURL, nil, cli)
+
+	// Now we send a request that should run into rate limiting error.
+	err = client.requestGraphQL(ctx, query, vars, &result)
+	require.NoError(t, err)
+
+	// Two requests should have been sent
+	assert.Equal(t, numRequests, 2)
+
+	// We want the same data to have been sent, twice
+	wantPath := "/api/graphql"
+	wantBody := `{"query":"query Foobar { foobar }","variables":{}}`
+	assert.Equal(t, []string{wantPath, wantPath}, requestPaths)
+	assert.Equal(t, []string{wantBody, wantBody}, requestBodies)
+}
+
 func TestV4Client_SearchRepos(t *testing.T) {
+	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 	cli, save := newV4Client(t, "SearchRepos")
 	t.Cleanup(save)
 
@@ -310,7 +379,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-12",
+				HeadRefName:  "test-pr-02",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 			},
@@ -341,7 +410,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-13",
+				HeadRefName:  "test-pr-15",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 				Draft:        true,
@@ -582,8 +651,8 @@ func TestMergePullRequest(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pr := &PullRequest{
-			// https://github.com/sourcegraph/automation-testing/pull/488
-			ID: "PR_kwDODS5xec5JaPkU",
+			// https://github.com/sourcegraph/automation-testing/pull/506
+			ID: "PR_kwDODS5xec5TxsRF",
 		}
 
 		err := cli.MergePullRequest(context.Background(), pr, true)
@@ -902,7 +971,10 @@ func newV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client("Test", uri, vcrToken, doer), save
+	cli := NewV4Client("Test", uri, vcrToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv4", rate.NewLimiter(100, 10))
+
+	return cli, save
 }
 
 func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
@@ -920,7 +992,9 @@ func newEnterpriseV4Client(t testing.TB, name string) (*V4Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV4Client("Test", uri, gheToken, doer), save
+	cli := NewV4Client("Test", uri, gheToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv4", rate.NewLimiter(100, 10))
+	return cli, save
 }
 
 func TestClient_GetReposByNameWithOwner(t *testing.T) {
@@ -967,7 +1041,6 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		wantRepos        []*Repository
 		err              string
 	}{
-
 		{
 			name: "found",
 			mockResponseBody: `
@@ -1107,6 +1180,7 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 			mock := mockHTTPResponseBody{responseBody: tc.mockResponseBody}
 			apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
 			c := NewV4Client("Test", apiURL, nil, &mock)
+			c.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv4", rate.NewLimiter(100, 10))
 
 			repos, err := c.GetReposByNameWithOwner(context.Background(), namesWithOwners...)
 			if have, want := fmt.Sprint(err), fmt.Sprint(tc.err); tc.err != "" && have != want {
@@ -1145,15 +1219,15 @@ func TestClient_buildGetRepositoriesBatchQuery(t *testing.T) {
 	}
 
 	wantIncluded := `
-repo0: repository(owner: "sourcegraph", name: "grapher-tutorial") { ... on Repository { ...RepositoryFields } }
-repo1: repository(owner: "sourcegraph", name: "clojure-grapher") { ... on Repository { ...RepositoryFields } }
-repo2: repository(owner: "sourcegraph", name: "programming-challenge") { ... on Repository { ...RepositoryFields } }
-repo3: repository(owner: "sourcegraph", name: "annotate") { ... on Repository { ...RepositoryFields } }
-repo4: repository(owner: "sourcegraph", name: "sourcegraph-sublime-old") { ... on Repository { ...RepositoryFields } }
-repo5: repository(owner: "sourcegraph", name: "makex") { ... on Repository { ...RepositoryFields } }
-repo6: repository(owner: "sourcegraph", name: "pydep") { ... on Repository { ...RepositoryFields } }
-repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { ...RepositoryFields } }
-repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields } }`
+repo0: repository(owner: "sourcegraph", name: "grapher-tutorial") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo1: repository(owner: "sourcegraph", name: "clojure-grapher") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo2: repository(owner: "sourcegraph", name: "programming-challenge") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo3: repository(owner: "sourcegraph", name: "annotate") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo4: repository(owner: "sourcegraph", name: "sourcegraph-sublime-old") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo5: repository(owner: "sourcegraph", name: "makex") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo6: repository(owner: "sourcegraph", name: "pydep") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }`
 
 	mock := mockHTTPResponseBody{responseBody: ""}
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}

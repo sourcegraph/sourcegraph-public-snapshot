@@ -1,5 +1,5 @@
 import { uniqBy } from 'lodash'
-import { RouteObject } from 'react-router-dom'
+import type { RouteObject } from 'react-router-dom'
 
 import { routes as legacyRoutes } from '../routes'
 
@@ -15,7 +15,7 @@ export const PagePath = {
  *
  * Proposal:
  *
- * 1. Create storm folder for OSS and enterprise version.
+ * 1. Create storm folder
  * 2. Create routes constant that re-uses existing routes and one by one replaces old ones with new components.
  * 3. "Upgraded" components are moved into the `storm` project.
  *

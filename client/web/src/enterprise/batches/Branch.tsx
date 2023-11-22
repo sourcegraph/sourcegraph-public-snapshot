@@ -4,7 +4,7 @@ import { mdiSourceFork, mdiAccountQuestion } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
-import { Badge, Icon, BadgeProps, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, Icon, type BadgeProps, Tooltip } from '@sourcegraph/wildcard'
 
 export interface ForkTarget {
     pushUser: boolean
@@ -30,6 +30,7 @@ export const Branch: React.FunctionComponent<React.PropsWithChildren<BranchProps
         className={classNames('text-monospace', className)}
         as={deleted ? 'del' : 'span'}
         aria-label={deleted ? 'Deleted' : ''}
+        pill={true}
     >
         {!forkTarget || forkTarget.namespace === null ? (
             name
@@ -54,7 +55,9 @@ export const BranchMerge: React.FunctionComponent<React.PropsWithChildren<Branch
     forkTarget,
     headRef,
 }) => (
-    <div className="d-block d-sm-inline-block">
+    // Relative positioning needed to avoid VisuallyHidden creating a double layer scrollbar in Chrome.
+    // Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
+    <div className="d-block d-sm-inline-block position-relative">
         <VisuallyHidden>Request to merge commit into</VisuallyHidden>
         <Branch name={baseRef} />
         <Icon as="span" inline={false} className="p-1" aria-label="from">

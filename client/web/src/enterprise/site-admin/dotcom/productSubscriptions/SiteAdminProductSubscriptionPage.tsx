@@ -1,36 +1,29 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 
-import { mdiArrowLeft, mdiPlus } from '@mdi/js'
-import { useNavigate, useParams } from 'react-router-dom'
-import { Observable, Subject, NEVER } from 'rxjs'
-import { catchError, map, mapTo, startWith, switchMap, tap, filter } from 'rxjs/operators'
+import { mdiPlus } from '@mdi/js'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
-import {
-    Button,
-    LoadingSpinner,
-    useObservable,
-    useEventObservable,
-    Link,
-    CardHeader,
-    CardBody,
-    Card,
-    Icon,
-    H2,
-    ErrorAlert,
-} from '@sourcegraph/wildcard'
+import { logger } from '@sourcegraph/common'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { Button, LoadingSpinner, Link, Icon, ErrorAlert, PageHeader, Container, H3 } from '@sourcegraph/wildcard'
 
-import { queryGraphQL, requestGraphQL } from '../../../../backend/graphql'
-import { FilteredConnection } from '../../../../components/FilteredConnection'
-import { PageTitle } from '../../../../components/PageTitle'
 import {
+    ConnectionContainer,
+    ConnectionError,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ShowMoreButton,
+    SummaryContainer,
+} from '../../../../components/FilteredConnection/ui'
+import { PageTitle } from '../../../../components/PageTitle'
+import { useScrollToLocationHash } from '../../../../components/useScrollToLocationHash'
+import type {
+    DotComProductSubscriptionResult,
+    DotComProductSubscriptionVariables,
     ArchiveProductSubscriptionResult,
     ArchiveProductSubscriptionVariables,
-    DotComProductSubscriptionResult,
-    ProductLicensesResult,
-    ProductLicenseFields,
 } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
@@ -38,322 +31,242 @@ import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { LicenseGenerationKeyWarning } from '../../../productSubscription/LicenseGenerationKeyWarning'
 
-import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
 import {
-    siteAdminProductLicenseFragment,
-    SiteAdminProductLicenseNode,
-    SiteAdminProductLicenseNodeProps,
-} from './SiteAdminProductLicenseNode'
+    ARCHIVE_PRODUCT_SUBSCRIPTION,
+    DOTCOM_PRODUCT_SUBSCRIPTION,
+    useProductSubscriptionLicensesConnection,
+} from './backend'
+import { CodyServicesSection } from './CodyServicesSection'
+import { SiteAdminGenerateProductLicenseForSubscriptionForm } from './SiteAdminGenerateProductLicenseForSubscriptionForm'
+import { SiteAdminProductLicenseNode } from './SiteAdminProductLicenseNode'
+import { accessTokenPath, errorForPath } from './utils'
 
-interface Props {
-    /** For mocking in tests only. */
-    _queryProductSubscription?: typeof queryProductSubscription
-
-    /** For mocking in tests only. */
-    _queryProductLicenses?: typeof queryProductLicenses
-}
-
-const LOADING = 'loading' as const
+interface Props {}
 
 /**
  * Displays a product subscription in the site admin area.
  */
-export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    _queryProductSubscription = queryProductSubscription,
-    _queryProductLicenses = queryProductLicenses,
-}) => {
+export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
     const navigate = useNavigate()
     const { subscriptionUUID = '' } = useParams<{ subscriptionUUID: string }>()
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscription'), [])
 
     const [showGenerate, setShowGenerate] = useState<boolean>(false)
 
-    /**
-     * The product subscription, or loading, or an error.
-     */
-    const productSubscription =
-        useObservable(
-            useMemo(
-                () =>
-                    _queryProductSubscription(subscriptionUUID).pipe(
-                        catchError(error => [asError(error)]),
-                        startWith(LOADING)
-                    ),
-                [_queryProductSubscription, subscriptionUUID]
+    const { data, loading, error, refetch } = useQuery<
+        DotComProductSubscriptionResult,
+        DotComProductSubscriptionVariables
+    >(DOTCOM_PRODUCT_SUBSCRIPTION, {
+        variables: { uuid: subscriptionUUID },
+        errorPolicy: 'all',
+    })
+
+    const [archiveProductSubscription, { loading: archiveLoading, error: archiveError }] = useMutation<
+        ArchiveProductSubscriptionResult,
+        ArchiveProductSubscriptionVariables
+    >(ARCHIVE_PRODUCT_SUBSCRIPTION)
+
+    const onArchive = useCallback(async () => {
+        if (!data) {
+            return
+        }
+        if (
+            !window.confirm(
+                'Do you really want to archive this product subscription? This will hide it from site admins and users.\n\nHowever, it does NOT:\n\n- invalidate the license key\n- refund payment or cancel billing\n\nYou must manually do those things.'
             )
-        ) || LOADING
-
-    /** The result of archiving this subscription: undefined for done or not started, loading, or an error. */
-    const [nextArchival, archival] = useEventObservable(
-        useCallback(
-            (archivals: Observable<React.MouseEvent>) => {
-                if (productSubscription === LOADING || isErrorLike(productSubscription)) {
-                    return NEVER
-                }
-                return archivals.pipe(
-                    filter(() =>
-                        window.confirm(
-                            'Really archive this product subscription? This will hide it from site admins and users.\n\nHowever, it does NOT:\n\n- invalidate the license key\n- refund payment or cancel billing\n\nYou must manually do those things.'
-                        )
-                    ),
-                    switchMap(() =>
-                        archiveProductSubscription({ id: productSubscription.id }).pipe(
-                            mapTo(undefined),
-                            tap(() => navigate('/site-admin/dotcom/product/subscriptions')),
-                            catchError(error => [asError(error)]),
-                            startWith(LOADING)
-                        )
-                    )
-                )
-            },
-            [navigate, productSubscription]
-        )
-    )
-
-    const queryProductLicensesForSubscription = useCallback(
-        (args: { first?: number }) => _queryProductLicenses(subscriptionUUID, args),
-        [_queryProductLicenses, subscriptionUUID]
-    )
+        ) {
+            return
+        }
+        try {
+            await archiveProductSubscription({ variables: { id: data.dotcom.productSubscription.id } })
+            navigate('/site-admin/dotcom/product/subscriptions')
+        } catch (error) {
+            logger.error(error)
+        }
+    }, [data, archiveProductSubscription, navigate])
 
     const toggleShowGenerate = useCallback((): void => setShowGenerate(previousValue => !previousValue), [])
 
-    /** Updates to the subscription's licenses. */
-    const licenseUpdates = useMemo(() => new Subject<void>(), [])
-    const onLicenseUpdate = useCallback(() => {
-        licenseUpdates.next()
-        toggleShowGenerate()
-    }, [licenseUpdates, toggleShowGenerate])
+    const refetchRef = useRef<(() => void) | null>(null)
+    const setRefetchRef = useCallback(
+        (refetch: (() => void) | null) => {
+            refetchRef.current = refetch
+        },
+        [refetchRef]
+    )
 
-    const nodeProps: Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'> = {
-        showSubscription: false,
+    const onLicenseUpdate = useCallback(async () => {
+        await refetch()
+        if (refetchRef.current) {
+            refetchRef.current()
+        }
+        setShowGenerate(false)
+    }, [refetch, refetchRef])
+
+    if (loading && !data) {
+        return <LoadingSpinner />
     }
 
+    // If there's an error, and the entire request failed loading, simply render an error page.
+    // Otherwise, we want to get more specific with error handling.
+    if (
+        error &&
+        (error.networkError ||
+            error.clientErrors.length > 0 ||
+            !(error.graphQLErrors.length === 1 && errorForPath(error, accessTokenPath)))
+    ) {
+        return <ErrorAlert className="my-2" error={error} />
+    }
+
+    const productSubscription = data!.dotcom.productSubscription
+
     return (
-        <div className="site-admin-product-subscription-page">
-            <PageTitle title="Product subscription" />
-            <div className="mb-2">
-                <Button to="/site-admin/dotcom/product/subscriptions" variant="link" size="sm" as={Link}>
-                    <Icon aria-hidden={true} svgPath={mdiArrowLeft} /> All subscriptions
-                </Button>
-            </div>
-            {productSubscription === LOADING ? (
-                <LoadingSpinner />
-            ) : isErrorLike(productSubscription) ? (
-                <ErrorAlert className="my-2" error={productSubscription} />
-            ) : (
-                <>
-                    <H2>Product subscription {productSubscription.name}</H2>
-                    <div className="mb-3">
-                        <Button onClick={nextArchival} disabled={archival === LOADING} variant="danger">
+        <>
+            <div className="site-admin-product-subscription-page">
+                <PageTitle title="Product subscription" />
+                <PageHeader
+                    headingElement="h2"
+                    path={[
+                        { text: 'Product subscriptions', to: '/site-admin/dotcom/product/subscriptions' },
+                        { text: productSubscription.name },
+                    ]}
+                    actions={
+                        <Button onClick={onArchive} disabled={archiveLoading} variant="danger">
                             Archive
                         </Button>
-                        {isErrorLike(archival) && <ErrorAlert className="mt-2" error={archival} />}
-                    </div>
-                    <Card className="mt-3">
-                        <CardHeader>Details</CardHeader>
-                        <table className="table mb-0">
-                            <tbody>
-                                <tr>
-                                    <th className="text-nowrap">ID</th>
-                                    <td className="w-100">{productSubscription.name}</td>
-                                </tr>
-                                <tr>
-                                    <th className="text-nowrap">Plan</th>
-                                    <td className="w-100">
-                                        <ProductSubscriptionLabel productSubscription={productSubscription} />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th className="text-nowrap">Account</th>
-                                    <td className="w-100">
-                                        <AccountName account={productSubscription.account} /> &mdash;{' '}
-                                        <Link to={productSubscription.url}>View as user</Link>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th className="text-nowrap">Account emails</th>
-                                    <td className="w-100">
-                                        {productSubscription.account && (
-                                            <AccountEmailAddresses emails={productSubscription.account.emails} />
-                                        )}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <th className="text-nowrap">Created at</th>
-                                    <td className="w-100">
-                                        <Timestamp date={productSubscription.createdAt} />
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </Card>
-                    <LicenseGenerationKeyWarning className="mt-3" />
-                    <Card className="mt-1">
-                        <CardHeader className="d-flex align-items-center justify-content-between">
-                            Licenses
-                            {showGenerate ? (
-                                <Button onClick={toggleShowGenerate} variant="secondary">
-                                    Dismiss new license form
-                                </Button>
-                            ) : (
-                                <Button onClick={toggleShowGenerate} variant="primary" size="sm">
-                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new license manually
-                                </Button>
-                            )}
-                        </CardHeader>
-                        {showGenerate && (
-                            <CardBody>
-                                <SiteAdminGenerateProductLicenseForSubscriptionForm
-                                    subscriptionID={productSubscription.id}
-                                    subscriptionAccount={productSubscription.account?.username || ''}
-                                    onGenerate={onLicenseUpdate}
-                                />
-                            </CardBody>
-                        )}
-                        <FilteredConnection<
-                            ProductLicenseFields,
-                            Pick<SiteAdminProductLicenseNodeProps, 'showSubscription'>
-                        >
-                            className="list-group list-group-flush"
-                            noun="product license"
-                            pluralNoun="product licenses"
-                            queryConnection={queryProductLicensesForSubscription}
-                            nodeComponent={SiteAdminProductLicenseNode}
-                            nodeComponentProps={nodeProps}
-                            compact={true}
-                            hideSearch={true}
-                            noSummaryIfAllNodesVisible={true}
-                            updates={licenseUpdates}
-                        />
-                    </Card>
-                </>
+                    }
+                    className="mb-3"
+                />
+                {archiveError && <ErrorAlert className="mt-2" error={archiveError} />}
+
+                <H3>Details</H3>
+                <Container className="mb-3">
+                    <table className="table mb-0">
+                        <tbody>
+                            <tr>
+                                <th className="text-nowrap">ID</th>
+                                <td className="w-100">{productSubscription.name}</td>
+                            </tr>
+                            <tr>
+                                <th className="text-nowrap">Plan</th>
+                                <td className="w-100">
+                                    <ProductSubscriptionLabel productSubscription={productSubscription} />
+                                </td>
+                            </tr>
+                            <tr>
+                                <th className="text-nowrap">Account</th>
+                                <td className="w-100">
+                                    <AccountName account={productSubscription.account} /> &mdash;{' '}
+                                    <Link to={productSubscription.url}>View as user</Link>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th className="text-nowrap">Account emails</th>
+                                <td className="w-100">
+                                    {productSubscription.account && (
+                                        <AccountEmailAddresses emails={productSubscription.account.emails} />
+                                    )}
+                                </td>
+                            </tr>
+                            <tr>
+                                <th className="text-nowrap">Created at</th>
+                                <td className="w-100">
+                                    <Timestamp date={productSubscription.createdAt} />
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </Container>
+
+                <CodyServicesSection
+                    viewerCanAdminister={true}
+                    currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
+                    accessTokenError={errorForPath(error, accessTokenPath)}
+                    codyGatewayAccess={productSubscription.codyGatewayAccess}
+                    productSubscriptionID={productSubscription.id}
+                    productSubscriptionUUID={subscriptionUUID}
+                    refetchSubscription={refetch}
+                />
+
+                <H3 className="d-flex align-items-center mt-5">
+                    Licenses
+                    <Button className="ml-auto" onClick={toggleShowGenerate} variant="primary">
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new license manually
+                    </Button>
+                </H3>
+                <LicenseGenerationKeyWarning className="mb-3" />
+                <Container className="mb-2">
+                    <ProductSubscriptionLicensesConnection
+                        subscriptionUUID={subscriptionUUID}
+                        setRefetch={setRefetchRef}
+                    />
+                </Container>
+            </div>
+
+            {showGenerate && (
+                <SiteAdminGenerateProductLicenseForSubscriptionForm
+                    subscriptionID={productSubscription.id}
+                    subscriptionAccount={productSubscription.account?.username || ''}
+                    latestLicense={productSubscription.productLicenses?.nodes[0] ?? undefined}
+                    onGenerate={onLicenseUpdate}
+                    onCancel={() => setShowGenerate(false)}
+                />
             )}
-        </div>
+        </>
     )
 }
 
-function queryProductSubscription(
-    uuid: string
-): Observable<DotComProductSubscriptionResult['dotcom']['productSubscription']> {
-    return queryGraphQL<DotComProductSubscriptionResult>(
-        gql`
-            query DotComProductSubscription($uuid: String!) {
-                dotcom {
-                    productSubscription(uuid: $uuid) {
-                        id
-                        name
-                        account {
-                            ...DotComProductSubscriptionEmailFields
-                        }
-                        productLicenses {
-                            nodes {
-                                id
-                                info {
-                                    tags
-                                    userCount
-                                    expiresAt
-                                }
-                                licenseKey
-                                createdAt
-                            }
-                            totalCount
-                            pageInfo {
-                                hasNextPage
-                            }
-                        }
-                        activeLicense {
-                            id
-                            info {
-                                productNameWithBrand
-                                tags
-                                userCount
-                                expiresAt
-                            }
-                            licenseKey
-                            createdAt
-                        }
-                        createdAt
-                        isArchived
-                        url
-                    }
-                }
-            }
-
-            fragment DotComProductSubscriptionEmailFields on User {
-                id
-                username
-                displayName
-                emails {
-                    email
-                    verified
-                }
-            }
-        `,
-        { uuid }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data?.dotcom?.productSubscription || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return data.dotcom.productSubscription
-        })
+const ProductSubscriptionLicensesConnection: React.FunctionComponent<{
+    subscriptionUUID: string
+    setRefetch: (refetch: () => void) => void
+}> = ({ subscriptionUUID, setRefetch }) => {
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useProductSubscriptionLicensesConnection(
+        subscriptionUUID,
+        20
     )
-}
 
-function queryProductLicenses(
-    subscriptionUUID: string,
-    args: { first?: number }
-): Observable<ProductLicensesResult['dotcom']['productSubscription']['productLicenses']> {
-    return queryGraphQL<ProductLicensesResult>(
-        gql`
-            query ProductLicenses($first: Int, $subscriptionUUID: String!) {
-                dotcom {
-                    productSubscription(uuid: $subscriptionUUID) {
-                        productLicenses(first: $first) {
-                            nodes {
-                                ...ProductLicenseFields
-                            }
-                            totalCount
-                            pageInfo {
-                                hasNextPage
-                            }
-                        }
-                    }
-                }
-            }
-            ${siteAdminProductLicenseFragment}
-        `,
-        {
-            first: args.first,
-            subscriptionUUID,
+    useEffect(() => {
+        setRefetch(refetchAll)
+    }, [setRefetch, refetchAll])
+
+    const location = useLocation()
+    const licenseIDFromLocationHash = useMemo(() => {
+        if (location.hash.length > 1) {
+            return decodeURIComponent(location.hash.slice(1))
         }
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data?.dotcom?.productSubscription?.productLicenses || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-            return data.dotcom.productSubscription.productLicenses
-        })
-    )
-}
+        return
+    }, [location.hash])
+    useScrollToLocationHash(location)
 
-function archiveProductSubscription(args: ArchiveProductSubscriptionVariables): Observable<void> {
-    return requestGraphQL<ArchiveProductSubscriptionResult, ArchiveProductSubscriptionVariables>(
-        gql`
-            mutation ArchiveProductSubscription($id: ID!) {
-                dotcom {
-                    archiveProductSubscription(id: $id) {
-                        alwaysNil
-                    }
-                }
-            }
-        `,
-        args
-    ).pipe(
-        map(({ data, errors }) => {
-            if (!data?.dotcom?.archiveProductSubscription || (errors && errors.length > 0)) {
-                throw createAggregateError(errors)
-            }
-        })
+    return (
+        <ConnectionContainer>
+            {error && <ConnectionError errors={[error.message]} />}
+            {loading && !connection && <ConnectionLoading />}
+            <ConnectionList as="ul" className="list-group list-group-flush mb-0" aria-label="Subscription licenses">
+                {connection?.nodes?.map(node => (
+                    <SiteAdminProductLicenseNode
+                        key={node.id}
+                        node={node}
+                        defaultExpanded={node.id === licenseIDFromLocationHash}
+                        showSubscription={false}
+                        onRevokeCompleted={refetchAll}
+                    />
+                ))}
+            </ConnectionList>
+            {connection && (
+                <SummaryContainer className="mt-2">
+                    <ConnectionSummary
+                        first={15}
+                        centered={true}
+                        connection={connection}
+                        noun="product license"
+                        pluralNoun="product licenses"
+                        hasNextPage={hasNextPage}
+                        noSummaryIfAllNodesVisible={true}
+                    />
+                    {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
+                </SummaryContainer>
+            )}
+        </ConnectionContainer>
     )
 }

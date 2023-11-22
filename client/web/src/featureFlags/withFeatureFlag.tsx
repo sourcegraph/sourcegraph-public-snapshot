@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { FeatureFlagName } from './featureFlags'
+import type { FeatureFlagName } from './featureFlags'
 import { useFeatureFlag } from './useFeatureFlag'
 
 /**

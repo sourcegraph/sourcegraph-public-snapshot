@@ -17,7 +17,7 @@ DIRS=(
   client/build-config
   client/client-api
   client/codeintellify
-  client/common
+    client/common
   client/extension-api
   client/extension-api-types
   client/http-client

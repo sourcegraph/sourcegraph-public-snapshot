@@ -1,8 +1,8 @@
 import expect from 'expect'
-import { test } from 'mocha'
+import { afterEach, beforeEach, describe, test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
-import { SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
+import { type SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import {
     commitHighlightResult,
     commitSearchStreamEvents,
@@ -12,17 +12,22 @@ import {
     highlightFileResult,
     symbolSearchStreamEvents,
     ownerSearchStreamEvents,
-} from '@sourcegraph/shared/src/search/integration'
-import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+} from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
+import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { getSearchQueryInputConfig, percySnapshotWithVariants, SearchQueryInput, withSearchQueryInput } from './utils'
+import {
+    getSearchQueryInputConfig,
+    percySnapshotWithVariants,
+    type SearchQueryInput,
+    withSearchQueryInput,
+} from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
@@ -101,7 +106,6 @@ const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedG
             avatarURL: '',
             viewerCanAdminister: true,
             builtinAuth: true,
-            tags: [],
             createdAt: '2020-03-02T11:52:15Z',
             roles: {
                 __typename: 'RoleConnection',
@@ -113,7 +117,7 @@ const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedG
 
 const queryInputSelectors: Record<SearchQueryInput, string> = {
     codemirror6: '[data-testid="searchbox"] .test-query-input',
-    'experimental-search-input': '.test-experimental-search-input',
+    v2: '.test-v2-query-input',
 }
 
 describe('Search', () => {
@@ -285,9 +289,7 @@ describe('Search', () => {
                     const editor = await waitForInput(driver, queryInputSelector)
                     await editor.focus()
                     await driver.paste('foo\n\n\n\n\nbar')
-                    expect(await editor.getValue()).toBe(
-                        name === 'experimental-search-input' ? 'context:global foo bar' : 'foo bar'
-                    )
+                    expect(await editor.getValue()).toBe(name === 'v2' ? 'context:global foo bar' : 'foo bar')
                 })
             })
         })
@@ -326,7 +328,7 @@ describe('Search', () => {
                     const input = await waitForInput(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
                     await driver.page.click('.test-case-sensitivity-toggle')
-                    if (name === 'experimental-search-input') {
+                    if (name === 'v2') {
                         // The the toggle buttons do not submit automatically in the new search input
                         await input.focus()
                         await driver.page.keyboard.press(Key.Enter)
@@ -367,7 +369,7 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    if (name === 'experimental-search-input') {
+                    if (name === 'v2') {
                         // The the toggle buttons do not submit automatically in the new search input
                         await editor.focus()
                         await driver.page.keyboard.press(Key.Enter)
@@ -380,7 +382,7 @@ describe('Search', () => {
                     const editor = await waitForInput(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    if (name === 'experimental-search-input') {
+                    if (name === 'v2') {
                         // The the toggle buttons do not submit automatically in the new search input
                         await editor.focus()
                         await driver.page.keyboard.press(Key.Enter)

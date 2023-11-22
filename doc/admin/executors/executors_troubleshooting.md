@@ -16,16 +16,17 @@ You can now run `executor validate`, which will inform you about any configurati
 ### Creating a debug Firecracker VM
 The next step is to create a temporary Firecracker VM for debugging purposes.
 
-> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform.md), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 Run one of the following commands `executor test-vm` to generate a test firecracker VM:
-  * ```shell
-    executor test-vm
-    ````
-  * ```shell
-    # Optionally provide a repo to clone into the VMs workspace, to verify that cloning works properly as well.
-    executor test-vm [--repo=github.com/sourcegraph/sourcegraph --revision=main]
-    ```
+```shell
+# Test if a firecracker VM can be started
+executor test-vm
+
+# Test if a firecracker VM can be started and if a repository can be cloned into the VM's workspace
+executor test-vm [--repo=github.com/sourcegraph/sourcegraph --revision=main]
+```
+
 The command will output a line like:
 ```
 Success! Connect to the VM using
@@ -34,7 +35,7 @@ $ ignite attach executor-test-vm-0160f53f-e765-4481-a81e-aa3c704d07bd
 Execute the generated `ignite attach <vm>` command to gain a shell to the Firecracker VM.
 
 ## Disabling the auto-deletion of Executor VMs
-> NOTE: These instructions are for users using the VMs deployed via the [Terraform Modules](./deploy_executors_terraform)
+> NOTE: These instructions are for users using the VMs deployed via the [Terraform Modules](./deploy_executors_terraform.md)
 
 The Executor host VMs are configured to automatically tear themselves down once all jobs in the queue are completed. While this is desired behaviour under regular circumstances, it complicates debugging issues in the executor configuration or connections. To prevent the VMs from automatically stopping:
 1. `ssh` into the VM
@@ -46,7 +47,7 @@ The VM should now persist after all jobs are satisfied.
 ## Recreating a Firecracker VM 
 If a server-side batch change fails unexpectedly, it's possible to recreate the generated Firecracker VM from the batch change execution.
 
-> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform.md), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 1. Navigate to the failed execution page of the Batch Change
 1. Select a failed Workspace on the left and click the `Diagnostics` link on the right pane
@@ -98,7 +99,11 @@ curl http://localhost:5000/v2/_catalog
 ### Registry is mounted in the file system
 Verify that the registry is mounted under the expected path in the file system by running:
 ```shell
-ls /mnt/registry/docker/registry/v2/repositories/sourcegraph 
+# This directory should always be mounted
+ls /mnt/registry
+   
+# If jobs have been processed, the following path should exist
+ls /mnt/registry/docker/registry/v2/repositories/<public repository name>
 ```
 
 ## Connecting to cloud provider executor instances
@@ -117,6 +122,8 @@ Then, using the name of an instance, run
 # use an identity-aware proxy tunnel with --tunnel-through-iap
 gcloud compute ssh ${INSTANCE_NAME}
 ```
+    
+Alternatively, you may navigate to the compute instance in the GCP web console, where you will be able to connect with SSH in-browser.
 
 ### AWS
 In order to connect to an EC2 instance using SSH, you must have [specified a key pair](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html) when the instance was launched. If you have not done so, you can connect to your instance through the web console instead.  
@@ -134,23 +141,24 @@ ssh -i "path/to/key.pem" root@${INSTANCE_PUBLIC_DNS}
 ## Misconfigured environment variables
 This section lists some common mistakes with environment variables. Some of these will be exposed by running `executor validate` on the executor instance.
 
-| Env var                                                                                                                                                                 | Common mistakes                                             |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
-| `EXECUTOR_FRONTEND_URL`                                                                                                                                                 | No protocol included (e.g. `https://`                       |
-| `EXECUTOR_FRONTEND_PASSWORD`                                                                                                                                            | Not set in `executor.accessToken` in the site config        |
-| `EXECUTOR_QUEUE_NAME`                                                                                                                                                   | Value doesn't match one of [`codeintel`, `batches`]         |
-| <ul><li>`EXECUTOR_MAXIMUM_RUNTIME_PER_JOB`</li><li>`EXECUTOR_MAX_ACTIVE_TIME`</li><li>`EXECUTOR_QUEUE_POLL_INTERVAL`</li><li>`EXECUTOR_CLEANUP_TASK_INTERVAL`</li></ul> | Value format can't be parsed by `time.ParseDuration`        |
-| <ul><li>`EXECUTOR_JOB_MEMORY`</li><li>`EXECUTOR_JOB_NUM_CPUS`</li></ul>                                                                                                 | Value format not recognized by virtual machine or Docker    |
-| `EXECUTOR_FIRECRACKER_DISK_SPACE`                                                                                                                                       | Value format not recognized by virtual machine              |
-| `EXECUTOR_DOCKER_REGISTRY_MIRROR_URL`                                                                                                                                   | Wrong IP or port specified                                  |
-| `EXECUTOR_DOCKER_HOST_MOUNT_PATH`                                                                                                                                       | Workspace does not exist at provided mount path             |
-| `EXECUTOR_VM_STARTUP_SCRIPT_PATH`                                                                                                                                       | Script does not exist at provided file path                 |
-| <ul><li>`EXECUTOR_FIRECRACKER_IMAGE`</li><li>`EXECUTOR_FIRECRACKER_KERNEL_IMAGE`</li><li>`EXECUTOR_FIRECRACKER_SANDBOX_IMAGE`</li></ul>                                 | Image does not exist for provided repository, name, or tag  |
-| <ul><li>`NODE_EXPORTER_URL`</li><li>`DOCKER_REGISTRY_NODE_EXPORTER_URL`</li></ul>                                                                                       | `/metrics` path is included or wrong IP or port specified   |
-| `SRC_LOG_LEVEL`                                                                                                                                                         | not set to one of [`dbug`, `info`, `warn`, `error`, `crit`] |
+| Env var                                                                                                                                                                 | Common mistakes                                                                                                            |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| `EXECUTOR_FRONTEND_URL`                                                                                                                                                 | No protocol included (e.g. `https://`                                                                                      |
+| `EXECUTOR_FRONTEND_PASSWORD`                                                                                                                                            | Not set in `executor.accessToken` in the site config                                                                       |
+| `EXECUTOR_QUEUE_NAME`                                                                                                                                                   | Value doesn't match one of [`codeintel`, `batches`], or neither of `EXECUTOR_QUEUE_NAME` and `EXECUTOR_QUEUE_NAMES` is set |
+| `EXECUTOR_QUEUE_NAMES`                                                                                                                                                  | Value doesn't match one of [`codeintel`, `batches`]                                                                        |
+| <ul><li>`EXECUTOR_MAXIMUM_RUNTIME_PER_JOB`</li><li>`EXECUTOR_MAX_ACTIVE_TIME`</li><li>`EXECUTOR_QUEUE_POLL_INTERVAL`</li><li>`EXECUTOR_CLEANUP_TASK_INTERVAL`</li></ul> | Value format can't be parsed by `time.ParseDuration`                                                                       |
+| <ul><li>`EXECUTOR_JOB_MEMORY`</li><li>`EXECUTOR_JOB_NUM_CPUS`</li></ul>                                                                                                 | Value format not recognized by virtual machine or Docker                                                                   |
+| `EXECUTOR_FIRECRACKER_DISK_SPACE`                                                                                                                                       | Value format not recognized by virtual machine                                                                             |
+| `EXECUTOR_DOCKER_REGISTRY_MIRROR_URL`                                                                                                                                   | Wrong IP or port specified                                                                                                 |
+| `EXECUTOR_DOCKER_HOST_MOUNT_PATH`                                                                                                                                       | Workspace does not exist at provided mount path                                                                            |
+| `EXECUTOR_VM_STARTUP_SCRIPT_PATH`                                                                                                                                       | Script does not exist at provided file path                                                                                |
+| <ul><li>`EXECUTOR_FIRECRACKER_IMAGE`</li><li>`EXECUTOR_FIRECRACKER_KERNEL_IMAGE`</li><li>`EXECUTOR_FIRECRACKER_SANDBOX_IMAGE`</li></ul>                                 | Image does not exist for provided repository, name, or tag                                                                 |
+| <ul><li>`NODE_EXPORTER_URL`</li><li>`DOCKER_REGISTRY_NODE_EXPORTER_URL`</li></ul>                                                                                       | `/metrics` path is included or wrong IP or port specified                                                                  |
+| `SRC_LOG_LEVEL`                                                                                                                                                         | not set to one of [`dbug`, `info`, `warn`, `error`, `crit`]                                                                |
 
 ## Verify Firecracker support    
-The VM instance must [support KVM](./deploy_executors#firecracker-requirements). In effect, this means the instance must meet certain requirements depending on the Cloud provider in use.
+The VM instance must [support KVM](./deploy_executors.md#firecracker-requirements). In effect, this means the instance must meet certain requirements depending on the Cloud provider in use.
     
 ### GCP
 Nested virtualization must be enabled on the machine.
@@ -179,3 +187,58 @@ Verify that the machine type in use is of type `.metal` (e.g. `M5.metal`).
 | Guest to host       | Block outbound traffic (e.g. other executors or the Docker registry) | `iptables -A INPUT -s 10.61.0.0/16 -j DROP`                   |
 | Guest to guest      | Block outbound traffic to other Firecracker VMs                      | `iptables -A INPUT -s 10.61.0.0/16 -d 10.61.0.0/16 -j DROP`   |
 | Guest to link-local | Block Cloud provider resources such as instance metadata             | `iptables -A INPUT -s 10.61.0.0/16 -d 169.254.0.0/16 -j DROP` |
+
+## Kubernetes Job Scheduling
+
+There are a few environment variables available that can be used to determine which node an Executor Job Pod will be 
+scheduled in. The Job Pods need to be scheduled in the same node as the Executor Pod (in order to mount the 
+Persistence Volume Claim).
+
+The following environment variables can be used to determine where the Job Pods will be scheduled.
+
+| Name                                                         | Default Value | Description                                                                                                                                                                                            |
+|--------------------------------------------------------------|:--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| EXECUTOR_KUBERNETES_NODE_NAME                                | N/A           | The name of the Kubernetes Node to create Jobs in. If not specified, the Pods are created in the first available node.                                                                                 |
+| EXECUTOR_KUBERNETES_NODE_SELECTOR                            | N/A           | A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. `foo=bar,app=my-app`                                                                                              |
+| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS | N/A           | The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`                                                                 |
+| EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS      | N/A           | The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`                                                                      |
+| EXECUTOR_KUBERNETES_POD_AFFINITY                             | N/A           | The JSON encoded pod affinity for Kubernetes Jobs. e.g. [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]      |
+| EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY                        | N/A           | The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}] |
+
+### Scheduling Errors
+
+If you encounter the following errors,
+
+```text
+deleted by scheduler: pod could not be scheduled
+```
+
+or
+
+```text
+unexpected end of watch
+```
+
+Add/update the environment variable `SRC_LOG_LEVEL` to `dbug` to start receiving debug logs. The specific debug logs 
+that may help troubleshoot the errors is `Watching pod`
+
+The `Watching pod` debug logs contain `conditions` that may describe _why_ a Job Pod is not being scheduled correctly. 
+For example,
+
+```json
+{
+  "conditions": {
+    "condition[0]": {
+      "type": "PodScheduled",
+      "status": "False",
+      "reason": "Unschedulable",
+      "message": "0/1 nodes are available: 1 node(s) didn't match pod affinity rules. preemption: 0/1 nodes are available: 1 Preemption is not helpful for scheduling."
+    }
+  }
+}
+```
+
+Tells us that the Pod cannot be scheduled because the pod affinity rules (`EXECUTOR_KUBERNETES_POD_AFFINITY`) we 
+configured do not match any nodes.
+
+In this case, the `EXECUTOR_KUBERNETES_POD_AFFINITY` needs to be modified to correctly target the node.

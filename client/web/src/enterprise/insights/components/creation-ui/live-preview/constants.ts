@@ -1,6 +1,6 @@
-import { Series } from '@sourcegraph/wildcard'
+import type { Series } from '@sourcegraph/wildcard'
 
-import { CategoricalChartContent } from '../../../core'
+import type { CategoricalChartContent } from '../../../core'
 
 const getYValue = (datum: MockSeriesDatum): number => datum.value
 const getXValue = (datum: MockSeriesDatum): Date => new Date(datum.x)

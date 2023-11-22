@@ -20,7 +20,7 @@ To learn more about developing metrics, see the [observability developer guides]
 ## Prom-wrapper
 
 The entrypoint of the image is a sidecar program called the prom-wrapper.
-It manages Prometheus and Alertmanager, and provides integration with the Sourcgraph frontend.
+It manages Prometheus and Alertmanager, and provides integration with the Sourcegraph frontend.
 Learn more about it [here](https://handbook.sourcegraph.com/engineering/observability/monitoring_architecture#prom-wrapper).
 
 The source code for this program is currently kept in [`docker-images/prometheus/cmd/prom-wrapper`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/docker-images/prometheus/cmd/prom-wrapper).

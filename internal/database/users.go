@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/sourcegraph/log"
@@ -38,10 +39,10 @@ import (
 // User hooks
 var (
 	// BeforeCreateUser (if set) is a hook called before creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
 	BeforeCreateUser func(ctx context.Context, db DB, spec *extsvc.AccountSpec) error
 	// AfterCreateUser (if set) is a hook called after creating a new user in the DB by any means
-	// (e.g., both directly via Users.Create or via ExternalAccounts.CreateUserAndSave).
+	// (e.g., both directly via Users.Create or via Users.CreateWithExternalAccount).
 	// Whatever this hook mutates in database should be reflected on the `user` argument as well.
 	AfterCreateUser func(ctx context.Context, db DB, user *types.User) error
 	// BeforeSetUserIsSiteAdmin (if set) is a hook called before promoting/revoking a user to be a
@@ -56,7 +57,14 @@ type UserStore interface {
 	basestore.ShareableStore
 	CheckAndDecrementInviteQuota(context.Context, int32) (ok bool, err error)
 	Count(context.Context, *UsersListOptions) (int, error)
+	CountForSCIM(context.Context, *UsersListOptions) (int, error)
 	Create(context.Context, NewUser) (*types.User, error)
+	// CreateWithExternalAccount is used to create a new Sourcegraph user account from an external account
+	// (e.g., "signup from SAML").
+	//
+	// It creates a new user and associates it with the specified external account. If the user to
+	// create already exists, it returns an error.
+	CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (*types.User, error)
 	CreateInTransaction(context.Context, NewUser, *extsvc.AccountSpec) (*types.User, error)
 	CreatePassword(ctx context.Context, id int32, password string) error
 	Delete(context.Context, int32) error
@@ -72,7 +80,6 @@ type UserStore interface {
 	GetByVerifiedEmail(context.Context, string) (*types.User, error)
 	HardDelete(context.Context, int32) error
 	HardDeleteList(context.Context, []int32) error
-	HasTag(ctx context.Context, userID int32, tag string) (bool, error)
 	InvalidateSessionsByID(context.Context, int32) (err error)
 	InvalidateSessionsByIDs(context.Context, []int32) (err error)
 	IsPassword(ctx context.Context, id int32, password string) (bool, error)
@@ -85,11 +92,14 @@ type UserStore interface {
 	RenewPasswordResetCode(context.Context, int32) (string, error)
 	SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bool) error
 	SetPassword(ctx context.Context, id int32, resetCode, newPassword string) (bool, error)
-	SetTag(ctx context.Context, userID int32, tag string, present bool) error
-	Tags(context.Context, int32) (map[string]bool, error)
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
+	UpgradeToCodyPro(ctx context.Context, id int32) error
+	SetChatCompletionsQuota(ctx context.Context, id int32, quota *int) error
+	GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error)
+	SetCodeCompletionsQuota(ctx context.Context, id int32, quota *int) error
+	GetCodeCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -255,6 +265,26 @@ func (u *userStore) Create(ctx context.Context, info NewUser) (newUser *types.Us
 	return newUser, err
 }
 
+func (u *userStore) CreateWithExternalAccount(ctx context.Context, newUser NewUser, acct *extsvc.Account) (_ *types.User, err error) {
+	tx, err := u.Transact(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	createdUser, err := tx.CreateInTransaction(ctx, newUser, &acct.AccountSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	acct.UserID = createdUser.ID
+	acct, err = ExternalAccountsWith(u.logger, tx).Insert(ctx, acct)
+	if err == nil {
+		logAccountCreatedEvent(ctx, NewDBWith(u.logger, tx), createdUser, acct.AccountSpec.ServiceType)
+	}
+	return createdUser, err
+}
+
 // CheckPassword returns an error depending on the method used for validation
 func CheckPassword(pw string) error {
 	return security.ValidatePassword(pw)
@@ -278,7 +308,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		return nil, errors.New("no email verification code provided for new user with unverified email")
 	}
 
-	searchable := true
 	createdAt := timeutil.Now()
 	updatedAt := createdAt
 	invalidatedSessionsAt := createdAt
@@ -323,8 +352,8 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 	var siteAdmin bool
 	err = u.QueryRow(
 		ctx,
-		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin, searchable",
-			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin, &searchable)
+		sqlf.Sprintf("INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, tos_accepted, site_admin) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s AND NOT EXISTS(SELECT * FROM users)) RETURNING id, site_admin",
+			info.Username, info.DisplayName, avatarURL, createdAt, updatedAt, passwd, invalidatedSessionsAt, info.TosAccepted, !alreadyInitialized)).Scan(&id, &siteAdmin)
 	if err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) {
@@ -383,7 +412,6 @@ func (u *userStore) CreateInTransaction(ctx context.Context, info NewUser, spec 
 		SiteAdmin:             siteAdmin,
 		BuiltinAuth:           info.Password != "",
 		InvalidatedSessionsAt: invalidatedSessionsAt,
-		Searchable:            searchable,
 	}
 
 	{
@@ -474,7 +502,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
-	db.EventLogs().Insert(ctx, logEvent)
+	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 
 func logAccountModifiedEvent(ctx context.Context, db DB, userID int32, serviceType string) {
@@ -526,7 +554,7 @@ type UserUpdate struct {
 	// - If pointer to a non-empty string, the value in the DB is set to the string.
 	DisplayName, AvatarURL *string
 	TosAccepted            *bool
-	Searchable             *bool
+	CompletedPostSignup    *bool
 }
 
 // Update updates a user's profile information.
@@ -567,8 +595,8 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	if update.TosAccepted != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("tos_accepted=%s", *update.TosAccepted))
 	}
-	if update.Searchable != nil {
-		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("searchable=%s", *update.Searchable))
+	if update.CompletedPostSignup != nil {
+		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("completed_post_signup=%s", *update.CompletedPostSignup))
 	}
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
 	res, err := tx.ExecResult(ctx, query)
@@ -589,7 +617,40 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	return nil
 }
 
+// NOTE(naman): THIS IS TEMPORARY FOR DEC GA
+// Upgrade user to cody pro plan
+func (u *userStore) UpgradeToCodyPro(ctx context.Context, id int32) (err error) {
+	// TODO: update usage limits as well
+	query := sqlf.Sprintf("UPDATE users SET cody_pro_enabled_at=NOW() WHERE id=%d AND cody_pro_enabled_at IS NULL AND deleted_at IS NULL", id)
+
+	res, err := u.ExecResult(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if nrows == 0 {
+		user, err := u.GetByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		if user == nil {
+			return userNotFoundErr{args: []any{id}}
+		}
+
+		return errors.New("user is already on Cody Pro plan")
+	}
+
+	return nil
+}
+
 // Delete performs a soft-delete of the user and all resources associated with this user.
+// Permissions for soft-deleted users are removed from the user_repo_permissions table via a trigger.
 func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 	return u.DeleteList(ctx, []int32{id})
 }
@@ -631,7 +692,7 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {
@@ -774,10 +835,10 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 			Timestamp:       now,
 		}
 	}
-	db.EventLogs().BulkInsert(ctx, logEvents)
+	_ = db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
-// RecoverList recovers a list of users by their IDs.
+// RecoverUsersList recovers a list of users by their IDs.
 func (u *userStore) RecoverUsersList(ctx context.Context, ids []int32) (_ []int32, err error) {
 	tx, err := u.transact(ctx)
 	if err != nil {
@@ -895,7 +956,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
 			}
-			db.EventLogs().Insert(ctx, logEvent)
+			_ = db.EventLogs().Insert(ctx, logEvent)
 			return err
 		}
 
@@ -1006,6 +1067,14 @@ func (u *userStore) InvalidateSessionsByIDs(ctx context.Context, ids []int32) (e
 	return nil
 }
 
+func (u *userStore) CountForSCIM(ctx context.Context, opt *UsersListOptions) (int, error) {
+	if opt == nil {
+		opt = &UsersListOptions{}
+	}
+	opt.includeDeleted = true
+	return u.Count(ctx, opt)
+}
+
 func (u *userStore) Count(ctx context.Context, opt *UsersListOptions) (int, error) {
 	if opt == nil {
 		opt = &UsersListOptions{}
@@ -1031,8 +1100,6 @@ type UsersListOptions struct {
 	// Only show users inside this org
 	OrgID int32
 
-	Tag string // only include users with this tag
-
 	// InactiveSince filters out users that have had an eventlog entry with a
 	// `timestamp` greater-than-or-equal to the given timestamp.
 	InactiveSince time.Time
@@ -1045,16 +1112,18 @@ type UsersListOptions struct {
 	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
 	// user accounts.
 	ExcludeSourcegraphOperators bool
+	// includeDeleted indicates whether to include soft deleted user accounts.
+	//
+	// The intention is that external consumers should not need to interact with soft deleted users but
+	// internally there are valid reasons to include them.
+	includeDeleted bool
 
 	*LimitOffset
 }
 
 func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
-	tr, ctx := trace.New(ctx, "database.Users.List", fmt.Sprintf("%+v", opt))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "database.Users.List", attribute.String("opt", fmt.Sprintf("%+v", opt)))
+	defer tr.EndWithErr(&err)
 
 	if opt == nil {
 		opt = &UsersListOptions{}
@@ -1067,15 +1136,13 @@ func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types
 
 // ListForSCIM lists users along with their email addresses and SCIM ExternalID.
 func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ []*types.UserForSCIM, err error) {
-	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", fmt.Sprintf("%+v", opt))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", attribute.String("opt", fmt.Sprintf("%+v", opt)))
+	defer tr.EndWithErr(&err)
 
 	if opt == nil {
 		opt = &UsersListOptions{}
 	}
+	opt.includeDeleted = true
 	conditions := u.listSQL(*opt)
 
 	q := sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conditions, "AND"), opt.LimitOffset.SQL())
@@ -1177,7 +1244,11 @@ func newQueryCond(query *string) *sqlf.Query {
 }
 
 func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
-	conds = []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
+	conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
+
+	if !opt.includeDeleted {
+		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+	}
 
 	if cond := newQueryCond(&opt.Query); cond != nil {
 		conds = append(conds, cond)
@@ -1201,9 +1272,6 @@ func (*userStore) listSQL(opt UsersListOptions) (conds []*sqlf.Query) {
 	}
 	if opt.OrgID != 0 {
 		conds = append(conds, sqlf.Sprintf(orgMembershipCond, opt.OrgID))
-	}
-	if opt.Tag != "" {
-		conds = append(conds, sqlf.Sprintf("%s::text = ANY(u.tags)", opt.Tag))
 	}
 
 	if !opt.InactiveSince.IsZero() {
@@ -1272,18 +1340,18 @@ func (u *userStore) getOneBySQL(ctx context.Context, q *sqlf.Query) (*types.User
 func (u *userStore) getBySQL(ctx context.Context, query *sqlf.Query) ([]*types.User, error) {
 	q := sqlf.Sprintf(`
 SELECT u.id,
-       u.username,
-       u.display_name,
-       u.avatar_url,
-       u.created_at,
-       u.updated_at,
-       u.site_admin,
-       u.passwd IS NOT NULL,
-       u.tags,
-       u.invalidated_sessions_at,
-       u.tos_accepted,
-       u.searchable,
-       EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled
+	u.username,
+	u.display_name,
+	u.avatar_url,
+	u.created_at,
+	u.updated_at,
+	u.site_admin,
+	u.passwd IS NOT NULL,
+	u.invalidated_sessions_at,
+	u.tos_accepted,
+	u.completed_post_signup,
+	EXISTS (SELECT 1 FROM user_external_accounts WHERE service_type = 'scim' AND user_id = u.id AND deleted_at IS NULL) AS scim_controlled,
+	u.cody_pro_enabled_at
 FROM users u %s`, query)
 	rows, err := u.Query(ctx, q)
 	if err != nil {
@@ -1295,7 +1363,7 @@ FROM users u %s`, query)
 	for rows.Next() {
 		var u types.User
 		var displayName, avatarURL sql.NullString
-		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, &u.SCIMControlled)
+		err := rows.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, &u.CompletedPostSignup, &u.SCIMControlled, &u.CodyProEnabledAt)
 		if err != nil {
 			return nil, err
 		}
@@ -1318,7 +1386,6 @@ WITH scim_accounts AS (
         account_data
     FROM user_external_accounts
     WHERE service_type = 'scim'
-    AND deleted_at IS NULL
 )
 SELECT u.id,
        u.username,
@@ -1326,12 +1393,11 @@ SELECT u.id,
        u.avatar_url,
        u.created_at,
        u.updated_at,
+	   u.deleted_at,
        u.site_admin,
        u.passwd IS NOT NULL,
-       u.tags,
        u.invalidated_sessions_at,
        u.tos_accepted,
-       u.searchable,
        ARRAY(SELECT email FROM user_emails WHERE user_id = u.id AND verified_at IS NOT NULL) AS emails,
        sa.account_id AS scim_external_id,
        sa.account_data AS scim_account_data
@@ -1351,7 +1417,8 @@ func (u *userStore) getBySQLForSCIM(ctx context.Context, query *sqlf.Query) ([]*
 func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	var u types.UserForSCIM
 	var displayName, avatarURL, scimExternalID, scimAccountData sql.NullString
-	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &u.SiteAdmin, &u.BuiltinAuth, pq.Array(&u.Tags), &u.InvalidatedSessionsAt, &u.TosAccepted, &u.Searchable, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
+	var deletedAt sql.NullTime
+	err := s.Scan(&u.ID, &u.Username, &displayName, &avatarURL, &u.CreatedAt, &u.UpdatedAt, &deletedAt, &u.SiteAdmin, &u.BuiltinAuth, &u.InvalidatedSessionsAt, &u.TosAccepted, pq.Array(&u.Emails), &scimExternalID, &scimAccountData)
 	if err != nil {
 		return nil, err
 	}
@@ -1359,6 +1426,7 @@ func scanUserForSCIM(s dbutil.Scanner) (*types.UserForSCIM, error) {
 	u.AvatarURL = avatarURL.String
 	u.SCIMExternalID = scimExternalID.String
 	u.SCIMAccountData = scimAccountData.String
+	u.Active = !deletedAt.Valid
 	return &u, nil
 }
 
@@ -1470,6 +1538,46 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
+// SetChatCompletionsQuota sets the user's quota override for completions. Nil means unset.
+func (u *userStore) SetChatCompletionsQuota(ctx context.Context, id int32, quota *int) error {
+	if quota == nil {
+		return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = NULL WHERE id = %s", id))
+	}
+	return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = %s WHERE id = %s", *quota, id))
+}
+
+// GetChatCompletionsQuota reads the user's quota override for completions. Nil means unset.
+func (u *userStore) GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error) {
+	quota, found, err := basestore.ScanFirstInt(u.Query(ctx, sqlf.Sprintf("SELECT completions_quota FROM users WHERE id = %s AND completions_quota IS NOT NULL", id)))
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return &quota, nil
+	}
+	return nil, nil
+}
+
+// SetCodeCompletionsQuota sets the user's quota override for code completions. Nil means unset.
+func (u *userStore) SetCodeCompletionsQuota(ctx context.Context, id int32, quota *int) error {
+	if quota == nil {
+		return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET code_completions_quota = NULL WHERE id = %s", id))
+	}
+	return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET code_completions_quota = %s WHERE id = %s", *quota, id))
+}
+
+// GetCodeCompletionsQuota reads the user's quota override for code completions. Nil means unset.
+func (u *userStore) GetCodeCompletionsQuota(ctx context.Context, id int32) (*int, error) {
+	quota, found, err := basestore.ScanFirstInt(u.Query(ctx, sqlf.Sprintf("SELECT code_completions_quota FROM users WHERE id = %s AND code_completions_quota IS NOT NULL", id)))
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return &quota, nil
+	}
+	return nil, nil
+}
+
 // CreatePassword creates a user's password if they don't have a password.
 func (u *userStore) CreatePassword(ctx context.Context, id int32, password string) error {
 	// 🚨 SECURITY: Check min and max password length
@@ -1571,7 +1679,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		Timestamp:       time.Now(),
 	}
 
-	db.EventLogs().Insert(ctx, logEvent)
+	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 
 func hashPassword(password string) (sql.NullString, error) {
@@ -1592,71 +1700,6 @@ func validPassword(hash, password string) bool {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password)) == nil
 }
 
-// SetTag adds (present=true) or removes (present=false) a tag from the given user's set of tags. An
-// error occurs if the user does not exist. Adding a duplicate tag or removing a nonexistent tag is
-// not an error.
-func (u *userStore) SetTag(ctx context.Context, userID int32, tag string, present bool) error {
-	var q *sqlf.Query
-	if present {
-		// Add tag.
-		q = sqlf.Sprintf(`UPDATE users SET tags=CASE WHEN NOT %s::text = ANY(tags) THEN (tags || %s::text) ELSE tags END WHERE id=%s`, tag, tag, userID)
-	} else {
-		// Remove tag.
-		q = sqlf.Sprintf(`UPDATE users SET tags=array_remove(tags, %s::text) WHERE id=%s`, tag, userID)
-	}
-
-	res, err := u.ExecResult(ctx, q)
-	if err != nil {
-		return err
-	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if nrows == 0 {
-		return userNotFoundErr{args: []any{userID}}
-	}
-	return nil
-}
-
-// HasTag reports whether the context actor has the given tag.
-// If not, it returns false and a nil error.
-func (u *userStore) HasTag(ctx context.Context, userID int32, tag string) (bool, error) {
-	var tags []string
-	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return false, userNotFoundErr{[]any{userID}}
-		}
-		return false, err
-	}
-
-	for _, t := range tags {
-		if t == tag {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// Tags returns a map with all the tags currently belonging to the user.
-func (u *userStore) Tags(ctx context.Context, userID int32) (map[string]bool, error) {
-	var tags []string
-	err := u.QueryRow(ctx, sqlf.Sprintf("SELECT tags FROM users WHERE id = %s", userID)).Scan(pq.Array(&tags))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, userNotFoundErr{[]any{userID}}
-		}
-		return nil, err
-	}
-
-	tagMap := make(map[string]bool, len(tags))
-	for _, t := range tags {
-		tagMap[t] = true
-	}
-	return tagMap, nil
-}
-
 // MockHashPassword if non-nil is used instead of database.hashPassword. This is useful
 // when running tests since we can use a faster implementation.
 var (
@@ -1664,6 +1707,7 @@ var (
 	MockValidPassword func(hash, password string) bool
 )
 
+//nolint:unused // used in tests
 func useFastPasswordMocks() {
 	// We can't care about security in tests, we care about speed.
 	MockHashPassword = func(password string) (sql.NullString, error) {

@@ -8,10 +8,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var metricLabels = []string{"method", "success"}
@@ -26,32 +27,25 @@ var requestGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Current number of requests running for a method.",
 }, []string{"method"})
 
-//nolint:unparam // unparam complains that `server` always has same value across call-sites, but that's OK
-func trace(ctx context.Context, server, method string, arg any, err *error) (context.Context, func()) {
-	requestGauge.WithLabelValues(server + "." + method).Inc()
+func startTrace(ctx context.Context, method string, arg any, err *error) (context.Context, func()) { //nolint:unparam // unparam complains that `server` always has same value across call-sites, but that's OK
+	name := "Repos." + method
+	requestGauge.WithLabelValues(name).Inc()
 
-	span, ctx := ot.StartSpanFromContext(ctx, server+"."+method) //nolint:staticcheck // OT is deprecated
-	span.SetTag("Server", server)
-	span.SetTag("Method", method)
-	span.SetTag("Argument", fmt.Sprintf("%#v", arg))
+	tr, ctx := trace.New(ctx, name,
+		attribute.String("argument", fmt.Sprintf("%#v", arg)),
+		attribute.Int("userID", int(actor.FromContext(ctx).UID)),
+	)
 	start := time.Now()
 
 	done := func() {
 		elapsed := time.Since(start)
-		span.SetTag("UserID", actor.FromContext(ctx).UID)
-
-		if err != nil && *err != nil {
-			span.SetTag("Error", (*err).Error())
-		}
-		span.Finish()
-
-		name := server + "." + method
 		labels := prometheus.Labels{
 			"method":  name,
 			"success": strconv.FormatBool(err == nil),
 		}
 		requestDuration.With(labels).Observe(elapsed.Seconds())
 		requestGauge.WithLabelValues(name).Dec()
+		tr.EndWithErr(err)
 	}
 
 	return ctx, done

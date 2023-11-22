@@ -52,7 +52,7 @@ Here's a word-by-word breakout to demonstrate how the captured entry aligns with
 ### What is audited?
 
 - [Security events](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/database/security_event_logs.go?L120-131)
-- [Gitserver access](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/gitserver/server/internal/accesslog/accesslog.go?L100-104)
+- [Gitserver access](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/gitserver/internal/accesslog/accesslog.go?L100-104)
 - [GraphQL requests](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/httpapi/graphql.go?L226-244)
 
 This list is expected to grow in the future.
@@ -71,15 +71,17 @@ The audit log is currently configured using the site config. Here's the correspo
       "internalTraffic": false,
       "graphQL": false,
       "gitserverAccess": false,
-      "severityLevel": "INFO"
+      "severityLevel": "INFO" // DEPRECATED, defaults to SRC_LOG_LEVEL
     }
+    "securityEventLog": {
+     "location": "auditlog" // option to set "database" or "all" as well, default to outputing as an audit log
   }
 ```
 
 We believe the individual settings are self-explanatory, but here are a couple of notes:
 
-- Security events are non-configurable; they're _always_ a part of the audit log so that the customers always have at least some kind of minimal log.
-- We recommend using `INFO` level severity, but beware, if your instance sets the base logging level above, the audit log will be lost.
+- `securityEventLog` configures the destination of security events, logging to the database may result in performance issues
+- `internalTraffic` is disabled by default and will result in security events from internal traffic not being logged
 
 ## Using
 
@@ -89,12 +91,19 @@ Audit logs are structured logs. As long as one can ingest logs, we assume one ca
 
 There are two easy approaches to filtering the audit logs:
 
-- JSON-based: look for the presence of the `Attributes.audit` node.
+- JSON-based: look for the presence of the `Attributes.audit` node. Do not depend on the log level, as it can change based on `SRC_LOG_LEVEL`.
 - Message-based: we recommend going the JSON route, but if there's no easy way of parsing JSON using your SIEM or data processing stack, you can filter based on the following string: `auditId`.
 
 ### Cloud
+[Cloud](../cloud/index.md#audit-logs)
 
-To be done soon.
+
+Audit Logs are a default feature for Cloud instances, with a standard retention policy of 30 days. Should you wish to
+extend this period, please be aware that additional charges will apply. To request an extension, please contact
+your assigned Customer Engineer (CE) or send an email to Sourcegraph Support at support@sourcegraph.com.
+
+For requesting audit logs, please follow the above steps and contact your assigned Sourcegraph representative or our support team.
+
 
 ## Developing
 
@@ -124,9 +133,9 @@ audit.Log(ctx, logger, audit.Record{
 The `audit.actor` node carries ID of the user who performed the action (`actorUID`), but it’s not mapped into a full Sourcegraph user right now. You can, however, obtain the user details by following these steps:
 
 1. Grab the user ID from the audit log
-2. Base64 [encode](https://www.base64encode.org) the ID with a "User:" prefix. For example, for Actor with ID 71 use `User:71`, which encodes to `VXNlcjo3MQ==`
-4. Navigate to Site Admin -> API Console and run the query below
-5. Find the corresponding user by searching the query results for the encoded ID from above
+1. Base64 [encode](https://www.base64encode.org) the ID with a "User:" prefix. For example, for Actor with ID 71 use `User:71`, which encodes to `VXNlcjo3MQ==`
+1. Navigate to Site Admin -> API Console and run the query below
+1. Find the corresponding user by searching the query results for the encoded ID from above
 
 GraphQL query:
 ```
@@ -137,5 +146,19 @@ GraphQL query:
       username
     }
   }
+}
+```
+
+### Excessive audit logging
+
+If you are seeing a large number of logs in the format `frontend.SecurityEvents` or similar, these are securityEventLogs.
+
+To disable them, in the site config set `log.securityEventLog.location` to `none`.
+
+```json
+ "log": {
+    "securityEventLog": {
+      "location": "none"
+    }
 }
 ```

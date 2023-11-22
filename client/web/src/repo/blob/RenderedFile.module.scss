@@ -13,4 +13,25 @@
         // maybe intentional, to get the h1 ruler all the way across?
         width: 100%;
     }
+
+    // Apply background styling to README <code> blocks
+    // to distinguish code snippets from body text.
+
+    // for inline code
+    code {
+        border-radius: var(--border-radius);
+        background-color: var(--subtle-bg);
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    // for code blocks
+    pre code {
+        padding-left: 1.2rem;
+        padding-right: 1.2rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
 }

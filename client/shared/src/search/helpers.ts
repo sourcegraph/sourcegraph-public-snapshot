@@ -1,12 +1,12 @@
-import * as H from 'history'
+import type * as H from 'history'
 
-import { HistoryOrNavigate } from '@sourcegraph/common'
+import type { HistoryOrNavigate } from '@sourcegraph/common'
 
-import { SearchPatternType } from '../graphql-operations'
+import type { SearchPatternType } from '../graphql-operations'
 
-import { SearchContextProps } from './helpers/searchContext'
-import { CharacterRange } from './query/token'
-import { SearchMode } from './searchQueryState'
+import type { SearchContextProps } from './helpers/searchContext'
+import type { CharacterRange } from './query/token'
+import type { SearchMode } from './searchQueryState'
 
 export interface SearchPatternTypeProps {
     patternType: SearchPatternType
@@ -49,7 +49,7 @@ export enum EditorHint {
 
 /**
  * The search query and additional information depending on how the query was
- * changed. See MonacoQueryInput for how this data is applied to the editor.
+ * changed.
  */
 export type QueryState =
     | {

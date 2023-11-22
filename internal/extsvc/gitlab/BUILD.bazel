@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "gitlab",
@@ -25,10 +26,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/api",
         "//internal/conf",
         "//internal/encryption",
+        "//internal/errcode",
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/httpcli",
@@ -36,14 +37,14 @@ go_library(
         "//internal/oauthutil",
         "//internal/ratelimit",
         "//internal/rcache",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//lib/errors",
-        "@com_github_inconshreveable_log15//:log15",
         "@com_github_masterminds_semver//:semver",
         "@com_github_peterhellberg_link//:link",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )
@@ -86,5 +87,6 @@ go_test(
         "@com_github_masterminds_semver//:semver",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
     ],
 )

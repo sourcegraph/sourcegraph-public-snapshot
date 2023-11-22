@@ -1,13 +1,9 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 
 import { mdiArrowCollapseUp, mdiArrowExpandDown, mdiBookmarkOutline, mdiChevronDown, mdiDownload } from '@mdi/js'
 import classNames from 'classnames'
 
-import { logger } from '@sourcegraph/common'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
-import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import {
     Icon,
     Link,
@@ -21,19 +17,13 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 
-import { CreateAction } from './createActions'
-import { downloadSearchResults } from './searchResultsExport'
+import type { CreateAction } from './createActions'
 
 import navStyles from './SearchResultsInfoBar.module.scss'
 
-interface SearchActionsMenuProps
-    extends SearchPatternTypeProps,
-        Pick<PlatformContext, 'sourcegraphURL'>,
-        TelemetryProps {
-    query?: string
-    options: StreamSearchOptions
+interface SearchActionsMenuProps {
     results?: AggregateStreamingSearchResults
     authenticatedUser: Pick<AuthenticatedUser, 'id'> | null
     createActions: CreateAction[]
@@ -42,13 +32,11 @@ interface SearchActionsMenuProps
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
     onSaveQueryClick: () => void
+    onExportCsvClick: () => void
 }
 
 export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> = ({
-    query = '',
     results,
-    options,
-    sourcegraphURL,
     authenticatedUser,
     createActions,
     createCodeMonitorAction,
@@ -56,15 +44,9 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
     allExpanded,
     onExpandAllResultsToggle,
     onSaveQueryClick,
-    telemetryService,
+    onExportCsvClick,
 }) => {
     const resultsFound = results ? results.results.length > 0 : false
-    const downloadResults = useCallback(() => {
-        if (query.includes('select:file.owners')) {
-            telemetryService.log('searchResults:ownershipCsv:exported')
-        }
-        downloadSearchResults(sourcegraphURL, query, options).catch(error => logger.error(error))
-    }, [query, options, sourcegraphURL, telemetryService])
 
     return (
         <Menu>
@@ -92,7 +74,7 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                     />
                                     {allExpanded ? 'Collapse all' : 'Expand all'}
                                 </MenuItem>
-                                <MenuItem onSelect={downloadResults}>
+                                <MenuItem onSelect={onExportCsvClick}>
                                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
                                     Export results
                                 </MenuItem>

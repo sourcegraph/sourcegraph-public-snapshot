@@ -6,6 +6,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 )
@@ -24,7 +26,7 @@ func NewClient(urn string, httpfactory *httpcli.Factory) (*Client, error) {
 	}
 	return &Client{
 		uncachedClient: uncached,
-		limiter:        ratelimit.DefaultRegistry.Get(urn),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("RustCratesClient"), urn)),
 	}, nil
 }
 

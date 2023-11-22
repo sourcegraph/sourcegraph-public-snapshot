@@ -1,6 +1,6 @@
-import { RawRepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { RawRepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
-import { CodeHostContext } from '../shared/codeHost'
+import type { CodeHostContext } from '../shared/codeHost'
 
 // example pathname: /projects/TEST/repos/some-repo/browse/src/extension.ts
 const PATH_REGEX = /\/projects\/([^/]+)\/repos\/([^/]+)\//

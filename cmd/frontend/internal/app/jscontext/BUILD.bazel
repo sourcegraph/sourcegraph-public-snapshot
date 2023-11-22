@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "jscontext",
@@ -6,23 +7,24 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/auth/providers",
         "//cmd/frontend/enterprise",
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/hooks",
         "//cmd/frontend/internal/app/assetsutil",
-        "//cmd/frontend/internal/auth/userpasswd",
-        "//cmd/frontend/internal/siteid",
         "//cmd/frontend/webhooks",
         "//internal/actor",
+        "//internal/auth/providers",
+        "//internal/auth/userpasswd",
+        "//internal/cody",
         "//internal/conf",
         "//internal/conf/deploy",
         "//internal/database",
         "//internal/env",
+        "//internal/insights",
         "//internal/lazyregexp",
-        "//internal/singleprogram/filepicker",
+        "//internal/siteid",
         "//internal/types",
         "//internal/version",
         "//schema",

@@ -1,13 +1,15 @@
-import React, { useCallback, useEffect, useState, memo, FC, ReactElement, ReactNode } from 'react'
+import React, { useCallback, useEffect, useState, memo, type FC, type ReactElement, type ReactNode } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H5, Input, H3 } from '@sourcegraph/wildcard'
 
-import { FilterLink, FilterLinkProps } from './FilterLink'
+import { FilterLink, type FilterLinkProps } from './FilterLink'
 
 import styles from './SearchFilterSection.module.scss'
+
+export { styles }
 
 export interface SearchFilterSectionProps {
     sectionId: string

@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/go-diff/diff"
 
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -18,6 +19,10 @@ const (
 )
 
 var escaper = strings.NewReplacer(" ", `\ `)
+
+func escapeUTF8AndSpaces(s string) string {
+	return escaper.Replace(strings.ToValidUTF8(s, "�"))
+}
 
 func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (string, result.Ranges) {
 	var buf strings.Builder
@@ -38,14 +43,14 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (s
 		ranges = append(ranges, fdh.OldFile.Add(loc)...)
 		// NOTE(@camdencheek): this does not correctly update the highlight ranges of files with spaces in the name.
 		// Doing so would require a smarter replacer.
-		escaped := escaper.Replace(fileDiff.OrigName)
+		escaped := escapeUTF8AndSpaces(fileDiff.OrigName)
 		buf.WriteString(escaped)
 		buf.WriteByte(' ')
 		loc.Offset = buf.Len()
 		loc.Column = len(escaped) + len(" ")
 
 		ranges = append(ranges, fdh.NewFile.Add(loc)...)
-		buf.WriteString(escaper.Replace(fileDiff.NewName))
+		buf.WriteString(escapeUTF8AndSpaces(fileDiff.NewName))
 		buf.WriteByte('\n')
 		loc.Offset = buf.Len()
 		loc.Line++
@@ -76,8 +81,12 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (s
 			loc.Line++
 			loc.Column = 0
 
-			lines := bytes.Split(hunk.Body, []byte("\n"))
-			for lineIdx, line := range lines {
+			lr := byteutils.NewLineReader(hunk.Body)
+			lineIdx := -1
+			for lr.Scan() {
+				line := lr.Line()
+				lineIdx++
+
 				if len(line) == 0 {
 					continue
 				}
@@ -91,7 +100,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (s
 					ranges = append(ranges, lineHighlights.Add(loc)...)
 				}
 
-				buf.Write(lineWithoutPrefix)
+				buf.Write(bytes.ToValidUTF8(lineWithoutPrefix, []byte("�")))
 				buf.WriteByte('\n')
 				loc.Offset = buf.Len()
 				loc.Line++

@@ -7,5 +7,5 @@ import (
 )
 
 func NewService() *Service {
-	return newService(observation.NewContext(log.Scoped("luasandbox", "")))
+	return newService(observation.NewContext(log.Scoped("luasandbox")))
 }

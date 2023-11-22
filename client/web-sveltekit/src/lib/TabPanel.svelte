@@ -1,18 +1,21 @@
 <script lang="ts">
-    import { getContext } from 'svelte'
-    import { type TabsContext, KEY } from './Tabs.svelte'
+    import { getContext, onDestroy } from 'svelte'
     import * as uuid from 'uuid'
+
+    import { type TabsContext, KEY } from './Tabs.svelte'
 
     export let title: string
 
     const context = getContext<TabsContext>(KEY)
     const id = uuid.v4()
     const tabId = `${context.id}-tab-${id}`
-    context.register({
-        id: tabId,
-        title,
-    })
-    $: selectedId = context.selectedTab
+    onDestroy(
+        context.register({
+            id: tabId,
+            title,
+        })
+    )
+    $: selectedId = context.selectedTabID
     $: selected = $selectedId === tabId
 </script>
 
@@ -21,3 +24,10 @@
         <slot />
     </div>
 {/if}
+
+<style lang="scss">
+    div {
+        flex: 1;
+        min-height: 0;
+    }
+</style>

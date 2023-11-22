@@ -1,4 +1,6 @@
-import { Lexer, OPERATOR_CHARS, OPERATORS, OperatorTree, TemplateLexer, Token, TokenType } from './lexer'
+import { describe, expect, test } from 'vitest'
+
+import { Lexer, OPERATOR_CHARS, OPERATORS, type OperatorTree, TemplateLexer, type Token, TokenType } from './lexer'
 
 describe('Lexer', () => {
     const lexer = new Lexer()

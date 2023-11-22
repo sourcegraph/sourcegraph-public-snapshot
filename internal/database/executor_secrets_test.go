@@ -1,4 +1,4 @@
-package database
+package database_test
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -21,8 +23,8 @@ func TestEnsureActorHasNamespaceWriteAccess(t *testing.T) {
 	adminID := int32(2)
 	orgID := int32(1)
 
-	db := NewMockDB()
-	us := NewMockUserStore()
+	db := dbmocks.NewMockDB()
+	us := dbmocks.NewMockUserStore()
 	us.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int32) (*types.User, error) {
 		if i == userID {
 			return &types.User{
@@ -37,7 +39,7 @@ func TestEnsureActorHasNamespaceWriteAccess(t *testing.T) {
 		return nil, errors.New("not found")
 	})
 	db.UsersFunc.SetDefaultReturn(us)
-	om := NewMockOrgMemberStore()
+	om := dbmocks.NewMockOrgMemberStore()
 	om.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, oid, uid int32) (*types.OrgMembership, error) {
 		if uid == userID && oid == orgID {
 			// Is a member.
@@ -142,14 +144,14 @@ func TestEnsureActorHasNamespaceWriteAccess(t *testing.T) {
 	}
 	for _, tt := range tts {
 		t.Run(tt.name, func(t *testing.T) {
-			secret := &ExecutorSecret{}
+			secret := &database.ExecutorSecret{}
 			if tt.namespaceOrgID != 0 {
 				secret.NamespaceOrgID = tt.namespaceOrgID
 			}
 			if tt.namespaceUserID != 0 {
 				secret.NamespaceUserID = tt.namespaceUserID
 			}
-			err := ensureActorHasNamespaceWriteAccess(tt.ctx, db, secret)
+			err := database.EnsureActorHasNamespaceWriteAccess(tt.ctx, db, secret)
 			if have, want := err != nil, tt.wantErr; have != want {
 				t.Fatalf("unexpected err state: have=%t want=%t", have, want)
 			}
@@ -162,8 +164,8 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 	// tested further down separately.
 	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	user, err := db.Users().Create(ctx, NewUser{Username: "johndoe"})
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,44 +180,44 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 	store := db.ExecutorSecrets(&encryption.NoopKey{})
 	secretVal := "sosecret"
 	t.Run("global secret", func(t *testing.T) {
-		secret := &ExecutorSecret{
+		secret := &database.ExecutorSecret{
 			Key:       "GH_TOKEN",
 			CreatorID: user.ID,
 		}
 		t.Run("non-admin user cannot create global secret", func(t *testing.T) {
-			if err := store.Create(userCtx, ExecutorSecretScopeBatches, secret, secretVal); err == nil {
+			if err := store.Create(userCtx, database.ExecutorSecretScopeBatches, secret, secretVal); err == nil {
 				t.Fatal("unexpected non-nil error")
 			}
 		})
 		t.Run("empty secret is forbidden", func(t *testing.T) {
-			if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, ""); err == nil {
+			if err := store.Create(ctx, database.ExecutorSecretScopeBatches, secret, ""); err == nil {
 				t.Fatal("unexpected non-nil error")
 			}
 		})
-		if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
+		if err := store.Create(ctx, database.ExecutorSecretScopeBatches, secret, secretVal); err != nil {
 			t.Fatal(err)
 		}
-		if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+		if val, err := secret.Value(ctx, dbmocks.NewMockExecutorSecretAccessLogStore()); err != nil {
 			t.Fatal(err)
 		} else if val != secretVal {
 			t.Fatalf("stored value does not match passed secret have=%q want=%q", val, secretVal)
 		}
-		if have, want := secret.Scope, ExecutorSecretScopeBatches; have != want {
+		if have, want := secret.Scope, database.ExecutorSecretScopeBatches; have != want {
 			t.Fatalf("invalid scope stored: have=%q want=%q", have, want)
 		}
 		if have, want := secret.CreatorID, user.ID; have != want {
 			t.Fatalf("invalid creator ID stored: have=%q want=%q", have, want)
 		}
 		t.Run("duplicate keys are forbidden", func(t *testing.T) {
-			secret := &ExecutorSecret{
+			secret := &database.ExecutorSecret{
 				Key:       "GH_TOKEN",
 				CreatorID: user.ID,
 			}
-			err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal)
+			err := store.Create(ctx, database.ExecutorSecretScopeBatches, secret, secretVal)
 			if err == nil {
 				t.Fatal("no error for duplicate key")
 			}
-			if err != ErrDuplicateExecutorSecret {
+			if err != database.ErrDuplicateExecutorSecret {
 				t.Fatal("incorrect error returned")
 			}
 		})
@@ -223,21 +225,21 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 			newSecretValue := "evenmoresecret"
 
 			t.Run("non-admin user cannot update global secret", func(t *testing.T) {
-				if err := store.Update(userCtx, ExecutorSecretScopeBatches, secret, newSecretValue); err == nil {
+				if err := store.Update(userCtx, database.ExecutorSecretScopeBatches, secret, newSecretValue); err == nil {
 					t.Fatal("unexpected non-nil error")
 				}
 			})
 
 			t.Run("empty secret is forbidden", func(t *testing.T) {
-				if err := store.Update(ctx, ExecutorSecretScopeBatches, secret, ""); err == nil {
+				if err := store.Update(ctx, database.ExecutorSecretScopeBatches, secret, ""); err == nil {
 					t.Fatal("unexpected non-nil error")
 				}
 			})
 
-			if err := store.Update(ctx, ExecutorSecretScopeBatches, secret, newSecretValue); err != nil {
+			if err := store.Update(ctx, database.ExecutorSecretScopeBatches, secret, newSecretValue); err != nil {
 				t.Fatal(err)
 			}
-			if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+			if val, err := secret.Value(ctx, dbmocks.NewMockExecutorSecretAccessLogStore()); err != nil {
 				t.Fatal(err)
 			} else if val != newSecretValue {
 				t.Fatalf("stored value does not match passed secret have=%q want=%q", val, newSecretValue)
@@ -245,39 +247,39 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 		})
 		t.Run("delete", func(t *testing.T) {
 			t.Run("non-admin user cannot delete global secret", func(t *testing.T) {
-				if err := store.Delete(userCtx, ExecutorSecretScopeBatches, secret.ID); err == nil {
+				if err := store.Delete(userCtx, database.ExecutorSecretScopeBatches, secret.ID); err == nil {
 					t.Fatal("unexpected non-nil error")
 				}
 			})
 
-			if err := store.Delete(ctx, ExecutorSecretScopeBatches, secret.ID); err != nil {
+			if err := store.Delete(ctx, database.ExecutorSecretScopeBatches, secret.ID); err != nil {
 				t.Fatal(err)
 			}
-			_, err = store.GetByID(ctx, ExecutorSecretScopeBatches, secret.ID)
+			_, err = store.GetByID(ctx, database.ExecutorSecretScopeBatches, secret.ID)
 			if err == nil {
 				t.Fatal("secret not deleted")
 			}
-			esnfe := &ExecutorSecretNotFoundErr{}
+			esnfe := &database.ExecutorSecretNotFoundErr{}
 			if !errors.As(err, esnfe) {
 				t.Fatal("invalid error returned, expected not found")
 			}
 		})
 	})
 	t.Run("user secret", func(t *testing.T) {
-		secret := &ExecutorSecret{
+		secret := &database.ExecutorSecret{
 			Key:             "GH_TOKEN",
 			NamespaceUserID: user.ID,
 			CreatorID:       user.ID,
 		}
-		if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
+		if err := store.Create(ctx, database.ExecutorSecretScopeBatches, secret, secretVal); err != nil {
 			t.Fatal(err)
 		}
-		if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+		if val, err := secret.Value(ctx, dbmocks.NewMockExecutorSecretAccessLogStore()); err != nil {
 			t.Fatal(err)
 		} else if val != secretVal {
 			t.Fatalf("stored value does not match passed secret have=%q want=%q", val, secretVal)
 		}
-		if have, want := secret.Scope, ExecutorSecretScopeBatches; have != want {
+		if have, want := secret.Scope, database.ExecutorSecretScopeBatches; have != want {
 			t.Fatalf("invalid scope stored: have=%q want=%q", have, want)
 		}
 		if have, want := secret.CreatorID, user.ID; have != want {
@@ -287,56 +289,56 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 			t.Fatalf("invalid namespace user ID stored: have=%q want=%q", have, want)
 		}
 		t.Run("duplicate keys are forbidden", func(t *testing.T) {
-			secret := &ExecutorSecret{
+			secret := &database.ExecutorSecret{
 				Key:             "GH_TOKEN",
 				NamespaceUserID: user.ID,
 				CreatorID:       user.ID,
 			}
-			err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal)
+			err := store.Create(ctx, database.ExecutorSecretScopeBatches, secret, secretVal)
 			if err == nil {
 				t.Fatal("no error for duplicate key")
 			}
 		})
 		t.Run("update", func(t *testing.T) {
 			newSecretValue := "evenmoresecret"
-			if err := store.Update(ctx, ExecutorSecretScopeBatches, secret, newSecretValue); err != nil {
+			if err := store.Update(ctx, database.ExecutorSecretScopeBatches, secret, newSecretValue); err != nil {
 				t.Fatal(err)
 			}
-			if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+			if val, err := secret.Value(ctx, dbmocks.NewMockExecutorSecretAccessLogStore()); err != nil {
 				t.Fatal(err)
 			} else if val != newSecretValue {
 				t.Fatalf("stored value does not match passed secret have=%q want=%q", val, newSecretValue)
 			}
 		})
 		t.Run("delete", func(t *testing.T) {
-			if err := store.Delete(ctx, ExecutorSecretScopeBatches, secret.ID); err != nil {
+			if err := store.Delete(ctx, database.ExecutorSecretScopeBatches, secret.ID); err != nil {
 				t.Fatal(err)
 			}
-			_, err = store.GetByID(ctx, ExecutorSecretScopeBatches, secret.ID)
+			_, err = store.GetByID(ctx, database.ExecutorSecretScopeBatches, secret.ID)
 			if err == nil {
 				t.Fatal("secret not deleted")
 			}
-			esnfe := &ExecutorSecretNotFoundErr{}
+			esnfe := &database.ExecutorSecretNotFoundErr{}
 			if !errors.As(err, esnfe) {
 				t.Fatal("invalid error returned, expected not found")
 			}
 		})
 	})
 	t.Run("org secret", func(t *testing.T) {
-		secret := &ExecutorSecret{
+		secret := &database.ExecutorSecret{
 			Key:            "GH_TOKEN",
 			NamespaceOrgID: org.ID,
 			CreatorID:      user.ID,
 		}
-		if err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
+		if err := store.Create(ctx, database.ExecutorSecretScopeBatches, secret, secretVal); err != nil {
 			t.Fatal(err)
 		}
-		if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+		if val, err := secret.Value(ctx, dbmocks.NewMockExecutorSecretAccessLogStore()); err != nil {
 			t.Fatal(err)
 		} else if val != secretVal {
 			t.Fatalf("stored value does not match passed secret have=%q want=%q", val, secretVal)
 		}
-		if have, want := secret.Scope, ExecutorSecretScopeBatches; have != want {
+		if have, want := secret.Scope, database.ExecutorSecretScopeBatches; have != want {
 			t.Fatalf("invalid scope stored: have=%q want=%q", have, want)
 		}
 		if have, want := secret.CreatorID, user.ID; have != want {
@@ -346,36 +348,36 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 			t.Fatalf("invalid namespace org ID stored: have=%q want=%q", have, want)
 		}
 		t.Run("duplicate keys are forbidden", func(t *testing.T) {
-			secret := &ExecutorSecret{
+			secret := &database.ExecutorSecret{
 				Key:            "GH_TOKEN",
 				NamespaceOrgID: org.ID,
 				CreatorID:      user.ID,
 			}
-			err := store.Create(ctx, ExecutorSecretScopeBatches, secret, secretVal)
+			err := store.Create(ctx, database.ExecutorSecretScopeBatches, secret, secretVal)
 			if err == nil {
 				t.Fatal("no error for duplicate key")
 			}
 		})
 		t.Run("update", func(t *testing.T) {
 			newSecretValue := "evenmoresecret"
-			if err := store.Update(ctx, ExecutorSecretScopeBatches, secret, newSecretValue); err != nil {
+			if err := store.Update(ctx, database.ExecutorSecretScopeBatches, secret, newSecretValue); err != nil {
 				t.Fatal(err)
 			}
-			if val, err := secret.Value(ctx, NewMockExecutorSecretAccessLogStore()); err != nil {
+			if val, err := secret.Value(ctx, dbmocks.NewMockExecutorSecretAccessLogStore()); err != nil {
 				t.Fatal(err)
 			} else if val != newSecretValue {
 				t.Fatalf("stored value does not match passed secret have=%q want=%q", val, newSecretValue)
 			}
 		})
 		t.Run("delete", func(t *testing.T) {
-			if err := store.Delete(ctx, ExecutorSecretScopeBatches, secret.ID); err != nil {
+			if err := store.Delete(ctx, database.ExecutorSecretScopeBatches, secret.ID); err != nil {
 				t.Fatal(err)
 			}
-			_, err = store.GetByID(ctx, ExecutorSecretScopeBatches, secret.ID)
+			_, err = store.GetByID(ctx, database.ExecutorSecretScopeBatches, secret.ID)
 			if err == nil {
 				t.Fatal("secret not deleted")
 			}
-			esnfe := &ExecutorSecretNotFoundErr{}
+			esnfe := &database.ExecutorSecretNotFoundErr{}
 			if !errors.As(err, esnfe) {
 				t.Fatal("invalid error returned, expected not found")
 			}
@@ -386,15 +388,15 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 func TestExecutorSecrets_GetListCount(t *testing.T) {
 	internalCtx := actor.WithInternalActor(context.Background())
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	user, err := db.Users().Create(internalCtx, NewUser{Username: "johndoe"})
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	user, err := db.Users().Create(internalCtx, database.NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := db.Users().SetIsSiteAdmin(internalCtx, user.ID, false); err != nil {
 		t.Fatal(err)
 	}
-	otherUser, err := db.Users().Create(internalCtx, NewUser{Username: "alice"})
+	otherUser, err := db.Users().Create(internalCtx, database.NewUser{Username: "alice"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -425,36 +427,36 @@ func TestExecutorSecrets_GetListCount(t *testing.T) {
 	// Org: GH_TOKEN, NPM_TOKEN (org-owned), DOCKER_TOKEN (org-owned)
 
 	secretVal := "sosecret"
-	createSecret := func(secret *ExecutorSecret) *ExecutorSecret {
+	createSecret := func(secret *database.ExecutorSecret) *database.ExecutorSecret {
 		secret.CreatorID = user.ID
-		if err := store.Create(internalCtx, ExecutorSecretScopeBatches, secret, secretVal); err != nil {
+		if err := store.Create(internalCtx, database.ExecutorSecretScopeBatches, secret, secretVal); err != nil {
 			t.Fatal(err)
 		}
 		return secret
 	}
-	globalGHToken := createSecret(&ExecutorSecret{Key: "GH_TOKEN"})
-	globalNPMToken := createSecret(&ExecutorSecret{Key: "NPM_TOKEN"})
-	userGHToken := createSecret(&ExecutorSecret{Key: "GH_TOKEN", NamespaceUserID: user.ID})
-	userSGToken := createSecret(&ExecutorSecret{Key: "SG_TOKEN", NamespaceUserID: user.ID})
-	orgNPMToken := createSecret(&ExecutorSecret{Key: "NPM_TOKEN", NamespaceOrgID: org.ID})
-	orgDockerToken := createSecret(&ExecutorSecret{Key: "DOCKER_TOKEN", NamespaceOrgID: org.ID})
+	globalGHToken := createSecret(&database.ExecutorSecret{Key: "GH_TOKEN"})
+	globalNPMToken := createSecret(&database.ExecutorSecret{Key: "NPM_TOKEN"})
+	userGHToken := createSecret(&database.ExecutorSecret{Key: "GH_TOKEN", NamespaceUserID: user.ID})
+	userSGToken := createSecret(&database.ExecutorSecret{Key: "SG_TOKEN", NamespaceUserID: user.ID})
+	orgNPMToken := createSecret(&database.ExecutorSecret{Key: "NPM_TOKEN", NamespaceOrgID: org.ID})
+	orgDockerToken := createSecret(&database.ExecutorSecret{Key: "DOCKER_TOKEN", NamespaceOrgID: org.ID})
 
 	t.Run("GetByID", func(t *testing.T) {
 		t.Run("global secret as user", func(t *testing.T) {
-			secret, err := store.GetByID(userCtx, ExecutorSecretScopeBatches, globalGHToken.ID)
+			secret, err := store.GetByID(userCtx, database.ExecutorSecretScopeBatches, globalGHToken.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(globalGHToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+			if diff := cmp.Diff(globalGHToken, secret, cmpopts.IgnoreUnexported(database.ExecutorSecret{})); diff != "" {
 				t.Fatal(diff)
 			}
 		})
 		t.Run("user secret as user", func(t *testing.T) {
-			secret, err := store.GetByID(userCtx, ExecutorSecretScopeBatches, userGHToken.ID)
+			secret, err := store.GetByID(userCtx, database.ExecutorSecretScopeBatches, userGHToken.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(userGHToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+			if diff := cmp.Diff(userGHToken, secret, cmpopts.IgnoreUnexported(database.ExecutorSecret{})); diff != "" {
 				t.Fatal(diff)
 			}
 
@@ -463,22 +465,22 @@ func TestExecutorSecrets_GetListCount(t *testing.T) {
 			}
 
 			t.Run("accessing other users secret", func(t *testing.T) {
-				if _, err := store.GetByID(otherUserCtx, ExecutorSecretScopeBatches, userGHToken.ID); err == nil {
+				if _, err := store.GetByID(otherUserCtx, database.ExecutorSecretScopeBatches, userGHToken.ID); err == nil {
 					t.Fatal("unexpected non nil error")
 				}
 			})
 		})
 		t.Run("org secret as user", func(t *testing.T) {
-			secret, err := store.GetByID(userCtx, ExecutorSecretScopeBatches, orgNPMToken.ID)
+			secret, err := store.GetByID(userCtx, database.ExecutorSecretScopeBatches, orgNPMToken.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if diff := cmp.Diff(orgNPMToken, secret, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+			if diff := cmp.Diff(orgNPMToken, secret, cmpopts.IgnoreUnexported(database.ExecutorSecret{})); diff != "" {
 				t.Fatal(diff)
 			}
 
 			t.Run("accessing org secret as non-member", func(t *testing.T) {
-				if _, err := store.GetByID(otherUserCtx, ExecutorSecretScopeBatches, orgNPMToken.ID); err == nil {
+				if _, err := store.GetByID(otherUserCtx, database.ExecutorSecretScopeBatches, orgNPMToken.ID); err == nil {
 					t.Fatal("unexpected non nil error")
 				}
 			})
@@ -487,92 +489,92 @@ func TestExecutorSecrets_GetListCount(t *testing.T) {
 
 	t.Run("ListCount", func(t *testing.T) {
 		t.Run("global secrets as user", func(t *testing.T) {
-			opts := ExecutorSecretsListOpts{}
-			secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+			opts := database.ExecutorSecretsListOpts{}
+			secrets, _, err := store.List(userCtx, database.ExecutorSecretScopeBatches, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
-			count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+			count, err := store.Count(userCtx, database.ExecutorSecretScopeBatches, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if have, want := count, len(secrets); have != want {
 				t.Fatalf("invalid count returned: %d", have)
 			}
-			if diff := cmp.Diff([]*ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+			if diff := cmp.Diff([]*database.ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(database.ExecutorSecret{})); diff != "" {
 				t.Fatal(diff)
 			}
 		})
 		t.Run("user secrets as user", func(t *testing.T) {
-			opts := ExecutorSecretsListOpts{NamespaceUserID: user.ID}
-			secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+			opts := database.ExecutorSecretsListOpts{NamespaceUserID: user.ID}
+			secrets, _, err := store.List(userCtx, database.ExecutorSecretScopeBatches, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
-			count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+			count, err := store.Count(userCtx, database.ExecutorSecretScopeBatches, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if have, want := count, len(secrets); have != want {
 				t.Fatalf("invalid count returned: %d", have)
 			}
-			if diff := cmp.Diff([]*ExecutorSecret{userGHToken, globalNPMToken, userSGToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+			if diff := cmp.Diff([]*database.ExecutorSecret{userGHToken, globalNPMToken, userSGToken}, secrets, cmpopts.IgnoreUnexported(database.ExecutorSecret{})); diff != "" {
 				t.Fatal(diff)
 			}
 
 			t.Run("by Keys", func(t *testing.T) {
-				opts := ExecutorSecretsListOpts{NamespaceUserID: user.ID, Keys: []string{userGHToken.Key, globalNPMToken.Key}}
-				secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+				opts := database.ExecutorSecretsListOpts{NamespaceUserID: user.ID, Keys: []string{userGHToken.Key, globalNPMToken.Key}}
+				secrets, _, err := store.List(userCtx, database.ExecutorSecretScopeBatches, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
-				count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+				count, err := store.Count(userCtx, database.ExecutorSecretScopeBatches, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
 				if have, want := count, len(secrets); have != want {
 					t.Fatalf("invalid count returned: %d", have)
 				}
-				if diff := cmp.Diff([]*ExecutorSecret{userGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				if diff := cmp.Diff([]*database.ExecutorSecret{userGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(database.ExecutorSecret{})); diff != "" {
 					t.Fatal(diff)
 				}
 			})
 
 			t.Run("accessing other users secrets", func(t *testing.T) {
-				secrets, _, err := store.List(otherUserCtx, ExecutorSecretScopeBatches, opts)
+				secrets, _, err := store.List(otherUserCtx, database.ExecutorSecretScopeBatches, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
 				// Only returns global tokens.
-				if diff := cmp.Diff([]*ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				if diff := cmp.Diff([]*database.ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(database.ExecutorSecret{})); diff != "" {
 					t.Fatal(diff)
 				}
 			})
 		})
 		t.Run("org secrets as user", func(t *testing.T) {
-			opts := ExecutorSecretsListOpts{NamespaceOrgID: org.ID}
-			secrets, _, err := store.List(userCtx, ExecutorSecretScopeBatches, opts)
+			opts := database.ExecutorSecretsListOpts{NamespaceOrgID: org.ID}
+			secrets, _, err := store.List(userCtx, database.ExecutorSecretScopeBatches, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
-			count, err := store.Count(userCtx, ExecutorSecretScopeBatches, opts)
+			count, err := store.Count(userCtx, database.ExecutorSecretScopeBatches, opts)
 			if err != nil {
 				t.Fatal(err)
 			}
 			if have, want := count, len(secrets); have != want {
 				t.Fatalf("invalid count returned: %d", have)
 			}
-			if diff := cmp.Diff([]*ExecutorSecret{orgDockerToken, globalGHToken, orgNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+			if diff := cmp.Diff([]*database.ExecutorSecret{orgDockerToken, globalGHToken, orgNPMToken}, secrets, cmpopts.IgnoreUnexported(database.ExecutorSecret{})); diff != "" {
 				t.Fatal(diff)
 			}
 
 			t.Run("accessing org secrets as non-member", func(t *testing.T) {
-				secrets, _, err := store.List(otherUserCtx, ExecutorSecretScopeBatches, opts)
+				secrets, _, err := store.List(otherUserCtx, database.ExecutorSecretScopeBatches, opts)
 				if err != nil {
 					t.Fatal(err)
 				}
 				// Only returns global tokens.
-				if diff := cmp.Diff([]*ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(ExecutorSecret{})); diff != "" {
+				if diff := cmp.Diff([]*database.ExecutorSecret{globalGHToken, globalNPMToken}, secrets, cmpopts.IgnoreUnexported(database.ExecutorSecret{})); diff != "" {
 					t.Fatal(diff)
 				}
 			})
@@ -581,24 +583,8 @@ func TestExecutorSecrets_GetListCount(t *testing.T) {
 }
 
 func TestExecutorSecretNotFoundError(t *testing.T) {
-	err := ExecutorSecretNotFoundErr{}
+	err := database.ExecutorSecretNotFoundErr{}
 	if have := errcode.IsNotFound(err); !have {
 		t.Error("ExecutorSecretNotFoundErr does not say it represents a not found error")
-	}
-}
-
-func TestExecutorSecret_Value(t *testing.T) {
-	secretVal := "sosecret"
-	esal := NewMockExecutorSecretAccessLogStore()
-	secret := &ExecutorSecret{encryptedValue: NewUnencryptedCredential([]byte(secretVal))}
-	val, err := secret.Value(context.Background(), esal)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if val != secretVal {
-		t.Fatalf("invalid secret value returned: want=%q have=%q", secretVal, val)
-	}
-	if len(esal.CreateFunc.History()) != 1 {
-		t.Fatal("no access log entry created")
 	}
 }

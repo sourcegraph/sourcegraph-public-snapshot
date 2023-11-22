@@ -1,13 +1,13 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { mdiAws, mdiBitbucket, mdiGit, mdiGithub, mdiGitlab, mdiMicrosoftAzure } from '@mdi/js'
-import { MdiReactIconComponentType } from 'mdi-react'
+import type { MdiReactIconComponentType } from 'mdi-react'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon, IconProps } from '@sourcegraph/wildcard'
+import { Icon, type IconProps } from '@sourcegraph/wildcard'
 
 import { GerritIcon } from '../../../components/externalServices/GerritIcon'
-import { GetCodeHostsResult } from '../../../graphql-operations'
+import type { GetCodeHostsResult } from '../../../graphql-operations'
 
 type CodeHostIconProps = IconProps & {
     codeHostType: ExternalServiceKind | null
@@ -30,47 +30,64 @@ export const CodeHostIcon: FC<CodeHostIconProps> = props => {
 
 export const getCodeHostIconPath = (codeHostType: ExternalServiceKind | null): string | null => {
     switch (codeHostType) {
-        case ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB: {
             return mdiGithub
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case ExternalServiceKind.BITBUCKETCLOUD: {
             return mdiBitbucket
-        case ExternalServiceKind.BITBUCKETSERVER:
+        }
+        case ExternalServiceKind.BITBUCKETSERVER: {
             return mdiBitbucket
-        case ExternalServiceKind.GITLAB:
+        }
+        case ExternalServiceKind.GITLAB: {
             return mdiGitlab
-        case ExternalServiceKind.GITOLITE:
+        }
+        case ExternalServiceKind.GITOLITE: {
             return mdiGit
-        case ExternalServiceKind.AWSCODECOMMIT:
+        }
+        case ExternalServiceKind.AWSCODECOMMIT: {
             return mdiAws
-        case ExternalServiceKind.AZUREDEVOPS:
+        }
+        case ExternalServiceKind.AZUREDEVOPS: {
             return mdiMicrosoftAzure
-        default:
+        }
+        default: {
             // TODO: Add support for other code host
             return null
+        }
     }
 }
 
 export const getCodeHostName = (codeHostType: ExternalServiceKind | null): string => {
     switch (codeHostType) {
-        case ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB: {
             return 'GitHub'
-        case ExternalServiceKind.GITLAB:
+        }
+        case ExternalServiceKind.GITLAB: {
             return 'GitLab'
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case ExternalServiceKind.BITBUCKETCLOUD: {
             return 'BitBucket.org'
-        case ExternalServiceKind.BITBUCKETSERVER:
+        }
+        case ExternalServiceKind.BITBUCKETSERVER: {
             return 'BitBucket Server'
-        case ExternalServiceKind.AWSCODECOMMIT:
+        }
+        case ExternalServiceKind.AWSCODECOMMIT: {
             return 'AWS Code Commit'
-        case ExternalServiceKind.GITOLITE:
+        }
+        case ExternalServiceKind.GITOLITE: {
             return 'Gitolite'
-        case ExternalServiceKind.GERRIT:
+        }
+        case ExternalServiceKind.GERRIT: {
             return 'Gerrit'
-        case ExternalServiceKind.AZUREDEVOPS:
+        }
+        case ExternalServiceKind.AZUREDEVOPS: {
             return 'Azure DevOps'
-        default:
+        }
+        default: {
             // TODO: Add support for other code host
             return 'Unknown'
+        }
     }
 }
 

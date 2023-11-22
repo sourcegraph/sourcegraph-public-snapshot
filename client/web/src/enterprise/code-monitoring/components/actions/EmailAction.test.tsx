@@ -1,14 +1,19 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
+import { afterEach, beforeEach, describe, expect, test } from 'vitest'
 
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 
-import { MonitorEmailPriority, SendTestEmailResult, SendTestEmailVariables } from '../../../../graphql-operations'
+import {
+    MonitorEmailPriority,
+    type SendTestEmailResult,
+    type SendTestEmailVariables,
+} from '../../../../graphql-operations'
 import { mockAuthenticatedUser } from '../../testing/util'
-import { ActionProps } from '../FormActionArea'
+import type { ActionProps } from '../FormActionArea'
 
 import { EmailAction, SEND_TEST_EMAIL } from './EmailAction'
 

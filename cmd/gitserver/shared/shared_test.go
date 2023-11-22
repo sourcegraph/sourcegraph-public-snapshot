@@ -1,31 +1,15 @@
 package shared
 
 import (
-	"bytes"
 	"context"
 	"flag"
-	"io"
-	"net/http"
 	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"google.golang.org/grpc"
 )
 
 func TestMain(m *testing.M) {
@@ -36,160 +20,117 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestParsePercent(t *testing.T) {
+func TestMethodSpecificStreamInterceptor(t *testing.T) {
 	tests := []struct {
-		i       int
-		want    int
-		wantErr bool
+		name string
+
+		matchedMethod string
+		testMethod    string
+
+		expectedInterceptorCalled bool
 	}{
-		{i: -1, wantErr: true},
-		{i: -4, wantErr: true},
-		{i: 300, wantErr: true},
-		{i: 0, want: 0},
-		{i: 50, want: 50},
-		{i: 100, want: 100},
+		{
+			name: "allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "allowedMethod",
+
+			expectedInterceptorCalled: true,
+		},
+		{
+			name: "not allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "otherMethod",
+
+			expectedInterceptorCalled: false,
+		},
 	}
-	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
-			got, err := getPercent(tt.i)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("parsePercent() error = %v, wantErr %v", err, tt.wantErr)
-				return
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			interceptorCalled := false
+			interceptor := methodSpecificStreamInterceptor(test.matchedMethod, func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+				interceptorCalled = true
+				return handler(srv, ss)
+			})
+
+			handlerCalled := false
+			noopHandler := func(srv any, ss grpc.ServerStream) error {
+				handlerCalled = true
+				return nil
 			}
-			if got != tt.want {
-				t.Errorf("parsePercent() = %v, want %v", got, tt.want)
+
+			err := interceptor(nil, nil, &grpc.StreamServerInfo{FullMethod: test.testMethod}, noopHandler)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			if !handlerCalled {
+				t.Error("expected handler to be called")
+			}
+
+			if diff := cmp.Diff(test.expectedInterceptorCalled, interceptorCalled); diff != "" {
+				t.Fatalf("unexpected interceptor called value (-want +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-type mockDoer struct {
-	do func(*http.Request) (*http.Response, error)
-}
+func TestMethodSpecificUnaryInterceptor(t *testing.T) {
+	tests := []struct {
+		name string
 
-func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
-	return c.do(r)
-}
+		matchedMethod string
+		testMethod    string
 
-func TestGetRemoteURLFunc_GitHubApp(t *testing.T) {
-	externalServiceStore := database.NewMockExternalServiceStore()
-	externalServiceStore.GetByIDFunc.SetDefaultReturn(
-		&types.ExternalService{
-			ID:   1,
-			Kind: extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(`
-{
-  "url": "https://github.com",
-  "githubAppInstallationID": "21994992",
-  "repos": [],
-  "authorization": {},
-}`),
+		expectedInterceptorCalled bool
+	}{
+		{
+			name: "allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "allowedMethod",
+
+			expectedInterceptorCalled: true,
 		},
-		nil,
-	)
+		{
+			name: "not allowed method",
 
-	repoStore := database.NewMockRepoStore()
-	repoStore.GetByNameFunc.SetDefaultReturn(
-		&types.Repo{
-			ID:   1,
-			Name: "test-repo-1",
-			Sources: map[string]*types.SourceInfo{
-				"extsvc:github:1": {
-					ID:       "extsvc:github:1",
-					CloneURL: "https://github.com/sgtest/test-repo-1",
-				},
-			},
-			Metadata: &github.Repository{
-				URL: "https://github.com/sgtest/test-repo-1",
-			},
+			matchedMethod: "allowedMethod",
+			testMethod:    "otherMethod",
+
+			expectedInterceptorCalled: false,
 		},
-		nil,
-	)
+	}
 
-	doer := &mockDoer{
-		do: func(r *http.Request) (*http.Response, error) {
-			want := "http://github-proxy/app/installations/21994992/access_tokens"
-			if r.URL.String() != want {
-				return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			interceptorCalled := false
+			interceptor := methodSpecificUnaryInterceptor(test.matchedMethod, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+				interceptorCalled = true
+				return handler(ctx, req)
+			})
+
+			handlerCalled := false
+			noopHandler := func(ctx context.Context, req any) (any, error) {
+				handlerCalled = true
+				return nil, nil
 			}
 
-			body := `{"token": "mock-installtion-access-token"}`
-			return &http.Response{
-				Status:     http.StatusText(http.StatusOK),
-				StatusCode: http.StatusOK,
-				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-			}, nil
-		},
-	}
+			_, err := interceptor(context.Background(), nil, &grpc.UnaryServerInfo{FullMethod: test.testMethod}, noopHandler)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
 
-	const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			GitHubApp: &schema.GitHubApp{
-				AppID:        "404",
-				PrivateKey:   bogusKey,
-				Slug:         "test-app",
-				ClientID:     "Iv1.deb0cd1048cf1040",
-				ClientSecret: "c6d0ed049217a89825c457898c701c30324f873b",
-			},
-		},
-	})
-	defer conf.Mock(nil)
+			if !handlerCalled {
+				t.Error("expected handler to be called")
+			}
 
-	got, err := getRemoteURLFunc(context.Background(), externalServiceStore, repoStore, doer, "test-repo-1")
-	require.NoError(t, err)
+			if diff := cmp.Diff(test.expectedInterceptorCalled, interceptorCalled); diff != "" {
+				t.Fatalf("unexpected interceptor called value (-want +got):\n%s", diff)
+			}
 
-	want := "https://x-access-token:mock-installtion-access-token@github.com/sgtest/test-repo-1"
-	assert.Equal(t, want, got)
-}
-
-func TestGetVCSSyncer(t *testing.T) {
-	tempReposDir, err := os.MkdirTemp("", "TestGetVCSSyncer")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if err := os.RemoveAll(tempReposDir); err != nil {
-			t.Fatal(err)
-		}
-	})
-	tempCoursierCacheDir := filepath.Join(tempReposDir, "coursier")
-
-	repo := api.RepoName("foo/bar")
-	extsvcStore := database.NewMockExternalServiceStore()
-	repoStore := database.NewMockRepoStore()
-	depsSvc := new(dependencies.Service)
-
-	repoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		return &types.Repo{
-			ExternalRepo: api.ExternalRepoSpec{
-				ServiceType: extsvc.TypePerforce,
-			},
-			Sources: map[string]*types.SourceInfo{
-				"a": {
-					ID:       "abc",
-					CloneURL: "example.com",
-				},
-			},
-		}, nil
-	})
-
-	extsvcStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int64) (*types.ExternalService, error) {
-		return &types.ExternalService{
-			ID:          1,
-			Kind:        extsvc.KindPerforce,
-			DisplayName: "test",
-			Config:      extsvc.NewEmptyConfig(),
-		}, nil
-	})
-
-	s, err := getVCSSyncer(context.Background(), extsvcStore, repoStore, depsSvc, repo, tempReposDir, tempCoursierCacheDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, ok := s.(*server.PerforceDepotSyncer)
-	if !ok {
-		t.Fatalf("Want *server.PerforceDepotSyncer, got %T", s)
+		})
 	}
 }

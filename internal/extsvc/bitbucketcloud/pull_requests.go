@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -15,12 +16,14 @@ type PullRequestInput struct {
 	Title        string
 	Description  string
 	SourceBranch string
+	Reviewers    []Account
 
 	// The following fields are optional.
 	//
 	// If SourceRepo is provided, only FullName is actually used.
 	SourceRepo        *Repo
 	DestinationBranch *string
+	CloseSourceBranch bool `json:"close_source_branch"`
 }
 
 // CreatePullRequest opens a new pull request.
@@ -40,10 +43,9 @@ func (c *client) CreatePullRequest(ctx context.Context, repo *Repo, input PullRe
 	}
 
 	var pr PullRequest
-	if err := c.do(ctx, req, &pr); err != nil {
-		return nil, errors.Wrap(err, "sending request")
+	if code, err := c.do(ctx, req, &pr); err != nil {
+		return nil, errors.Wrap(errcode.MaybeMakeNonRetryable(code, err), "sending request")
 	}
-
 	return &pr, nil
 }
 
@@ -57,7 +59,7 @@ func (c *client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (
 	}
 
 	var pr PullRequest
-	if err := c.do(ctx, req, &pr); err != nil {
+	if _, err := c.do(ctx, req, &pr); err != nil {
 		return nil, errors.Wrap(err, "sending request")
 	}
 
@@ -72,7 +74,7 @@ func (c *client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*Pul
 	}
 
 	var pr PullRequest
-	if err := c.do(ctx, req, &pr); err != nil {
+	if _, err := c.do(ctx, req, &pr); err != nil {
 		return nil, errors.Wrap(err, "sending request")
 	}
 
@@ -94,7 +96,7 @@ func (c *client) GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultS
 			Values []*PullRequestStatus `json:"values"`
 		}
 
-		if err := c.do(ctx, req, &page); err != nil {
+		if _, err := c.do(ctx, req, &page); err != nil {
 			return nil, nil, err
 		}
 
@@ -120,7 +122,7 @@ func (c *client) UpdatePullRequest(ctx context.Context, repo *Repo, id int64, in
 	}
 
 	var updated PullRequest
-	if err := c.do(ctx, req, &updated); err != nil {
+	if _, err := c.do(ctx, req, &updated); err != nil {
 		return nil, errors.Wrap(err, "sending request")
 	}
 
@@ -145,7 +147,7 @@ func (c *client) CreatePullRequestComment(ctx context.Context, repo *Repo, id in
 	}
 
 	var comment Comment
-	if err := c.do(ctx, req, &comment); err != nil {
+	if _, err := c.do(ctx, req, &comment); err != nil {
 		return nil, errors.Wrap(err, "sending request")
 	}
 
@@ -174,7 +176,7 @@ func (c *client) MergePullRequest(ctx context.Context, repo *Repo, id int64, opt
 	}
 
 	var pr PullRequest
-	if err := c.do(ctx, req, &pr); err != nil {
+	if _, err := c.do(ctx, req, &pr); err != nil {
 		return nil, errors.Wrap(err, "sending request")
 	}
 
@@ -198,10 +200,11 @@ func (input *PullRequestInput) MarshalJSON() ([]byte, error) {
 	}
 
 	type request struct {
-		Title       string  `json:"title"`
-		Description string  `json:"description,omitempty"`
-		Source      source  `json:"source"`
-		Destination *source `json:"destination,omitempty"`
+		Title             string  `json:"title"`
+		Description       string  `json:"description,omitempty"`
+		Source            source  `json:"source"`
+		Destination       *source `json:"destination,omitempty"`
+		CloseSourceBranch bool    `json:"close_source_branch,omitempty"`
 	}
 
 	req := request{
@@ -210,6 +213,7 @@ func (input *PullRequestInput) MarshalJSON() ([]byte, error) {
 		Source: source{
 			Branch: branch{Name: input.SourceBranch},
 		},
+		CloseSourceBranch: input.CloseSourceBranch,
 	}
 	if input.SourceRepo != nil {
 		req.Source.Repository = &repository{

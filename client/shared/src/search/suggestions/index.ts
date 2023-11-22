@@ -1,18 +1,18 @@
 import { noop } from 'lodash'
-import { fromEvent, Observable, of, Subscriber, Subscription } from 'rxjs'
+import { fromEvent, type Observable, of, type Subscriber, type Subscription } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { SearchPatternType } from '../../graphql-operations'
 import {
-    AggregateStreamingSearchResults,
+    type AggregateStreamingSearchResults,
     LATEST_VERSION,
     messageHandlers,
-    MessageHandlers,
+    type MessageHandlers,
     observeMessages,
     search,
-    SearchEvent,
-    SearchMatch,
-    StreamSearchOptions,
+    type SearchEvent,
+    type SearchMatch,
+    type StreamSearchOptions,
     switchAggregateSearchResults,
 } from '../stream'
 

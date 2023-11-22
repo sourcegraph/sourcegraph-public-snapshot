@@ -1,7 +1,7 @@
-import React, { ReactNode } from 'react'
+import React, { type ReactNode } from 'react'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Alert, H3, H4, Markdown } from '@sourcegraph/wildcard'
 

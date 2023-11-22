@@ -1,20 +1,20 @@
 import { applyEdits, modify, parse as parseJSONC } from 'jsonc-parser'
-import { from, fromEvent, Observable } from 'rxjs'
+import { from, fromEvent, type Observable } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { SettingsEdit } from '@sourcegraph/shared/src/api/client/services/settings'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsEdit } from '@sourcegraph/shared/src/api/client/services/settings'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     mergeSettings,
-    SettingsCascade,
-    SettingsCascadeOrError,
-    SettingsSubject,
+    type SettingsCascade,
+    type SettingsCascadeOrError,
+    type SettingsSubject,
 } from '@sourcegraph/shared/src/settings/settings'
 
 import { observeStorageKey, storage } from '../../browser-extension/web-extension-api/storage'
-import { ViewerConfigurationResult } from '../../graphql-operations'
+import type { ViewerConfigurationResult } from '../../graphql-operations'
 import { isInPage } from '../context'
 
 const inPageClientSettingsKey = 'sourcegraphClientSettings'

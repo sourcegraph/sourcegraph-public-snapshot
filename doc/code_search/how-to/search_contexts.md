@@ -31,7 +31,7 @@ You can also search across multiple contexts at once using the `OR` [boolean ope
 
 `(context:release1 OR context:release2 OR context:release3) someTerribleBug` 
 
-## Organzing search contexts
+## Organizing search contexts
 
 To organize your search contexts better, you can use a specific context as your default and star any number of contexts. This affects what context is selected when loading Sourcegraph and how the list of contexts is sorted.
 
@@ -64,7 +64,7 @@ A search context consists of a name, description, and a set of repositories at o
 
 Contexts can be owned by a user, and can be private to the user or public to all users on the Sourcegraph instance.
 
-Contexts can also be at the global instance level, and can be private to site admins or public to all users on the Sourcegraph instance.\
+Contexts can also be at the global instance level, and can be private to site admins or public to all users on the Sourcegraph instance.
 
 ### Creating search contexts from header navigation
 
@@ -103,8 +103,8 @@ For example:
 
 You will be returned to the list of search contexts. Your new search context will appear in the search contexts selector in the search input, and can be [used immediately](#using-search-contexts).
 
-## Beta: Query-based search contexts
-As of release 3.36, search contexts can be defined with a restricted search query as an alternative to a specific list of repositories and revisions. This feature is in beta and may change in following releases. Allowed filters are: `repo`, `rev`, `file`, `lang`, `case`, `fork`, and `visibility`. `OR` and `AND` expressions are also allowed.
+## Query-based search contexts
+As of release 3.36, search contexts can be defined with a restricted search query as an alternative to a specific list of repositories and revisions. Allowed filters are: `repo`, `rev`, `file`, `lang`, `case`, `fork`, and `visibility`. `OR` and `AND` expressions are also allowed.
 
 > NOTE: Currently, repo built in predicates for example `repo:has.file`, `repo:has.content` etc, aren't currently supported in search contexts.
 

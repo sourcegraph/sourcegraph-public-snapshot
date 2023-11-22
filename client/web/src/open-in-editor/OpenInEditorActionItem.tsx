@@ -6,8 +6,8 @@ import { from } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { isSettingsValid, Settings } from '@sourcegraph/shared/src/settings/settings'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import { isSettingsValid, type Settings } from '@sourcegraph/shared/src/settings/settings'
 import {
     Button,
     Icon,
@@ -24,7 +24,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import { getEditorSettingsErrorMessage } from './build-url'
 import type { EditorSettings } from './editor-settings'
-import { EditorId, getEditor } from './editors'
+import { type EditorId, getEditor } from './editors'
 import { migrateLegacySettings } from './migrate-legacy-settings'
 import { OpenInEditorPopover } from './OpenInEditorPopover'
 import { useOpenCurrentUrlInEditor } from './useOpenCurrentUrlInEditor'

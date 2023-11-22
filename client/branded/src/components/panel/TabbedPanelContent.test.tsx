@@ -1,10 +1,11 @@
 import React from 'react'
 
 import { cleanup, fireEvent } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { Panel, TabbedPanelContent, useBuiltinTabbedPanelViews } from './TabbedPanelContent'
+import { type Panel, TabbedPanelContent, useBuiltinTabbedPanelViews } from './TabbedPanelContent'
 import { panels, panelProps } from './TabbedPanelContent.fixtures'
 
 describe('TabbedPanel', () => {

@@ -11,15 +11,18 @@ import (
 
 type EmbeddingsResolver interface {
 	EmbeddingsSearch(ctx context.Context, args EmbeddingsSearchInputArgs) (EmbeddingsSearchResultsResolver, error)
+	EmbeddingsMultiSearch(ctx context.Context, args EmbeddingsMultiSearchInputArgs) (EmbeddingsSearchResultsResolver, error)
 	IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryInputArgs) (bool, error)
 	RepoEmbeddingJobs(ctx context.Context, args ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[RepoEmbeddingJobResolver], error)
+	MigrateToQdrant(ctx context.Context) (*EmptyResponse, error)
 
 	ScheduleRepositoriesForEmbedding(ctx context.Context, args ScheduleRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
-	ScheduleContextDetectionForEmbedding(ctx context.Context) (*EmptyResponse, error)
+	CancelRepoEmbeddingJob(ctx context.Context, args CancelRepoEmbeddingJobArgs) (*EmptyResponse, error)
 }
 
 type ScheduleRepositoriesForEmbeddingArgs struct {
 	RepoNames []string
+	Force     *bool
 }
 
 type IsContextRequiredForChatQueryInputArgs struct {
@@ -33,12 +36,21 @@ type EmbeddingsSearchInputArgs struct {
 	TextResultsCount int32
 }
 
+type EmbeddingsMultiSearchInputArgs struct {
+	Repos            []graphql.ID
+	Query            string
+	CodeResultsCount int32
+	TextResultsCount int32
+}
+
 type EmbeddingsSearchResultsResolver interface {
-	CodeResults(ctx context.Context) []EmbeddingsSearchResultResolver
-	TextResults(ctx context.Context) []EmbeddingsSearchResultResolver
+	CodeResults(ctx context.Context) ([]EmbeddingsSearchResultResolver, error)
+	TextResults(ctx context.Context) ([]EmbeddingsSearchResultResolver, error)
 }
 
 type EmbeddingsSearchResultResolver interface {
+	RepoName(ctx context.Context) string
+	Revision(ctx context.Context) string
 	FileName(ctx context.Context) string
 	StartLine(ctx context.Context) int32
 	EndLine(ctx context.Context) int32
@@ -47,6 +59,13 @@ type EmbeddingsSearchResultResolver interface {
 
 type ListRepoEmbeddingJobsArgs struct {
 	graphqlutil.ConnectionResolverArgs
+	Query *string
+	State *string
+	Repo  *graphql.ID
+}
+
+type CancelRepoEmbeddingJobArgs struct {
+	Job graphql.ID
 }
 
 type RepoEmbeddingJobResolver interface {
@@ -64,4 +83,11 @@ type RepoEmbeddingJobResolver interface {
 	Cancel() bool
 	Repo(ctx context.Context) (*RepositoryResolver, error)
 	Revision(ctx context.Context) (*GitCommitResolver, error)
+	Stats(context.Context) (RepoEmbeddingJobStatsResolver, error)
+}
+
+type RepoEmbeddingJobStatsResolver interface {
+	FilesEmbedded() int32
+	FilesScheduled() int32
+	FilesSkipped() int32
 }

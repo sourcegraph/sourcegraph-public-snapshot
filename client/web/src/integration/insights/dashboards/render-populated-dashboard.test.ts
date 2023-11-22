@@ -1,12 +1,13 @@
 import assert from 'assert'
 
-import { Page } from 'puppeteer'
+import { beforeEach, describe, it } from 'mocha'
+import type { Page } from 'puppeteer'
 
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetInsightViewResult } from '../../../graphql-operations'
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
+import type { GetInsightViewResult } from '../../../graphql-operations'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../../context'
 import {
     CAPTURE_GROUP_INSIGHT,
     COMPUTE_INSIGHT,

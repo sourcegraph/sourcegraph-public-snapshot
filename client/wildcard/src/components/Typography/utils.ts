@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES, TYPOGRAPHY_WEIGHTS } from './constants'
+import type { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES, TYPOGRAPHY_WEIGHTS } from './constants'
 
 import styles from './Typography.module.scss'
 
@@ -31,11 +31,14 @@ export const getFontWeightStyle = ({ weight }: GetFontWeightStyleParameters): st
 
 export const getModeStyle = ({ mode }: GetModeStyleParameters): string => {
     switch (mode) {
-        case 'single-line':
+        case 'single-line': {
             return styles.singleLine
-        case 'break-word':
+        }
+        case 'break-word': {
             return styles.breakWord
-        default:
+        }
+        default: {
             return ''
+        }
     }
 }

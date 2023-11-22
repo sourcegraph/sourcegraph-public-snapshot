@@ -1,11 +1,11 @@
-import { ApolloClient } from '@apollo/client'
-import { Observable } from 'rxjs'
+import type { ApolloClient } from '@apollo/client'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { ErrorLike } from '@sourcegraph/common'
+import type { ErrorLike } from '@sourcegraph/common'
 import { fromObservableQuery, getDocumentNode, gql } from '@sourcegraph/http-client'
 
-import { PreciseIndexFields, PreciseIndexResult } from '../../../../graphql-operations'
+import type { PreciseIndexFields, PreciseIndexResult } from '../../../../graphql-operations'
 
 import { preciseIndexFieldsFragment } from './types'
 

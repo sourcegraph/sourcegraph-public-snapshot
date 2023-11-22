@@ -11,7 +11,7 @@ interactions:
     method: GET
   response:
     body: '[{"id":927197,"description":"","name":"gokulkarthick","name_with_namespace":"Gokul
-      Karthick / gokulkarthick","path":"gokulkarthick","path_with_namespace":"gokulkarthick/gokulkarthick","created_at":"2016-03-02T10:30:48.552Z","default_branch":"master","tag_list":[],"ssh_url_to_repo":"git@gitlab.com:gokulkarthick/gokulkarthick.git","http_url_to_repo":"https://gitlab.com/gokulkarthick/gokulkarthick.git","web_url":"https://gitlab.com/gokulkarthick/gokulkarthick","readme_url":"https://gitlab.com/gokulkarthick/gokulkarthick/blob/master/README.md","avatar_url":null,"star_count":0,"forks_count":0,"last_activity_at":"2016-03-02T10:30:49.086Z","namespace":{"id":509170,"name":"gokulkarthick","path":"gokulkarthick","kind":"user","full_path":"gokulkarthick","parent_id":null}}]'
+      Karthick / gokulkarthick","path":"gokulkarthick","path_with_namespace":"gokulkarthick/gokulkarthick","created_at":"2016-03-02T10:30:48.552Z","default_branch":"master","tag_list":[],"ssh_url_to_repo":"git@gitlab.com:gokulkarthick/gokulkarthick.git","http_url_to_repo":"https://gitlab.com/gokulkarthick/gokulkarthick.git","web_url":"https://gitlab.com/gokulkarthick/gokulkarthick","readme_url":"https://gitlab.com/gokulkarthick/gokulkarthick/blob/master/README.md","avatar_url":null,"star_count":0,"forks_count":0,"last_activity_at":"2016-03-02T10:30:49.086Z","namespace":{"id":509170,"name":"gokulkarthick","path":"gokulkarthick","topics":["topic1", "topic2"],"kind":"user","full_path":"gokulkarthick","parent_id":null}}]'
     headers:
       Cache-Control:
       - max-age=0, private, must-revalidate
@@ -67,7 +67,7 @@ interactions:
     url: https://gitlab.com/api/v4/projects?per_page=100&search=dotfiles-vegetableman
     method: GET
   response:
-    body: '[{"id":8781514,"description":null,"name":"dotfiles-vegetableman","name_with_namespace":"guld
+    body: '[{"id":8781514,"topics":["topic1", "topic2"],"description":null,"name":"dotfiles-vegetableman","name_with_namespace":"guld
       / dotfiles-vegetableman","path":"dotfiles-vegetableman","path_with_namespace":"guld/dotfiles-vegetableman","created_at":"2018-10-09T18:35:47.619Z","default_branch":null,"tag_list":[],"ssh_url_to_repo":"git@gitlab.com:guld/dotfiles-vegetableman.git","http_url_to_repo":"https://gitlab.com/guld/dotfiles-vegetableman.git","web_url":"https://gitlab.com/guld/dotfiles-vegetableman","readme_url":null,"avatar_url":null,"star_count":0,"forks_count":0,"last_activity_at":"2018-10-09T18:35:47.619Z","namespace":{"id":3017680,"name":"guld","path":"guld","kind":"group","full_path":"guld","parent_id":null}},{"id":7789240,"description":null,"name":"dotfiles-vegetableman","name_with_namespace":"Ira
       Miller / dotfiles-vegetableman","path":"dotfiles-vegetableman","path_with_namespace":"isysd/dotfiles-vegetableman","created_at":"2018-08-07T02:51:02.979Z","default_branch":"vegetableman","tag_list":[],"ssh_url_to_repo":"git@gitlab.com:isysd/dotfiles-vegetableman.git","http_url_to_repo":"https://gitlab.com/isysd/dotfiles-vegetableman.git","web_url":"https://gitlab.com/isysd/dotfiles-vegetableman","readme_url":null,"avatar_url":null,"star_count":0,"forks_count":0,"last_activity_at":"2018-08-07T02:51:02.979Z","namespace":{"id":2068545,"name":"isysd","path":"isysd","kind":"user","full_path":"isysd","parent_id":null}}]'
     headers:

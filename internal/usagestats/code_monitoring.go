@@ -45,6 +45,8 @@ func GetCodeMonitoringUsageStatistics(ctx context.Context, db database.DB) (*typ
 		&stats.TriggerRunsErrored,
 		&stats.P50TriggerRunTimeSeconds,
 		&stats.P90TriggerRunTimeSeconds,
+		&stats.MonitorsEnabled,
+		&stats.MonitorsEnabledUniqueUsers,
 	); err != nil {
 		return nil, err
 	}

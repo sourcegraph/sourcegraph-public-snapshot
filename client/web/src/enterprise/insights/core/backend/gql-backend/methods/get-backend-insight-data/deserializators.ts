@@ -1,7 +1,7 @@
-import { InsightDataNode } from '../../../../../../../graphql-operations'
-import { BackendInsight, isComputeInsight, isCaptureGroupInsight } from '../../../../types'
+import type { InsightDataNode } from '../../../../../../../graphql-operations'
+import { type BackendInsight, isComputeInsight, isCaptureGroupInsight } from '../../../../types'
 import { InsightContentType } from '../../../../types/insight/common'
-import { BackendInsightData } from '../../../code-insights-backend-types'
+import type { BackendInsightData } from '../../../code-insights-backend-types'
 import { createComputeCategoricalChart } from '../../../utils/create-categorical-content'
 import { createLineChartContent } from '../../../utils/create-line-chart-content'
 

@@ -9,30 +9,37 @@
   }
 </style>
 
-<aside class="beta">
-<span class="badge badge-beta">Beta</span> Executors are in beta and might change in the future.
-</aside>
-
 Executor secrets can be used to define additional values to be used in Sourcegraph executors.
 
 Secret values are currently only available in server-side batch changes. Use [`step.env`](../../batch_changes/references/batch_spec_yaml_reference.md#steps-env) to reference configured secrets in executions.
 
 ## How secrets work
 
-Executor secrets are defined per-feature. If you want to define a secret for server-side batch changes, create a secret for that namespace. Batch Changes is currently the only namespace. Secrets are [encrypted](../config/encryption.md) if encryption is on, and always redacted in log outputs.
+Executor secrets are defined per-feature. If you want to define a secret for server-side batch changes, create a secret for that namespace (examples of namespaces are "Code Graph" and "Batch Changes"). Secrets are [encrypted](../config/encryption.md) if encryption is on, and always redacted in log outputs.
 
 There are two types of secrets: 
 
-- Global secrets: These secrets are defined by an admin in the site-admin interface and will be usable by every user on the Sourcegraph instance.
-- Namespaced secrets: These secrets are set either in org or user settings and are only usable by the user or org members in their respective namespaces. If a namespaced secret has the same name as a global secret, the namespaced secret is preferred.
+- **Global secrets** 
+
+  These secrets are defined by an admin in the site-admin interface and will be usable by every user on the Sourcegraph instance.
+
+- **Namespaced secrets**
+  
+  These secrets are set either in org or user settings and are only usable by the user or org members in their respective namespaces. If a namespaced secret has the same name as a global secret, the namespaced secret is preferred.
 
 Examples:
 
-Global secret `GITHUB_TOKEN`: Can be used by every server-side batch change
+- Global secret `GITHUB_TOKEN`
 
-User 1 secret `GITHUB_TOKEN`: Can be used by batch changes created by user 1 in their own namespace, overwrites the global secret
+  Can be used by every server-side batch change
 
-Org 1 secret `GITHUB_TOKEN`: Can be used by batch changes created by any org member of org 1 in the org namespace, overwrites the global secret
+- User 1 secret `GITHUB_TOKEN`
+
+  Can be used by batch changes created by user 1 in their own namespace, overwrites the global secret
+
+- Org 1 secret `GITHUB_TOKEN`
+
+  Can be used by batch changes created by any org member of org 1 in the org namespace, overwrites the global secret
 
 ## Creating a new secret
 

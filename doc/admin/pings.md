@@ -1,6 +1,8 @@
 # Pings
 
-Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance (the URL is `https://sourcegraph.example.com/site-admin/pings`) or, for users of the Sourcegraph app, see [Sourcegraph app telemetry](#sourcegraph-app-telemetry). 
+Sourcegraph periodically sends a ping to `pings.sourcegraph.com` to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance (the URL is `https://sourcegraph.example.com/site-admin/pings`). 
+
+Sourcegraph will also periodically perform a license verification check, to verify the validity of the configured Sourcegraph license. Tampering with these checks, or preventing them from occuring, will cause Sourcegraph to disable many features until a successful check is completed. Certain Enterprise licenses can request to be exempt from these license verification checks.
 
 ## Telemetry
 
@@ -188,45 +190,55 @@ Sourcegraph aggregates usage and performance metrics for some product features i
     - Count of unique users who interacted with the search exports feature
     - Count interactions with the go imports search query transformation feature
     - Count of unique users who interacted with the go imports search query transformation feature
-- Sourcegraph Own usage data
-  - Whether the `search-ownership` feature flag is turned on.
+- Code ownership usage data
   - Number and ratio of repositories for which ownership data is available via CODEOWNERS file or the API.
-  - Aggregate monthly weekly and daily active users for the following activities:
+  - Number of owners assigned through Own.
+  <!-- - Aggregate monthly weekly and daily active users for the following activities: -->
     - Narrowing search results by owner using `file:has.owners` predicate.
     - Selecting owner search result through `select:file.owners`.
     - Displaying ownership panel in file view.
 - Histogram of cloned repository sizes
+- Aggregate daily, weekly, monthly repository metadata usage statistics
 </details>
 
-## Sourcegraph app telemetry
+## Allowlist IPs / CIDR Ranges for Sourcegraph
 
-We collect extremely limited telemetry from the Sourcegraph app to infer value to our users and send update notifications: 
+Starting 5.2.0:
+- For `pings.sourcegraph.com`, allowlist the IP address: `34.36.231.254`
+- For `sourcegraph.com`, allowlist the full [Cloudflare IP ranges](https://www.cloudflare.com/ips/)
 
-- Randomly generated site identifier
-- Deployment type (the Sourcegraph app)
-- Release version
-- Operating system
-- Total number of repositories added
-- Whether a user was active today (boolean) 
-
-## CIDR Range for Sourcegraph
-
-Sourcegraph currently uses Cloudflare to provide web application security. You should allow access to all [Cloudflare IP ranges](https://www.cloudflare.com/ips/)
+Prior to 5.2.0, allowlist the full [Cloudflare IP ranges](https://www.cloudflare.com/ips/).
 
 ## Using an HTTP proxy for telemetry requests
 
 The environment variable `TELEMETRY_HTTP_PROXY` can be set on the `sourcegraph-frontend` service, to use an HTTP proxy for telemetry requests.
 
-## Connections to Sourcegraph.com
 
-Sourcegraph only connects to Sourcegraph.com for two purposes:
+Be sure to update the enviornment variable like so : ```TELEMETRY_HTTP_PROXY:"http://proxy.example.com:8080"```
+
+## Connections to Sourcegraph-managed services
+
+
+Sourcegraph only connects to Sourcegraph-managed services for three purposes:
 
 1. The pings described above are sent, in order to:
    - Check for new product updates.
    - Send [anonymous, non-specific, aggregate metrics](#pings) back to Sourcegraph.com (see the full list above).
+1. [Verify](./licensing/index.md) the validity of the configured Sourcegraph license.
 1. Legacy Sourcegraph extensions are fetched from Sourcegraph.com`s extension registry.
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
+
+## Connections to Sourcegraph.com via Cody app
+
+The Cody app connects to Sourcegraph.com to send a limited selection of the pings described above in order to infer value to our users and send update notifications. They include:  
+
+- Randomly generated site identifier
+- Deployment type (the Cody app)
+- Release version
+- Operating system
+- Total number of repositories added
+- Whether a user was active today (boolean) 
 
 ## Troubleshooting Pings
 
@@ -240,7 +252,7 @@ The most common scenario in which Sourcegraph stops sending pings is a change to
 ```
 "update.channel": "release",
 ```
-*This setting [must be set to "release"](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/internal/app/updatecheck/client%5C.go+channel+%21%3D+%22release%22&patternType=literal) in order for the telemetry goroutine to run.*
+*This setting [must be set to "release"](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/updatecheck/client.go?L803-806) in order for the telemetry goroutine to run.*
 
 
 ### Check if the goroutine is running

@@ -5,7 +5,7 @@
 1. Login to your Okta account.
 2. On the left hand side, click on the “Applications” menu, and then select the “Applications” item.
 3. Click on “Create App Integration”. Another screen should pop-up, listing sign-in methods. Choose “SAML 2.0”. Click "Next".
-4. You should now see “Create SAML Integration” on this page, and you will be on “General Settings”. Specify a name for “App name” (Ex: “Sourcegraph”). Click “Next”.
+4. You should now see “Create SAML Integration” on this page, and you will be on “General Settings”. Specify a name for “App name” (example: “Sourcegraph”) and the [logo](https://sourcegraphstatic.com/sourcegraph-logo-asterisk-color-1024px.png). Click “Next”.
 5. Now you should be on “Configure SAML”. On this page, you will need your Sourcegraph URL (Ex: `https://sourcegraph.example.com`). Follow along with the following instructions, replacing `<URL>` with your Sourcegraph URL:
     - In section A ("SAML Settings"), under "General":
       - For “Single sign on URL”, set the value to `<URL>`/.auth/saml/acs
@@ -52,4 +52,4 @@
 }
 ```
 
-> NOTE: Optional, but recommended: [add automatic provisioning of users with SCIM](../../scim). 
+> NOTE: Optional, but recommended: [add automatic provisioning of users with SCIM](../../scim.md). 

@@ -1,19 +1,19 @@
-import { forwardRef, HTMLAttributes, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { forwardRef, type HTMLAttributes, useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { isDefined } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, useDebounce, useDeepMemo, Text } from '@sourcegraph/wildcard'
 
-import { GetInsightViewResult, GetInsightViewVariables } from '../../../../../../graphql-operations'
+import type { GetInsightViewResult, GetInsightViewVariables } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import {
-    BackendInsight,
+    type BackendInsight,
     CodeInsightsBackendContext,
-    InsightFilters,
+    type InsightFilters,
     isComputeInsight,
     useSaveInsightAsNewView,
 } from '../../../../core'
@@ -29,7 +29,7 @@ import { InsightContext } from '../InsightContext'
 import {
     BackendInsightErrorAlert,
     DrillDownFiltersPopover,
-    DrillDownInsightCreationFormValues,
+    type DrillDownInsightCreationFormValues,
     BackendInsightChart,
     InsightIncompleteAlert,
 } from './components'
@@ -232,3 +232,4 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         </InsightCard>
     )
 })
+BackendInsightView.displayName = 'BackendInsightView'

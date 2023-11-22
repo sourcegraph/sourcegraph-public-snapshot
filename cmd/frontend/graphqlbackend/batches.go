@@ -304,6 +304,8 @@ type BatchChangesResolver interface {
 
 	MaxUnlicensedChangesets(ctx context.Context) int32
 
+	GetChangesetsByIDs(ctx context.Context, args *GetChangesetsByIDsArgs) (graphqlutil.SliceConnectionResolver[ChangesetResolver], error)
+
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
@@ -554,8 +556,10 @@ type BatchChangesCodeHostResolver interface {
 	ExternalServiceURL() string
 	RequiresSSH() bool
 	RequiresUsername() bool
+	SupportsCommitSigning() bool
 	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
+	CommitSigningConfiguration(context.Context) (CommitSigningConfigResolver, error)
 }
 
 type BatchChangesCredentialResolver interface {
@@ -565,6 +569,11 @@ type BatchChangesCredentialResolver interface {
 	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() gqlutil.DateTime
 	IsSiteCredential() bool
+}
+
+// Only GitHubApps are supported for commit signing for now.
+type CommitSigningConfigResolver interface {
+	ToGitHubApp() (GitHubAppResolver, bool)
 }
 
 type ChangesetCountsArgs struct {
@@ -610,12 +619,15 @@ type ListBatchSpecWorkspaceFilesArgs struct {
 }
 
 type AvailableBulkOperationsArgs struct {
-	BatchChange graphql.ID
-	Changesets  []graphql.ID
+	BulkOperationBaseArgs
 }
 
 type CheckBatchChangesCredentialArgs struct {
 	BatchChangesCredential graphql.ID
+}
+
+type GetChangesetsByIDsArgs struct {
+	BulkOperationBaseArgs
 }
 
 type ListWorkspacesArgs struct {
@@ -698,6 +710,7 @@ type BatchWorkspaceFileResolver interface {
 	RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	URL(ctx context.Context) (string, error)
 	CanonicalURL() string
+	ChangelistURL(ctx context.Context) (*string, error)
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
 	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
 
@@ -791,6 +804,8 @@ type ExternalChangesetResolver interface {
 	// If the changeset is a fork, this corresponds to the name of the fork.
 	ForkName() *string
 
+	CommitVerification(context.Context) (CommitVerificationResolver, error)
+
 	// ReviewState returns a value of type *btypes.ChangesetReviewState.
 	ReviewState(context.Context) *string
 	// CheckState returns a value of type *btypes.ChangesetCheckState.
@@ -807,6 +822,18 @@ type ExternalChangesetResolver interface {
 	ScheduleEstimateAt(ctx context.Context) (*gqlutil.DateTime, error)
 
 	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+}
+
+// Only GitHubApps are supported for commit signing for now.
+type CommitVerificationResolver interface {
+	ToGitHubCommitVerification() (GitHubCommitVerificationResolver, bool)
+}
+
+type GitHubCommitVerificationResolver interface {
+	Verified() bool
+	Reason() string
+	Signature() string
+	Payload() string
 }
 
 type ChangesetEventsConnectionResolver interface {

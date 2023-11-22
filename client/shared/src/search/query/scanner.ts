@@ -3,20 +3,20 @@ import { SearchPatternType } from '../../graphql-operations'
 import { filterTypeKeysWithAliases } from './filters'
 import { scanPredicate } from './predicates'
 import {
-    Token,
-    Whitespace,
-    OpeningParen,
-    ClosingParen,
-    Keyword,
-    Comment,
-    Literal,
-    Pattern,
-    Filter,
+    type Token,
+    type Whitespace,
+    type OpeningParen,
+    type ClosingParen,
+    type Keyword,
+    type Comment,
+    type Literal,
+    type Pattern,
+    type Filter,
     KeywordKind,
     PatternKind,
-    CharacterRange,
+    type CharacterRange,
     createLiteral,
-    Separator,
+    type Separator,
 } from './token'
 
 /**
@@ -511,7 +511,7 @@ const scanStandard = (query: string): ScanResult<Token[]> => {
     return scan(query, 0)
 }
 
-function detectPatternType(query: string): SearchPatternType | undefined {
+export function detectPatternType(query: string): SearchPatternType | undefined {
     const result = scanStandard(query)
     const tokens =
         result.type === 'success'
@@ -538,17 +538,22 @@ export const scanSearchQuery = (
     switch (patternType) {
         case SearchPatternType.standard:
         case SearchPatternType.lucky:
-        case SearchPatternType.keyword:
+        case SearchPatternType.newStandardRC1:
+        case SearchPatternType.keyword: {
             return scanStandard(query)
-        case SearchPatternType.literal:
+        }
+        case SearchPatternType.literal: {
             patternKind = PatternKind.Literal
             break
-        case SearchPatternType.regexp:
+        }
+        case SearchPatternType.regexp: {
             patternKind = PatternKind.Regexp
             break
-        case SearchPatternType.structural:
+        }
+        case SearchPatternType.structural: {
             patternKind = PatternKind.Structural
             break
+        }
     }
     const scanner = createScanner(patternKind, interpretComments)
     return scanner(query, 0)

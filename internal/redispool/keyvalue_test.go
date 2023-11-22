@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -38,6 +40,15 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Equal(kv.Get("simple"), true)
 		require.Equal(kv.Get("simple"), []byte("1"))
 
+		// Set when not exists
+		set, err := kv.SetNx("setnx", "2")
+		require.Works(err)
+		assert.True(t, set)
+		set, err = kv.SetNx("setnx", "3")
+		require.Works(err)
+		assert.False(t, set)
+		require.Equal(kv.Get("setnx"), "2")
+
 		// GetSet on existing value
 		require.Equal(kv.GetSet("simple", "2"), "1")
 		require.Equal(kv.GetSet("simple", "3"), "2")
@@ -55,10 +66,21 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 
 		// Incr
 		require.Works(kv.Set("incr-set", 5))
-		require.Works(kv.Incr("incr-set"))
-		require.Works(kv.Incr("incr-unset"))
+		_, err = kv.Incr("incr-set")
+		require.Works(err)
+		_, err = kv.Incr("incr-unset")
+		require.Works(err)
 		require.Equal(kv.Get("incr-set"), 6)
 		require.Equal(kv.Get("incr-unset"), 1)
+
+		// Incrby
+		require.Works(kv.Set("incrby-set", 5))
+		_, err = kv.Incrby("incrby-set", 2)
+		require.Works(err)
+		_, err = kv.Incrby("incrby-unset", 2)
+		require.Works(err)
+		require.Equal(kv.Get("incrby-set"), 7)
+		require.Equal(kv.Get("incrby-unset"), 2)
 	})
 
 	t.Run("hash", func(t *testing.T) {
@@ -84,6 +106,16 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 			"simple": "1",
 			"horse":  "graph",
 		})
+
+		// hdel and ensure it no longer exists
+		require.Equal(kv.HDel("hash", "horse"), 1)
+		require.Equal(kv.HGet("hash", "horse"), redis.ErrNil)
+		// Nonexistent key returns 0
+		require.Equal(kv.HGet("doesnotexist", "neitherdoesthis"), redis.ErrNil)
+		require.Equal(kv.HDel("doesnotexist", "neitherdoesthis"), 0)
+		// Existing key but nonexistent field returns 0
+		require.Equal(kv.HGet("hash", "doesnotexist"), redis.ErrNil)
+		require.Equal(kv.HDel("hash", "doesnotexist"), 0)
 
 		// Redis returns nil on unset fields
 		require.Equal(kv.HGet("hash", "hi"), redis.ErrNil)
@@ -301,7 +333,8 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 				require.Equal(kv.Get(k), errWrongType)
 				require.Equal(kv.GetSet(k, "2"), errWrongType)
 				require.Equal(kv.Get(k), errWrongType) // ensure GetSet didn't set
-				requireWrongType(kv.Incr(k))
+				_, err := kv.Incr(k)
+				requireWrongType(err)
 			}
 
 			// Ensure we fail hashes when used against non hashes.
@@ -356,7 +389,7 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 		}
 	}
 
-	if err := deleteAllKeysWithPrefix(c, prefix); err != nil {
+	if err := redispool.DeleteAllKeysWithPrefix(c, prefix); err != nil {
 		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
 	}
 
@@ -364,36 +397,6 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 		WithPrefix(string) redispool.KeyValue
 	})
 	return kv.WithPrefix(prefix)
-}
-
-// The number of keys to delete per batch.
-// The maximum number of keys that can be unpacked
-// is determined by the Lua config LUAI_MAXCSTACK
-// which is 8000 by default.
-// See https://www.lua.org/source/5.1/luaconf.h.html
-var deleteBatchSize = 5000
-
-func deleteAllKeysWithPrefix(c redis.Conn, prefix string) error {
-	const script = `
-redis.replicate_commands()
-local cursor = '0'
-local prefix = ARGV[1]
-local batchSize = ARGV[2]
-local result = ''
-repeat
-	local keys = redis.call('SCAN', cursor, 'MATCH', prefix, 'COUNT', batchSize)
-	if #keys[2] > 0
-	then
-		result = redis.call('DEL', unpack(keys[2]))
-	end
-
-	cursor = keys[1]
-until cursor == '0'
-return result
-`
-
-	_, err := c.Do("EVAL", script, 0, prefix+":*", deleteBatchSize)
-	return err
 }
 
 func bytes(ss ...string) [][]byte {

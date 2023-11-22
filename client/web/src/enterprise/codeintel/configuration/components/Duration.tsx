@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 
 import { intervalToDuration } from 'date-fns'
 import formatDuration from 'date-fns/formatDuration'

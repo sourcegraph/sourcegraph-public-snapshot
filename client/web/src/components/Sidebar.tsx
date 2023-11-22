@@ -1,4 +1,4 @@
-import React, { FC, PropsWithChildren } from 'react'
+import React, { type FC, type PropsWithChildren } from 'react'
 
 import { mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -14,7 +14,7 @@ import {
     CollapsePanel,
     H2,
     H3,
-    ForwardReferenceComponent,
+    type ForwardReferenceComponent,
 } from '@sourcegraph/wildcard'
 
 import styles from './Sidebar.module.scss'
@@ -44,7 +44,13 @@ export const SidebarNavItem: FC<PropsWithChildren<SidebarNavItemProps>> = ({
 
     if (source === 'server') {
         return (
-            <ButtonLink as={AnchorLink} to={to} className={classNames(buttonClassNames, className)} onClick={onClick}>
+            <ButtonLink
+                as={AnchorLink}
+                to={to}
+                variant={routeMatch ? 'primary' : undefined}
+                className={classNames(buttonClassNames, className)}
+                onClick={onClick}
+            >
                 {children}
             </ButtonLink>
         )

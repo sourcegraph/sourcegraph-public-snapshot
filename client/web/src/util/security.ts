@@ -1,6 +1,6 @@
 import { logger } from '@sourcegraph/common'
 
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 export function validatePassword(
     context: Pick<

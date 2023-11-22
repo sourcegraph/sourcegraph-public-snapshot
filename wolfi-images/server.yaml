@@ -1,70 +1,84 @@
+include: ./sourcegraph-base.yaml
+
 contents:
-  keyring:
-    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
-  repositories:
-    - https://packages.wolfi.dev/os
-    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
   packages:
-    ## Base set of packages included in sourcegraph/alpine base image
-    - wolfi-baselayout
-    - ca-certificates-bundle
-    - tzdata
+    # Included by existing SG base image
     - tini
-    - mailcap
-    # Dev tools - may not be required in production
-    - busybox
-    - curl
-    - wget
-    # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
 
     ## server packages
     - bash
-    - ca-certificates # TODO: Required?
+    - ca-certificates
     - git
     - git-lfs
     - git-p4
+    - glibc-locale-en
     - libev
-    - nodejs # TODO: Is this the same as nodejs-current? Test upgrade from 14.5.0 to 18.12
+    - libstdc++
+    - nginx
+    - openjdk-11
+    - openjdk-11-default-jvm
     - openssh-client
     - pcre
+    - posix-libc-utils # Adds locale, used by server postgres init scripts
     - postgresql-12
     - postgresql-12-contrib
-    - python3 # TODO: Missing python2; required?
-    - redis # TODO: 7.0.7; test upgrade from 5.0
+    - prometheus-postgres-exporter
+    - prometheus-alertmanager
+    - python3
+    - posix-libc-utils # Locales
+    - prometheus
+    - prometheus-alertmanager
+    - redis-6.2
     - sqlite-libs
     - su-exec
-
-    ## Missing packages
-    #- nginx
-    #- python2
 
     - comby@sourcegraph
     - ctags@sourcegraph
     - coursier@sourcegraph
     - p4cli@sourcegraph
-    - p4-fusion@sourcegraph
+    - p4-fusion-sg@sourcegraph
+    - s3proxy@sourcegraph
+    - grafana@chainguard
 
 accounts:
   groups:
     - groupname: sourcegraph
       gid: 101
+    - groupname: postgres
+      gid: 70
+    - groupname: nginx
+      gid: 102
+    - groupname: redis
+      gid: 103
     - groupname: grafana
-      gid: 201
+      gid: 104
   users:
     - username: sourcegraph
       uid: 100
       gid: 101
+    # These users should all be /bin/nologin
+    - username: postgres
+      uid: 70
+      gid: 70
+    - username: nginx
+      uid: 101
+      gid: 102
+    - username: redis
+      uid: 102
+      gid: 103
     - username: grafana
-      uid: 200
-      gid: 201
+      uid: 103
+      gid: 104
 
-# NOTE: This is ignored (see build output)
-# To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`
-archs:
- - amd64
+paths:
+  - path: /var/lib/nginx/tmp
+    type: directory
+    permissions: 0o755
+  - path: /var/run
+    type: directory
+    permissions: 0o755
+  - path: /sg_grafana_additional_dashboards
+    type: directory
+    permissions: 0o755
 
-annotations:
-  org.opencontainers.image.url: https://sourcegraph.com/
-  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
-  org.opencontainers.image.documentation: https://docs.sourcegraph.com/
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

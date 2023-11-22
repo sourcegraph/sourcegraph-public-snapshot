@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { PageTitle } from '../../../../../components/PageTitle'
 
@@ -10,14 +10,12 @@ import { DynamicCodeInsightExample } from './components/dynamic-code-insight-exa
 
 import styles from './CodeInsightsGettingStartedPage.module.scss'
 
-interface CodeInsightsGettingStartedPageProps extends TelemetryProps {
-    isSourcegraphApp?: boolean
-}
+interface CodeInsightsGettingStartedPageProps extends TelemetryProps {}
 
 export const CodeInsightsGettingStartedPage: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsGettingStartedPageProps>
 > = props => {
-    const { telemetryService, isSourcegraphApp } = props
+    const { telemetryService } = props
 
     useEffect(() => {
         telemetryService.logViewEvent('InsightsGetStartedPage')
@@ -26,7 +24,7 @@ export const CodeInsightsGettingStartedPage: React.FunctionComponent<
     return (
         <main className="pb-5">
             <PageTitle title="Code Insights" />
-            <DynamicCodeInsightExample isSourcegraphApp={isSourcegraphApp} telemetryService={telemetryService} />
+            <DynamicCodeInsightExample telemetryService={telemetryService} />
             <CodeInsightsExamples telemetryService={telemetryService} className={styles.section} />
             <CodeInsightsTemplates telemetryService={telemetryService} className={styles.section} />
         </main>

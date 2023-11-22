@@ -6,7 +6,7 @@ import { logger } from '@sourcegraph/common'
 import { Button, Modal, Link, Code, Label, Text, Input, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { ExternalServiceKind, Scalars } from '../../../graphql-operations'
+import { ExternalServiceKind, type Scalars } from '../../../graphql-operations'
 
 import { useCreateBatchChangesCredential } from './backend'
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
@@ -59,8 +59,9 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
             permissions.
         </span>
     ),
+    [ExternalServiceKind.GERRIT]: <span />,
+    [ExternalServiceKind.PERFORCE]: <span>with the ability to shelve changelists.</span>,
     // These are just for type completeness and serve as placeholders for a bright future.
-    [ExternalServiceKind.GERRIT]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
     [ExternalServiceKind.PYTHONPACKAGES]: <span>Unsupported</span>,
@@ -68,11 +69,11 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.RUBYPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.JVMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.NPMPACKAGES]: <span>Unsupported</span>,
-    [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,
     [ExternalServiceKind.PHABRICATOR]: <span>Unsupported</span>,
     [ExternalServiceKind.AWSCODECOMMIT]: <span>Unsupported</span>,
     [ExternalServiceKind.PAGURE]: <span>Unsupported</span>,
     [ExternalServiceKind.OTHER]: <span>Unsupported</span>,
+    [ExternalServiceKind.LOCALGIT]: <span>Unsupported</span>,
 }
 
 type Step = 'add-token' | 'get-ssh-key'
@@ -142,7 +143,11 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
     )
 
     const patLabel =
-        externalServiceKind === ExternalServiceKind.BITBUCKETCLOUD ? 'App password' : 'Personal access token'
+        externalServiceKind === ExternalServiceKind.PERFORCE
+            ? 'Ticket'
+            : externalServiceKind === ExternalServiceKind.BITBUCKETCLOUD
+            ? 'App password'
+            : 'Personal access token'
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>

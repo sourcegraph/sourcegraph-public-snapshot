@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "auth",
@@ -17,11 +18,11 @@ go_library(
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/router",
         "//cmd/frontend/internal/app/ui/router",
-        "//cmd/frontend/internal/auth/userpasswd",
-        "//cmd/frontend/internal/session",
         "//internal/actor",
         "//internal/auth",
+        "//internal/auth/userpasswd",
         "//internal/authz",
+        "//internal/authz/permssync",
         "//internal/conf",
         "//internal/database",
         "//internal/deviceid",
@@ -29,6 +30,7 @@ go_library(
         "//internal/extsvc",
         "//internal/featureflag",
         "//internal/lazyregexp",
+        "//internal/session",
         "//internal/types",
         "//internal/usagestats",
         "//lib/errors",
@@ -53,11 +55,12 @@ go_test(
         "//internal/auth",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/errcode",
         "//internal/extsvc",
-        "//internal/search/job/jobutil",
         "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_derision_test_go_mockgen//testutil/require",
         "@com_github_google_go_cmp//cmp",

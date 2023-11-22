@@ -1,0 +1,42 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "backfiller",
+    srcs = [
+        "config.go",
+        "job_backfill.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/background/backfiller",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/codeintel/uploads/internal/store",
+        "//internal/env",
+        "//internal/gitserver",
+        "//internal/goroutine",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "backfiller_test",
+    srcs = [
+        "job_backfill_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":backfiller"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/uploads/internal/store",
+        "//internal/codeintel/uploads/shared",
+        "//internal/database/basestore",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/observation",
+        "//internal/workerutil/dbworker/store",
+        "//lib/codeintel/precise",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

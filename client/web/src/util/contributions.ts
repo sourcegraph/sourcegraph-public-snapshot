@@ -1,4 +1,4 @@
-import React from 'react'
+import type React from 'react'
 
 interface Conditional<C extends object> {
     /** Optional condition under which this item should be used */
@@ -26,6 +26,7 @@ export interface ComponentDescriptor<C extends object = {}> extends Conditional<
 export interface RouteV6Descriptor<C extends object = {}> extends Conditional<C> {
     readonly path: string
     readonly render: (props: C) => React.ReactNode
+    readonly exact?: boolean
 }
 
 export interface NavGroupDescriptor<C extends object = {}> extends Conditional<C> {

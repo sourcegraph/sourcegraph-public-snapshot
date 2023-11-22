@@ -1,20 +1,21 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 
-import { GlobalNavbar, GlobalNavbarProps } from './GlobalNavbar'
+import { GlobalNavbar, type GlobalNavbarProps } from './GlobalNavbar'
 
 const defaultProps: GlobalNavbarProps = {
     isSourcegraphDotCom: false,
-    isSourcegraphApp: false,
+    isCodyApp: false,
     settingsCascade: {
         final: null,
         subjects: null,
@@ -56,30 +57,37 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: DecoratorFn = Story => (
-    <WebStory>
-        {() => (
-            <div className="mt-3">
-                <Story args={defaultProps} />
-            </div>
-        )}
-    </WebStory>
-)
+const decorator: Decorator<GlobalNavbarProps> = Story => {
+    updateJSContextBatchChangesLicense('full')
 
-const config: Meta = {
+    return (
+        <WebStory>
+            {() => (
+                <div className="mt-3">
+                    <Story args={defaultProps} />
+                </div>
+            )}
+        </WebStory>
+    )
+}
+
+const config: Meta<typeof GlobalNavbar> = {
     title: 'web/nav/GlobalNav',
     decorators: [decorator],
     parameters: {
         chromatic: {
             disableSnapshot: false,
-            viewports: [320, 576, 978],
+            viewports: [
+                // 320, // TODO: Mobile size detection is not working in Storybook
+                576, 978,
+            ],
         },
     },
 }
 
 export default config
 
-export const Default: Story<GlobalNavbarProps> = props => (
+export const Default: StoryFn<GlobalNavbarProps> = props => (
     <Grid columnCount={1}>
         <div>
             <H3 className="ml-2">Anonymous viewer</H3>

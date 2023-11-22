@@ -1,4 +1,0 @@
-filegroup(
-    name = "img",
-    srcs = glob(["**/*.*"]),
-)

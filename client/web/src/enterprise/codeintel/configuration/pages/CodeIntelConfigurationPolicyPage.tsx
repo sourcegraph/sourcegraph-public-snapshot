@@ -1,17 +1,17 @@
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { ApolloError } from '@apollo/client'
-import { mdiDelete, mdiGraveStone } from '@mdi/js'
+import type { ApolloError } from '@apollo/client'
+import { mdiCheck, mdiDelete, mdiGraveStone } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { useLazyQuery } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { displayRepoName, RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
     Badge,
@@ -32,7 +32,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
-import {
+import type {
     CodeIntelligenceConfigurationPolicyFields,
     PreviewGitObjectFilterResult,
     PreviewGitObjectFilterVariables,
@@ -45,7 +45,7 @@ import { useDeletePolicies } from '../hooks/useDeletePolicies'
 import { usePolicyConfigurationByID } from '../hooks/usePolicyConfigurationById'
 import {
     convertGitObjectFilterResult,
-    GitObjectPreviewResult,
+    type GitObjectPreviewResult,
     PREVIEW_GIT_OBJECT_FILTER,
 } from '../hooks/usePreviewGitObjectFilter'
 import { useSavePolicyConfiguration } from '../hooks/useSavePolicyConfiguration'
@@ -62,6 +62,7 @@ export interface CodeIntelConfigurationPolicyPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     indexingEnabled?: boolean
     allowGlobalPolicies?: boolean
+    domain?: 'scip' | 'embeddings'
 }
 
 type PolicyUpdater = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(updates: {
@@ -73,6 +74,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     authenticatedUser,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
+    domain = 'scip',
     telemetryService,
 }) => {
     const navigate = useNavigate()
@@ -152,7 +154,9 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     useEffect(() => {
         const urlType = new URLSearchParams(location.search).get('type')
         const defaultTypes =
-            urlType === 'branch'
+            domain === 'embeddings'
+                ? { type: GitObjectType.GIT_COMMIT, embeddingsEnabled: true }
+                : urlType === 'branch'
                 ? { type: GitObjectType.GIT_TREE, pattern: '*' }
                 : urlType === 'tag'
                 ? { type: GitObjectType.GIT_TAG, pattern: '*' }
@@ -164,7 +168,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
         setPolicy(configWithDefaults)
         setSaved(configWithDefaults)
-    }, [policyConfig, repo, location.search])
+    }, [policyConfig, repo, domain, location.search])
 
     if (loadingPolicyConfig) {
         return <LoadingSpinner />
@@ -179,8 +183,8 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             <PageTitle
                 title={
                     repo
-                        ? 'Code graph configuration policy for repository'
-                        : 'Global code graph data configuration policy'
+                        ? (domain === 'scip' ? 'Code graph' : 'Embeddings') + ' configuration policy for repository'
+                        : `Global ${domain === 'scip' ? 'code graph data' : 'embeddings'} configuration policy`
                 }
             />
             <PageHeader
@@ -189,25 +193,31 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     {
                         text: repo ? (
                             <>
-                                {policy?.id === '' ? 'Create a new' : 'Update a'} code graph configuration policy for{' '}
+                                {policy?.id === '' ? 'Create a new' : 'Update a'}{' '}
+                                {domain === 'scip' ? 'code graph' : 'embeddings'} configuration policy for{' '}
                                 <RepoLink repoName={repo.name} to={null} />
                             </>
                         ) : (
                             <>
-                                {policy?.id === '' ? 'Create a new' : 'Update a'} global code graph configuration policy
+                                {policy?.id === '' ? 'Create a new' : 'Update a'} global{' '}
+                                {domain === 'scip' ? 'code graph' : 'embeddings'} configuration policy
                             </>
                         ),
                     },
                 ]}
                 description={
-                    <>
-                        Rules that control{indexingEnabled && <> auto-indexing and</>} data retention behavior of code
-                        graph data.
-                    </>
+                    domain === 'scip' ? (
+                        <>
+                            Rules that control{indexingEnabled && <> auto-indexing and</>} data retention behavior of
+                            code graph data.
+                        </>
+                    ) : (
+                        <>Rules that control keeping embeddings up-to-date.</>
+                    )
                 }
                 className="mb-3"
             />
-            {!policy.id && authenticatedUser?.siteAdmin && <NavigationCTA repo={repo} />}
+            {!policy.id && authenticatedUser?.siteAdmin && <NavigationCTA repo={repo} domain={domain} />}
 
             {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
             {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
@@ -220,11 +230,19 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             )}
 
             <Container className="container form">
-                <NameSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />
-                <GitConfiguration policy={policy} updatePolicy={updatePolicy} repo={repo} />
+                <NameSettingsSection policy={policy} updatePolicy={updatePolicy} domain={domain} repo={repo} />
+                {domain === 'scip' && <GitConfiguration policy={policy} updatePolicy={updatePolicy} repo={repo} />}
                 {!policy.repository && <RepositorySettingsSection policy={policy} updatePolicy={updatePolicy} />}
-                {indexingEnabled && <IndexSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />}
-                <RetentionSettingsSection policy={policy} updatePolicy={updatePolicy} />
+                {domain === 'scip' ? (
+                    <>
+                        {indexingEnabled && (
+                            <IndexSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />
+                        )}
+                        <RetentionSettingsSection policy={policy} updatePolicy={updatePolicy} />
+                    </>
+                ) : (
+                    <EmbeddingsSettingsSection policy={policy} updatePolicy={updatePolicy} />
+                )}
 
                 <div className="mt-4">
                     <Button
@@ -303,31 +321,36 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
 interface NavigationCTAProps {
     repo?: { id: string; name: string }
+    domain?: 'scip' | 'embeddings'
 }
 
-const NavigationCTA: FunctionComponent<NavigationCTAProps> = ({ repo }) => (
+const NavigationCTA: FunctionComponent<NavigationCTAProps> = ({ repo, domain = 'scip' }) => (
     <Container className="mb-2">
         {repo ? (
             <>
                 Alternatively,{' '}
-                <Link to="/site-admin/code-graph/configuration/new">create global configuration policy</Link> that
-                applies to more than this repository.
+                <Link to={`/site-admin/${domain === 'scip' ? 'code-graph' : 'embeddings'}/configuration/new`}>
+                    create global configuration policy
+                </Link>{' '}
+                that applies to more than this repository.
             </>
         ) : (
             <>
-                To create a policy that applies to a particular repository, visit that repository's code graph settings.
+                To create a policy that applies to a particular repository, visit that repository's{' '}
+                {domain === 'scip' ? 'code graph' : 'embeddings'} settings.
             </>
         )}
     </Container>
 )
 
 interface NameSettingsSectionProps {
+    domain: 'scip' | 'embeddings'
     policy: CodeIntelligenceConfigurationPolicyFields
     updatePolicy: PolicyUpdater
     repo?: { id: string; name: string }
 }
 
-const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo, policy, updatePolicy }) => (
+const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ domain, repo, policy, updatePolicy }) => (
     <div className="form-group">
         <div className="input-group">
             <Input
@@ -340,7 +363,15 @@ const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo
                 required={true}
                 error={policy.name === '' ? 'Please supply a value' : undefined}
                 placeholder={`Custom ${!repo ? 'global ' : ''}${
-                    policy.indexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
+                    domain === 'scip'
+                        ? policy.indexingEnabled
+                            ? 'indexing '
+                            : policy.retentionEnabled
+                            ? 'retention '
+                            : ''
+                        : policy.embeddingsEnabled
+                        ? 'embeddings '
+                        : ''
                 }policy${repo ? ` for ${displayRepoName(repo.name)}` : ''}`}
             />
         </div>
@@ -438,7 +469,8 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
             </Label>
             <Text size="small" className="text-muted mb-2">
                 Configuration policies apply to code intelligence data for specific revisions of{' '}
-                {repo ? 'this repository' : 'matching repositories'}.
+                {repo ? 'this repository' : 'matching repositories'}. Specify branches or tags using a{' '}
+                <Link to="https://github.com/gobwas/glob#example">glob pattern</Link>.
             </Text>
 
             <div className="input-group">
@@ -631,7 +663,8 @@ const RepositorySettingsSection: FunctionComponent<RepositorySettingsSectionProp
     <div className="form-group">
         <Label className="mb-0">Which repositories match this policy?</Label>
         <Text size="small" className="text-muted mb-2">
-            Configuration policies can apply to one, a set, or to all repositories on a Sourcegraph instance.
+            Configuration policies can apply to one, a set, or to all repositories on a Sourcegraph instance. Specify a
+            set of repositories using a <Link to="https://github.com/gobwas/glob#example">glob pattern</Link>.
         </Text>
         {!policy.repositoryPatterns || policy.repositoryPatterns.length === 0 ? (
             <Alert variant="info" className="d-flex justify-content-between align-items-center">
@@ -858,6 +891,24 @@ const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, 
             <></>
         )}
     </>
+)
+
+interface EmbeddingsSettingsSectionProps {
+    policy: CodeIntelligenceConfigurationPolicyFields
+    updatePolicy: PolicyUpdater
+}
+
+const EmbeddingsSettingsSection: FunctionComponent<EmbeddingsSettingsSectionProps> = ({ policy, updatePolicy }) => (
+    <div className="form-group">
+        <Label className="mb-0">
+            <Icon aria-hidden={true} svgPath={mdiCheck} /> Keep embeddings up-to-date
+            <div className={styles.toggleContainer}>
+                <Text size="small" className="text-muted mb-0">
+                    This policy will ensure that embeddings will be maintained for the matching repositories.
+                </Text>
+            </div>
+        </Label>
+    </div>
 )
 
 function validatePolicy(

@@ -1,4 +1,4 @@
-import React, { FunctionComponent, HTMLAttributes, LiHTMLAttributes } from 'react'
+import React, { type FunctionComponent, type HTMLAttributes, type LiHTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 import { noop } from 'lodash'

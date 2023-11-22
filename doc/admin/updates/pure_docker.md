@@ -12,6 +12,186 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- Add changes changes to this section before release. -->
 
+## v5.2.2 ➔ v5.2.3
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.2.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.2.2...v5.2.3)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.2.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.2.2...v5.2.3)
+
+#### Notes:
+
+## v5.2.1 ➔ v5.2.2
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.2.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.2.1...v5.2.2)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.2.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.2.1...v5.2.2)
+
+#### Notes:
+
+## v5.2.0 ➔ v5.2.1
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.2.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.2.0...v5.2.1)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.2.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.2.0...v5.2.1)
+
+#### Notes:
+
+## v5.1.9 ➔ v5.2.0
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.2.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.9...v5.2.0)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.2.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.9...v5.2.0)
+
+#### Notes:
+
+## v5.1.8 ➔ v5.1.9
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.9`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.8...v5.1.9)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.9`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.8...v5.1.9)
+
+#### Notes:
+
+## v5.1.7 ➔ v5.1.8
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.8`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.7...v5.1.8)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.8`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.7...v5.1.8)
+
+#### Notes:
+
+## v5.1.6 ➔ v5.1.7
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.7`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.6...v5.1.7)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.7`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.6...v5.1.7)
+
+#### Notes:
+
+## v5.1.5 ➔ v5.1.6
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.6`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.5...v5.1.6)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.6`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.5...v5.1.6)
+
+#### Notes:
+
+## v5.1.4 ➔ v5.1.5
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.5`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.4...v5.1.5)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.5`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.4...v5.1.5)
+
+#### Notes:
+
+## v5.1.3 ➔ v5.1.4
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.3...v5.1.4)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.3...v5.1.4)
+
+#### Notes:
+
+## v5.1.2 ➔ v5.1.3
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.2...v5.1.3)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.2...v5.1.3)
+
+#### Notes:
+
+## v5.1.1 ➔ v5.1.2
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.1...v5.1.2)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.1...v5.1.2)
+
+#### Notes:
+
+## v5.1.0 ➔ v5.1.1
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.0...v5.1.1)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.0...v5.1.1)
+
+#### Notes:
+
+## v5.0.6 ➔ v5.1.0
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.6...v5.1.0)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.6...v5.1.0)
+
+#### Notes:
+
+## v5.0.5 ➔ v5.0.6
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.6`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.5...v5.0.6)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.6`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.5...v5.0.6)
+
+#### Notes:
+
+## v5.0.4 ➔ v5.0.5
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.5`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.4...v5.0.5)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.5`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.4...v5.0.5)
+
+#### Notes:
+
+## v5.0.3 ➔ v5.0.4
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.3...v5.0.4)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.4`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.3...v5.0.4)
+
+#### Notes:
+
+## v5.0.2 ➔ v5.0.3
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.2...v5.0.3)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.3`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.2...v5.0.3)
+
+#### Notes:
+
+## v5.0.1 ➔ v5.0.2
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.1...v5.0.2)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.2`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.1...v5.0.2)
+
+#### Notes:
+
+## v5.0.0 ➔ v5.0.1
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.0...v5.0.1)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.0.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.0.0...v5.0.1)
+
+#### Notes:
+
 ## v4.5.1 ➔ v5.0.0
 
 As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.0.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v4.5.1...v5.0.0)

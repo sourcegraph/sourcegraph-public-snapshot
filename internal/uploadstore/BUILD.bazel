@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "uploadstore",
@@ -9,6 +10,8 @@ go_library(
         "gcs_client.go",
         "lazy_client.go",
         "observability.go",
+        "pool.go",
+        "reader.go",
         "s3_api.go",
         "s3_client.go",
         "store.go",
@@ -20,6 +23,7 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
+        "//lib/iterator",
         "@com_github_aws_aws_sdk_go_v2//aws",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
         "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",
@@ -27,9 +31,10 @@ go_library(
         "@com_github_aws_aws_sdk_go_v2_service_s3//:s3",
         "@com_github_aws_aws_sdk_go_v2_service_s3//types",
         "@com_github_inconshreveable_log15//:log15",
-        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_storage//:storage",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_api//iterator",
         "@org_golang_google_api//option",
     ],
@@ -56,5 +61,6 @@ go_test(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_inconshreveable_log15//:log15",
         "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//iterator",
     ],
 )

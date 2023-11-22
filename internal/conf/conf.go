@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonx"
 	sglog "github.com/sourcegraph/log"
 
@@ -67,8 +68,8 @@ func getMode() configurationMode {
 }
 
 func getModeUncached() configurationMode {
-	if deploy.IsApp() {
-		// App always uses the server mode because everything is running in the same process.
+	if deploy.IsSingleBinary() {
+		// When running everything in the same process, use server mode.
 		return modeServer
 	}
 
@@ -106,7 +107,10 @@ func getModeUncached() configurationMode {
 var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
-	defaultClient := &client{store: newStore()}
+	defaultClient := &client{
+		store:          newStore(),
+		lastUpdateTime: time.Now(),
+	}
 
 	mode := getMode()
 	// Don't kickoff the background updaters for the client/server
@@ -123,6 +127,19 @@ func initDefaultClient() *client {
 			log.Fatalf("received error when setting up the store for the default client during test, err :%s", err)
 		}
 	}
+
+	m := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_conf_client_time_since_last_successful_update_seconds",
+		Help: "Time since the last successful update of the configuration by the conf client",
+	}, func() float64 {
+		defaultClient.lastUpdateTimeMu.RLock()
+		defer defaultClient.lastUpdateTimeMu.RUnlock()
+
+		return time.Since(defaultClient.lastUpdateTime).Seconds()
+	})
+
+	prometheus.DefaultRegisterer.MustRegister(m)
+
 	return defaultClient
 }
 
@@ -217,12 +234,22 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 	}
 
 	siteConfigEscapeHatchPath = os.ExpandEnv(siteConfigEscapeHatchPath)
+	if deploy.IsSingleBinary() {
+		// For single-binary mode, always store the site config on disk, and this is achieved through
+		// making the "escape hatch file" point to our desired location on disk.
+		// The concept of an escape hatch file is not something users care
+		// about (it only makes sense in Docker/Kubernetes, e.g. to edit the config
+		// file if the sourcegraph-frontend container is crashing) - it runs
+		// natively and this mechanism is just a convenient way for us to keep
+		// the file on disk as our source of truth.
+		siteConfigEscapeHatchPath = os.Getenv("SITE_CONFIG_FILE")
+	}
 
 	var (
 		ctx                                        = context.Background()
 		lastKnownFileContents, lastKnownDBContents string
 		lastKnownConfigID                          int32
-		logger                                     = sglog.Scoped("SiteConfigEscapeHatch", "escape hatch for site config").With(sglog.String("path", siteConfigEscapeHatchPath))
+		logger                                     = sglog.Scoped("SiteConfigEscapeHatch").With(sglog.String("path", siteConfigEscapeHatchPath))
 	)
 	go func() {
 		// First, ensure we populate the file with what is currently in the DB.
@@ -294,6 +321,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 					time.Sleep(1 * time.Second)
 					continue
 				}
+				lastKnownDBContents = newDBConfig.Site
 				lastKnownFileContents = newDBConfig.Site
 				lastKnownConfigID = newDBConfig.ID
 			}

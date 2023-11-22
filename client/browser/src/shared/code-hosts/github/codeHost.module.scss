@@ -30,9 +30,15 @@
 }
 
 .code-view-toolbar {
-    margin-right: 4px;
     margin-bottom: -4px;
     text-align: right;
+}
+
+/* Old GitHub code view blob header */
+:global(.js-blob-header) {
+    .code-view-toolbar {
+        margin-right: 4px;
+    }
 }
 
 .code-view-toolbar-item {
@@ -50,6 +56,24 @@
 .hover-overlay-close-button {
     /* Align close button with large GitHub badges */
     top: 0.33rem !important; /* !important to override default close button `top` */
+}
+
+/* View repo on Sourcegraph link when global navigation update feature preview is enabled */
+:global(.AppHeader .open-on-sourcegraph),
+/* View file on Sourcegraph link in the blob header */
+:global(.sourcegraph-github-file-code-view-toolbar-mount .open-on-sourcegraph) {
+    /* Center link icon */
+    min-height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* New GitHub code view: view repo on Sourcegraph link when global navigation update feature preview is disabled */
+:global(.pagehead-actions .open-on-sourcegraph) {
+    .icon {
+        /* Center link icon */
+        margin-bottom: -1px;
+    }
 }
 
 /* Blob view

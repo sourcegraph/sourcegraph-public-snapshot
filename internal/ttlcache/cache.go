@@ -57,7 +57,7 @@ func New[K comparable, V any](newEntryFunc func(K) V, options ...Option[K, V]) *
 		newEntryFunc:   newEntryFunc,
 		expirationFunc: func(k K, v V) {},
 
-		logger: log.Scoped("ttlcache", "cache"),
+		logger: log.Scoped("ttlcache"),
 
 		sizeWarningThreshold: 0,
 
@@ -112,13 +112,6 @@ func WithLogger[K comparable, V any](logger log.Logger) Option[K, V] {
 func WithSizeWarningThreshold[K comparable, V any](threshold uint) Option[K, V] {
 	return func(c *Cache[K, V]) {
 		c.sizeWarningThreshold = threshold
-	}
-}
-
-// withClock sets the clock to be used by the cache. This is useful for testing.
-func withClock[K comparable, V any](clock clock) Option[K, V] {
-	return func(c *Cache[K, V]) {
-		c.clock = clock
 	}
 }
 

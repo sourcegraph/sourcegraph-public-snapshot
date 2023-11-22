@@ -1,4 +1,4 @@
-import { SearchBasedInsightSeries } from '../../../core'
+import type { SearchBasedInsightSeries } from '../../../core'
 
 export function getSanitizedLine(line: SearchBasedInsightSeries): SearchBasedInsightSeries {
     return {
@@ -9,7 +9,7 @@ export function getSanitizedLine(line: SearchBasedInsightSeries): SearchBasedIns
         // Native html input element adds escape symbols by itself
         // to prevent this behavior below we replace double escaping
         // with just one series of escape characters e.g. - //
-        query: line.query.replace(/\\\\/g, '\\'),
+        query: line.query.replaceAll('\\\\', '\\'),
     }
 }
 

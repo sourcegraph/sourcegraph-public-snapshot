@@ -1,9 +1,9 @@
 import React, { memo, useMemo } from 'react'
 
-import { ScaleLinear, ScaleTime } from 'd3-scale'
+import type { ScaleLinear, ScaleTime } from 'd3-scale'
 import * as uuid from 'uuid'
 
-import { SeriesWithData } from '../../utils'
+import type { SeriesWithData } from '../../utils'
 
 import { getStackedAreaPaths } from './get-stacked-area-paths'
 

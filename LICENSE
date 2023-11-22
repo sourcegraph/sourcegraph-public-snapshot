@@ -1,3 +1,3 @@
-LICENSE.apache (Apache License) applies to all files in this
-repository, except for those in or under any directory named
-"enterprise", which are covered by LICENSE.enterprise.
+LICENSE.enterprise (Enterprise License) applies to all files in this
+repository, except for files in or under any directory that contains a
+superseding license file.

@@ -1,0 +1,62 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Postgres packages
+    - glibc-locale-en
+    - libpq-12
+    - postgresql-12
+    - postgresql-12-client
+    - postgresql-12-contrib
+    - postgresql-12-oci-entrypoint
+    - su-exec
+
+# These are overridden by the Dockerfile, but provide defaults for running in the base image
+environment:
+  PGDATA: /data/pgdata-12
+  POSTGRES_USER: sg
+  POSTGRES_PASSWORD: ''
+  POSTGRES_DB: sg
+
+# Ideally, running the base image would start a Postgres server, but the lack of a Postgres user
+# means this won't work. We can't create one as the UID/GID depends on the image.
+# entrypoint:
+#   command: /var/lib/postgres/initdb/postgresql-entrypoint.sh postgres
+
+accounts:
+  groups:
+    - groupname: postgres
+      gid: 999
+    - groupname: ping
+      gid: 99
+  users:
+    - username: postgres
+      uid: 999
+      gid: 999
+    - username: ping
+      uid: 99
+      gid: 99
+
+paths:
+  - path: /data
+    type: directory
+    uid: 999
+    gid: 999
+    permissions: 0o750
+  - path: /data/pgdata-12
+    type: directory
+    uid: 999
+    gid: 999
+    permissions: 0o750
+  - path: /var/lib/postgresql
+    type: directory
+    uid: 999
+    gid: 999
+    permissions: 0o755
+  - path: /var/run/postgresql
+    type: directory
+    uid: 999
+    gid: 999
+    permissions: 0o755
+
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

@@ -1,9 +1,11 @@
 import { memoize } from 'lodash'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import { getGraphQLClient, GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
+import { getGraphQLClient, type GraphQLResult, requestGraphQLCommon } from '@sourcegraph/http-client'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import { getFeatureFlagOverrides } from '../featureFlags/lib/feature-flag-local-overrides'
+import type { WebGraphQlOperations } from '../graphql-operations'
+import { useDeveloperSettings } from '../stores'
 
 import { getPersistentCache } from './getPersistentCache'
 
@@ -18,7 +20,19 @@ const getHeaders = (): { [header: string]: string } => {
     if (trace) {
         headers['X-Sourcegraph-Should-Trace'] = trace
     }
-    const feat = parameters.getAll('feat')
+
+    // Get values from URL and local overrides
+    let feat = parameters.getAll('feat')
+    if (process.env.NODE_ENV === 'development' || useDeveloperSettings.getState().enabled) {
+        // Use Set to dedupe values from the URL and local. At some point during page
+        // rendering the overrides from the URL will be synced to local.
+        // It's not necessary to dedupe them (duplicate values are not a problem),
+        // but it's less surprising when inspecting requests.
+        feat = Array.from(
+            new Set(feat.concat(Array.from(getFeatureFlagOverrides(), ([flag, value]) => (value ? '' : '-') + flag)))
+        )
+    }
+
     if (feat.length) {
         headers['X-Sourcegraph-Override-Feature'] = feat.join(',')
     }
@@ -27,13 +41,11 @@ const getHeaders = (): { [header: string]: string } => {
 
 /**
  * Does a GraphQL request to the Sourcegraph GraphQL API running under `/.api/graphql`
- *
  * @param request The GraphQL request (query or mutation)
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
  * @template TResult The type of the query result (import from our auto-generated types).
  * @template TVariables The type of the query input variables (import from our auto-generated types).
- *
  * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
  */
 export const requestGraphQL = <TResult, TVariables = object>(
@@ -50,11 +62,9 @@ type WebGraphQlOperationResults = ReturnType<WebGraphQlOperations[keyof WebGraph
 
 /**
  * Does a GraphQL query to the Sourcegraph GraphQL API running under `/.api/graphql`
- *
  * @param request The GraphQL query
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
- *
  * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
  */
 export const queryGraphQL = <TResult extends WebGraphQlOperationResults>(
@@ -69,11 +79,9 @@ export const queryGraphQL = <TResult extends WebGraphQlOperationResults>(
 
 /**
  * Does a GraphQL mutation to the Sourcegraph GraphQL API running under `/.api/graphql`
- *
  * @param request The GraphQL mutation
  * @param variables A key/value object with variable values
  * @returns Observable That emits the result or errors if the HTTP request failed
- *
  * @deprecated Prefer using Apollo-Client instead if possible. The migration is in progress.
  */
 export const mutateGraphQL = <TResult extends WebGraphQlOperationResults>(
@@ -100,7 +108,7 @@ export const getWebGraphQLClient = memoize(async () => {
 
     const client = await getGraphQLClient({
         cache: persistentCache,
-        headers: getHeaders(),
+        getHeaders,
     })
 
     return client

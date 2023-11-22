@@ -1,4 +1,4 @@
-import React, { useMemo, ReactNode } from 'react'
+import React, { useMemo, type ReactNode } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
@@ -12,8 +12,10 @@ import styles from './index.module.scss'
 interface ValueLegendItemProps {
     color?: string
     description: string
-    // Value is a number or LoadingSpinner
+    // Value is a number or LoadingSpinner.
     value: number | string | ReactNode
+    // secondValue is used for items showing a relative number (i.e. 13/37 -- 13 out of 37).
+    secondValue?: number
     tooltip?: string
     className?: string
     filter?: { name: string; value: string }
@@ -22,6 +24,7 @@ interface ValueLegendItemProps {
 
 export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
     value,
+    secondValue,
     color = 'var(--body-color)',
     description,
     tooltip,
@@ -31,6 +34,8 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
 }) => {
     const formattedNumber = useMemo(() => (typeof value === 'number' ? formatNumber(value) : value), [value])
     const unformattedNumber = `${value}`
+    const formattedSecondNumber = useMemo(() => (secondValue ? formatNumber(secondValue) : secondValue), [secondValue])
+    const unformattedSecondNumber = `${secondValue}`
     const location = useLocation()
 
     const searchParams = useMemo(() => {
@@ -41,12 +46,25 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
         return search
     }, [filter, location.search])
 
-    const tooltipOnNumber =
-        formattedNumber !== unformattedNumber && typeof value !== 'object'
-            ? isNaN(parseFloat(unformattedNumber))
-                ? unformattedNumber
-                : Intl.NumberFormat('en').format(parseFloat(unformattedNumber))
-            : undefined
+    let tooltipOnNumber
+    if (secondValue) {
+        tooltipOnNumber =
+            typeof value !== 'object' &&
+            (formattedNumber !== unformattedNumber || formattedSecondNumber !== unformattedSecondNumber)
+                ? isNaN(parseFloat(unformattedNumber))
+                    ? unformattedNumber
+                    : `${Intl.NumberFormat('en').format(parseFloat(unformattedNumber))} out of ${Intl.NumberFormat(
+                          'en'
+                      ).format(parseFloat(unformattedSecondNumber))}`
+                : undefined
+    } else {
+        tooltipOnNumber =
+            formattedNumber !== unformattedNumber && typeof value !== 'object'
+                ? isNaN(parseFloat(unformattedNumber))
+                    ? unformattedNumber
+                    : Intl.NumberFormat('en').format(parseFloat(unformattedNumber))
+                : undefined
+    }
     return (
         <div className={classNames(styles.legendItem, className)}>
             <Tooltip content={tooltipOnNumber}>
@@ -62,7 +80,9 @@ export const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({
                         className={classNames(styles.count, 'cursor-pointer')}
                         onClick={onClick}
                     >
-                        {formattedNumber}
+                        {secondValue && !isNaN(parseFloat(unformattedNumber))
+                            ? `${formattedNumber} / ${formattedSecondNumber}`
+                            : formattedNumber}
                     </Text>
                 )}
             </Tooltip>

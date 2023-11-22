@@ -1,13 +1,13 @@
-import { EditorView } from '@codemirror/view'
+import type { EditorView } from '@codemirror/view'
 import { merge } from 'lodash'
-import { Page } from 'puppeteer'
+import type { Page } from 'puppeteer'
 
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import { type Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
 const CODE_HIGHLIGHTING_QUERIES: Partial<keyof (WebGraphQlOperations & SharedGraphQlOperations)>[] = [
     'highlightCode',
@@ -117,6 +117,8 @@ export const percySnapshotWithVariants = async (
 
     // Theme-dark
     await setColorScheme(page, 'dark', waitForCodeHighlighting)
+    // Wait for the theme class set by `useLayoutEffect` in `client/web/src/LegacyLayout.tsx`
+    await page.waitForSelector('html.theme.theme-dark')
     // Wait for the UI to settle before converting images and taking the
     // screenshot.
     await page.waitForTimeout(timeout)
@@ -125,6 +127,8 @@ export const percySnapshotWithVariants = async (
 
     // Theme-light
     await setColorScheme(page, 'light', waitForCodeHighlighting)
+    // Wait for the theme class set by `useLayoutEffect` in `client/web/src/LegacyLayout.tsx`
+    await page.waitForSelector('html.theme.theme-light')
     // Wait for the UI to settle before converting images and taking the
     // screenshot.
     await page.waitForTimeout(timeout)
@@ -132,7 +136,7 @@ export const percySnapshotWithVariants = async (
     await percySnapshot(page, `${name} - light theme`)
 }
 
-type Editor = 'monaco' | 'codemirror6' | 'experimental-search-input'
+type Editor = 'monaco' | 'codemirror6' | 'v2'
 
 export interface EditorAPI {
     name: Editor
@@ -295,7 +299,7 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
         }
         return api
     },
-    'experimental-search-input': (driver: Driver, rootSelector: string) => {
+    v2: (driver: Driver, rootSelector: string) => {
         // Selector to use to wait for the editor to be complete loaded
         const completionSelector = `${rootSelector} [role="grid"]`
         const completionLabelSelector = `${completionSelector} .test-option-label`
@@ -352,7 +356,7 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
     return api
 }
 
-export type SearchQueryInput = Extract<Editor, 'codemirror6' | 'experimental-search-input'>
+export type SearchQueryInput = Extract<Editor, 'codemirror6' | 'v2'>
 interface SearchQueryInputAPI {
     /**
      * The name of the currently used query input implementation. Can be used to dynamically generate
@@ -363,7 +367,7 @@ interface SearchQueryInputAPI {
     applySettings: (settings?: Settings) => Settings
 }
 
-const searchInputNames: SearchQueryInput[] = ['codemirror6', 'experimental-search-input']
+const searchInputNames: SearchQueryInput[] = ['codemirror6', 'v2']
 
 const searchInputConfigs: Record<SearchQueryInput, SearchQueryInputAPI> = {
     codemirror6: {
@@ -372,11 +376,11 @@ const searchInputConfigs: Record<SearchQueryInput, SearchQueryInputAPI> = {
         applySettings: (settings = {}) =>
             merge(settings, { experimentalFeatures: { searchQueryInput: 'v1' } } satisfies Settings),
     },
-    'experimental-search-input': {
-        name: 'experimental-search-input',
+    v2: {
+        name: 'v2',
         waitForInput: (driver: Driver, rootSelector: string) => createEditorAPI(driver, rootSelector),
         applySettings: (settings = {}) =>
-            merge(settings, { experimentalFeatures: { searchQueryInput: 'experimental' } } satisfies Settings),
+            merge(settings, { experimentalFeatures: { searchQueryInput: 'v2' } } satisfies Settings),
     },
 }
 

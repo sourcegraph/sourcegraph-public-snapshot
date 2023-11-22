@@ -1,9 +1,23 @@
-import { ProxyMarked, transferHandlers, releaseProxy, TransferHandler, Remote, proxyMarker } from 'comlink'
-import { Unsubscribable, Subscribable, Observable, Observer, PartialObserver, Subscription } from 'rxjs'
+import {
+    type ProxyMarked,
+    transferHandlers,
+    releaseProxy,
+    type TransferHandler,
+    type Remote,
+    proxyMarker,
+} from 'comlink'
+import {
+    type Unsubscribable,
+    type Subscribable,
+    Observable,
+    type Observer,
+    type PartialObserver,
+    Subscription,
+} from 'rxjs'
 
 import { hasProperty, AbortError } from '@sourcegraph/common'
 
-import { ProxySubscribable } from './extension/api/common'
+import type { ProxySubscribable } from './extension/api/common'
 
 /**
  * Tests whether a value is a WHATWG URL object.
@@ -40,7 +54,7 @@ export const syncRemoteSubscription = (
     subscriptionPromise: Promise<Remote<Unsubscribable & ProxyMarked>>
 ): Subscription =>
     // We cannot pass the proxy subscription directly to Rx because it is a Proxy that looks like a function
-    // eslint-disable-next-line @typescript-eslint/no-misused-promises
+
     new Subscription(async () => {
         const subscriptionProxy = await subscriptionPromise
         await subscriptionProxy.unsubscribe()

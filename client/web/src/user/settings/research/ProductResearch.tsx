@@ -2,16 +2,16 @@ import React, { useEffect } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, ButtonLink, Icon, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { PageTitle } from '../../../components/PageTitle'
 
 interface Props {
     telemetryService: TelemetryService
     authenticatedUser: Pick<AuthenticatedUser, 'emails'>
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 const SIGN_UP_FORM_URL = 'https://info.sourcegraph.com/product-research'
@@ -19,7 +19,7 @@ const SIGN_UP_FORM_URL = 'https://info.sourcegraph.com/product-research'
 export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     authenticatedUser,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsProductResearch')
@@ -35,9 +35,9 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
         <>
             <PageTitle title="Product research" />
             <PageHeader headingElement="h2" path={[{ text: 'Product research and feedback' }]} className="mb-3" />
-            {isSourcegraphApp && (
+            {isCodyApp && (
                 <Container className="mb-2">
-                    <Text>Do you have feedback or need help with Sourcegraph App?</Text>
+                    <Text>Do you have feedback or need help with Cody App?</Text>
                     {[
                         {
                             content: 'File an issue',

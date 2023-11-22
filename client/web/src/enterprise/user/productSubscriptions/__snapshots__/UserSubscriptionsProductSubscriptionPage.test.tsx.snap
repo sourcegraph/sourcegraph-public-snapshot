@@ -1,38 +1,72 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`UserSubscriptionsProductSubscriptionPage renders 1`] = `
+exports[`UserSubscriptionsProductSubscriptionPage > renders 1`] = `
 <DocumentFragment>
   <div
     class="user-subscriptions-product-subscription-page"
   >
     <div
-      class="d-flex align-items-center justify-content-between"
+      class="container mb-3"
     >
-      <a
-        class="anchorLink btn btnLink btnSm mb-3"
-        href="/u/subscriptions"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline"
-          fill="currentColor"
-          height="24"
-          role="img"
-          viewBox="0 0 24 24"
-          width="24"
+      <div>
+        <h2
+          class="h2 heading"
         >
-          <path
-            d="M20,11V13H8L13.5,18.5L12.08,19.92L4.16,12L12.08,4.08L13.5,5.5L8,11H20Z"
-          />
-        </svg>
-         All subscriptions
-      </a>
+          <span
+            class="wrapper breadcrumb"
+          >
+            <a
+              class="anchorLink path"
+              href="/u/subscriptions"
+            >
+              <span
+                class="text"
+              >
+                Subscriptions
+              </span>
+            </a>
+          </span>
+          <span
+            class="wrapper breadcrumb"
+          >
+            <span
+              class="path"
+            />
+          </span>
+        </h2>
+      </div>
     </div>
-    <h2
-      class="h2"
+    <h3
+      class="h3"
     >
-      Subscription 
-    </h2>
+      Cody services 
+      <span
+        style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+      >
+        This feature is currently in beta
+      </span>
+      <span
+        aria-hidden="true"
+        class="badge info productStatusBadge"
+        status="beta"
+      >
+        beta
+      </span>
+    </h3>
+    <div
+      class="container mb-3"
+    >
+      <h4
+        class="h4"
+      >
+        Access token
+      </h4>
+      <p
+        class="mb-2"
+      >
+        Access tokens can be used for Cody Gateway access. In most cases this is not needed, since access tokens are automatically generated from each instance's configured license key.
+      </p>
+    </div>
   </div>
 </DocumentFragment>
 `;

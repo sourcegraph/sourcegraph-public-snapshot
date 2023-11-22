@@ -1,8 +1,9 @@
-import { MockedProvider, MockedResponse } from '@apollo/client/testing'
+import { MockedProvider, type MockedResponse } from '@apollo/client/testing'
 import { getAllByRole, getByRole, queryByRole, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { spy, stub, assert } from 'sinon'
+import { describe, expect, it } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import {
@@ -13,10 +14,10 @@ import {
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 
-import { setDefaultSearchContextResult } from '../../graphql-operations'
+import type { setDefaultSearchContextResult } from '../../graphql-operations'
 
 import { SET_DEFAULT_SEARCH_CONTEXT_MUTATION } from './hooks/useDefaultContext'
-import { SearchContextsList, SearchContextsListProps } from './SearchContextsList'
+import { SearchContextsList, type SearchContextsListProps } from './SearchContextsList'
 
 describe('SearchContextsList', () => {
     const defaultProps: SearchContextsListProps = {

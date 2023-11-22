@@ -1,17 +1,17 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { addMinutes, formatRFC3339 } from 'date-fns'
 import { of } from 'rxjs'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
-import { WebhookLogFields, WebhookLogsVariables } from '../../graphql-operations'
+import type { WebhookLogFields, WebhookLogsVariables } from '../../graphql-operations'
 
-import { queryWebhookLogs, SelectedExternalService } from './backend'
+import type { queryWebhookLogs, SelectedExternalService } from './backend'
 import { BODY_JSON, BODY_PLAIN, buildHeaderMock, HEADERS_JSON, HEADERS_PLAIN } from './story/fixtures'
 import { WebhookLogPage } from './WebhookLogPage'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/WebhookLogPage',
@@ -25,13 +25,15 @@ const config: Meta = {
         externalServiceCount: {
             name: 'external service count',
             control: { type: 'number' },
-            defaultValue: 2,
         },
         erroredWebhookCount: {
             name: 'errored webhook count',
             control: { type: 'number' },
-            defaultValue: 2,
         },
+    },
+    args: {
+        externalServiceCount: 2,
+        erroredWebhookCount: 2,
     },
 }
 
@@ -118,7 +120,7 @@ const buildWebhookLogs = (count: number, externalServiceCount: number): WebhookL
     return logs
 }
 
-export const NoLogs: Story = args => (
+export const NoLogs: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
@@ -130,7 +132,7 @@ export const NoLogs: Story = args => (
 
 NoLogs.storyName = 'no logs'
 
-export const OnePageOfLogs: Story = args => (
+export const OnePageOfLogs: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>
@@ -142,7 +144,7 @@ export const OnePageOfLogs: Story = args => (
 
 OnePageOfLogs.storyName = 'one page of logs'
 
-export const TwoPagesOfLogs: Story = args => (
+export const TwoPagesOfLogs: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider mocks={buildHeaderMock(args.externalServiceCount, args.erroredWebhookCount)}>

@@ -1,9 +1,9 @@
 import { groupBy } from 'lodash'
 
-import { AllPermissionsResult, PermissionNamespace, AllRolesResult } from '../../graphql-operations'
+import { type AllPermissionsResult, PermissionNamespace, type AllRolesResult } from '../../graphql-operations'
 import { BatchChangesWritePermission, BatchChangesReadPermission } from '../../rbac/constants'
 
-import { PermissionsMap } from './backend'
+import type { PermissionsMap } from './backend'
 
 export const mockPermissions: AllPermissionsResult = {
     permissions: {

@@ -1,6 +1,8 @@
 import * as assert from 'assert'
 
-import { calculateOverlayPosition, HasGetBoundingClientRect } from './overlayPosition'
+import { describe, it } from 'vitest'
+
+import { calculateOverlayPosition, type HasGetBoundingClientRect } from './overlayPosition'
 
 const rectangle = (left: number, top: number, width: number, height: number): HasGetBoundingClientRect => ({
     getBoundingClientRect: () => ({

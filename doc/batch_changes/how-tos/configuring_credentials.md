@@ -86,7 +86,7 @@ Adding a global service account token is done through the Batch Changes section 
 
 1. From any Sourcegraph page, click on your avatar at the top right of the page.
 1. Select **Site admin** from the dropdown menu.
-1. Click **Batch Changes** on the sidebar menu.
+1. Click **Settings** under the **Batch Changes** sub-heading on the sidebar menu.
 1. Click **Add credentials** and follow the steps to [create a new token](#creating-a-code-host-token) for the code host
 
 Code hosts with tokens configured are indicated by a green tick to the left of the code host name, while code hosts without tokens have an empty red circle next to them.
@@ -187,8 +187,15 @@ Follow the steps to [create a PAT](https://learn.microsoft.com/en-us/azure/devop
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/ado-create-pat.png" alt="The Azure DevOps PAT creation page">
 
+### Gerrit
+
+- Permissions to create, comment, close, merge, and delete a Change in Gerrit.
+- Create an HTTP password in the user settings page.
+
+<img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/gerrit-batches-password.png" alt="Gerrit Password Creation">
+
 ### SSH access to code host
 
-When Sourcegraph is configured to [clone repositories using SSH via the `gitURLType` setting](../../admin/repo/auth.md), an SSH keypair will be generated for you and the public key needs to be added to the code host to allow push access. In the process of adding your personal access token you will be given that public key. You can also come back later and copy it to paste it in your code hosts SSH access settings page.
+When Sourcegraph is configured to [clone repositories using SSH via the `gitURLType` setting](../../admin/repo/auth.md), an SSH keypair will be generated for you and the public key needs to be added to the code host to allow push access. In the process of adding your personal access token you will be given that public key. You can also come back later and copy it to paste it in your code host's SSH access settings page.
 
 <img class="screenshot" src="https://sourcegraphstatic.com/docs/images/batch_changes/create-credential-ssh-key.png" alt="Credentials setup process, showing the SSH public key to be copied">

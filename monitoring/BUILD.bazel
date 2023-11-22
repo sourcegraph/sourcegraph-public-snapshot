@@ -17,3 +17,125 @@ go_binary(
     embed = [":monitoring_lib"],
     visibility = ["//visibility:public"],
 )
+
+genrule(
+    name = "generate_config_zip",
+    srcs = [],
+    outs = ["monitoring.zip"],
+    cmd = """
+        $(location //monitoring:monitoring) generate \
+                --all.dir monitoring && \
+        zip -r $@ monitoring
+        """,
+    tools = ["//monitoring"],
+    visibility = ["//docker-images/grafana:__pkg__"],
+)
+
+genrule(
+    name = "generate_grafana_config_tar",
+    srcs = [],
+    outs = ["monitoring.tar"],
+    cmd = """
+        $(location //monitoring:monitoring) generate \
+                --all.dir monitoring && \
+
+        mkdir -p usr/share/grafana/public/dashboards/ && \
+        mv monitoring/grafana/home.json usr/share/grafana/public/dashboards/ && \
+
+        mkdir -p sg_config_grafana/provisioning/dashboards/sourcegraph/ && \
+        mv monitoring/grafana/* sg_config_grafana/provisioning/dashboards/sourcegraph/ &&\
+
+        if tar --version | grep -q bsdtar; then
+          tar -cf $@ --uid=0 --gid=0 --numeric-owner usr/share/grafana/public/dashboards/ sg_config_grafana/provisioning/dashboards/sourcegraph/
+        else
+          tar -cf $@ --owner=:0 --group=:0 --numeric-owner usr/share/grafana/public/dashboards/ sg_config_grafana/provisioning/dashboards/sourcegraph/
+        fi
+        """,
+    tools = ["//monitoring"],
+    visibility = ["//visibility:public"],
+)
+
+# Bazel expects all outputs to be explicitly defined. Therefore we have
+# to manually list them here. This so we can use this target as inputs to a
+# pkg_tar rule. Using the zip variant from above would not work, as we
+# would have to write a rule that unzips it and ... we'll circle back to
+# the issue of having non-deterministic outputs for bazel to work with.
+#
+# To avoid accidentally missing one silently, which would be very hard
+# to debug, there is a test target :generate_config_test below that
+# runs the monitoring tool once again to ensure that all generated files are present in the output below, acting as failsafe to detect any deviation.
+genrule(
+    name = "generate_config",
+    srcs = [],
+    outs = [
+        "outputs/docs/alerts.md",
+        "outputs/docs/dashboards.md",
+        "outputs/grafana/codeintel-autoindexing.json",
+        "outputs/grafana/codeintel-codenav.json",
+        "outputs/grafana/codeintel-policies.json",
+        "outputs/grafana/codeintel-ranking.json",
+        "outputs/grafana/codeintel-uploads.json",
+        "outputs/grafana/containers.json",
+        "outputs/grafana/embeddings.json",
+        "outputs/grafana/executor.json",
+        "outputs/grafana/frontend.json",
+        "outputs/grafana/gitserver.json",
+        "outputs/grafana/home.json",
+        "outputs/grafana/otel-collector.json",
+        "outputs/grafana/postgres.json",
+        "outputs/grafana/precise-code-intel-worker.json",
+        "outputs/grafana/prometheus.json",
+        "outputs/grafana/redis.json",
+        "outputs/grafana/repo-updater.json",
+        "outputs/grafana/searcher.json",
+        "outputs/grafana/symbols.json",
+        "outputs/grafana/syntect-server.json",
+        "outputs/grafana/telemetry.json",
+        "outputs/grafana/worker.json",
+        "outputs/grafana/zoekt.json",
+        "outputs/prometheus/codeintel_autoindexing_alert_rules.yml",
+        "outputs/prometheus/codeintel_codenav_alert_rules.yml",
+        "outputs/prometheus/codeintel_policies_alert_rules.yml",
+        "outputs/prometheus/codeintel_ranking_alert_rules.yml",
+        "outputs/prometheus/codeintel_uploads_alert_rules.yml",
+        "outputs/prometheus/containers_alert_rules.yml",
+        "outputs/prometheus/embeddings_alert_rules.yml",
+        "outputs/prometheus/executor_alert_rules.yml",
+        "outputs/prometheus/frontend_alert_rules.yml",
+        "outputs/prometheus/gitserver_alert_rules.yml",
+        "outputs/prometheus/otel_collector_alert_rules.yml",
+        "outputs/prometheus/postgres_alert_rules.yml",
+        "outputs/prometheus/precise_code_intel_worker_alert_rules.yml",
+        "outputs/prometheus/prometheus_alert_rules.yml",
+        "outputs/prometheus/redis_alert_rules.yml",
+        "outputs/prometheus/repo_updater_alert_rules.yml",
+        "outputs/prometheus/searcher_alert_rules.yml",
+        "outputs/prometheus/src_custom_rules.yml",
+        "outputs/prometheus/symbols_alert_rules.yml",
+        "outputs/prometheus/syntect_server_alert_rules.yml",
+        "outputs/prometheus/telemetry_alert_rules.yml",
+        "outputs/prometheus/worker_alert_rules.yml",
+        "outputs/prometheus/zoekt_alert_rules.yml",
+    ],
+    cmd = """
+        mkdir -p $(@D)/outputs
+        $(location //monitoring:monitoring) generate \
+                --all.dir $(@D)/outputs/
+        """,
+    tools = ["//monitoring"],
+    visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "generate_config_test",
+    size = "small",
+    srcs = ["generate_config_test.sh"],
+    args = [
+        "$(location :monitoring)",
+        "$(locations :generate_config)",
+    ],
+    data = [
+        ":generate_config",
+        ":monitoring",
+    ],
+)

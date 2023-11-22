@@ -10,29 +10,27 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -80,7 +78,7 @@ func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []a
 		return nil, nil
 	}
 
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient("graphql.search.results.repositories")
 	resolvers := make([]*RepositoryResolver, 0, len(ids))
 	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
 		IDs: ids,
@@ -135,7 +133,7 @@ func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultRe
 		Rev  string
 	}
 	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
-	gsClient := gitserver.NewClient()
+	gsClient := gitserver.NewClient("graphql.search.results")
 	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
@@ -193,8 +191,8 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 }
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
-	tr, _ := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
-	defer tr.Finish()
+	tr, _ := trace.New(ctx, "DynamicFilters", attribute.String("resolver", "SearchResultsResolver"))
+	defer tr.End()
 
 	var filters streaming.SearchFilters
 	filters.Update(streaming.SearchEvent{
@@ -236,14 +234,8 @@ func (sf *searchFilterResolver) Kind() string {
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
 func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.FileMatch) (t time.Time, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "blameFileMatch") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "SearchResultsResolver.blameFileMatch")
+	defer tr.EndWithErr(&err)
 
 	// Blame the first line match.
 	if len(fm.ChunkMatches) == 0 {
@@ -251,7 +243,7 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		return time.Time{}, nil
 	}
 	hm := fm.ChunkMatches[0]
-	hunks, err := gitserver.NewClient().BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hunks, err := gitserver.NewClient("graphql.search.results.blame").BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    hm.Ranges[0].Start.Line,
 		EndLine:      hm.Ranges[0].Start.Line,
@@ -331,9 +323,6 @@ loop:
 		}
 	}
 	p.Wait()
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		span.SetTag("blame_ops", blameOps)
-	}
 	return sparkline, nil
 }
 
@@ -368,7 +357,7 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 
 func logBatch(ctx context.Context, searchInputs *search.Inputs, srr *SearchResultsResolver, err error) {
 	var status, alertType string
-	status = DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
+	status = searchclient.DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
 	if srr.SearchAlert != nil {
 		alertType = srr.SearchAlert.PrometheusType
 	}
@@ -389,6 +378,7 @@ func logBatch(ctx context.Context, searchInputs *search.Inputs, srr *SearchResul
 			Status:        status,
 			AlertType:     alertType,
 			DurationMs:    srr.elapsed.Milliseconds(),
+			LatencyMs:     nil, // no latency for batch requests
 			ResultSize:    n,
 			Error:         err,
 		})
@@ -417,25 +407,6 @@ func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search
 		SearchAlert: alert,
 		Stats:       stats,
 		db:          r.db,
-	}
-}
-
-// DetermineStatusForLogs determines the final status of a search for logging
-// purposes.
-func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
-	switch {
-	case err == context.DeadlineExceeded:
-		return "timeout"
-	case err != nil:
-		return "error"
-	case stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos):
-		return "timeout"
-	case stats.Status.Any(search.RepoStatusTimedout):
-		return "partial_timeout"
-	case alert != nil:
-		return "alert"
-	default:
-		return "success"
 	}
 }
 
@@ -472,7 +443,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err := json.Unmarshal(jsonRes, &stats); err != nil {
 			return nil, err
 		}
-		stats.logger = r.logger.Scoped("searchResultsStats", "provides status on search results")
+		stats.logger = r.logger.Scoped("searchResultsStats")
 		stats.sr = r
 		return stats, nil
 	}
@@ -488,7 +459,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.NewBasicJob(r.SearchInputs, b, r.enterpriseJobs)
+		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
 		if err != nil {
 			return nil, err
 		}
@@ -533,7 +504,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 		return nil, err // sparkline generation failed, so don't cache.
 	}
 	stats = &searchResultsStats{
-		logger:                  r.logger.Scoped("searchResultsStats", "provides status on search results"),
+		logger:                  r.logger.Scoped("searchResultsStats"),
 		JApproximateResultCount: v.ApproximateResultCount(),
 		JSparkline:              sparkline,
 		sr:                      r,

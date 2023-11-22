@@ -1,13 +1,14 @@
 import assert from 'assert'
 
 import delay from 'delay'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../context'
 import { createEditorAPI, percySnapshotWithVariants } from '../utils'
 
 import { createJITMigrationToGQLInsightMetadataFixture } from './fixtures/insights-metadata'

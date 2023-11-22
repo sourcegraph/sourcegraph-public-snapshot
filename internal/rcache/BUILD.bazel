@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "rcache",
@@ -28,5 +29,9 @@ go_test(
         # Test requires localhost database
         "requires-network",
     ],
-    deps = ["@com_github_stretchr_testify//assert"],
+    deps = [
+        "//internal/redispool",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
 )

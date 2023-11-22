@@ -1,0 +1,27 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "util",
+    srcs = [
+        "exec.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/batcheshelper/util",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/executor/types",
+        "//internal/executor/util",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "util_test",
+    srcs = ["util_test.go"],
+    deps = [
+        ":util",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

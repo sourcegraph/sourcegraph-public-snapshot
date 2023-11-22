@@ -3,24 +3,20 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"sort"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/graph-gophers/graphql-go"
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -41,16 +37,15 @@ func TestRepository_Commit(t *testing.T) {
 		backend.Mocks = backend.MockServices{}
 	}()
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	RunTests(t, []*Test{
-		{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query: `
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
 				{
 					repository(name: "github.com/gorilla/mux") {
 						commit(rev: "abc") {
@@ -59,7 +54,7 @@ func TestRepository_Commit(t *testing.T) {
 					}
 				}
 			`,
-			ExpectedResult: `
+		ExpectedResult: `
 				{
 					"repository": {
 						"commit": {
@@ -68,7 +63,61 @@ func TestRepository_Commit(t *testing.T) {
 					}
 				}
 			`,
-		},
+	})
+}
+
+func TestRepository_Changelist(t *testing.T) {
+	repo := &types.Repo{ID: 2, Name: "github.com/gorilla/mux"}
+
+	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		assert.Equal(t, api.RepoID(2), repo.ID)
+		return exampleCommitSHA1, nil
+	}
+
+	repos := dbmocks.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(repo, nil)
+	repos.GetByNameFunc.SetDefaultReturn(repo, nil)
+
+	repoCommitsChangelists := dbmocks.NewMockRepoCommitsChangelistsStore()
+	repoCommitsChangelists.GetRepoCommitChangelistFunc.SetDefaultReturn(&types.RepoCommit{
+		ID:                   1,
+		RepoID:               2,
+		CommitSHA:            dbutil.CommitBytea(exampleCommitSHA1),
+		PerforceChangelistID: 123,
+	}, nil)
+
+	db := dbmocks.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsChangelists)
+
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
+				{
+					repository(name: "github.com/gorilla/mux") {
+						changelist(cid: "123") {
+							cid
+							canonicalURL
+							commit {
+								oid
+							}
+						}
+					}
+				}
+			`,
+		ExpectedResult: fmt.Sprintf(`
+				{
+					"repository": {
+						"changelist": {
+							"cid": "123",
+							"canonicalURL": "/github.com/gorilla/mux/-/changelist/123",
+"commit": {
+	"oid": "%s"
+}
+						}
+					}
+				}
+			`, exampleCommitSHA1),
 	})
 }
 
@@ -102,12 +151,12 @@ func TestRepositoryHydration(t *testing.T) {
 	t.Run("hydrated without errors", func(t *testing.T) {
 		minimalRepo, hydratedRepo := makeRepos()
 
-		rs := database.NewMockRepoStore()
+		rs := dbmocks.NewMockRepoStore()
 		rs.GetFunc.SetDefaultReturn(hydratedRepo, nil)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewTestClient(t), minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
@@ -117,12 +166,12 @@ func TestRepositoryHydration(t *testing.T) {
 
 		dbErr := errors.New("cannot load repo")
 
-		rs := database.NewMockRepoStore()
+		rs := dbmocks.NewMockRepoStore()
 		rs.GetFunc.SetDefaultReturn(nil, dbErr)
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewTestClient(t), minimalRepo)
 		_, err := repoResolver.Description(ctx)
 		require.ErrorIs(t, err, dbErr)
 
@@ -229,139 +278,4 @@ func TestRepository_DefaultBranch(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestRepository_KVPs(t *testing.T) {
-	ctx := context.Background()
-
-	flags := map[string]bool{"repository-metadata": true}
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
-
-	logger := logtest.Scoped(t)
-	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
-	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	db.UsersFunc.SetDefaultReturn(users)
-
-	err := db.Repos().Create(ctx, &types.Repo{
-		Name: "testrepo",
-	})
-	require.NoError(t, err)
-	repo, err := db.Repos().GetByName(ctx, "testrepo")
-	require.NoError(t, err)
-
-	schema := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
-	gqlID := MarshalRepositoryID(repo.ID)
-
-	strPtr := func(s string) *string { return &s }
-
-	t.Run("add", func(t *testing.T) {
-		_, err = schema.AddRepoKeyValuePair(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "key1",
-			Value: strPtr("val1"),
-		})
-		require.NoError(t, err)
-
-		_, err = schema.AddRepoKeyValuePair(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "tag1",
-			Value: nil,
-		})
-		require.NoError(t, err)
-
-		repoResolver, err := schema.repositoryByID(ctx, gqlID)
-		require.NoError(t, err)
-
-		kvps, err := repoResolver.KeyValuePairs(ctx)
-		require.NoError(t, err)
-		sort.Slice(kvps, func(i, j int) bool {
-			return kvps[i].key < kvps[j].key
-		})
-		require.Equal(t, []KeyValuePair{{
-			key:   "key1",
-			value: strPtr("val1"),
-		}, {
-			key:   "tag1",
-			value: nil,
-		}}, kvps)
-	})
-
-	t.Run("update", func(t *testing.T) {
-		_, err = schema.UpdateRepoKeyValuePair(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "key1",
-			Value: strPtr("val2"),
-		})
-		require.NoError(t, err)
-
-		_, err = schema.UpdateRepoKeyValuePair(ctx, struct {
-			Repo  graphql.ID
-			Key   string
-			Value *string
-		}{
-			Repo:  gqlID,
-			Key:   "tag1",
-			Value: strPtr("val3"),
-		})
-		require.NoError(t, err)
-
-		repoResolver, err := schema.repositoryByID(ctx, gqlID)
-		require.NoError(t, err)
-
-		kvps, err := repoResolver.KeyValuePairs(ctx)
-		require.NoError(t, err)
-		sort.Slice(kvps, func(i, j int) bool {
-			return kvps[i].key < kvps[j].key
-		})
-		require.Equal(t, []KeyValuePair{{
-			key:   "key1",
-			value: strPtr("val2"),
-		}, {
-			key:   "tag1",
-			value: strPtr("val3"),
-		}}, kvps)
-	})
-
-	t.Run("delete", func(t *testing.T) {
-		_, err = schema.DeleteRepoKeyValuePair(ctx, struct {
-			Repo graphql.ID
-			Key  string
-		}{
-			Repo: gqlID,
-			Key:  "key1",
-		})
-		require.NoError(t, err)
-
-		_, err = schema.DeleteRepoKeyValuePair(ctx, struct {
-			Repo graphql.ID
-			Key  string
-		}{
-			Repo: gqlID,
-			Key:  "tag1",
-		})
-		require.NoError(t, err)
-
-		repoResolver, err := schema.repositoryByID(ctx, gqlID)
-		require.NoError(t, err)
-
-		kvps, err := repoResolver.KeyValuePairs(ctx)
-		require.NoError(t, err)
-		sort.Slice(kvps, func(i, j int) bool {
-			return kvps[i].key < kvps[j].key
-		})
-		require.Empty(t, kvps)
-	})
 }

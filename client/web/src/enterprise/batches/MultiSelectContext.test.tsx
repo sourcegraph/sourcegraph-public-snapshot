@@ -1,9 +1,12 @@
+import { fail } from 'assert'
+
 import React, { useContext, useEffect } from 'react'
 
 import { render } from '@testing-library/react'
 import { act } from 'react-dom/test-utils'
+import { describe, expect, test } from 'vitest'
 
-import { MultiSelectContext, MultiSelectContextProvider, MultiSelectContextState } from './MultiSelectContext'
+import { MultiSelectContext, MultiSelectContextProvider, type MultiSelectContextState } from './MultiSelectContext'
 
 describe('MultiSelectContextProvider', () => {
     test('providers are initially empty', () => {

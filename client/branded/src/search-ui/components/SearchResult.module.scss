@@ -9,10 +9,6 @@
     padding: 0.25rem 0;
     position: relative;
 
-    &-clickable {
-        cursor: pointer;
-    }
-
     &:hover {
         text-decoration: none;
     }
@@ -46,12 +42,12 @@
     }
 }
 
-.icon {
-    margin-right: 0.25rem;
-}
-
 .match-type {
     white-space: nowrap;
+}
+
+.icon {
+    margin-right: 0.25rem;
 }
 
 .divider-vertical {
@@ -88,18 +84,6 @@
     padding: 0.25rem;
 }
 
-.muted-repo-file-link {
-    color: var(--text-muted);
-
-    a {
-        color: var(--text-muted);
-
-        &:hover {
-            color: var(--text-muted);
-        }
-    }
-}
-
 .header-description {
     line-height: (14/11);
 }
@@ -126,20 +110,6 @@
     }
 }
 
-.collapsible-results {
-    // The LastSyncedIcon is absolutely-positions inside the search results.
-    // This causes it to show over the sticky header when scrolling unless
-    // we isolate the search result contents.
-    isolation: isolate;
-
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-
-    &:hover {
-        border-color: var(--border-color-2);
-    }
-}
-
 .copy-button {
     visibility: hidden;
     padding-top: 0;
@@ -150,5 +120,19 @@
     .copy-button-container:hover &,
     .copy-button-container:focus-within & {
         visibility: visible;
+    }
+}
+
+.gap-1 {
+    gap: 0.5rem;
+}
+
+.divider-between {
+    > *:not(:last-child)::after {
+        content: ' ';
+        height: 1rem;
+        margin: 0 0.75rem;
+        border-right: 1px solid var(--border-color-2);
+        display: block;
     }
 }

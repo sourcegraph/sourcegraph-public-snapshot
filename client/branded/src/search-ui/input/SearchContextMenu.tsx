@@ -1,4 +1,4 @@
-import { useCallback, useRef, useEffect, FormEvent, useState, FC, useMemo } from 'react'
+import { useCallback, useRef, useEffect, type FormEvent, useState, type FC, useMemo } from 'react'
 
 import { mdiClose, mdiArrowRight, mdiStar } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
@@ -7,11 +7,11 @@ import { BehaviorSubject, combineLatest, of, timer } from 'rxjs'
 import { catchError, debounce, map, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { getDefaultSearchContextSpec, SearchContextInputProps } from '@sourcegraph/shared/src/search'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { getDefaultSearchContextSpec, type SearchContextInputProps } from '@sourcegraph/shared/src/search'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Badge,
     Button,
@@ -41,6 +41,7 @@ export interface SearchContextMenuProps
     selectSearchContextSpec: (spec: string) => void
     className?: string
     onMenuClose: (isEscapeKey?: boolean) => void
+    ignoreDefaultContextDoesNotExistError?: boolean
 }
 
 interface PageInfo {
@@ -197,7 +198,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
             <ComboboxList ref={infiniteScrollList} data-testid="search-context-menu-list" className={styles.list}>
                 {loadingState !== 'LOADING' && (
                     <>
-                        {defaultContextExists === false && (
+                        {defaultContextExists === false && !props.ignoreDefaultContextDoesNotExistError && (
                             <Alert variant="warning" className="mx-2 mt-2">
                                 Your default search context is no longer available.
                                 <br />

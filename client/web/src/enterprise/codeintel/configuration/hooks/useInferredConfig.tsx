@@ -1,8 +1,8 @@
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
 import { useQuery } from '@sourcegraph/http-client'
 
-import { InferredIndexConfigurationResult, AutoIndexJobDescriptionFields } from '../../../../graphql-operations'
+import type { InferredIndexConfigurationResult, AutoIndexJobDescriptionFields } from '../../../../graphql-operations'
 import { INFERRED_CONFIGURATION } from '../backend'
 
 interface UseInferredConfigResult {

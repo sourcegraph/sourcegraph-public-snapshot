@@ -3,7 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { Link, LoadingSpinner, MenuLink } from '@sourcegraph/wildcard'
 
-import { AppUserConnectDotComAccountResult } from '../graphql-operations'
+import type { AppUserConnectDotComAccountResult } from '../graphql-operations'
 
 const QUERY = gql`
     query AppUserConnectDotComAccount {
@@ -33,6 +33,7 @@ export const AppUserConnectDotComAccount: React.FC = () => {
         <MenuLink
             as={Link}
             to={`https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination=${destination}`}
+            target="_blank"
         >
             Connect to Sourcegraph.com
         </MenuLink>

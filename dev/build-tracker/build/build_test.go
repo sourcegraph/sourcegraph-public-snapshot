@@ -25,7 +25,7 @@ func TestUpdateFromEvent(t *testing.T) {
 	}
 
 	event := Event{
-		Name: "build.finished",
+		Name: EventBuildFinished,
 		Build: buildkite.Build{
 			Message: &msg,
 			WebURL:  &url,
@@ -79,11 +79,11 @@ func TestBuildStoreAdd(t *testing.T) {
 	failed := "failed"
 	pipeline := "bobheadxi"
 	eventFailed := func(n int) *Event {
-		return &Event{Name: "build.finished", Build: buildkite.Build{State: &failed, Number: &n}, Pipeline: buildkite.Pipeline{Name: &pipeline}}
+		return &Event{Name: EventBuildFinished, Build: buildkite.Build{State: &failed, Number: &n}, Pipeline: buildkite.Pipeline{Name: &pipeline}}
 	}
 	eventSucceeded := func(n int) *Event {
 		// no state === not failed
-		return &Event{Name: "build.finished", Build: buildkite.Build{State: nil, Number: &n}, Pipeline: buildkite.Pipeline{Name: &pipeline}}
+		return &Event{Name: EventBuildFinished, Build: buildkite.Build{State: nil, Number: &n}, Pipeline: buildkite.Pipeline{Name: &pipeline}}
 	}
 
 	store := NewBuildStore(logtest.Scoped(t))
@@ -122,11 +122,16 @@ func TestBuildStoreAdd(t *testing.T) {
 }
 
 func TestBuildFailedJobs(t *testing.T) {
-	state := "done"
+	buildState := "done"
 	pipeline := "bobheadxi"
 	exitCode := 1
+	jobState := JobFinishedState
 	eventFailed := func(name string, buildNumber int) *Event {
-		return &Event{Name: "job.finished", Build: buildkite.Build{State: &state, Number: &buildNumber}, Pipeline: buildkite.Pipeline{Name: &pipeline}, Job: buildkite.Job{Name: &name, ExitStatus: &exitCode}}
+		return &Event{
+			Name:     EventJobFinished,
+			Build:    buildkite.Build{State: &buildState, Number: &buildNumber},
+			Pipeline: buildkite.Pipeline{Name: &pipeline},
+			Job:      buildkite.Job{Name: &name, ExitStatus: &exitCode, State: &jobState}}
 	}
 
 	store := NewBuildStore(logtest.Scoped(t))

@@ -4,9 +4,11 @@ package main
 
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss/osscmd"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )
 
 func main() {
-	osscmd.DeprecatedSingleServiceMainOSS(shared.Service)
+	sanitycheck.Pass()
+	svcmain.SingleServiceMain(shared.Service)
 }

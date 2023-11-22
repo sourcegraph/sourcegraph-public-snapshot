@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -35,8 +36,6 @@ func externalServicesWritable() error {
 	}
 	return nil
 }
-
-const syncExternalServiceTimeout = 15 * time.Second
 
 type addExternalServiceArgs struct {
 	Input addExternalServiceInput
@@ -70,12 +69,23 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
 	}
 
+	// Create the external service in the database.
 	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
-	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
-	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
+	// Now, schedule the external service for syncing immediately.
+	s := repos.NewStore(r.logger, r.db)
+	err = s.EnqueueSingleSyncJob(ctx, externalService.ID)
+	if err != nil {
+		// Not a fatal issue, it will be picked up by the scheduler again.
+		r.logger.Warn("Failed to trigger external service sync")
+	}
+
+	// Verify if the connection is functional, to render a warning message in the
+	// editor if not.
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver"), db: r.db, externalService: externalService}
+	if err = newExternalServices(r.logger, r.db).ValidateConnection(ctx, externalService); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -131,6 +141,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
+	// Update the external service in the database.
 	if err = r.db.ExternalServices().Update(ctx, ps, id, update); err != nil {
 		return nil, err
 	}
@@ -145,16 +156,35 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
+	// Now, schedule the external service for syncing immediately.
+	s := repos.NewStore(r.logger, r.db)
+	err = s.EnqueueSingleSyncJob(ctx, es.ID)
+	if err != nil {
+		// Not a fatal issue, it will be picked up by the scheduler again.
+		r.logger.Warn("Failed to trigger external service sync")
+	}
+
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver"), db: r.db, externalService: es}
 
 	if oldConfig != newConfig {
-		if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, es, syncExternalServiceTimeout); err != nil {
+		// Verify if the connection is functional, to render a warning message in the
+		// editor if not.
+		if err = newExternalServices(r.logger, r.db).ValidateConnection(ctx, es); err != nil {
 			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 		}
 	}
 
 	return res, nil
 }
+
+func newExternalServices(logger log.Logger, db database.DB) backend.ExternalServicesService {
+	if mockExternalServicesService != nil {
+		return mockExternalServicesService
+	}
+	return backend.NewExternalServices(logger, db)
+}
+
+var mockExternalServicesService backend.ExternalServicesService
 
 type excludeRepoFromExternalServiceArgs struct {
 	ExternalServices []graphql.ID
@@ -182,7 +212,7 @@ func (r *schemaResolver) ExcludeRepoFromExternalServices(ctx context.Context, ar
 		return nil, err
 	}
 
-	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExcludeRepoFromExternalServices(ctx, extSvcIDs, repositoryID); err != nil {
+	if err = newExternalServices(r.logger, r.db).ExcludeRepoFromExternalServices(ctx, extSvcIDs, repositoryID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -238,6 +268,7 @@ type ExternalServicesArgs struct {
 	graphqlutil.ConnectionArgs
 	After     *string
 	Namespace *graphql.ID
+	Repo      *graphql.ID
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
@@ -259,6 +290,14 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		AfterID: afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
+
+	if args.Repo != nil {
+		repoID, err := UnmarshalRepositoryID(*args.Repo)
+		if err != nil {
+			return nil, err
+		}
+		opt.RepoID = repoID
+	}
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 
@@ -286,7 +325,7 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
 	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: r.db, externalService: externalService})
 	}
 	return resolvers, nil
 }
@@ -330,29 +369,37 @@ func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*grap
 	return graphqlutil.HasNextPage(false), nil
 }
 
-type computedExternalServiceConnectionResolver struct {
+type ComputedExternalServiceConnectionResolver struct {
 	args             graphqlutil.ConnectionArgs
 	externalServices []*types.ExternalService
 	db               database.DB
 }
 
-func (r *computedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
+func NewComputedExternalServiceConnectionResolver(db database.DB, externalServices []*types.ExternalService, args graphqlutil.ConnectionArgs) *ComputedExternalServiceConnectionResolver {
+	return &ComputedExternalServiceConnectionResolver{
+		db:               db,
+		externalServices: externalServices,
+		args:             args,
+	}
+}
+
+func (r *ComputedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
 	svcs := r.externalServices
 	if r.args.First != nil && int(*r.args.First) < len(svcs) {
 		svcs = svcs[:*r.args.First]
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: svc})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: r.db, externalService: svc})
 	}
 	return resolvers
 }
 
-func (r *computedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
+func (r *ComputedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
 	return int32(len(r.externalServices))
 }
 
-func (r *computedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
+func (r *ComputedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
 	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
 }
 
@@ -457,14 +504,14 @@ func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *ex
 	}
 
 	return &externalServiceNamespaceConnectionResolver{
-		args:              args,
-		repoupdaterClient: r.repoupdaterClient,
+		args: args,
+		db:   r.db,
 	}, nil
 }
 
 type externalServiceNamespaceConnectionResolver struct {
-	args              *externalServiceNamespacesArgs
-	repoupdaterClient *repoupdater.Client
+	args *externalServiceNamespacesArgs
+	db   database.DB
 
 	once       sync.Once
 	nodes      []*types.ExternalServiceNamespace

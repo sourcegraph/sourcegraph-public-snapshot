@@ -1,21 +1,25 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Observable, of, Subscription } from 'rxjs'
+import { type Observable, of, type Subscription } from 'rxjs'
 
 import { requestGraphQLCommon } from '@sourcegraph/http-client'
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { fetchSearchContexts, getUserSearchContextNamespaces, QueryState } from '@sourcegraph/shared/src/search'
+import {
+    fetchSearchContexts as sharedFetchSearchContexts,
+    getUserSearchContextNamespaces,
+    type QueryState,
+} from '@sourcegraph/shared/src/search'
 import {
     aggregateStreamingSearch,
-    AggregateStreamingSearchResults,
+    type AggregateStreamingSearchResults,
     LATEST_VERSION,
-    Progress,
-    SearchMatch,
-    StreamingResultsState,
+    type Progress,
+    type SearchMatch,
+    type StreamingResultsState,
 } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE, type SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
@@ -24,12 +28,13 @@ import { SearchPatternType } from '../graphql-operations'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
 
 import { getInstanceURL } from '.'
+import { fetchSearchContextsCompat } from './compat/fetchSearchContexts'
 import { GlobalKeyboardListeners } from './GlobalKeyboardListeners'
 import { JetBrainsSearchBox } from './input/JetBrainsSearchBox'
 import { saveLastSearch } from './js-to-java-bridge'
 import { SearchResultList } from './results/SearchResultList'
 import { StatusBar } from './StatusBar'
-import { Search } from './types'
+import type { Search } from './types'
 
 import styles from './App.module.scss'
 
@@ -50,6 +55,20 @@ interface Props {
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
     return fetchStreamSuggestions(query, getInstanceURL() + '.api')
+}
+
+const fetchSearchContexts = (backendVersion: string | null): typeof sharedFetchSearchContexts => {
+    if (backendVersion === null || backendVersion === '0.0.0+dev') {
+        return sharedFetchSearchContexts
+    }
+    const [major, minor] = backendVersion.split('.').map(Number)
+    // This is the case for dotcom
+    if (Number.isNaN(major) || Number.isNaN(minor)) {
+        return sharedFetchSearchContexts
+    }
+    // The shared fetchSearchContexts was updated to query additional fields starting from 4.3.
+    const isAfterOrOn4_3 = major > 4 || (major === 4 && minor >= 3)
+    return isAfterOrOn4_3 ? sharedFetchSearchContexts : fetchSearchContextsCompat
 }
 
 function fallbackToLiteralSearchIfNeeded(
@@ -174,7 +193,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     patternType: nextSearch.patternType,
                     trace: undefined,
                     sourcegraphURL: instanceURL + '.api',
-                    decorationContextLines: 0,
                     displayLimit: 200,
                 }
             ).subscribe((searchResults: AggregateStreamingSearchResults) => {
@@ -270,7 +288,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                                 showSearchContextManagement={false}
                                 setSelectedSearchContextSpec={contextSpec => onSubmit({ contextSpec })}
                                 selectedSearchContextSpec={lastSearch.selectedSearchContextSpec}
-                                fetchSearchContexts={fetchSearchContexts}
+                                fetchSearchContexts={fetchSearchContexts(backendVersion)}
                                 getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                                 fetchStreamSuggestions={fetchStreamSuggestionsWithStaticUrl}
                                 settingsCascade={settingsCascade}

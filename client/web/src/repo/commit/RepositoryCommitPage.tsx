@@ -1,47 +1,37 @@
 import React, { useMemo, useCallback, useEffect } from 'react'
 
+import type { ApolloError } from '@apollo/client'
 import classNames from 'classnames'
 import { useParams } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
-import { gql, useQuery } from '@sourcegraph/http-client'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useQuery } from '@sourcegraph/http-client'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { FileDiffNode, FileDiffNodeProps } from '../../components/diff/FileDiffNode'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { FileDiffNode, type FileDiffNodeProps } from '../../components/diff/FileDiffNode'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import {
-    ExternalLinkFields,
-    GitCommitFields,
-    RepositoryCommitResult,
-    RepositoryCommitVariables,
-    RepositoryFields,
-    FileDiffFields,
+    type ExternalLinkFields,
+    type GitCommitFields,
+    type RepositoryCommitResult,
+    type RepositoryCommitVariables,
+    type RepositoryFields,
+    type FileDiffFields,
+    type RepositoryChangelistResult,
+    type RepositoryChangelistVariables,
+    RepositoryType,
 } from '../../graphql-operations'
 import { GitCommitNode } from '../commits/GitCommitNode'
-import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { queryRepositoryComparisonFileDiffs, RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
+import { queryRepositoryComparisonFileDiffs, type RepositoryComparisonDiff } from '../compare/RepositoryCompareDiffPage'
+
+import { CHANGELIST_QUERY, COMMIT_QUERY } from './backend'
 
 import styles from './RepositoryCommitPage.module.scss'
-
-const COMMIT_QUERY = gql`
-    query RepositoryCommit($repo: ID!, $revspec: String!) {
-        node(id: $repo) {
-            __typename
-            ... on Repository {
-                commit(rev: $revspec) {
-                    __typename # Necessary for error handling to check if commit exists
-                    ...GitCommitFields
-                }
-            }
-        }
-    }
-    ${gitCommitFragment}
-`
 
 interface RepositoryCommitPageProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
     repo: RepositoryFields
@@ -55,7 +45,7 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
     const params = useParams<{ revspec: string }>()
 
     if (!params.revspec) {
-        throw new Error('Missing `revspec` param!')
+        throw new Error('Missing `revspec` param.')
     }
 
     const { data, error, loading } = useQuery<RepositoryCommitResult, RepositoryCommitVariables>(COMMIT_QUERY, {
@@ -63,14 +53,78 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
             repo: props.repo.id,
             revspec: params.revspec,
         },
+        errorPolicy: 'all',
     })
 
     const commit = useMemo(
-        () => (data?.node && data?.node?.__typename === 'Repository' ? data?.node?.commit : undefined),
+        () => (data?.node && data?.node?.__typename === 'Repository' ? data?.node?.commit || undefined : undefined),
         [data]
     )
 
+    return (
+        <RepositoryRevisionNodes
+            error={error}
+            loading={loading}
+            revspec={params.revspec}
+            changelistID=""
+            commit={commit}
+            {...props}
+        />
+    )
+}
+
+/** Displays a changelist. */
+export const RepositoryChangelistPage: React.FunctionComponent<RepositoryCommitPageProps> = props => {
+    const params = useParams<{ changelistID: string }>()
+
+    if (!params.changelistID) {
+        throw new Error('Missing `changelistID` param. It must be set.')
+    }
+
+    const { data, error, loading } = useQuery<RepositoryChangelistResult, RepositoryChangelistVariables>(
+        CHANGELIST_QUERY,
+        {
+            variables: {
+                repo: props.repo.id,
+                changelistID: params.changelistID,
+            },
+            errorPolicy: 'all',
+        }
+    )
+
+    const commit = useMemo(
+        () => (data?.node?.__typename === 'Repository' ? data?.node?.changelist?.commit : undefined),
+        [data]
+    )
+
+    return (
+        <RepositoryRevisionNodes
+            error={error}
+            loading={loading}
+            changelistID={params.changelistID}
+            revspec=""
+            commit={commit}
+            {...props}
+        />
+    )
+}
+
+interface RepositoryRevisionNodesProps extends TelemetryProps, PlatformContextProps, SettingsCascadeProps {
+    error?: ApolloError
+    loading: boolean
+
+    revspec: string
+    changelistID: string
+
+    repo: RepositoryFields
+    commit: GitCommitFields | undefined
+    onDidUpdateExternalLinks: (externalLinks?: ExternalLinkFields[]) => void
+}
+
+const RepositoryRevisionNodes: React.FunctionComponent<RepositoryRevisionNodesProps> = props => {
     const [diffMode, setDiffMode] = useTemporarySetting('repo.commitPage.diffMode', 'unified')
+
+    const { error, loading, commit, repo } = props
 
     useEffect(() => {
         props.telemetryService.logViewEvent('RepositoryCommit')
@@ -93,53 +147,62 @@ export const RepositoryCommitPage: React.FunctionComponent<RepositoryCommitPageP
                 first: args.first ?? null,
                 after: args.after ?? null,
                 paths: [],
-                repo: props.repo.id,
+                repo: repo.id,
                 base: commitParentOrEmpty(commit!),
                 head: commit!.oid,
             }),
-        [commit, props.repo.id]
+        [commit, repo.id]
     )
+
+    const pageTitle = commit
+        ? commit.subject
+        : repo.sourceType === RepositoryType.PERFORCE_DEPOT
+        ? `Changelist ${props.changelistID}`
+        : `Commit ${props.revspec}`
+
+    const pageError = repo.sourceType === RepositoryType.PERFORCE_DEPOT ? 'Changelist not found' : 'Commit not found'
 
     return (
         <div data-testid="repository-commit-page" className={classNames('p-3', styles.repositoryCommitPage)}>
-            <PageTitle title={commit ? commit.subject : `Commit ${params.revspec}`} />
+            <PageTitle title={pageTitle} />
+            {error && <ErrorAlert className="mt-2" error={error ?? new Error(pageError)} />}
             {loading ? (
                 <LoadingSpinner className="mt-2" />
-            ) : error || !commit ? (
-                <ErrorAlert className="mt-2" error={error ?? new Error('Commit not found')} />
             ) : (
-                <>
-                    <div className="border-bottom pb-2">
-                        <div>
-                            <GitCommitNode
-                                node={commit}
-                                expandCommitMessageBody={true}
-                                showSHAAndParentsRow={true}
-                                diffMode={diffMode}
-                                onHandleDiffMode={setDiffMode}
-                                className={styles.gitCommitNode}
-                            />
+                commit && (
+                    <>
+                        <div className="border-bottom pb-2">
+                            <div>
+                                <GitCommitNode
+                                    node={commit}
+                                    expandCommitMessageBody={true}
+                                    showSHAAndParentsRow={true}
+                                    diffMode={diffMode}
+                                    onHandleDiffMode={setDiffMode}
+                                    className={styles.gitCommitNode}
+                                />
+                            </div>
                         </div>
-                    </div>
-                    <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
-                        listClassName="list-group list-group-flush"
-                        noun="changed file"
-                        pluralNoun="changed files"
-                        queryConnection={queryDiffs}
-                        nodeComponent={FileDiffNode}
-                        nodeComponentProps={{
-                            ...props,
-                            lineNumbers: true,
-                            diffMode,
-                        }}
-                        updateOnChange={`${props.repo.id}:${commit.oid}`}
-                        defaultFirst={15}
-                        hideSearch={true}
-                        noSummaryIfAllNodesVisible={true}
-                        withCenteredSummary={true}
-                        cursorPaging={true}
-                    />
-                </>
+                        <FilteredConnection<FileDiffFields, Omit<FileDiffNodeProps, 'node'>>
+                            listClassName="list-group list-group-flush"
+                            noun="changed file"
+                            pluralNoun="changed files"
+                            queryConnection={queryDiffs}
+                            nodeComponent={FileDiffNode}
+                            nodeComponentProps={{
+                                ...props,
+                                lineNumbers: true,
+                                diffMode,
+                            }}
+                            updateOnChange={`${repo.id}:${commit.oid}`}
+                            defaultFirst={15}
+                            hideSearch={true}
+                            noSummaryIfAllNodesVisible={true}
+                            withCenteredSummary={true}
+                            cursorPaging={true}
+                        />
+                    </>
+                )
             )}
         </div>
     )

@@ -31,7 +31,7 @@ type NaiveUpdater func(before NaiveValue, found bool) (after NaiveValue, remove 
 // have to read the full value, and any mutation requires rewriting the full
 // value. This is usually fine, but may be an issue when backed by a large
 // Hash or List. As such this function is designed with the functionality of
-// Sourcegraph App in mind (single process, low traffic).
+// Cody App in mind (single process, low traffic).
 type NaiveKeyValueStore func(ctx context.Context, key string, f NaiveUpdater) error
 
 // FromNaiveKeyValueStore returns a KeyValue based on the store function.
@@ -95,12 +95,29 @@ func (kv *naiveKeyValue) SetEx(key string, ttlSeconds int, value any) error {
 	}).err
 }
 
-func (kv *naiveKeyValue) Incr(key string) error {
+func (kv *naiveKeyValue) SetNx(key string, value any) (bool, error) {
+	op := write
+	v := kv.maybeUpdate(key, func(_ redisValue, found bool) (redisValue, updaterOp, error) {
+		if found {
+			op = readOnly
+		}
+		return redisValue{
+			Group: redisGroupString,
+			Reply: value,
+		}, op, nil
+	})
+	if v.err != nil {
+		return false, v.err
+	}
+	return op == write, nil
+}
+
+func (kv *naiveKeyValue) Incr(key string) (int, error) {
 	return kv.maybeUpdateGroup(redisGroupString, key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
 		if !found {
 			return redisValue{
 				Group: redisGroupString,
-				Reply: 1,
+				Reply: int64(1),
 			}, write, nil
 		}
 
@@ -109,9 +126,28 @@ func (kv *naiveKeyValue) Incr(key string) error {
 			return value, readOnly, err
 		}
 
-		value.Reply = num + 1
+		value.Reply = int64(num + 1)
 		return value, write, nil
-	}).err
+	}).Int()
+}
+
+func (kv *naiveKeyValue) Incrby(key string, val int) (int, error) {
+	return kv.maybeUpdateGroup(redisGroupString, key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
+		if !found {
+			return redisValue{
+				Group: redisGroupString,
+				Reply: int64(val),
+			}, write, nil
+		}
+
+		num, err := redis.Int(value.Reply, nil)
+		if err != nil {
+			return value, readOnly, err
+		}
+
+		value.Reply = int64(num + val)
+		return value, write, nil
+	}).Int()
 }
 
 func (kv *naiveKeyValue) Del(key string) error {
@@ -204,6 +240,20 @@ func (kv *naiveKeyValue) HSet(key, field string, fieldValue any) error {
 
 		return li, write, nil
 	}).err
+}
+
+func (kv *naiveKeyValue) HDel(key, field string) Value {
+	var removed int64
+	err := kv.maybeUpdateValues(redisGroupHash, key, func(li []any) ([]any, updaterOp, error) {
+		idx, ok, err := hsetValueIndex(li, field)
+		if err != nil || !ok {
+			return li, readOnly, err
+		}
+		removed = 1
+		li = append(li[:idx-1], li[idx+1:]...)
+		return li, write, nil
+	}).err
+	return Value{reply: removed, err: err}
 }
 
 func hsetValueIndex(li []any, field string) (int, bool, error) {

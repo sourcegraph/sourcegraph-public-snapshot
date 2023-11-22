@@ -4,12 +4,12 @@ import { Navigate } from 'react-router-dom'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
-import { EnterprisePageRoutes } from '../../routes.constants'
+import { PageRoutes } from '../../routes.constants'
 import { createNotebook } from '../backend'
 
 const LOADING = 'loading' as const
@@ -32,7 +32,7 @@ export const CreateNotebookPage: React.FunctionComponent<
 
     if (notebookOrError && !isErrorLike(notebookOrError) && notebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookCreated')
-        return <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', notebookOrError.id)} replace={true} />
+        return <Navigate to={PageRoutes.Notebook.replace(':id', notebookOrError.id)} replace={true} />
     }
 
     return (

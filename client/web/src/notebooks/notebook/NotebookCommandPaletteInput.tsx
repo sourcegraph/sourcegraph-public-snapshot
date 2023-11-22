@@ -5,7 +5,7 @@ import { useMergeRefs } from 'use-callback-ref'
 
 import { Button, useOnClickOutside, Input } from '@sourcegraph/wildcard'
 
-import { BlockInput } from '..'
+import type { BlockInput } from '..'
 
 import { NotebookAddBlockButtons } from './NotebookAddBlockButtons'
 import { useCommandPaletteOptions } from './useCommandPaletteOptions'

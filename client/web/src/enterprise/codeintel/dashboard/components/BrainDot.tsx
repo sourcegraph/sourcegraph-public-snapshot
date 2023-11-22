@@ -1,75 +1,122 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
-import { mdiBrain } from '@mdi/js'
+import { mdiArrowRightThin, mdiBrain } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Position,
+    Icon,
+    Link,
+    LoadingSpinner,
+    Menu,
+    MenuButton,
+    MenuDivider,
+    MenuHeader,
+    MenuList,
+    Tooltip,
+    RadioButton,
+    useSessionStorage,
+    Code,
+} from '@sourcegraph/wildcard'
 
-import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../constants'
-import { useRepoCodeIntelStatus } from '../hooks/useRepoCodeIntelStatus'
-
-import { getIndexerKey, getIndexRoot, sanitizePath } from './tree/util'
+import { useVisibleIndexes } from '../hooks/useVisibleIndexes'
 
 import styles from './BrainDot.module.scss'
 
 export interface BrainDotProps {
     repoName: string
+    commit: string
+    path?: string
 }
 
-export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName }) => {
-    const { data } = useRepoCodeIntelStatus({ repository: repoName })
+export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, commit, path }) => (
+    <Menu>
+        <Tooltip content="View code intelligence summary">
+            <MenuButton className={classNames('text-decoration-none', styles.braindot)} aria-label="Code graph">
+                <Icon aria-hidden={true} svgPath={mdiBrain} />
+            </MenuButton>
+        </Tooltip>
+        <MenuList position={Position.bottomEnd} className={styles.dropdownMenu}>
+            <MenuHeader>
+                Click to view code intelligence summary
+                <span className="float-right">
+                    <Tooltip content="View code intelligence summary">
+                        <Link to={`/${repoName}/-/code-graph/dashboard`}>
+                            <Icon aria-hidden={true} svgPath={mdiArrowRightThin} />
+                        </Link>
+                    </Tooltip>
+                </span>
+            </MenuHeader>
 
-    const indexes = useMemo(() => {
-        if (!data) {
-            return []
-        }
+            <MenuDivider />
 
-        return data.summary.recentActivity
-    }, [data])
+            <BrainDotContent repoName={repoName} commit={commit} path={path} />
+        </MenuList>
+    </Menu>
+)
 
-    const suggestedIndexers = useMemo(() => {
-        if (!data) {
-            return []
-        }
+const BrainDotContent: React.FunctionComponent<BrainDotProps> = ({ repoName, commit, path }) => {
+    const { data: visibleIndexes, loading: visibleIndexesLoading } = useVisibleIndexes({
+        repository: repoName,
+        commit,
+        path: path ?? '',
+    })
 
-        return data.summary.availableIndexers
-            .flatMap(({ rootsWithKeys, indexer }) =>
-                rootsWithKeys.map(({ root, comparisonKey }) => ({ root, comparisonKey, ...indexer }))
-            )
-            .filter(
-                ({ root, key }) =>
-                    !indexes.some(index => getIndexRoot(index) === sanitizePath(root) && getIndexerKey(index) === key)
-            )
-    }, [data, indexes])
+    const [indexIDsForSnapshotData, setIndexIDForSnapshotData] = useSessionStorage<{
+        [repoName: string]: string | undefined
+    }>('blob.preciseIndexIDForSnapshotData', {})
+    let visibleIndexID = indexIDsForSnapshotData[repoName]
 
-    const dotStyle = useMemo((): string => {
-        if (!indexes || !suggestedIndexers) {
-            return ''
-        }
-
-        const numCompletedIndexes = indexes.filter(index => INDEX_COMPLETED_STATES.has(index.state)).length
-        const numFailedIndexes = indexes.filter(index => INDEX_FAILURE_STATES.has(index.state)).length
-        const numUnconfiguredProjects = suggestedIndexers.length
-
-        return numFailedIndexes > 0
-            ? styles.braindotDanger
-            : numUnconfiguredProjects > 0
-            ? styles.braindotWarning
-            : numCompletedIndexes > 0
-            ? styles.braindotSuccess
-            : ''
-    }, [indexes, suggestedIndexers])
+    if (!visibleIndexes?.some(value => value.id === visibleIndexID)) {
+        visibleIndexID = undefined
+    }
 
     return (
-        <Tooltip content="View code intelligence summary">
-            <Link to={`/${repoName}/-/code-graph/dashboard`}>
-                <Button
-                    className={classNames('text-decoration-none', styles.braindot, dotStyle)}
-                    aria-label="Code graph"
-                >
-                    <Icon aria-hidden={true} svgPath={mdiBrain} />
-                </Button>
-            </Link>
-        </Tooltip>
+        <>
+            {visibleIndexesLoading && <LoadingSpinner className="mx-2" />}
+            {visibleIndexes && visibleIndexes.length > 0 && (
+                <MenuHeader>
+                    <Tooltip content="Not intended for regular use">
+                        <span>Display debug information for uploaded index.</span>
+                    </Tooltip>
+                    {[
+                        <RadioButton
+                            id="none"
+                            key="none"
+                            name="none"
+                            label="None"
+                            wrapperClassName="py-1"
+                            checked={visibleIndexID === undefined}
+                            onChange={() => {
+                                delete indexIDsForSnapshotData[repoName]
+                                setIndexIDForSnapshotData(indexIDsForSnapshotData)
+                            }}
+                        />,
+                        ...visibleIndexes.map(index => (
+                            <Tooltip content={`Uploaded at ${index.uploadedAt}`} key={index.id}>
+                                <RadioButton
+                                    id={index.id}
+                                    name={index.id}
+                                    checked={visibleIndexID === index.id}
+                                    wrapperClassName="py-1"
+                                    label={
+                                        <>
+                                            Index at <Code>{index.inputCommit.slice(0, 7)}</Code>
+                                        </>
+                                    }
+                                    onChange={() => {
+                                        indexIDsForSnapshotData[repoName] = index.id
+                                        setIndexIDForSnapshotData(indexIDsForSnapshotData)
+                                    }}
+                                />
+                            </Tooltip>
+                        )),
+                    ]}
+                </MenuHeader>
+            )}
+            {(visibleIndexes?.length ?? 0) === 0 && !visibleIndexesLoading && (
+                <MenuHeader>No precise indexes to display debug information for.</MenuHeader>
+            )}
+        </>
     )
 }

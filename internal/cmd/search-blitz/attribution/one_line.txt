@@ -1,0 +1,1 @@
+const data: Event = { ...JSON.parse(message.data), type: message.event }

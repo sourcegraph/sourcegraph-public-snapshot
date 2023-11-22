@@ -4,11 +4,10 @@ import classNames from 'classnames'
 
 import { Code } from '@sourcegraph/wildcard'
 
-import { FileDiffHunkFields } from '../../graphql-operations'
-import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
+import type { FileDiffHunkFields } from '../../graphql-operations'
+import type { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 
 import styles from './DiffBoundary.module.scss'
-import diffHunkStyles from './DiffHunk.module.scss'
 
 interface DiffBoundaryProps extends Pick<FileDiffHunkFields, 'oldRange' | 'newRange' | 'section'> {
     contentClassName: string
@@ -29,7 +28,7 @@ const DiffBoundaryContent: React.FunctionComponent<React.PropsWithChildren<DiffB
             data-diff-marker=" "
         >
             {props.oldRange.lines !== undefined && props.newRange.lines !== undefined && (
-                <Code className={diffHunkStyles.content}>
+                <Code>
                     @@ -{props.oldRange.startLine},{props.oldRange.lines} +{props.newRange.startLine},
                     {props.newRange.lines} {props.section && `@@ ${props.section}`}
                 </Code>

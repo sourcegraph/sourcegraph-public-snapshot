@@ -1,8 +1,8 @@
 import {
     Annotation,
     EditorSelection,
-    Extension,
-    Range,
+    type Extension,
+    type Range,
     RangeSet,
     RangeSetBuilder,
     StateEffect,
@@ -15,17 +15,61 @@ import {
     GutterMarker,
     layer,
     lineNumbers,
-    PluginValue,
+    type PluginValue,
     RectangleMarker,
     ViewPlugin,
-    ViewUpdate,
+    type ViewUpdate,
 } from '@codemirror/view'
-import classNames from 'classnames'
 
-import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
+import { isFirefox } from '@sourcegraph/common'
 
-import { blobPropsFacet } from './index'
 import { isValidLineRange, MOUSE_MAIN_BUTTON } from './utils'
+
+const selectedLinesTheme = EditorView.theme({
+    /**
+     * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
+     * returns absolutely positioned markers. Markers top position has extra 1px (5px in case blame decorations
+     * are visible) more in its `top` value breaking alignment wih the line.
+     * We compensate this spacing by setting negative margin-top.
+     *
+     * Line highlighting breaks (highlights two lines instead of 1) in firefox if minHeight is set, so we
+     * add a conditional to check for the current browser, and set the css accordingly.
+     *
+     * todo(fkling): Revisit this, styling is not correct for empty lines
+     */
+    '.selected-lines-layer .selected-line': isFirefox()
+        ? {
+              marginTop: '-1px',
+          }
+        : {
+              marginTop: '-1px',
+              // Ensure selection marker height matches line height.
+              minHeight: '1.0rem',
+          },
+
+    '.selected-lines-layer .selected-line.blame-visible': {
+        marginTop: '-5px',
+
+        // Ensure selection marker height matches the increased line height.
+        minHeight: 'calc(1.5rem + 1px)',
+    },
+
+    // Selected line background is set by adding 'selected-line' class to the layer markers.
+    '.cm-line.selected-line': {
+        background: 'transparent',
+    },
+
+    /**
+     * Rectangle markers `left` position matches the position of the character at the start of range
+     * (for selected lines it is first character of the first line in a range). When line content (`.cm-line`)
+     * has some padding to the left (e.g. to create extra space between gutters and code) there is a gap in
+     * highlight (background color) between the selected line gutters (decorated with {@link selectedLineGutterMarker}) and layer.
+     * To remove this gap we move padding from `.cm-line` to the last gutter.
+     */
+    '.cm-gutter:last-child .cm-gutterElement': {
+        paddingRight: '0.2rem',
+    },
+})
 
 /**
  * Represents the currently selected line range. null means no lines are
@@ -119,7 +163,7 @@ export const selectedLines = StateField.define<SelectedLineRange>({
 
                 return RectangleMarker.forRange(
                     view,
-                    classNames('selected-line', { ['blame-visible']: view.state.facet(blobPropsFacet).isBlameVisible }),
+                    'selected-line',
                     EditorSelection.range(startLine.from, Math.min(endLine.to + 1, view.state.doc.length))
                 )
             },
@@ -135,42 +179,8 @@ export const selectedLines = StateField.define<SelectedLineRange>({
             },
             class: 'selected-lines-layer',
         }),
-        EditorView.theme({
-            /**
-             * [RectangleMarker.forRange](https://sourcegraph.com/github.com/codemirror/view@a0a0b9ef5a4deaf58842422ac080030042d83065/-/blob/src/layer.ts?L60-75)
-             * returns absolutely positioned markers. Markers top position has extra 1px (6px in case blame decorations
-             * are visible) more in its `top` value breaking alignment wih the line.
-             * We compensate this spacing by setting negative margin-top.
-             */
-            '.selected-lines-layer .selected-line': {
-                marginTop: '-1px',
 
-                // Ensure selection marker height matches line height.
-                minHeight: '1rem',
-            },
-            '.selected-lines-layer .selected-line.blame-visible': {
-                marginTop: '-6px',
-
-                // Ensure selection marker height matches the increased line height.
-                minHeight: 'calc(1.5rem + 1px)',
-            },
-
-            // Selected line background is set by adding 'selected-line' class to the layer markers.
-            '.cm-line.selected-line': {
-                background: 'transparent',
-            },
-
-            /**
-             * Rectangle markers `left` position matches the position of the character at the start of range
-             * (for selected lines it is first character of the first line in a range). When line content (`.cm-line`)
-             * has some padding to the left (e.g. to create extra space between gutters and code) there is a gap in
-             * highlight (background color) between the selected line gutters (decorated with {@link selectedLineGutterMarker}) and layer.
-             * To remove this gap we move padding from `.cm-line` to the last gutter.
-             */
-            '.cm-gutter:last-child .cm-gutterElement': {
-                paddingRight: '1rem',
-            },
-        }),
+        selectedLinesTheme,
 
         gutterLineClass.compute([field], state => {
             const range = state.field(field)
@@ -251,10 +261,33 @@ const scrollIntoView = ViewPlugin.fromClass(
     }
 )
 
+const selectedLineNumberTheme = EditorView.theme({
+    '.cm-lineNumbers': {
+        cursor: 'pointer',
+        color: 'var(--line-number-color)',
+
+        '& .cm-gutterElement': {
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+        },
+
+        '& .cm-gutterElement:hover': {
+            textDecoration: 'underline',
+        },
+    },
+})
+
 interface SelectableLineNumbersConfig {
     onSelection: (range: SelectedLineRange) => void
     initialSelection: SelectedLineRange | null
-    navigateToLineOnAnyClick: boolean
+    /**
+     * If provided, this function will be called if the user
+     * clicks anywhere in a line, not just on the line number.
+     * In this case `onSelection` will be ignored.
+     */
+    onLineClick?: (line: number) => void
+    // todo(fkling): Refactor this logic, maybe move into separate extensions
 }
 
 /**
@@ -277,7 +310,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
         lineNumbers({
             domEventHandlers: {
                 mouseup(view, block, event) {
-                    if (!config.navigateToLineOnAnyClick) {
+                    if (!config.onLineClick) {
                         return false
                     }
 
@@ -286,19 +319,13 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                         return false
                     }
 
-                    const { blobInfo, navigate } = view.state.facet(blobPropsFacet)
                     const line = view.state.doc.lineAt(block.from).number
-                    const href = toPrettyBlobURL({
-                        ...blobInfo,
-                        position: { line, character: 0 },
-                    })
-                    navigate(href)
-
+                    config.onLineClick(line)
                     return true
                 },
 
                 mousedown(view, block, event) {
-                    if (config.navigateToLineOnAnyClick) {
+                    if (config.onLineClick) {
                         return false
                     }
 
@@ -308,11 +335,8 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                     }
 
                     const line = view.state.doc.lineAt(block.from).number
-                    const range = view.state.field(selectedLines)
                     view.dispatch({
-                        effects: mouseEvent.shiftKey
-                            ? setEndLine.of(line)
-                            : setSelectedLines.of(isSingleLine(range) && range?.line === line ? null : { line }),
+                        effects: mouseEvent.shiftKey ? setEndLine.of(line) : setSelectedLines.of({ line }),
                         annotations: lineSelectionSource.of('gutter'),
                         // Collapse/reset text selection
                         selection: { anchor: view.state.selection.main.anchor },
@@ -352,20 +376,7 @@ export function selectableLineNumbers(config: SelectableLineNumbersConfig): Exte
                 },
             },
         }),
-        EditorView.theme({
-            '.cm-lineNumbers': {
-                cursor: 'pointer',
-                color: 'var(--line-number-color)',
-            },
-            '.cm-lineNumbers .cm-gutterElement': {
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-end',
-            },
-            '.cm-lineNumbers .cm-gutterElement:hover': {
-                textDecoration: 'underline',
-            },
-        }),
+        selectedLineNumberTheme,
     ]
 }
 
@@ -405,19 +416,19 @@ function normalizeLineRange(range: SelectedLineRange): SelectedLineRange {
  * outside of the editor viewport).
  */
 export function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boolean {
-    if (!range || !isValidLineRange(range, view.state.doc)) {
+    // Only consider start and end line when determining whether to scroll a line into view.
+    // Whether or not the character offset is valid doesn't matter in this case.
+    const normalizedRange: SelectedLineRange = range ? { line: range.line, endLine: range.endLine } : range
+
+    if (!normalizedRange || !isValidLineRange(normalizedRange, view.state.doc)) {
         return false
     }
 
-    const from = view.lineBlockAt(view.state.doc.line(range.line).from)
-    const to = range.endLine ? view.lineBlockAt(view.state.doc.line(range.endLine).to) : from
+    const from = view.lineBlockAt(view.state.doc.line(normalizedRange.line).from)
+    const to = normalizedRange.endLine ? view.lineBlockAt(view.state.doc.line(normalizedRange.endLine).to) : from
 
     return (
         from.top + from.height >= view.scrollDOM.scrollTop + view.scrollDOM.clientHeight ||
         to.top <= view.scrollDOM.scrollTop
     )
-}
-
-function isSingleLine(range: SelectedLineRange): boolean {
-    return !!range && (!range.endLine || range.line === range.endLine)
 }

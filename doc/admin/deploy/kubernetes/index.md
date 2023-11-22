@@ -21,7 +21,7 @@ Below is an overview of installing Sourcegraph on Kubernetes using Kustomize.
      - [Azure AKS](https://github.com/sourcegraph/tf-k8s-configs/tree/main/azure)
      - [Google Cloud Platform GKE](https://github.com/sourcegraph/tf-k8s-configs/tree/main/gcp)
 
->WARNING: **If your Sourcegraph version is older than `4.5.0`, please refer to the [old deployment docs for Kubernetes](https://docs.sourcegraph.com/@v4.4.2/admin/deploy/kubernetes).**
+>WARNING: **If your Sourcegraph version is older than `v4.5.0` or hasn't [migrated](./kustomize/migrate.md) to [`deploy-sourcegraph-k8s`](https://github.com/sourcegraph/deploy-sourcegraph-k8s), please refer to the [legacy deployment docs for Kubernetes](https://docs.sourcegraph.com/@v4.4.2/admin/deploy/kubernetes).**
 
 ### **Step 1**: Set up a release branch
 
@@ -192,6 +192,7 @@ Common configurations that are strongly recommended for all Sourcegraph deployme
 - [Adjust storage sizes](configure.md#adjust-storage-sizes)
 - [Configure ingress](configure.md#ingress)
 - [Enable TLS](configure.md#tls)
+- [Enable Embeddings Service](configure.md#enable-embeddings-service)
 
 Other common configurations include:
 
@@ -206,10 +207,10 @@ We recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexi
 
 ## Learn more
 
+- [Scaling Sourcegraph on Kubernetes](scale.md)
 - Examples of deploying Sourcegraph to the cloud provider listed below:
   - [Amazon EKS](kustomize/eks.md)
   - [Google GKE](kustomize/gke.md)
-  - [Minikube](../single-node/minikube.md)
 - [Migration guide](kustomize/migrate.md) on migrating from [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) to [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s)
 - [Other deployment options](../index.md)
 - [Troubleshooting](troubleshoot.md)

@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
@@ -19,9 +19,7 @@ import {
 
 import styles from './IntroCreationPage.module.scss'
 
-interface IntroCreationPageProps extends TelemetryProps {
-    isSourcegraphApp: boolean
-}
+interface IntroCreationPageProps extends TelemetryProps {}
 
 /** Displays intro page for insights creation UI. */
 export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<IntroCreationPageProps>> = props => {
@@ -56,7 +54,7 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
     }, [telemetryService])
 
     return (
-        <CodeInsightsPage className={styles.container} isSourcegraphApp={props.isSourcegraphApp}>
+        <CodeInsightsPage className={styles.container}>
             <PageTitle title="Create insight - Code Insights" />
             <PageHeader
                 path={[{ icon: CodeInsightsIcon }, { text: 'Create new code insight' }]}

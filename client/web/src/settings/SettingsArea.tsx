@@ -2,22 +2,22 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { combineLatest, Observable, Subject, Subscription } from 'rxjs'
+import { combineLatest, type Observable, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 
-import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { asError, createAggregateError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, PageHeader, ErrorMessage } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { queryGraphQL } from '../backend/graphql'
 import { HeroPage } from '../components/HeroPage'
-import { SettingsCascadeResult } from '../graphql-operations'
+import type { SettingsCascadeResult } from '../graphql-operations'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { SettingsPage } from './SettingsPage'
@@ -129,21 +129,26 @@ export class SettingsArea extends React.Component<Props, State> {
 
         let term: string
         switch (this.props.subject.__typename) {
-            case 'User':
+            case 'User': {
                 term = 'User'
                 break
-            case 'Org':
+            }
+            case 'Org': {
                 term = 'Organization'
                 break
-            case 'Site':
+            }
+            case 'Site': {
                 term = 'Global'
                 break
-            case 'DefaultSettings':
+            }
+            case 'DefaultSettings': {
                 term = 'Default settings'
                 break
-            default:
+            }
+            default: {
                 term = 'Unknown'
                 break
+            }
         }
 
         const transferProps: SettingsAreaPageProps = {

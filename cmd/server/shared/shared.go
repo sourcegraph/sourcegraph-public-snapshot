@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -44,7 +45,6 @@ var DefaultEnv = map[string]string{
 	"SRC_HTTP_ADDR":         ":8080",
 	"SRC_HTTPS_ADDR":        ":8443",
 	"SRC_FRONTEND_INTERNAL": FrontendInternalHost,
-	"GITHUB_BASE_URL":       "http://127.0.0.1:3180", // points to github-proxy
 
 	"GRAFANA_SERVER_URL":          "http://127.0.0.1:3370",
 	"PROMETHEUS_URL":              "http://127.0.0.1:9090",
@@ -84,7 +84,7 @@ func Main() {
 	})
 	defer liblog.Sync()
 
-	logger := sglog.Scoped("server", "Sourcegraph server")
+	logger := sglog.Scoped("server")
 
 	// Ensure CONFIG_DIR and DATA_DIR
 
@@ -149,7 +149,7 @@ func Main() {
 		log.Fatal("Failed to setup nginx:", err)
 	}
 
-	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, postgresdsn.New("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
+	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --config.file="/postgres_exporter.yaml" --log.level=%s`, postgresdsn.New("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
 
 	// TODO: This should be fixed properly.
 	// Tell `gitserver` that its `hostname` is what the others think of as gitserver hostnames.
@@ -161,9 +161,9 @@ func Main() {
 		gitserverLine,
 		`symbols: symbols`,
 		`searcher: searcher`,
-		`github-proxy: github-proxy`,
 		`worker: worker`,
 		`repo-updater: repo-updater`,
+		`precise-code-intel-worker: precise-code-intel-worker`,
 		`syntax_highlighter: sh -c 'env QUIET=true ROCKET_ENV=production ROCKET_PORT=9238 ROCKET_LIMITS='"'"'{json=10485760}'"'"' ROCKET_SECRET_KEY='"'"'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='"'"' ROCKET_KEEP_ALIVE=0 ROCKET_ADDRESS='"'"'"127.0.0.1"'"'"' syntax_highlighter | grep -v "Rocket has launched" | grep -v "Warning: environment is"' | grep -v 'Configured for production'`,
 		postgresExporterLine,
 	}
@@ -236,6 +236,11 @@ func run(procfile, postgresProcfile []string, runMigrations bool, procDiedAction
 
 	group, _ := errgroup.WithContext(context.Background())
 
+	// Check whether database reindex is required, and run it if so
+	if shouldPostgresReindex() {
+		runPostgresReindex()
+	}
+
 	options := goreman.Options{
 		RPCAddr:        "127.0.0.1:5005",
 		ProcDiedAction: procDiedAction,
@@ -283,4 +288,61 @@ func runMigrator() {
 	}
 
 	log.Println("Migrated postgres schemas.")
+}
+
+func shouldPostgresReindex() (shouldReindex bool) {
+	fmt.Printf("Checking whether a Postgres reindex is required...\n")
+
+	// Check for presence of the reindex marker file
+	postgresReindexMarkerFile := postgresReindexMarkerFile()
+	_, err := os.Stat(postgresReindexMarkerFile)
+	if err == nil {
+		fmt.Printf("5.1 reindex marker file '%s' found\n", postgresReindexMarkerFile)
+		return false
+	}
+	fmt.Printf("5.1 reindex marker file '%s' not found\n", postgresReindexMarkerFile)
+
+	// Check PGHOST variable to see whether it refers to a local address or path
+	// If an external database is used, reindexing can be skipped
+	pgHost := os.Getenv("PGHOST")
+	if !(pgHost == "" || pgHost == "127.0.0.1" || pgHost == "localhost" || string(pgHost[0]) == "/") {
+		fmt.Printf("Using a non-local Postgres database '%s', reindexing not required\n", pgHost)
+		return false
+	}
+	fmt.Printf("Using a local Postgres database '%s', reindexing required\n", pgHost)
+
+	return true
+}
+
+func runPostgresReindex() {
+	fmt.Printf("Starting Postgres reindex process\n")
+
+	performMigration := os.Getenv("SOURCEGRAPH_5_1_DB_MIGRATION")
+	if performMigration != "true" {
+		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
+		fmt.Printf("Upgrading to Sourcegraph 5.1 or later from an earlier release requires a database reindex.\n\n")
+		fmt.Printf("This process may take several hours, depending on the size of your database.\n\n")
+		fmt.Printf("If you do not wish to perform the reindex process now, you should switch back to a release before Sourcegraph 5.1.\n\n")
+		fmt.Printf("To perform the reindexing process now, please review the instructions at https://docs.sourcegraph.com/admin/migration/5_1 and restart the container with the environment variable `SOURCEGRAPH_5_1_DB_MIGRATION=true` set.\n")
+		fmt.Printf("\n**************** MIGRATION REQUIRED **************\n\n")
+
+		os.Exit(101)
+	}
+
+	cmd := exec.Command("/bin/bash", "/reindex.sh")
+	cmd.Env = append(
+		os.Environ(),
+		fmt.Sprintf("REINDEX_COMPLETED_FILE=%s", postgresReindexMarkerFile()),
+		// PGDATA is set as an ENVAR in standalone container
+		fmt.Sprintf("PGDATA=%s", postgresDataPath()),
+		// Unset PGHOST so connections go over unix socket; we've already confirmed the database being reindexed is local
+		"PGHOST=",
+	)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("Error running database migration: %s\n", err)
+		os.Exit(1)
+	}
 }

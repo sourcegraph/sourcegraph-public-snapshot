@@ -19,7 +19,7 @@ by Sourcegraph, and contains all the information available about the cause of th
 
 ## Creating a webhook receiver
 
-A webhook reciever is a service that can accept an HTTP POST request with the contents of the webhook notification.
+A webhook receiver is a service that can accept an HTTP POST request with the contents of the webhook notification.
 The receiver must be reachable from the Sourcegraph cluster using the URL that is configured below.
 
 The HTTP POST request sent to the receiver will have a JSON-encoded body with the following fields:

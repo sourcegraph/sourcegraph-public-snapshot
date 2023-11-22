@@ -1,10 +1,10 @@
 import { groupBy } from 'lodash'
 
-import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
-import { Series, useDeepMemo } from '@sourcegraph/wildcard'
+import type { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
+import { type Series, useDeepMemo } from '@sourcegraph/wildcard'
 
-import { LivePreviewStatus, State } from './types'
-import { Datum, SeriesWithStroke, useLivePreviewSeriesInsight } from './use-live-preview-series-insight'
+import { LivePreviewStatus, type State } from './types'
+import { type Datum, type SeriesWithStroke, useLivePreviewSeriesInsight } from './use-live-preview-series-insight'
 
 interface ComputeSeries extends Omit<SeriesWithStroke, 'generatedFromCaptureGroups'> {}
 

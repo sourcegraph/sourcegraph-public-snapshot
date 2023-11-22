@@ -2,13 +2,13 @@ import { noop } from 'lodash'
 import { EMPTY, NEVER, of, Subscription } from 'rxjs'
 import sinon from 'sinon'
 
-import { FlatExtensionHostAPI } from '../api/contract'
+import type { FlatExtensionHostAPI } from '../api/contract'
 import { pretendProxySubscribable, pretendRemote } from '../api/util'
-import { FetchFileParameters } from '../backend/file'
-import { Controller } from '../extensions/controller'
-import { PlatformContext } from '../platform/context'
-import { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
-import { SettingsCascade } from '../settings/settings'
+import type { FetchFileParameters } from '../backend/file'
+import type { Controller } from '../extensions/controller'
+import type { PlatformContext } from '../platform/context'
+import type { AggregateStreamingSearchResults, ContentMatch, RepositoryMatch } from '../search/stream'
+import type { SettingsCascade } from '../settings/settings'
 
 export const CHUNK_MATCH_RESULT: ContentMatch = {
     type: 'content',
@@ -56,6 +56,10 @@ export const LINE_MATCH_RESULT: ContentMatch = {
 export const REPO_MATCH_RESULT: RepositoryMatch = {
     type: 'repo',
     repository: 'github.com/golang/oauth2',
+    metadata: {
+        'open-source': undefined,
+        authentication: undefined,
+    },
 }
 
 export const REPO_MATCH_RESULTS_WITH_METADATA: RepositoryMatch[] = [

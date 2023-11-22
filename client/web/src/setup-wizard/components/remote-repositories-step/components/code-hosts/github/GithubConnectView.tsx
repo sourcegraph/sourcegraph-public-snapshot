@@ -1,11 +1,20 @@
-import { FC, ReactNode, ReactElement, useCallback, useState, useMemo, ChangeEvent, useEffect } from 'react'
+import {
+    type FC,
+    type ReactNode,
+    type ReactElement,
+    useCallback,
+    useState,
+    useMemo,
+    type ChangeEvent,
+    useEffect,
+} from 'react'
 
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
 
 import { modify } from '@sourcegraph/common'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Tabs,
     Tab,
@@ -16,26 +25,31 @@ import {
     Checkbox,
     useField,
     useForm,
-    FormInstance,
+    type FormInstance,
     getDefaultInputProps,
-    useFieldAPI,
+    type useFieldAPI,
     useControlledField,
     ErrorAlert,
     FORM_ERROR,
-    AsyncValidator,
-    FormChangeEvent,
+    type AsyncValidator,
+    type FormChangeEvent,
     Link,
 } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_CHECK_CONNECTION_BY_ID } from '../../../../../../components/externalServices/backend'
 import { codeHostExternalServices } from '../../../../../../components/externalServices/externalServices'
-import {
+import type {
     ExternalServiceCheckConnectionByIdResult,
     ExternalServiceCheckConnectionByIdVariables,
     ValidateAccessTokenResult,
     ValidateAccessTokenVariables,
 } from '../../../../../../graphql-operations'
-import { CodeHostJSONFormContent, RadioGroupSection, CodeHostConnectFormFields, CodeHostJSONFormState } from '../common'
+import {
+    CodeHostJSONFormContent,
+    RadioGroupSection,
+    type CodeHostConnectFormFields,
+    type CodeHostJSONFormState,
+} from '../common'
 
 import { GithubOrganizationsPicker, GithubRepositoriesPicker } from './GithubEntityPickers'
 import { getAccessTokenValue, getRepositoriesSettings } from './helpers'
@@ -385,12 +399,15 @@ function useAccessTokenValidator(input: useAccessTokenValidatorInput): AsyncVali
 
                 switch (externalService.checkConnection.__typename) {
                     // Everything is ok, code host successfully checked and connected
-                    case 'ExternalServiceAvailable':
+                    case 'ExternalServiceAvailable': {
                         return
-                    case 'ExternalServiceUnavailable':
+                    }
+                    case 'ExternalServiceUnavailable': {
                         return externalService.checkConnection.suspectedReason
-                    case 'ExternalServiceAvailabilityUnknown':
+                    }
+                    case 'ExternalServiceAvailabilityUnknown': {
                         return "Check your access token, we couldn't reach out to code host by the current token"
+                    }
                 }
             }
 
@@ -408,12 +425,15 @@ function useAccessTokenValidator(input: useAccessTokenValidatorInput): AsyncVali
 
 function getViewKindByIndex(index: number): string | null {
     switch (index) {
-        case GithubConnectFormTab.Form:
+        case GithubConnectFormTab.Form: {
             return 'form-ui'
-        case GithubConnectFormTab.JSONC:
+        }
+        case GithubConnectFormTab.JSONC: {
             return 'json-editor'
+        }
 
-        default:
+        default: {
             return null
+        }
     }
 }

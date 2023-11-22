@@ -3,7 +3,7 @@ import React from 'react'
 import { H3, Text } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import { ExternalServiceKind } from '../../../graphql-operations'
+import type { ExternalServiceKind } from '../../../graphql-operations'
 
 export interface ModalHeaderProps {
     id: string

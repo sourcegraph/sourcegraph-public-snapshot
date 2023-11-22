@@ -1,4 +1,4 @@
-import { ReactElement } from 'react'
+import type { ReactElement } from 'react'
 
 import { Group } from '@visx/group'
 import { scaleLinear } from '@visx/scale'
@@ -92,7 +92,7 @@ export function getStackedData<Datum>(input: {
     const { data, getDatumValue } = input
 
     return data.reduce<StackedDatum<Datum>[]>((stack, item) => {
-        const previousStackedValue = stack.length !== 0 ? stack[stack.length - 1].stackedValue : 0
+        const previousStackedValue = stack.length !== 0 ? stack.at(-1)!.stackedValue : 0
 
         stack.push({ datum: item, stackedValue: previousStackedValue + getDatumValue(item) })
 

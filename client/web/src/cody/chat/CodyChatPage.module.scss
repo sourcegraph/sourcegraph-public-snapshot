@@ -1,0 +1,154 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.page-header {
+    display: flex;
+    margin-bottom: 1rem;
+
+    @media (--sm-breakpoint-down) {
+        display: none;
+    }
+}
+
+.chat-main-wrapper {
+    display: flex;
+    flex-direction: column;
+    filter: none;
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    padding: 0;
+
+    @media (--sm-breakpoint-down) {
+        &-with-mobile-history {
+            display: none;
+        }
+    }
+}
+
+.page {
+    @media (--sm-breakpoint-down) {
+        // These need to be !important to override the `py-4` default padding on the page
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+}
+
+.page-wrapper {
+    padding-top: 0.625rem;
+    height: 93%;
+
+    @media (--sm-breakpoint-down) {
+        padding-top: 0;
+        height: 100%;
+    }
+}
+
+.sidebar-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    @media (--sm-breakpoint-down) {
+        display: none;
+    }
+}
+
+.sidebar {
+    overflow-y: auto;
+    padding-bottom: 0.625rem;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 0.3125rem;
+}
+
+.cta-wrapper {
+    position: relative;
+    padding: 0.75rem;
+    background-color: var(--input-bg);
+
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .cta-link {
+        font-size: 0.75rem;
+        font-weight: 600;
+
+        &:hover {
+            text-decoration: none;
+        }
+
+        svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+    }
+    .close-button {
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 1rem;
+        height: 1rem;
+        cursor: pointer;
+    }
+}
+
+.mobile-top-bar {
+    display: none;
+
+    @media (--sm-breakpoint-down) {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        padding: 0.25rem 0.5rem;
+        border-bottom: 1px solid var(--border-color-2);
+    }
+}
+
+.mobile-top-bar-web {
+    display: none;
+
+    @media (--sm-breakpoint-down) {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+    }
+}
+
+.mobile-top-bar-button {
+    color: var(--text-muted);
+    padding: 0.5rem 2rem;
+    justify-content: center;
+
+    &:active {
+        background-color: var(--color-bg-1);
+    }
+}
+
+.mobile-top-bar-divider {
+    height: 1.25rem;
+}
+
+.mobile-history-wrapper {
+    display: none;
+
+    @media (--sm-breakpoint-down) {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        width: 100%;
+    }
+}
+
+.mobile-history {
+    overflow-y: auto;
+}
+
+.cta-content {
+    background-color: var(--color-bg-1);
+    padding: 1rem;
+}

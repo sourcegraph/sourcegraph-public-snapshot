@@ -1,31 +1,4 @@
 .file-path-breadcrumbs {
-    display: flex;
-    min-width: 0;
-    overflow: hidden;
-    align-items: center;
-    white-space: nowrap;
-    justify-content: flex-end;
-
-    .part {
-        /* Ensure focus shadow is not clipped by overflow: hidden */
-        margin: 0.125rem;
-    }
-
-    .root-directory {
-        min-width: 0.5rem !important;
-    }
-
-    .part-directory {
-        min-width: 1px;
-        max-width: fit-content;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        text-align: center;
-    }
-
-    .part-separator {
-        color: var(--link-color);
-        min-width: 0.5em;
-        text-align: center;
-    }
+    min-width: 7rem;
+    flex-grow: 1;
 }

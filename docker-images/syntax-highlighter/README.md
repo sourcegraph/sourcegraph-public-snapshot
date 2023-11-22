@@ -5,8 +5,13 @@ Crates:
 - The main `syntect_server` executable
 - `crates/scip-treesitter-languages/`: All the grammars and parsers live here to make shipping parsers with the same tree-sitter version (and associated build tooling) very easy. All new grammars and parsers should be added here.
 - `crates/scip-treesitter/`: Associated utilities for tree-sitter and scip. Not required to be used for other projects
+- `crates/scip-treesitter-cli/`: Command line tool that produces a SCIP index file from the analysis performed by other `scip-*` crates in this project
 - `crates/scip-syntax/`: local navigation calculation (and some other utilities) live here.
 - `crates/sg-syntax/`: Sourcegraph code to glue together whatever from the above crates to be used for our purposes.
+
+# scip-ctags
+
+See [queries](./docs/queries.md)
 
 # Syntect Server
 
@@ -35,7 +40,7 @@ See [API](./docs/api.md)
 
 ## Configuration
 
-By default on startup, `syntect_server` will list all features (themes + file types) it supports. This can be disabled by setting `QUIET=true` in the environment.
+By default on startup, `syntect_server` will list all file types it supports. This can be disabled by setting `QUIET=true` in the environment.
 
 ## Development
 
@@ -58,15 +63,6 @@ Once published, the image version will need to be updated in the following locat
 - [`sourcegraph/sourcegraph > sg.config.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/sg.config.yaml?subtree=true#L206:7)
 
 Additionally, it's worth doing a [search](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+sourcegraph/syntect_server:&patternType=literal) for other uses in case this list is stale.
-
-## Adding themes
-
-TODO: Maybe we can just remove themes entirely. I think they are u
-
-- Copy a `.tmTheme` file anywhere under `./syntect/testdata` (make a new dir if needed) [in our fork](https://github.com/slimsag/syntect).
-- `cd syntect && make assets`
-- In this repo, `cargo update -p syntect`.
-- Build a new binary.
 
 ## Adding languages (tree-sitter):
 
@@ -95,4 +91,4 @@ $ cargo update -p syntect
 
 ## Supported languages:
 
-Run: `cargo run --bin syntect_server` to see supported languages and themes.
+Run: `cargo run --bin syntect_server` to see supported languages.

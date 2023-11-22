@@ -23,12 +23,12 @@ import {
     Position,
     Button,
     Tooltip,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     Input,
     Select,
 } from '@sourcegraph/wildcard'
 
-import { DateRangeSelect, DateRangeSelectProps } from './DateRangeSelect'
+import { DateRangeSelect, type DateRangeSelectProps } from './DateRangeSelect'
 
 import styles from './Table.module.scss'
 
@@ -394,7 +394,7 @@ function Row<T>({
                             <Text alignment={align || 'left'} className="mb-0">
                                 {typeof accessor === 'function'
                                     ? accessor(data)
-                                    : typeof accessor !== 'undefined'
+                                    : accessor !== undefined
                                     ? data[accessor]
                                     : 'n/a'}
                             </Text>
@@ -443,16 +443,17 @@ function Actions<T>({ children, actions, disabled, selection, className }: Actio
         setIsOpen(event.isOpen)
     }, [])
 
+    const filteredActions = actions.filter(({ condition }) => !condition || condition(selection))
+
     return (
         <Popover isOpen={isOpen} onOpenChange={handleOpenChange}>
             <PopoverTrigger as={Button} className={className} disabled={disabled} variant="secondary" outline={true}>
                 {children}
             </PopoverTrigger>
             <PopoverContent position={Position.bottom} focusLocked={false}>
-                <ul className="list-unstyled mb-0">
-                    {actions
-                        .filter(({ condition }) => !condition || condition(selection))
-                        .map(({ key, label, icon, iconColor, labelColor, onClick, href, target }) => (
+                {filteredActions.length > 0 ? (
+                    <ul className="list-unstyled mb-0">
+                        {filteredActions.map(({ key, label, icon, iconColor, labelColor, onClick, href, target }) => (
                             <Button
                                 className={styles.actionItem}
                                 key={key}
@@ -477,7 +478,10 @@ function Actions<T>({ children, actions, disabled, selection, className }: Actio
                                 </span>
                             </Button>
                         ))}
-                </ul>
+                    </ul>
+                ) : (
+                    <Text className="m-2 font-italic text-muted">No actions available</Text>
+                )}
             </PopoverContent>
         </Popover>
     )

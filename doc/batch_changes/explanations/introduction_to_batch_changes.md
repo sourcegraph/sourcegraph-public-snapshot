@@ -31,8 +31,9 @@ The generic term **changeset** is used to refer to any of the following:
 - Bitbucket Server / Bitbucket Data Center and Bitbucket Data Center pull requests.
 - GitLab merge requests.
 - Bitbucket Cloud pull requests.
+- Gerrit changes.
+- <span class="badge badge-beta">Beta</span> Perforce changelists.
 - Phabricator diffs (not yet supported).
-- Gerrit changes (not yet supported).
 
 A single batch change can span many repositories and many code hosts.
 
@@ -47,6 +48,13 @@ A single batch change can span many repositories and many code hosts.
 - {#batch-changes-controller} The **batch change controller** reconciles the actual state of the batch change's changesets on the code host so that they match your desired intent (as described in the changeset specs).
 
 To learn about the internals of Batch Changes, see [Batch Changes](../../../dev/background-information/batch_changes/index.md) in the developer documentation.
+
+## Ownership
+
+When a user is deleted, their Batch Changes become inaccessible in the UI but the data is not permanently deleted.
+This allows recovering the Batch Changes if the user is restored.
+
+However, if the user deletion is permanent, deleting both account and data, then the associated Batch Changes are also permanently deleted from the database. This frees storage space and removes dangling references.
 
 ## Known issues
 

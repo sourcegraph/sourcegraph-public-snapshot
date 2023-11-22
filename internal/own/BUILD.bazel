@@ -1,0 +1,56 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "own",
+    srcs = [
+        "ownref.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/own",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/auth/providers",
+        "//internal/collections",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/extsvc",
+        "//internal/gitserver",
+        "//internal/own/codeowners",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+    ],
+)
+
+go_test(
+    name = "own_test",
+    timeout = "short",
+    srcs = [
+        "ownref_test.go",
+        "service_test.go",
+    ],
+    embed = [":own"],
+    tags = [
+        "requires-network",
+    ],
+    deps = [
+        "//internal/api",
+        "//internal/auth/providers",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/database/dbtest",
+        "//internal/extsvc",
+        "//internal/gitserver",
+        "//internal/own/codeowners",
+        "//internal/own/codeowners/v1:codeowners",
+        "//internal/own/types",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

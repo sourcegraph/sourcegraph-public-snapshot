@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "own",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/internal/own/resolvers",
+        "//internal/codeintel",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/observation",
+    ],
+)

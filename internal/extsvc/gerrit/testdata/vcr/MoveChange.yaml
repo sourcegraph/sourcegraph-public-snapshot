@@ -1,0 +1,43 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"destination_branch":"newest-batch"}'
+    form: {}
+    headers:
+      Content-Type:
+      - application/json
+    url: https://gerrit.sgdev.org/a/changes/I8a43a17e679cf4ee3ba862e875746be2ed2215ec/move
+    method: POST
+  response:
+    body: |
+      )]}'
+      {"id":"beatrix~newest-batch~I8a43a17e679cf4ee3ba862e875746be2ed2215ec","project":"beatrix","branch":"newest-batch","hashtags":[],"change_id":"I8a43a17e679cf4ee3ba862e875746be2ed2215ec","subject":"New commit message","status":"NEW","created":"2023-06-06 19:32:41.000000000","updated":"2023-06-22 18:07:17.000000000","submit_type":"MERGE_IF_NECESSARY","insertions":1,"deletions":0,"total_comment_count":0,"unresolved_comment_count":0,"work_in_progress":true,"has_review_started":true,"meta_rev_id":"031ce3a0ee58d9fdbb363eed07a255a2c5642402","_number":449,"owner":{"_account_id":1000018},"requirements":[],"submit_records":[{"rule_name":"gerrit~DefaultSubmitRule","status":"NOT_READY","labels":[{"label":"Code-Review","status":"NEED"}]}]}
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7db66e562f48a1f2-YYZ
+      Content-Disposition:
+      - attachment
+      Content-Type:
+      - application/json;charset=utf-8
+      Date:
+      - Thu, 22 Jun 2023 18:07:28 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 200 OK
+    code: 200
+    duration: ""

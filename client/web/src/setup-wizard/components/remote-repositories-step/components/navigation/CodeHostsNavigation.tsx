@@ -1,13 +1,24 @@
-import { FC, ReactElement } from 'react'
+import type { FC, ReactElement } from 'react'
 
-import { QueryResult } from '@apollo/client'
-import { mdiDelete, mdiInformationOutline, mdiPlus } from '@mdi/js'
+import type { QueryResult } from '@apollo/client'
+import { mdiDelete, mdiInformationOutline, mdiPlus, mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { Button, ErrorAlert, Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+import {
+    Button,
+    ErrorAlert,
+    Icon,
+    Link,
+    LoadingSpinner,
+    Popover,
+    PopoverTrigger,
+    PopoverContent,
+    PopoverTail,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
-import { CodeHost, ExternalServiceKind, GetCodeHostsResult } from '../../../../../graphql-operations'
+import { type CodeHost, ExternalServiceKind, type GetCodeHostsResult } from '../../../../../graphql-operations'
 import { CodeHostIcon, getCodeHostKindFromURLParam, getCodeHostName } from '../../helpers'
 
 import styles from './CodeHostsNavigation.module.scss'
@@ -44,10 +55,10 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
     }
 
     // Filter out all other external services since we don't properly support them
-    // in the wizard, "Other" external services are used as local repositories setup in
-    // Sourcegraph App for which we have a special setup step
+    // in the wizard, "Other" and "LocalGit" external services are used as local repositories setup in
+    // Cody App for which we have a special setup step
     const nonOtherExternalServices = data.externalServices.nodes.filter(
-        service => service.kind !== ExternalServiceKind.OTHER
+        service => service.kind !== ExternalServiceKind.OTHER && service.kind !== ExternalServiceKind.LOCALGIT
     )
 
     if (nonOtherExternalServices.length === 0) {
@@ -75,11 +86,7 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                     key={codeHost.id}
                     className={classNames(styles.item, { [styles.itemActive]: codeHost.id === activeConnectionId })}
                 >
-                    <Button
-                        as={Link}
-                        to={`/setup/remote-repositories/${codeHost.id}/edit`}
-                        className={styles.itemButton}
-                    >
+                    <Button as={Link} to={`${codeHost.id}/edit`} className={styles.itemButton}>
                         <span>
                             <CodeHostIcon codeHostType={codeHost.kind} aria-hidden={true} />
                         </span>
@@ -93,8 +100,10 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                                 )}
                             </span>
                             <small className={styles.itemDescriptionStatus}>
-                                {codeHost.lastSyncAt !== null && <>Synced, {codeHost.repoCount} repositories found</>}
-                                {codeHost.lastSyncAt === null && (
+                                {codeHost.lastSyncAt !== null && codeHost.lastSyncError === null && (
+                                    <>Synced, {codeHost.repoCount} repositories found</>
+                                )}
+                                {codeHost.lastSyncAt === null && codeHost.lastSyncError === null && (
                                     <>
                                         Syncing
                                         {codeHost.repoCount > 0 && (
@@ -104,6 +113,24 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
                                             </>
                                         )}
                                     </>
+                                )}
+                                {codeHost.lastSyncError !== null && (
+                                    <Popover>
+                                        <PopoverTrigger as="span" className={styles.errorButton}>
+                                            Sync error appeared{' '}
+                                            <Icon svgPath={mdiAlertCircle} aria-label="Sync error icon" />
+                                        </PopoverTrigger>
+
+                                        <PopoverContent position="right" className={styles.errorPopover}>
+                                            <ErrorAlert
+                                                error={codeHost.lastSyncError}
+                                                variant="danger"
+                                                className="m-3"
+                                            />
+                                        </PopoverContent>
+
+                                        <PopoverTail size="sm" />
+                                    </Popover>
                                 )}
                             </small>
                         </span>

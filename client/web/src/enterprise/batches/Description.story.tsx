@@ -1,10 +1,10 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
 import { Description } from './Description'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/Description',
@@ -13,7 +13,7 @@ const config: Meta = {
 
 export default config
 
-export const Overview: Story = () => (
+export const Overview: StoryFn = () => (
     <WebStory>
         {props => (
             <Description

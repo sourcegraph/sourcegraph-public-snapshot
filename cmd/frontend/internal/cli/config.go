@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -31,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -39,7 +39,7 @@ import (
 )
 
 func printConfigValidation(logger log.Logger) {
-	logger = logger.Scoped("configValidation", "")
+	logger = logger.Scoped("configValidation")
 	messages, err := conf.Validate(conf.Raw())
 	if err != nil {
 		logger.Warn("unable to validate Sourcegraph site configuration", log.Error(err))
@@ -110,7 +110,7 @@ func readSiteConfigFile(paths []string) ([]byte, error) {
 }
 
 func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) error {
-	logger = logger.Scoped("overrideSiteConfig", "")
+	logger = logger.Scoped("overrideSiteConfig")
 	paths := filepath.SplitList(os.Getenv("SITE_CONFIG_FILE"))
 	if len(paths) == 0 {
 		return nil
@@ -163,7 +163,7 @@ func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) 
 }
 
 func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.DB) error {
-	logger = logger.Scoped("overrideGlobalSettings", "")
+	logger = logger.Scoped("overrideGlobalSettings")
 	path := os.Getenv("GLOBAL_SETTINGS_FILE")
 	if path == "" {
 		return nil
@@ -208,7 +208,7 @@ func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.
 }
 
 func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB) error {
-	logger = logger.Scoped("overrideExtSvcConfig", "")
+	logger = logger.Scoped("overrideExtSvcConfig")
 	path := os.Getenv("EXTSVC_CONFIG_FILE")
 	if path == "" {
 		return nil
@@ -385,7 +385,7 @@ func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB
 }
 
 func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Context) (bool, error), paths ...string) {
-	logger = logger.Scoped("watch", "").With(log.Strings("files", paths))
+	logger = logger.Scoped("watch").With(log.Strings("files", paths))
 	events, err := watchPaths(ctx, paths...)
 	if err != nil {
 		logger.Error("failed to watch config override files", log.Error(err))
@@ -463,7 +463,7 @@ func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
 
 func newConfigurationSource(logger log.Logger, db database.DB) *configurationSource {
 	return &configurationSource{
-		logger: logger.Scoped("configurationSource", ""),
+		logger: logger.Scoped("configurationSource"),
 		db:     db,
 	}
 }
@@ -598,6 +598,7 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		Searchers:            searcherAddrs,
 		Symbols:              symbolsAddrs,
 		Embeddings:           embeddingsAddrs,
+		Qdrant:               qdrantAddr,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
 	}
@@ -615,6 +616,8 @@ var (
 
 	embeddingsURLsOnce sync.Once
 	embeddingsURLs     *endpoint.Map
+
+	qdrantAddr = os.Getenv("QDRANT_ENDPOINT")
 
 	indexedListTTL = func() time.Duration {
 		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))

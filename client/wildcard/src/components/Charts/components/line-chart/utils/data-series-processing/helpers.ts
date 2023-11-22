@@ -1,6 +1,6 @@
 import { isValidNumber } from '../data-guards'
 
-import { isStandardSeriesDatum, SeriesDatum } from './types'
+import { isStandardSeriesDatum, type SeriesDatum } from './types'
 
 export function isDatumWithValidNumber<Datum>(datum: SeriesDatum<Datum>): boolean {
     return isStandardSeriesDatum(datum) ? isValidNumber(datum.y) : isValidNumber(datum.y1)

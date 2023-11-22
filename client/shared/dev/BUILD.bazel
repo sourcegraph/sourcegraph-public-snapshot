@@ -1,18 +1,17 @@
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library")
-load("//dev:defs.bzl", "ts_project")
+load("//dev:defs.bzl", "ts_binary", "ts_project")
 
 # gazelle:ignore
 
 # dev/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
 
-js_binary(
+ts_binary(
     name = "generate_schema",
     data = [
         "//:node_modules/json-schema-to-typescript",
-        "//:node_modules/mz",
     ],
-    entry_point = "generateSchema.js",
+    entry_point = "generateSchema.ts",
     visibility = ["//client/shared:__pkg__"],
 )
 
@@ -28,6 +27,16 @@ js_library(
 )
 
 js_binary(
+    name = "build_code_intel_extensions",
+    data = [
+        "//:node_modules/shelljs",
+        "//:node_modules/signale",
+    ],
+    entry_point = "buildCodeIntelExtensions.js",
+    visibility = ["//client:__subpackages__"],
+)
+
+ts_binary(
     name = "generate_graphql_operations",
     data = [
         ":extract_graphql_operation_codegen_plugin",
@@ -35,68 +44,25 @@ js_binary(
         "//:node_modules/@graphql-codegen/typescript",
         "//:node_modules/@graphql-codegen/typescript-apollo-client-helpers",
         "//:node_modules/@graphql-codegen/typescript-operations",
+        "//:node_modules/glob",
+        "//:node_modules/graphql",
         "//:node_modules/prettier",
         "//cmd/frontend/graphqlbackend:graphql_schema",
     ],
-    entry_point = "generateGraphQlOperations.js",
+    entry_point = "generateGraphQlOperations.ts",
     visibility = ["//client:__subpackages__"],
 )
 
-ts_project(
-    name = "mock_ts",
-    srcs = [
-        "mockDomRect.ts",
-        "mockMatchMedia.ts",
-        "mockResizeObserver.ts",
-        "mockSentryBrowser.ts",
-        "mockUniqueId.ts",
-        "reactCleanup.ts",
-    ],
-    extends = None,
-    module = "commonjs",
-    tsconfig = "//client/shared:tsconfig",
-    visibility = ["//visibility:private"],
-    deps = [
-        "//:node_modules/@sentry/browser",
-        "//:node_modules/@testing-library/react",
-        "//:node_modules/@types/jest",
-        "//:node_modules/@types/node",
-        "//:node_modules/@types/react",
-        "//:node_modules/react",
-        "//:node_modules/react-visibility-sensor",
-        "//:node_modules/resize-observer-polyfill",
-        "//:node_modules/use-resize-observer",
-        "//client/shared:node_modules/@sourcegraph/wildcard",
-    ],
-)
-
-js_library(
-    name = "mock",
-    srcs = [
-        "jest-environment.js",
-        "jestGlobalSetup.js",
-        "mockDate.js",
-    ],
+js_binary(
+    name = "run_mocha_tests_with_percy",
     data = [
-        ":fetch-mock",
-        ":mock_ts",
+        "//:node_modules/@percy/cli",
+        "//:node_modules/mocha",
+        "//:node_modules/puppeteer",
+        "//:node_modules/resolve-bin",
     ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@peculiar/webcrypto",
-        "//:node_modules/jest-environment-jsdom",
-        "//:node_modules/mockdate",
-        "//:node_modules/react",
-    ],
-)
-
-js_library(
-    name = "fetch-mock",
-    srcs = ["fetch.js"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/node-fetch",
-    ],
+    entry_point = "runMochaTestsWithPercy.js",
+    visibility = ["//client:__subpackages__"],
 )
 
 js_library(

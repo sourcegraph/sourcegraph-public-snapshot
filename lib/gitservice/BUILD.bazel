@@ -1,22 +1,17 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "gitservice",
     srcs = ["gitservice.go"],
     importpath = "github.com/sourcegraph/sourcegraph/lib/gitservice",
     visibility = ["//visibility:public"],
-    deps = [
-        "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
-    ],
+    deps = ["//lib/errors"],
 )
 
 go_test(
     name = "gitservice_test",
     timeout = "short",
     srcs = ["gitservice_test.go"],
-    deps = [
-        ":gitservice",
-        "@com_github_sourcegraph_log//logtest",
-    ],
+    deps = [":gitservice"],
 )

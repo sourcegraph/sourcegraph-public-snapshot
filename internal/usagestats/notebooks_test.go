@@ -17,7 +17,7 @@ import (
 func TestGetNotebooksUsageStatistics(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	now := time.Now()
 
 	_, err := db.ExecContext(context.Background(), `

@@ -1,13 +1,5 @@
 # Deploying Sourcegraph executors using Terraform on AWS or GCP
 
-<aside class="beta">
-<p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
-</p>
-
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
-</aside>
-
 [Terraform modules](https://learn.hashicorp.com/tutorials/terraform/module-use?in=terraform/modules) are provided to
 provision machines running executors on [AWS](https://sourcegraph.com/github.com/sourcegraph/terraform-aws-executors)
 and [Google Cloud](https://sourcegraph.com/github.com/sourcegraph/terraform-google-executors).
@@ -33,22 +25,28 @@ module "executors" {
 
   executor_sourcegraph_external_url            = "<external url>"
   executor_sourcegraph_executor_proxy_password = "<shared secret>"
+              
+  # Either:
   executor_queue_name                          = "<codeintel | batches>"
+  # Or:
+  executor_queue_names                         = "codeintel,batches"
+                
   executor_instance_tag                        = "<tag to filter in stackdriver monitoring>"
   executor_metrics_environment_label           = "<label to filter custom metrics>"
 }
 ```
 
-| Variable                                       | Description                                                                                                                                                                                                        |
-|------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `availability_zone`                            | The **AWS** availability zone to create the instance in                                                                                                                                                            |
-| `region`                                       | The **Google** region to provision the executor resources in.                                                                                                                                                      |
-| `zone`                                         | The **Google** zone to provision the executor resources in.                                                                                                                                                        |
-| `executor_sourcegraph_external_url`            | The public URL of your Sourcegraph instance. This corresponds to the `externalURL` value in your Sourcegraph instance’s site configuration and must be resolvable from the provisioned executor compute resources. |
-| `executor_sourcegraph_executor_proxy_password` | The access token corresponding to the `executors.accessToken` in your Sourcegraph instance's site configuration.                                                                                                   |
-| `executor_queue_name`                          | The queue from which the executor should pull jobs from - [`codeintel`](../../code_navigation/explanations/auto_indexing.md) or [`batches`](../../batch_changes/explanations/server_side.md)                             |
-| `executor_instance_tag`                        | A label tag to add to all the executors; can be used for filtering out the right instances in stackdriver monitoring                                                                                               |
-| `executor_metrics_environment_label`           | The value for environment by which to filter the custom metrics.                                                                                                                                                   |
+| Variable                                        | Description                                                                                                                                                                                                                                                           |
+|------------------------------------------------ |-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `availability_zone`                             | The **AWS** availability zone to create the instance in                                                                                                                                                                                                               |
+| `region`                                        | The **Google** region to provision the executor resources in.                                                                                                                                                                                                         |
+| `zone`                                          | The **Google** zone to provision the executor resources in.                                                                                                                                                                                                           |
+| `executor_sourcegraph_external_url`             | The public URL of your Sourcegraph instance. This corresponds to the `externalURL` value in your Sourcegraph instance’s site configuration and must be resolvable from the provisioned executor compute resources.                                                    |
+| `executor_sourcegraph_executor_proxy_password`  | The access token corresponding to the `executors.accessToken` in your Sourcegraph instance's site configuration.                                                                                                                                                      |
+| `executor_queue_name`                           | The single queue from which the executor should pull jobs - [`codeintel`](../../code_navigation/explanations/auto_indexing.md) or [`batches`](../../batch_changes/explanations/server_side.md). Either this or `executor_queue_names` must be set.                    |
+| `executor_queue_names`                          | The multiple queues from which the executor should pull jobs - one or more of [`codeintel`](../../code_navigation/explanations/auto_indexing.md) and [`batches`](../../batch_changes/explanations/server_side.md). Either this or `executor_queue_name` must be set.  |
+| `executor_instance_tag`                         | A label tag to add to all the executors; can be used for filtering out the right instances in stackdriver monitoring                                                                                                                                                  |
+| `executor_metrics_environment_label`            | The value for environment by which to filter the custom metrics.                                                                                                                                                                                                      |
 
 See the Terraform Modules for additional configurations.
 
@@ -190,6 +188,7 @@ The following is a step-by-step guide on provisioning a single `codeintel` execu
             - A URL that is accessible from the GCP VM (e.g. a public URL such as `https://sourcegraph.example.com`)
         - `"executors.accessToken": "<new long secret>"`
             - Can be generated by running `cat /dev/random | base64 | head -c 20`
+            - The secret will be as displayed `REDACTED` once it's saved. 
         - `"codeIntelAutoIndexing.enabled": true`
             - *This is only for `codeintel` executors.*
 5. Download
@@ -206,7 +205,7 @@ The following is a step-by-step guide on provisioning a single `codeintel` execu
 9. Run `terraform plan` to preview the changes that will occur to your GCP infrastructure.
 10. Run `terraform apply` and enter "yes" after reviewing the proposed changes to create the executor VM
     - Ensure `terraform apply` exited with code 0 and did not print any errors
-11. Go back to the site admin page, expand **Maintenance**, click **Executors**, and check to see if your executor shows
+11. Go back to the site admin page, expand **Executors**, click **Instances**, and check to see if your executor shows
     up in the list with a green dot 🟢
 
 #### Validation
@@ -251,6 +250,10 @@ Nov 18 02:31:02 sourcegraph-executor-h0rv executor[2465]: t=2021-11-18T02:31:02+
 ```
 
 Ensure the `EXECUTOR_FRONTEND_URL` and `EXECUTOR_FRONTEND_PASSWORD` in `/etc/systemd/system/executor.env` are correct
+
+```
+cat /etc/systemd/system/executor.env
+```
 
 Ensure the VM can hit your `externalURL`:
 
@@ -368,7 +371,7 @@ The AWS EC2 auto-scaling groups configured by the Sourcegraph Terraform module r
 To write the scaling metric to **CloudWatch**, the `worker` service must have defined the following environment variables.
 
 | Environment Variable                    | Description                                              |
-|-----------------------------------------|----------------------------------------------------------|
+| --------------------------------------- | -------------------------------------------------------- |
 | `EXECUTOR_METRIC_ENVIRONMENT_LABEL`     | Same value as `executor_metrics_environment_label`       |
 | `EXECUTOR_METRIC_AWS_NAMESPACE`         | Must be set to `sourcegraph-executor`                    |
 | `EXECUTOR_METRIC_AWS_REGION`            | The target AWS region                                    |
@@ -381,15 +384,15 @@ The Google Compute Engine auto-scaling groups configured by the Sourcegraph Terr
 
 To write the scaling metric to **Cloud Monitoring**, the `worker` service must have defined the following environment variables.
 
-| Environment Variable                                          | Description                                                                                       |
-|---------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
-| `EXECUTOR_METRIC_ENVIRONMENT_LABEL`                           | Same value as `executor_metrics_environment_label`                                                |
-| `EXECUTOR_METRIC_GCP_PROJECT_ID`                              | The GCP Project ID                                                                                |
+| Environment Variable                | Description                                        |
+| ----------------------------------- | -------------------------------------------------- |
+| `EXECUTOR_METRIC_ENVIRONMENT_LABEL` | Same value as `executor_metrics_environment_label` |
+| `EXECUTOR_METRIC_GCP_PROJECT_ID`    | The GCP Project ID                                 |
 
 Then either one of the following environment variables must be set.
 
 | Environment Variable                                          | Description                                                                                       |
-|---------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE_CONTENT` | The **base64-decoded** output of `metric_writer_credentials_file`                                 |
 | `EXECUTOR_METRIC_GOOGLE_APPLICATION_CREDENTIALS_FILE`         | The path to the file containing the **base64-decoded** output of `metric_writer_credentials_file` |
 
@@ -403,3 +406,44 @@ To test if the metric is correctly reported into the Cloud provider:
 - On Google Cloud, this can be found in the **Metrics explorer**. Select **Resource type: Global** and then **Metric: `custom/executors/queue/size`**. You should see values reported here. `0` is also an indicator that it works correct.
 
 Next, you can test whether the number of executors rises and shrinks as load spikes occur. Keep in mind that auto-scaling is not a real-time operation on most cloud providers and usually takes a short moment and can have some delays between the metric going down and the desired machine count adjusting.
+
+## Upgrading executors
+
+Upgrading executors is relatively uninvolved. Simply follow the instructions below.
+Also, check the [changelog](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) for any Executors related breaking changes or new features or flags that you might want to configure. See [Executors maintenance](deploy_executors.md#Maintaining-and-upgrading-executors) for version compatability.
+
+### **Step 1:** Update the source version of the terraform modules
+
+> NOTE: Keep in mind that only one minor version bumps are guaranteed to be disruption-free.
+
+```diff
+module "executors" {
+  source = "sourcegraph/executors/<aws | google>"
+
+  # Find the latest version matching your Sourcegraph version here:
+  # - https://github.com/sourcegraph/terraform-google-executors/tags
+  # - https://github.com/sourcegraph/terraform-aws-executors/tags
+-  version = "4.0.0"
++  version = "4.1.0"
+
+  # AWS specific
+  availability_zone = "<availability zone to provision resource in AWS>"
+  # Google specific
+  region            = "<region to provision in GCP>"
+  zone              = "<zone to provision resource in GCP>"
+
+  executor_sourcegraph_external_url            = "<external url>"
+  executor_sourcegraph_executor_proxy_password = "<shared secret>"
+  executor_queue_name                          = "<codeintel | batches>"
+  executor_instance_tag                        = "<tag to filter in stackdriver monitoring>"
+  executor_metrics_environment_label           = "<label to filter custom metrics>"
+}
+```
+
+### **Step 2:** Reapply the terraform configuration
+
+Simply reapply the terraform configuration and executors will be ready to go again.
+
+```bash
+terraform apply
+```

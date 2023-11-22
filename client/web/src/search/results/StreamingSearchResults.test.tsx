@@ -4,11 +4,12 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER, of } from 'rxjs'
-import sinon from 'sinon'
+import { spy, assert } from 'sinon'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
-import { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults, Skipped } from '@sourcegraph/shared/src/search/stream'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import {
@@ -21,12 +22,13 @@ import {
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { simulateMenuItemClick } from '@sourcegraph/shared/src/testing/simulateMenuItemClick'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { useNavbarQueryState } from '../../stores'
 import * as helpers from '../helpers'
 
+import { SearchResultsCacheProvider } from './SearchResultsCacheProvider'
 import { generateMockedResponses } from './sidebar/Revisions.mocks'
-import { StreamingSearchResults, StreamingSearchResultsProps } from './StreamingSearchResults'
+import { StreamingSearchResults, type StreamingSearchResultsProps } from './StreamingSearchResults'
 
 describe('StreamingSearchResults', () => {
     const streamingSearchResult = MULTIPLE_SEARCH_RESULT
@@ -59,7 +61,7 @@ describe('StreamingSearchResults', () => {
             <BrowserRouter>
                 <MockedTestProvider mocks={revisionsMockResponses}>
                     <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
-                        {component}
+                        <SearchResultsCacheProvider>{component}</SearchResultsCacheProvider>
                     </SearchQueryStateStoreProvider>
                 </MockedTestProvider>
             </BrowserRouter>
@@ -83,11 +85,11 @@ describe('StreamingSearchResults', () => {
 
     it('should call streaming search API with the right parameters from URL', async () => {
         useNavbarQueryState.setState({ searchCaseSensitivity: true, searchPatternType: SearchPatternType.regexp })
-        const searchSpy = sinon.spy(defaultProps.streamSearch)
+        const searchSpy = spy(defaultProps.streamSearch)
 
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={searchSpy} />)
 
-        sinon.assert.calledOnce(searchSpy)
+        assert.calledOnce(searchSpy)
         const call = searchSpy.getCall(0)
         // We have to extract the query from the observable since we can't directly compare observables
         const receivedQuery = await call.args[0].toPromise()
@@ -102,6 +104,7 @@ describe('StreamingSearchResults', () => {
             trace: undefined,
             chunkMatches: true,
             featureOverrides: [],
+            zoektSearchOptions: '',
         })
     })
 
@@ -164,8 +167,8 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should log view, query, and results fetched events', () => {
-        const logSpy = sinon.spy()
-        const logViewEventSpy = sinon.spy()
+        const logSpy = spy()
+        const logViewEventSpy = spy()
         const telemetryService = {
             ...NOOP_TELEMETRY_SERVICE,
             log: logSpy,
@@ -174,13 +177,13 @@ describe('StreamingSearchResults', () => {
 
         renderWrapper(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
 
-        sinon.assert.calledOnceWithExactly(logViewEventSpy, 'SearchResults')
-        sinon.assert.calledWith(logSpy, 'SearchResultsQueried')
-        sinon.assert.calledWith(logSpy, 'SearchResultsFetched')
+        assert.calledOnceWithExactly(logViewEventSpy, 'SearchResults')
+        assert.calledWith(logSpy, 'SearchResultsQueried')
+        assert.calledWith(logSpy, 'SearchResultsFetched')
     })
 
     it('should log events when clicking on search result', () => {
-        const logSpy = sinon.spy()
+        const logSpy = spy()
         const telemetryService = {
             ...NOOP_TELEMETRY_SERVICE,
             log: logSpy,
@@ -189,20 +192,18 @@ describe('StreamingSearchResults', () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} telemetryService={telemetryService} />)
 
         userEvent.click(screen.getAllByTestId('result-container')[0])
-        sinon.assert.calledWith(logSpy, 'SearchResultClicked')
-        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+        assert.calledWith(logSpy, 'SearchResultClicked')
+        assert.calledWith(logSpy, 'search.ranking.result-clicked', {
             index: 0,
             type: 'fileMatch',
-            ranked: false,
             resultsLength: 3,
         })
 
         userEvent.click(screen.getAllByTestId('result-container')[2])
-        sinon.assert.calledWith(logSpy, 'SearchResultClicked')
-        sinon.assert.calledWith(logSpy, 'search.ranking.result-clicked', {
+        assert.calledWith(logSpy, 'SearchResultClicked')
+        assert.calledWith(logSpy, 'search.ranking.result-clicked', {
             index: 2,
             type: 'fileMatch',
-            ranked: false,
             resultsLength: 3,
         })
     })
@@ -228,7 +229,7 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should start a new search with added params when onSearchAgain event is triggered', async () => {
-        const submitSearchMock = jest.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
+        const submitSearchMock = vi.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
         const tests = [
             {
                 parsedSearchQuery: 'r:golang/oauth2 test f:travis',
@@ -249,15 +250,6 @@ describe('StreamingSearchResults', () => {
                 want: 'r:golang/oauth2 (foo count:1000) or (bar count:1000) fork:yes',
             },
         ]
-
-        ;(global as any).document.createRange = () => ({
-            setStart: () => {},
-            setEnd: () => {},
-            commonAncestorContainer: {
-                nodeName: 'BODY',
-                ownerDocument: document,
-            },
-        })
 
         for (const [index, test] of tests.entries()) {
             cleanup()

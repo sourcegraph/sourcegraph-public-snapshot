@@ -23,11 +23,22 @@ type File struct {
 }
 
 func (f *File) URL() *url.URL {
+	return f.url(false)
+}
+
+func (f *File) URLAtCommit() *url.URL {
+	return f.url(true)
+}
+
+func (f *File) url(atCommit bool) *url.URL {
 	var urlPath strings.Builder
 	urlPath.Grow(len("/@/-/blob/") + len(f.Repo.Name) + len(f.Path) + 20)
 	urlPath.WriteRune('/')
 	urlPath.WriteString(string(f.Repo.Name))
-	if f.InputRev != nil && len(*f.InputRev) > 0 {
+	if atCommit {
+		urlPath.WriteRune('@')
+		urlPath.WriteString(string(f.CommitID))
+	} else if f.InputRev != nil && len(*f.InputRev) > 0 {
 		urlPath.WriteRune('@')
 		urlPath.WriteString(*f.InputRev)
 	}

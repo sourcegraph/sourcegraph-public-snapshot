@@ -1,4 +1,4 @@
-import { Rectangle } from './geometry/rectangle'
+import type { Rectangle } from './geometry/rectangle'
 
 /**
  * Describes padding (offset) of tooltip element and target element.

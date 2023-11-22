@@ -1,4 +1,4 @@
-import { SearchBasedInsightSeries } from '../../../core'
+import type { SearchBasedInsightSeries } from '../../../core'
 
 export interface EditableDataSeries extends SearchBasedInsightSeries {
     valid: boolean

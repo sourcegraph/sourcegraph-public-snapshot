@@ -1,14 +1,16 @@
 package conf
 
 import (
-	"os"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -83,17 +85,17 @@ func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
 		},
 		{
 			name: "bad value should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(-100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(-100)}},
 			want: -1,
 		},
 		{
 			name: "set 0 should return 0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(0)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(0)}},
 			want: 0,
 		},
 		{
 			name: "set non-0 should return non-0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: intPtr(100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(100)}},
 			want: 100,
 		},
 	}
@@ -200,76 +202,6 @@ func TestAuthLockout(t *testing.T) {
 	}
 }
 
-func TestGitHubAppConfig(t *testing.T) {
-	tests := []struct {
-		name    string
-		sc      *Unified
-		want    GitHubAppConfiguration
-		wantErr bool
-	}{
-		{
-			name: "not set should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{}},
-			want: GitHubAppConfiguration{},
-		},
-		{
-			name: "bad value should return error",
-			sc: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					GitHubApp: &schema.GitHubApp{PrivateKey: "f00b4r"},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "configured should return configured",
-			sc: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					GitHubApp: &schema.GitHubApp{
-						PrivateKey:   `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`,
-						ClientID:     "1",
-						ClientSecret: "hush",
-						Slug:         "slugs-are-cool",
-						AppID:        "99",
-					},
-				},
-			},
-			want: GitHubAppConfiguration{
-				ClientID:     "1",
-				ClientSecret: "hush",
-				Slug:         "slugs-are-cool",
-				AppID:        "99",
-				PrivateKey: []byte(`-----BEGIN RSA PRIVATE KEY-----
-MIIBPAIBAAJBAPJHijktmT1IKaGta5Eep3AZ9CeOeL8jPDIFT7wQgKZmt3EFqDhB
-Own+QUHJuK9fovRDNJeVL2oY5BOIz4rw/G0CAwEAAQJBAMA+J92K4wcPVYlmc+3o
-pu96iJNCp2jy6na+ZDBT3+EoIJ5TRFvswGi/Lu3e8XQl1L3S3mnoLOJVMq1tmLN2
-HcECIQD+wZy/7FV1PAmviWyiXVIDO2g5bNiBengJCxEksbkUmQIhAPN2VZs3zPQp
-MDTooNRWrytEmTDDdjgb8ZsNWX/RODb1AiBecJnSUCNSBYK1ryU1f5DSn+hAOYh9
-X1A2UgL17mhlKQIhAO+bL6dCZKiLfNElfVtdMKqBqc6PH+MaxU6W9dVQoGWdAiEA
-mtfypOsa1bKhEL84nZ/ivEbBriRGjP2kyDDv3RX4WBk=
------END RSA PRIVATE KEY-----
-`),
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			Mock(test.sc)
-			have, err := GitHubAppConfig()
-			if err != nil && !test.wantErr {
-				t.Fatalf("unexpected err: %s", err)
-			}
-			if err == nil && test.wantErr {
-				t.Fatal("want err but got none")
-			}
-			if diff := cmp.Diff(have, test.want); diff != "" {
-				t.Fatalf("GitHubAppConfig() wrong: %s", diff)
-			}
-		})
-	}
-}
-
 func TestIsAccessRequestEnabled(t *testing.T) {
 	falseVal, trueVal := false, true
 	tests := []struct {
@@ -286,28 +218,26 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 			name: "parent object set should return default true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{},
+					AuthAccessRequest: &schema.AuthAccessRequest{},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set true should return true",
+			name: "explicitly set enabled=true should return true",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestEnabled: &trueVal,
-					},
+					AuthAccessRequest: &schema.AuthAccessRequest{Enabled: &trueVal},
 				},
 			},
 			want: true,
 		},
 		{
-			name: "explicitly set false should return false",
+			name: "explicitly set enabled=false should return false",
 			sc: &Unified{
 				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						AccessRequestEnabled: &falseVal,
+					AuthAccessRequest: &schema.AuthAccessRequest{
+						Enabled: &falseVal,
 					},
 				},
 			},
@@ -324,35 +254,924 @@ func TestIsAccessRequestEnabled(t *testing.T) {
 	}
 }
 
-func setenv(t *testing.T, keyval string) func() {
-	t.Helper()
-
-	parts := strings.SplitN(keyval, "=", 2)
-	key := parts[0]
-	value := parts[1]
-
-	orig, set := os.LookupEnv(key)
-	if err := os.Setenv(key, value); err != nil {
-		t.Fatal(err)
+func TestCodyEnabled(t *testing.T) {
+	tests := []struct {
+		name string
+		sc   schema.SiteConfiguration
+		want bool
+	}{
+		{
+			name: "nothing set",
+			sc:   schema.SiteConfiguration{},
+			want: false,
+		},
+		{
+			name: "cody enabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true)},
+			want: true,
+		},
+		{
+			name: "cody disabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false)},
+			want: false,
+		},
+		{
+			name: "cody enabled, completions configured",
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true), Completions: &schema.Completions{Model: "foobar"}},
+			want: true,
+		},
+		{
+			name: "cody disabled, completions enabled",
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false), Completions: &schema.Completions{Enabled: pointers.Ptr(true), Model: "foobar"}},
+			want: false,
+		},
+		{
+			name: "cody disabled, completions configured",
+			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false), Completions: &schema.Completions{Model: "foobar"}},
+			want: false,
+		},
+		{
+			// Legacy support: remove this once completions.enabled is removed
+			name: "cody.enabled not set, completions configured but not enabled",
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Model: "foobar"}},
+			want: false,
+		},
+		{
+			// Legacy support: remove this once completions.enabled is removed
+			name: "cody.enabled not set, completions configured and enabled",
+			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: pointers.Ptr(true), Model: "foobar"}},
+			want: true,
+		},
 	}
-	if set {
-		return func() {
-			if err := os.Setenv(key, orig); err != nil {
-				t.Fatal(err)
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: test.sc})
+			have := CodyEnabled()
+			assert.Equal(t, test.want, have)
+		})
+	}
+}
+
+func TestGetCompletionsConfig(t *testing.T) {
+	licenseKey := "theasdfkey"
+	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
+		ChatModel:                "anthropic/claude-2",
+		ChatModelMaxTokens:       12000,
+		FastChatModel:            "anthropic/claude-instant-1",
+		FastChatModelMaxTokens:   9000,
+		CompletionModel:          "anthropic/claude-instant-1",
+		CompletionModelMaxTokens: 9000,
+		AccessToken:              licenseAccessToken,
+		Provider:                 "sourcegraph",
+		Endpoint:                 "https://cody-gateway.sourcegraph.com",
+	}
+
+	testCases := []struct {
+		name         string
+		siteConfig   schema.SiteConfiguration
+		deployType   string
+		wantConfig   *conftypes.CompletionsConfig
+		wantDisabled bool
+	}{
+		{
+			name: "Completions disabled",
+			siteConfig: schema.SiteConfiguration{
+				LicenseKey: licenseKey,
+				Completions: &schema.Completions{
+					Enabled: pointers.Ptr(false),
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Completions disabled, but Cody enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Enabled: pointers.Ptr(false),
+				},
+			},
+			// cody.enabled=true and completions.enabled=false, the newer
+			// cody.enabled takes precedence and completions is enabled.
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "cody.enabled and empty completions object",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{},
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "cody.enabled set false",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(false),
+				Completions: &schema.Completions{},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "no cody config",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: nil,
+				Completions: nil,
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Invalid provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider: "invalid",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "anthropic completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Enabled:     pointers.Ptr(true),
+					Provider:    "anthropic",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "claude-2",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "claude-instant-1",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "claude-instant-1",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              "asdf",
+				Provider:                 "anthropic",
+				Endpoint:                 "https://api.anthropic.com/v1/complete",
+			},
+		},
+		{
+			name: "anthropic completions, with only completions.enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Enabled:         pointers.Ptr(true),
+					Provider:        "anthropic",
+					AccessToken:     "asdf",
+					ChatModel:       "claude-v1",
+					CompletionModel: "claude-instant-1",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "claude-v1",
+				ChatModelMaxTokens:       9000,
+				FastChatModel:            "claude-instant-1",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "claude-instant-1",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              "asdf",
+				Provider:                 "anthropic",
+				Endpoint:                 "https://api.anthropic.com/v1/complete",
+			},
+		},
+		{
+			name: "soucregraph completions defaults",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider: "sourcegraph",
+				},
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "OpenAI completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:    "openai",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "gpt-4",
+				ChatModelMaxTokens:       8000,
+				FastChatModel:            "gpt-3.5-turbo",
+				FastChatModelMaxTokens:   4000,
+				CompletionModel:          "gpt-3.5-turbo-instruct",
+				CompletionModelMaxTokens: 4000,
+				AccessToken:              "asdf",
+				Provider:                 "openai",
+				Endpoint:                 "https://api.openai.com",
+			},
+		},
+		{
+			name: "Azure OpenAI completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:        "azure-openai",
+					AccessToken:     "asdf",
+					Endpoint:        "https://acmecorp.openai.azure.com",
+					ChatModel:       "gpt4-deployment",
+					FastChatModel:   "gpt35-turbo-deployment",
+					CompletionModel: "gpt35-turbo-deployment",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "gpt4-deployment",
+				ChatModelMaxTokens:       8000,
+				FastChatModel:            "gpt35-turbo-deployment",
+				FastChatModelMaxTokens:   8000,
+				CompletionModel:          "gpt35-turbo-deployment",
+				CompletionModelMaxTokens: 8000,
+				AccessToken:              "asdf",
+				Provider:                 "azure-openai",
+				Endpoint:                 "https://acmecorp.openai.azure.com",
+			},
+		},
+		{
+			name: "Fireworks completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:    "fireworks",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "accounts/fireworks/models/llama-v2-7b",
+				ChatModelMaxTokens:       3000,
+				FastChatModel:            "accounts/fireworks/models/llama-v2-7b",
+				FastChatModelMaxTokens:   3000,
+				CompletionModel:          "accounts/fireworks/models/starcoder-7b-w8a16",
+				CompletionModelMaxTokens: 6000,
+				AccessToken:              "asdf",
+				Provider:                 "fireworks",
+				Endpoint:                 "https://api.fireworks.ai/inference/v1/completions",
+			},
+		},
+		{
+			name: "AWS Bedrock completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider: "aws-bedrock",
+					Endpoint: "us-west-2",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "anthropic.claude-v2",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "anthropic.claude-instant-v1",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "anthropic.claude-instant-v1",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              "",
+				Provider:                 "aws-bedrock",
+				Endpoint:                 "us-west-2",
+			},
+		},
+		{
+			name: "zero-config cody gateway completions without license key",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  "",
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "zero-config cody gateway completions with license key",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "zero-config cody gateway completions without provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					ChatModel:       "anthropic/claude-v1.3",
+					FastChatModel:   "anthropic/claude-instant-1.3",
+					CompletionModel: "anthropic/claude-instant-1.3",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "anthropic/claude-v1.3",
+				ChatModelMaxTokens:       9000,
+				FastChatModel:            "anthropic/claude-instant-1.3",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "anthropic/claude-instant-1.3",
+				CompletionModelMaxTokens: 9000,
+				AccessToken:              licenseAccessToken,
+				Provider:                 "sourcegraph",
+				Endpoint:                 "https://cody-gateway.sourcegraph.com",
+			},
+		},
+		{
+			// Legacy support for completions.enabled
+			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
+			siteConfig: schema.SiteConfiguration{
+				Completions: &schema.Completions{Enabled: pointers.Ptr(true)},
+				LicenseKey:  "",
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
+			siteConfig: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled: pointers.Ptr(true),
+				},
+				LicenseKey: licenseKey,
+			},
+			// Not supported, zero-config is new and should be using the new
+			// config.
+			wantDisabled: true,
+		},
+		{
+			name:       "app zero-config cody gateway completions with dotcom token",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				App: &schema.App{
+					DotcomAuthToken: "sgp_abcdef0123abcdef0123abcdef0123abcdef0123",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				AccessToken:              "sgd_d796dd3efc6c5257694b80cba0537131457b1742b42d081a27aeaef091107bc4",
+				ChatModel:                "anthropic/claude-2",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "anthropic/claude-instant-1",
+				FastChatModelMaxTokens:   9000,
+				CompletionModel:          "anthropic/claude-instant-1",
+				CompletionModelMaxTokens: 9000,
+				Endpoint:                 "https://cody-gateway.sourcegraph.com",
+				Provider:                 "sourcegraph",
+			},
+		},
+		{
+			name:       "app with custom configuration",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				Completions: &schema.Completions{
+					AccessToken:     "CUSTOM_TOKEN",
+					Provider:        "anthropic",
+					ChatModel:       "claude-v1",
+					FastChatModel:   "claude-instant-1",
+					CompletionModel: "claude-instant-1",
+				},
+				App: &schema.App{
+					DotcomAuthToken: "TOKEN",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				AccessToken:              "CUSTOM_TOKEN",
+				ChatModel:                "claude-v1",
+				ChatModelMaxTokens:       9000,
+				CompletionModel:          "claude-instant-1",
+				FastChatModelMaxTokens:   9000,
+				FastChatModel:            "claude-instant-1",
+				CompletionModelMaxTokens: 9000,
+				Provider:                 "anthropic",
+				Endpoint:                 "https://api.anthropic.com/v1/complete",
+			},
+		},
+		{
+			name:       "App but no dotcom username",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				App: &schema.App{
+					DotcomAuthToken: "",
+				},
+			},
+			wantDisabled: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
 			}
-		}
-	}
-	return func() {
-		if err := os.Unsetenv(key); err != nil {
-			t.Fatal(err)
-		}
+			t.Cleanup(func() {
+				deploy.Mock(defaultDeploy)
+			})
+			conf := GetCompletionsConfig(tc.siteConfig)
+			if tc.wantDisabled {
+				if conf != nil {
+					t.Fatalf("expected nil config but got non-nil: %+v", conf)
+				}
+			} else {
+				if conf == nil {
+					t.Fatal("unexpected nil config returned")
+				}
+				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
+					t.Fatalf("unexpected config computed: %s", diff)
+				}
+			}
+		})
 	}
 }
 
-func boolPtr(b bool) *bool {
-	return &b
+func TestGetEmbeddingsConfig(t *testing.T) {
+	licenseKey := "theasdfkey"
+	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	defaultQdrantConfig := conftypes.QdrantConfig{
+		QdrantHNSWConfig: conftypes.QdrantHNSWConfig{
+			OnDisk: true,
+		},
+		QdrantOptimizersConfig: conftypes.QdrantOptimizersConfig{
+			IndexingThreshold: 0,
+			MemmapThreshold:   100,
+		},
+		QdrantQuantizationConfig: conftypes.QdrantQuantizationConfig{
+			Enabled:  true,
+			Quantile: 0.98,
+		},
+	}
+	zeroConfigDefaultWithLicense := &conftypes.EmbeddingsConfig{
+		Provider:                   "sourcegraph",
+		AccessToken:                licenseAccessToken,
+		Model:                      "openai/text-embedding-ada-002",
+		Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+		Dimensions:                 1536,
+		Incremental:                true,
+		MinimumInterval:            24 * time.Hour,
+		MaxCodeEmbeddingsPerRepo:   3_072_000,
+		MaxTextEmbeddingsPerRepo:   512_000,
+		PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+		FileFilters: conftypes.EmbeddingsFileFilters{
+			MaxFileSizeBytes: 1000000,
+		},
+		ExcludeChunkOnError: true,
+		Qdrant:              defaultQdrantConfig,
+	}
+
+	testCases := []struct {
+		name         string
+		siteConfig   schema.SiteConfiguration
+		deployType   string
+		wantConfig   *conftypes.EmbeddingsConfig
+		wantDisabled bool
+	}{
+		{
+			name: "Embeddings disabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Enabled: pointers.Ptr(false),
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "cody.enabled and empty embeddings object",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings:  &schema.Embeddings{},
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "cody.enabled set false",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(false),
+				Embeddings:  &schema.Embeddings{},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "no cody config",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: nil,
+				Embeddings:  nil,
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Invalid provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "invalid",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Implicit config with cody.enabled",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "Sourcegraph provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+			},
+			wantConfig: zeroConfigDefaultWithLicense,
+		},
+		{
+			name: "File filters",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						MaxFileSizeBytes:         200,
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         200,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name: "File filters w/o MaxFileSizeBytes",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         embeddingsMaxFileSizeBytes,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name: "Disable exclude failed chunk during indexing",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						MaxFileSizeBytes:         200,
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+					ExcludeChunkOnError: pointers.Ptr(false),
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         200,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: false,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name: "No provider and no token, assume Sourcegraph",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Model: "openai/text-embedding-bobert-9000",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-bobert-9000",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 0, // unknown model used for test case
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name: "Sourcegraph provider without license",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  "",
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "OpenAI provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider:    "openai",
+					AccessToken: "asdf",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "openai",
+				AccessToken:                "asdf",
+				Model:                      "text-embedding-ada-002",
+				Endpoint:                   "https://api.openai.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name: "OpenAI provider without access token",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "openai",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name: "Azure OpenAI provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider:    "azure-openai",
+					AccessToken: "asdf",
+					Endpoint:    "https://acmecorp.openai.azure.com",
+					Dimensions:  1536,
+					Model:       "the-model",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "azure-openai",
+				AccessToken:                "asdf",
+				Model:                      "the-model",
+				Endpoint:                   "https://acmecorp.openai.azure.com",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name:       "App default config",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				App: &schema.App{
+					DotcomAuthToken: "sgp_0123456789012345678901234567890123456789",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                "sgd_a3eb0fee5d705bee20f7339924f442051520e2fcae446190128de1218d991660",
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name: "App but no dotcom username",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				App: &schema.App{
+					DotcomAuthToken: "",
+				},
+			},
+			wantDisabled: true,
+		},
+		{
+			name:       "App with dotcom token",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+				App: &schema.App{
+					DotcomAuthToken: "sgp_0123456789012345678901234567890123456789",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                "sgd_a3eb0fee5d705bee20f7339924f442051520e2fcae446190128de1218d991660",
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name:       "App with user token",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				Embeddings: &schema.Embeddings{
+					Provider:    "sourcegraph",
+					AccessToken: "TOKEN",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                "TOKEN",
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name:       "App without dotcom or user token",
+			deployType: deploy.App,
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+				},
+			},
+			wantDisabled: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			defaultDeploy := deploy.Type()
+			if tc.deployType != "" {
+				deploy.Mock(tc.deployType)
+			}
+			t.Cleanup(func() {
+				deploy.Mock(defaultDeploy)
+			})
+			conf := GetEmbeddingsConfig(tc.siteConfig)
+			if tc.wantDisabled {
+				if conf != nil {
+					t.Fatalf("expected nil config but got non-nil: %+v", conf)
+				}
+			} else {
+				if conf == nil {
+					t.Fatal("unexpected nil config returned")
+				}
+				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
+					t.Fatalf("unexpected config computed: %s", diff)
+				}
+			}
+		})
+	}
 }
 
-func intPtr(i int) *int {
-	return &i
+func TestEmailSenderName(t *testing.T) {
+	testCases := []struct {
+		name       string
+		siteConfig schema.SiteConfiguration
+		want       string
+	}{
+		{
+			name:       "nothing set",
+			siteConfig: schema.SiteConfiguration{},
+			want:       "Sourcegraph",
+		},
+		{
+			name: "value set",
+			siteConfig: schema.SiteConfiguration{
+				EmailSenderName: "Horsegraph",
+			},
+			want: "Horsegraph",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: tc.siteConfig})
+			t.Cleanup(func() { Mock(nil) })
+
+			if got, want := EmailSenderName(), tc.want; got != want {
+				t.Fatalf("EmailSenderName() = %v, want %v", got, want)
+			}
+		})
+	}
 }

@@ -1,6 +1,6 @@
-import { Validator, createRequiredValidator } from '@sourcegraph/wildcard'
+import { type Validator, createRequiredValidator } from '@sourcegraph/wildcard'
 
-import { EditableDataSeries } from '../form-series'
+import type { EditableDataSeries } from '../form-series'
 
 // Group of shared Creation UI/Edit UI insight validators.
 

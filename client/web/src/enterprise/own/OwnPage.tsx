@@ -17,21 +17,19 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 
 /**
- * A page explaining how to use Sourcegraph Own.
- * Note that this page is visible regardless of whether the `search-ownership`
- * feature flag has been enabled.
+ * A page explaining how to use Code ownership.
  */
 export const OwnPage: React.FunctionComponent<{}> = () => {
     const allowAutoplay = !useReducedMotion()
 
     return (
         <Page>
-            <PageTitle title="Sourcegraph Own" />
+            <PageTitle title="Code ownership" />
             <PageHeader description="Track and update code ownership across your entire codebase." className="mb-3">
                 <H1 as="h2" className="d-flex align-items-center">
                     <Icon svgPath={mdiAccount} aria-hidden={true} />
-                    <span className="ml-2">Own</span>
-                    <ProductStatusBadge status="experimental" className="ml-2" />
+                    <span className="ml-2">Code ownership</span>
+                    <ProductStatusBadge status="beta" className="ml-2" />
                 </H1>
             </PageHeader>
 
@@ -57,10 +55,10 @@ export const OwnPage: React.FunctionComponent<{}> = () => {
                     <div className="col-12 col-md-5">
                         <H2 as="h3">Evergreen code ownership data for your entire codebase</H2>
                         <Text>
-                            CODEOWNERS alone is not enough. Own makes it easy to find the owner of any file within your
-                            codebase.
+                            CODEOWNERS alone is not enough. Code ownership makes it easy to find the owner of any file
+                            within your codebase.
                         </Text>
-                        <H3 as="h4">Use Own to…</H3>
+                        <H3 as="h4">Use code ownership to…</H3>
                         <ul>
                             <li>Search for vulnerable code and reach out to the owner in seconds</li>
                             <li>Find who to ask about unfamiliar code</li>
@@ -68,8 +66,8 @@ export const OwnPage: React.FunctionComponent<{}> = () => {
                         </ul>
                         <Text>Ingest ownership data from CODEOWNERS files, or from an existing ownership system.</Text>
                         <Text>
-                            Own is currently an experimental feature and is getting smarter fast. We’d love your
-                            feedback. You can turn it on using the documentation below, or{' '}
+                            Code ownership is in a beta and is getting smarter fast. We’d love your feedback. You can
+                            turn it on using the documentation below, or{' '}
                             <Link to="https://about.sourcegraph.com/demo">contact us</Link> to get a demo and learn more
                             about our roadmap.
                         </Text>

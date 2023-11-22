@@ -1,49 +1,18 @@
-.show-on-touch-screen {
-    display: none;
-    visibility: hidden;
-
-    // Shows the element on devices with a coarse pointer (touch screens) or
-    // on devices without the ability to hover.
-    // See https://www.w3.org/TR/mediaqueries-4/#mf-interaction
-    @media (pointer: coarse), (hover: none) {
-        display: block;
-        visibility: visible;
-    }
+.wrapper {
+    isolation: isolate;
 }
 
-.nav-dropdown {
-    &-wrapper {
-        padding: 0 1rem 0 0;
-    }
+.menu-list {
+    margin-left: -0.625rem;
+}
 
-    &-container {
-        margin-left: -0.625rem;
-    }
+.button {
+    padding: 0;
+    font-weight: normal;
+    border: none;
+    height: 100%;
+}
 
-    &-link {
-        --link-hover-color: inherit;
-        --link-hover-decoration: none;
-
-        height: 100%;
-        display: flex;
-        align-items: center;
-        z-index: 1;
-
-        &:hover {
-            text-decoration: none;
-        }
-    }
-    &-icon-button {
-        // - we show this button under the actual link
-        // - we make it `absolute` at top-left so we have good origin point
-        //   to adjust dropdown menu position
-        height: 100%;
-        width: 100%;
-        position: absolute;
-        top: 0;
-        left: 0;
-        padding: 0;
-        border: none;
-        text-align: right;
-    }
+.nested-item {
+    padding-left: 2rem;
 }

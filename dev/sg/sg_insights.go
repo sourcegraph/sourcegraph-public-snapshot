@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -21,7 +22,7 @@ import (
 var insightsCommand = &cli.Command{
 	Name:     "insights",
 	Usage:    "Tools to interact with Code Insights data",
-	Category: CategoryDev,
+	Category: category.Dev,
 	Subcommands: []*cli.Command{
 		{
 			Name:        "decode-id",
@@ -62,7 +63,7 @@ func getInsightSeriesIDsAction(cmd *cli.Context) error {
 	std.Out.WriteNoticef("Finding the Series IDs for %s", ids[0])
 
 	ctx := cmd.Context
-	logger := log.Scoped("getInsightSeriesIDsAction", "")
+	logger := log.Scoped("getInsightSeriesIDsAction")
 
 	// Read the configuration.
 	conf, err := getConfig()

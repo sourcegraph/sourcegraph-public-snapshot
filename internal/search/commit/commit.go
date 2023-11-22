@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/conc/pool"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -99,7 +99,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
 	it := repos.Iterator(ctx, j.RepoOpts)
 
-	p := pool.New().WithContext(ctx).WithMaxGoroutines(j.Concurrency).WithFirstError()
+	p := pool.New().WithContext(ctx).WithMaxGoroutines(4).WithFirstError()
 
 	for it.Next() {
 		page := it.Current()
@@ -126,20 +126,20 @@ func (j SearchJob) Name() string {
 	return "CommitSearchJob"
 }
 
-func (j *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
+func (j *SearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+			attribute.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", j.Query),
-			trace.Scoped("repoOpts", j.RepoOpts.Tags()...),
-			log.Bool("diff", j.Diff),
-			log.Int("limit", j.Limit),
+			attribute.Stringer("query", j.Query),
+			attribute.Bool("diff", j.Diff),
+			attribute.Int("limit", j.Limit),
 		)
+		res = append(res, trace.Scoped("repoOpts", j.RepoOpts.Attributes()...)...)
 	}
 	return res
 }

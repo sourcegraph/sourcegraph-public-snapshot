@@ -1,14 +1,14 @@
 import { first } from 'lodash'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { filter, map } from 'rxjs/operators'
 
 import { isDefined, memoizeObservable } from '@sourcegraph/common'
 import { checkOk } from '@sourcegraph/http-client'
 
-import { DiffResolvedRevisionSpec } from '../../repo'
+import type { DiffResolvedRevisionSpec } from '../../repo'
 
-import { BitbucketRepoInfo } from './scrape'
+import type { BitbucketRepoInfo } from './scrape'
 
 //
 // PR API /rest/api/1.0/projects/SG/repos/go-langserver/pull-requests/1

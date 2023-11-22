@@ -1,10 +1,10 @@
-import { Observable, throwError } from 'rxjs'
+import { type Observable, throwError } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 
-import { ChangeState, DifferentialState, DiffusionState, PhabricatorMode, RevisionState } from '.'
-import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID, QueryConduitHelper } from './backend'
+import { type ChangeState, type DifferentialState, type DiffusionState, PhabricatorMode, type RevisionState } from '.'
+import { getRepoDetailsFromCallsign, getRepoDetailsFromRevisionID, type QueryConduitHelper } from './backend'
 
 const TAG_PATTERN = /r([\dA-z]+)([\da-f]{40})/
 function matchPageTag(): RegExpExecArray | null {
@@ -79,7 +79,7 @@ function getBaseCommitIDFromRevisionPage(): string {
 }
 
 export function getPhabricatorState(
-    location: Location,
+    location: URL | Location,
     requestGraphQL: PlatformContext['requestGraphQL'],
     queryConduit: QueryConduitHelper<any>
 ): Observable<DiffusionState | DifferentialState | RevisionState | ChangeState> {

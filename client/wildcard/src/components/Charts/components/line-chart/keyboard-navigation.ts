@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 
 import { Key } from 'ts-key-enum'
 
-import { decodePointId, getDatumValue, SeriesDatum, SeriesWithData } from './utils'
+import { decodePointId, getDatumValue, type SeriesDatum, type SeriesWithData } from './utils'
 
 interface Props<Datum> {
     element: SVGSVGElement | null
@@ -127,20 +127,23 @@ function findNextElementId<Datum>(
                 const nextSeriesIndex = currentSeriesIndex - 1 >= 0 ? currentSeriesIndex - 1 : sortedSeries.length - 1
                 const nextSeries = sortedSeries[nextSeriesIndex]
 
-                return nextSeries.data[nextSeries.data.length - 1].id
+                return nextSeries.data.at(-1)!.id
             }
 
             return currentSeries.data[nextPossibleIndex].id
         }
 
-        case Key.ArrowUp:
+        case Key.ArrowUp: {
             return getAbovePointId(currentPoint, currentSeries.id, sortedSeries)
+        }
 
-        case Key.ArrowDown:
+        case Key.ArrowDown: {
             return getBelowPointId(currentPoint, currentSeries.id, sortedSeries)
+        }
 
-        default:
+        default: {
             return null
+        }
     }
 }
 
@@ -236,7 +239,7 @@ function getBelowPointId<Datum>(
         return lastElementFromTheAboveGroup?.id ?? null
     }
 
-    const nextSeries = seriesWithSameValue[seriesWithSameValue.length - 1]
+    const nextSeries = seriesWithSameValue.at(-1)!
     return findPoint(currentPoint, nextSeries)
 }
 

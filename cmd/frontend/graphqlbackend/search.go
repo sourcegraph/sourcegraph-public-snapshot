@@ -5,15 +5,11 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type SearchArgs struct {
@@ -29,13 +25,8 @@ type SearchImplementer interface {
 }
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
-func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, args *SearchArgs) (_ SearchImplementer, err error) {
-	settings, err := DecodedViewerFinalSettings(ctx, db)
-	if err != nil {
-		return nil, err
-	}
-
-	cli := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs)
+func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
+	cli := client.New(logger, db, gitserver.NewClient("graphql.batchsearch"))
 	inputs, err := cli.Plan(
 		ctx,
 		args.Version,
@@ -43,8 +34,6 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		args.Query,
 		search.Precise,
 		search.Batch,
-		settings,
-		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
 		var queryErr *client.QueryError
@@ -55,44 +44,21 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
-		logger:         logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
-		client:         cli,
-		db:             db,
-		SearchInputs:   inputs,
-		enterpriseJobs: enterpriseJobs,
+		logger:       logger.Scoped("BatchSearchSearchImplementer"),
+		client:       cli,
+		db:           db,
+		SearchInputs: inputs,
 	}, nil
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewBatchSearchImplementer(ctx, r.logger, r.db, r.enterpriseSearchJobs, args)
+	return NewBatchSearchImplementer(ctx, r.logger, r.db, args)
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
-	logger         log.Logger
-	client         client.SearchClient
-	SearchInputs   *search.Inputs
-	db             database.DB
-	enterpriseJobs jobutil.EnterpriseJobs
-}
-
-var MockDecodedViewerFinalSettings *schema.Settings
-
-// DecodedViewerFinalSettings returns the final (merged) settings for the viewer
-func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.Settings, err error) {
-	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-	if MockDecodedViewerFinalSettings != nil {
-		return MockDecodedViewerFinalSettings, nil
-	}
-
-	cascade, err := newSchemaResolver(db, gitserver.NewClient(), nil).ViewerSettings(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return cascade.finalTyped(ctx)
+	logger       log.Logger
+	client       client.SearchClient
+	SearchInputs *search.Inputs
+	db           database.DB
 }

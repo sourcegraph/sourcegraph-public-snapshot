@@ -26,7 +26,9 @@ ts_project(
     ],
     tsconfig = ":tsconfig",
     deps = [
+        "//:node_modules/@types/mocha",
         "//:node_modules/@types/mockdate",
+        "//:node_modules/mocha",
         "//:node_modules/mockdate",
         "//client/web:node_modules/@sourcegraph/shared",
     ],
@@ -52,8 +54,27 @@ ts_project(
     ],
 )
 
-# mocha_test(
-#     name = "e2e",
-#     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
-#     deps = [":end-to-end_tests"],
-# )
+mocha_test(
+    name = "e2e",
+    timeout = "moderate",
+    env = {"INCLUDE_ADMIN_ONBOARDING": "false"},
+    node_toolchain = select({
+        "//:darwin_docker_e2e_go": "@nodejs_darwin_arm64//:node_toolchain",
+        "//conditions:default": None,
+    }),
+    tags = [
+        "manual",
+        "requires-network",
+    ],
+    tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    visibility = ["//testing:__pkg__"],
+    deps = [":end-to-end_tests"],
+)
+
+# For some reason, we can't explicitly set a visibility on the target itself,
+# it seems the esbuild rule doesn't pass along the visibility attribute properly.
+alias(
+    name = "testing_e2e_bundle",
+    actual = ":e2e_bundle",
+    visibility = ["//testing:__pkg__"],
+)

@@ -1,3 +1,5 @@
+import { afterAll, beforeAll, describe, expect, test } from 'vitest'
+
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SiteInitPage } from './SiteInitPage'
@@ -19,9 +21,7 @@ describe('SiteInitPage', () => {
                 needsSiteInit={false}
                 authenticatedUser={null}
                 context={{
-                    authProviders: [],
-                    sourcegraphDotComMode: false,
-                    experimentalFeatures: {},
+                    authPasswordPolicy: {},
                     authMinPasswordLength: 12,
                 }}
             />,
@@ -38,9 +38,7 @@ describe('SiteInitPage', () => {
                     needsSiteInit={true}
                     authenticatedUser={{ username: 'alice' }}
                     context={{
-                        authProviders: [],
-                        sourcegraphDotComMode: false,
-                        experimentalFeatures: {},
+                        authPasswordPolicy: {},
                         authMinPasswordLength: 12,
                     }}
                 />
@@ -54,9 +52,7 @@ describe('SiteInitPage', () => {
                     needsSiteInit={true}
                     authenticatedUser={null}
                     context={{
-                        authProviders: [],
-                        sourcegraphDotComMode: false,
-                        experimentalFeatures: {},
+                        authPasswordPolicy: {},
                         authMinPasswordLength: 12,
                     }}
                 />

@@ -1,4 +1,4 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -11,7 +11,7 @@ import { ExternalServiceKind } from '../../../graphql-operations'
 import { AddCredentialModal } from './AddCredentialModal'
 import { CREATE_BATCH_CHANGES_CREDENTIAL } from './backend'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/settings/AddCredentialModal',
@@ -26,7 +26,7 @@ const config: Meta = {
 
 export default config
 
-export const RequiresSSHstep1: Story = args => (
+export const RequiresSSHstep1: StoryFn = args => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -70,13 +70,15 @@ RequiresSSHstep1.argTypes = {
     externalServiceKind: {
         name: 'External service kind',
         control: { type: 'select', options: Object.values(ExternalServiceKind) },
-        defaultValue: ExternalServiceKind.GITHUB,
     },
+}
+RequiresSSHstep1.args = {
+    externalServiceKind: ExternalServiceKind.GITHUB,
 }
 
 RequiresSSHstep1.storyName = 'Requires SSH - step 1'
 
-export const RequiresSSHstep2: Story = args => (
+export const RequiresSSHstep2: StoryFn = args => (
     <WebStory>
         {props => (
             <AddCredentialModal
@@ -97,13 +99,15 @@ RequiresSSHstep2.argTypes = {
     externalServiceKind: {
         name: 'External service kind',
         control: { type: 'select', options: Object.values(ExternalServiceKind) },
-        defaultValue: ExternalServiceKind.GITHUB,
     },
+}
+RequiresSSHstep2.args = {
+    externalServiceKind: ExternalServiceKind.GITHUB,
 }
 
 RequiresSSHstep2.storyName = 'Requires SSH - step 2'
 
-export const GitHub: Story = () => (
+export const GitHub: StoryFn = () => (
     <WebStory>
         {props => (
             <AddCredentialModal
@@ -122,7 +126,7 @@ export const GitHub: Story = () => (
 
 GitHub.storyName = 'GitHub'
 
-export const GitLab: Story = () => (
+export const GitLab: StoryFn = () => (
     <WebStory>
         {props => (
             <AddCredentialModal
@@ -141,7 +145,7 @@ export const GitLab: Story = () => (
 
 GitLab.storyName = 'GitLab'
 
-export const BitbucketServer: Story = () => (
+export const BitbucketServer: StoryFn = () => (
     <WebStory>
         {props => (
             <AddCredentialModal
@@ -158,7 +162,7 @@ export const BitbucketServer: Story = () => (
     </WebStory>
 )
 
-export const BitbucketCloud: Story = () => (
+export const BitbucketCloud: StoryFn = () => (
     <WebStory>
         {props => (
             <AddCredentialModal

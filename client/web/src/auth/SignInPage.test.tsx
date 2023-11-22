@@ -1,11 +1,11 @@
 import { within } from '@testing-library/dom'
 import { Route, Routes } from 'react-router-dom'
+import { describe, expect, it } from 'vitest'
 
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { AuthenticatedUser } from '../auth'
-import { AuthProvider, SourcegraphContext } from '../jscontext'
+import type { AuthenticatedUser } from '../auth'
+import type { SourcegraphContext } from '../jscontext'
 
 import { SignInPage } from './SignInPage'
 
@@ -17,24 +17,34 @@ describe('SignInPage', () => {
             serviceType: 'builtin',
             authenticationURL: '',
             serviceID: '',
+            clientID: '1234',
         },
         {
             serviceType: 'github',
             displayName: 'GitHub',
             isBuiltin: false,
-            authenticationURL: '/.auth/github/login?pc=f00bar',
+            authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
             serviceID: 'https://github.com',
+            clientID: '1234',
+        },
+        {
+            serviceType: 'gitlab',
+            displayName: 'GitLab',
+            isBuiltin: false,
+            authenticationURL: 'http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch',
+            serviceID: 'https://gitlab.com',
+            clientID: '1234',
         },
     ]
 
     const render = (
         route: string,
         props: {
-            authProviders?: AuthProvider[]
+            authProviders?: SourcegraphContext['authProviders']
             authenticatedUser?: AuthenticatedUser
-            sourcegraphDotComMode?: boolean
-            experimentalFeatures?: SiteConfiguration['experimentalFeatures']
-            allowSignup?: boolean
+            sourcegraphDotComMode?: SourcegraphContext['sourcegraphDotComMode']
+            allowSignup?: SourcegraphContext['allowSignup']
+            primaryLoginProvidersCount?: SourcegraphContext['primaryLoginProvidersCount']
         }
     ) =>
         renderWithBrandedContext(
@@ -50,9 +60,8 @@ describe('SignInPage', () => {
                                 authProviders: props.authProviders ?? authProviders,
                                 resetPasswordEnabled: true,
                                 xhrHeaders: {},
-                                experimentalFeatures: props.experimentalFeatures ?? {},
+                                primaryLoginProvidersCount: props.primaryLoginProvidersCount ?? 5,
                             }}
-                            isSourcegraphDotCom={false}
                         />
                     }
                 />
@@ -64,9 +73,9 @@ describe('SignInPage', () => {
         const rendered = render('/sign-in', {})
         expect(
             within(rendered.baseElement)
-                .queryByText(txt => txt.includes('Continue with Email'))
-                ?.closest('a')
-        ).toHaveAttribute('href', '/sign-in?email=1&')
+                .queryByText(txt => txt.includes('Other login methods'))
+                ?.closest('button')
+        ).toBeInTheDocument()
         expect(
             within(rendered.baseElement)
                 .queryByText(txt => txt.includes('Sign up'))
@@ -77,7 +86,7 @@ describe('SignInPage', () => {
     })
 
     it('renders sign in page (server) with email form expanded', () => {
-        const rendered = render('/sign-in?email=1', {})
+        const rendered = render('/sign-in?showMore', {})
         expect(
             within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Email'))
         ).not.toBeInTheDocument()
@@ -100,8 +109,34 @@ describe('SignInPage', () => {
             authProviders: authProviders.filter(authProvider => authProvider.serviceType === 'builtin'),
         })
         expect(
-            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with Email'))
+            within(rendered.baseElement).queryByText(txt => txt.includes('Other login methods'))
         ).not.toBeInTheDocument()
+
+        expect(rendered.asFragment()).toMatchSnapshot()
+    })
+
+    it('renders "Other login methods" if primary provider count is low enough', () => {
+        const rendered = render('/sign-in', {
+            authProviders: authProviders.filter(authProvider => authProvider.serviceType !== 'builtin'),
+            primaryLoginProvidersCount: 1,
+        })
+        expect(within(rendered.baseElement).queryByText(txt => txt.includes('Other login methods'))).toBeInTheDocument()
+
+        expect(rendered.asFragment()).toMatchSnapshot()
+    })
+
+    it('renders non-primary auth provider if primary provider count is low enough and showMore is in the query', () => {
+        const rendered = render('/sign-in?showMore', {
+            authProviders: authProviders.filter(authProvider => authProvider.serviceType !== 'builtin'),
+            primaryLoginProvidersCount: 1,
+        })
+        expect(
+            within(rendered.baseElement).queryByText(txt => txt.includes('Other login methods'))
+        ).not.toBeInTheDocument()
+
+        expect(
+            within(rendered.baseElement).queryByText(txt => txt.includes('Continue with GitLab'))
+        ).toBeInTheDocument()
 
         expect(rendered.asFragment()).toMatchSnapshot()
     })
@@ -115,6 +150,7 @@ describe('SignInPage', () => {
                 serviceType: 'sourcegraph-operator',
                 authenticationURL: '',
                 serviceID: '',
+                clientID: '',
             },
         ]
 
@@ -144,6 +180,7 @@ describe('SignInPage', () => {
                 serviceType: 'gerrit',
                 authenticationURL: '',
                 serviceID: '',
+                clientID: '',
             },
         ]
         it('does not render the Gerrit provider', () => {
@@ -153,7 +190,7 @@ describe('SignInPage', () => {
         })
     })
 
-    it('renders sign in page (cloud)', () => {
+    it('renders sign in page (dotcom)', () => {
         expect(render('/sign-in', { sourcegraphDotComMode: true }).asFragment()).toMatchSnapshot()
     })
 
@@ -167,5 +204,23 @@ describe('SignInPage', () => {
         } as AuthenticatedUser
 
         expect(render('/sign-in', { authenticatedUser: mockUser }).asFragment()).toMatchSnapshot()
+    })
+
+    it('renders different prefix on provider buttons', () => {
+        const providers = authProviders.map(provider => ({ ...provider, displayPrefix: 'Just login through' }))
+
+        const rendered = render('/sign-in', { authProviders: providers })
+        expect(
+            within(rendered.baseElement)
+                .queryByText(txt => txt.includes('Just login through GitHub'))
+                ?.closest('a')
+        ).toBeInTheDocument()
+        expect(
+            within(rendered.baseElement)
+                .queryByText(txt => txt.includes('Just login through GitLab'))
+                ?.closest('a')
+        ).toBeInTheDocument()
+
+        expect(rendered.asFragment()).toMatchSnapshot()
     })
 })

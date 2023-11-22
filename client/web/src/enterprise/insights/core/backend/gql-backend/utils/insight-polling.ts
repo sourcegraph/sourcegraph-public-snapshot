@@ -1,4 +1,4 @@
-import { BackendInsight, isComputeInsight } from '../../..'
+import { type BackendInsight, isComputeInsight } from '../../..'
 
 const ALL_REPOS_POLL_INTERVAL = 30000
 const SOME_REPOS_POLL_INTERVAL = 7000

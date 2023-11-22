@@ -160,6 +160,7 @@ func (r PermissionsSyncJobReason) ResolveGroup() PermissionsSyncJobReasonGroup {
 		return PermissionsSyncJobReasonGroupSchedule
 	case ReasonUserEmailRemoved,
 		ReasonUserEmailVerified,
+		ReasonUserAdded,
 		ReasonUserAddedToOrg,
 		ReasonUserRemovedFromOrg,
 		ReasonUserAcceptedOrgInvite,
@@ -184,6 +185,7 @@ const (
 	// to Sourcegraph internal events.
 	ReasonUserEmailRemoved       PermissionsSyncJobReason = "REASON_USER_EMAIL_REMOVED"
 	ReasonUserEmailVerified      PermissionsSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
+	ReasonUserAdded              PermissionsSyncJobReason = "REASON_USER_ADDED"
 	ReasonUserAddedToOrg         PermissionsSyncJobReason = "REASON_USER_ADDED_TO_ORG"
 	ReasonUserRemovedFromOrg     PermissionsSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
 	ReasonUserAcceptedOrgInvite  PermissionsSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
@@ -235,7 +237,7 @@ type PermissionSyncJobStore interface {
 	CountUsersWithFailingSyncJob(ctx context.Context) (int32, error)
 	CountReposWithFailingSyncJob(ctx context.Context) (int32, error)
 	CancelQueuedJob(ctx context.Context, reason string, id int) error
-	SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
+	SaveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
 }
 
 type permissionSyncJobStore struct {
@@ -436,12 +438,20 @@ type SetPermissionsResult struct {
 	Found   int
 }
 
-func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
+func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
 	var added, removed, found int
+	partialSuccess := false
 	if result != nil {
 		added = result.Added
 		removed = result.Removed
 		found = result.Found
+	}
+	// If the job is successful, then we need to check for partial success.
+	if finishedSuccessfully {
+		_, success, failed := statuses.CountStatuses()
+		if success > 0 && failed > 0 {
+			partialSuccess = true
+		}
 	}
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
@@ -449,9 +459,10 @@ func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, res
 			permissions_added = %d,
 			permissions_removed = %d,
 			permissions_found = %d,
-			code_host_states = %s
+			code_host_states = %s,
+			is_partial_success = %s
 		WHERE id = %d
-		`, added, removed, found, pq.Array(statuses), id)
+		`, added, removed, found, pq.Array(statuses), partialSuccess, id)
 
 	_, err := s.ExecResult(ctx, q)
 	return err
@@ -467,6 +478,8 @@ type ListPermissionSyncJobOpts struct {
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
 	NotCanceled         bool
+	PartialSuccess      bool
+	WithPlaceInQueue    bool
 
 	// SearchType and Query are related to text search for sync jobs.
 	SearchType PermissionsSyncSearchType
@@ -498,8 +511,14 @@ func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
 	if opts.Reason != "" {
 		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
 	}
-	if opts.State != "" {
+	// If partial success parameter is set, we skip the `state` parameter because it
+	// should be `completed`, otherwise it won't make any sense.
+	if opts.PartialSuccess {
+		conds = append(conds, sqlf.Sprintf("is_partial_success = TRUE"))
+		conds = append(conds, sqlf.Sprintf("state = lower(%s)", PermissionsSyncJobStateCompleted))
+	} else if opts.State != "" {
 		conds = append(conds, sqlf.Sprintf("state = lower(%s)", opts.State))
+		conds = append(conds, sqlf.Sprintf("is_partial_success = FALSE"))
 	}
 	if opts.NullProcessAfter {
 		conds = append(conds, sqlf.Sprintf("process_after IS NULL"))
@@ -590,9 +609,22 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 		}
 	}
 
+	columns := sqlf.Join(PermissionSyncJobColumns, ", ")
+	if opts.WithPlaceInQueue {
+		columns = sqlf.Sprintf("%s, queue_ranks.rank AS queue_rank", columns)
+		joinClause = sqlf.Sprintf(`
+			%s
+			LEFT JOIN (
+				SELECT id, ROW_NUMBER() OVER (ORDER BY permission_sync_jobs.priority DESC, permission_sync_jobs.process_after ASC NULLS FIRST, permission_sync_jobs.id ASC) AS rank
+				FROM permission_sync_jobs
+				WHERE state = 'queued'
+			) AS queue_ranks ON queue_ranks.id = permission_sync_jobs.id
+		`, joinClause)
+	}
+
 	q := sqlf.Sprintf(
 		listPermissionSyncJobQueryFmtstr,
-		sqlf.Join(PermissionSyncJobColumns, ", "),
+		columns,
 		joinClause,
 		whereClause,
 	)
@@ -607,11 +639,15 @@ func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSy
 
 	var syncJobs []*PermissionSyncJob
 	for rows.Next() {
-		job, err := ScanPermissionSyncJob(rows)
-		if err != nil {
+		var job PermissionSyncJob
+		if opts.WithPlaceInQueue {
+			if err := scanPermissionSyncJobWithPlaceInQueue(&job, rows); err != nil {
+				return nil, err
+			}
+		} else if err := scanPermissionSyncJob(&job, rows); err != nil {
 			return nil, err
 		}
-		syncJobs = append(syncJobs, job)
+		syncJobs = append(syncJobs, &job)
 	}
 
 	return syncJobs, nil
@@ -737,9 +773,15 @@ type PermissionSyncJob struct {
 	PermissionsRemoved int
 	PermissionsFound   int
 	CodeHostStates     []PermissionSyncCodeHostState
+	IsPartialSuccess   bool
+	PlaceInQueue       *int32
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }
+
+func (j *PermissionSyncJob) RecordUID() string {
+	return strconv.Itoa(j.ID)
+}
 
 var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.id"),
@@ -770,6 +812,7 @@ var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.permissions_removed"),
 	sqlf.Sprintf("permission_sync_jobs.permissions_found"),
 	sqlf.Sprintf("permission_sync_jobs.code_host_states"),
+	sqlf.Sprintf("permission_sync_jobs.is_partial_success"),
 }
 
 func ScanPermissionSyncJob(s dbutil.Scanner) (*PermissionSyncJob, error) {
@@ -813,6 +856,52 @@ func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
 		&job.PermissionsRemoved,
 		&job.PermissionsFound,
 		pq.Array(&codeHostStates),
+		&job.IsPartialSuccess,
+	); err != nil {
+		return err
+	}
+
+	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+	job.CodeHostStates = append(job.CodeHostStates, codeHostStates...)
+
+	return nil
+}
+
+func scanPermissionSyncJobWithPlaceInQueue(job *PermissionSyncJob, s dbutil.Scanner) error {
+	var executionLogs []executor.ExecutionLogEntry
+	var codeHostStates []PermissionSyncCodeHostState
+
+	if err := s.Scan(
+		&job.ID,
+		&job.State,
+		&job.Reason,
+		&job.CancellationReason,
+		&dbutil.NullInt32{N: &job.TriggeredByUserID},
+		&job.FailureMessage,
+		&job.QueuedAt,
+		&dbutil.NullTime{Time: &job.StartedAt},
+		&dbutil.NullTime{Time: &job.FinishedAt},
+		&dbutil.NullTime{Time: &job.ProcessAfter},
+		&job.NumResets,
+		&job.NumFailures,
+		&dbutil.NullTime{Time: &job.LastHeartbeatAt},
+		pq.Array(&executionLogs),
+		&job.WorkerHostname,
+		&job.Cancel,
+
+		&dbutil.NullInt{N: &job.RepositoryID},
+		&dbutil.NullInt{N: &job.UserID},
+
+		&job.Priority,
+		&job.NoPerms,
+		&job.InvalidateCaches,
+
+		&job.PermissionsAdded,
+		&job.PermissionsRemoved,
+		&job.PermissionsFound,
+		pq.Array(&codeHostStates),
+		&job.IsPartialSuccess,
+		&job.PlaceInQueue,
 	); err != nil {
 		return err
 	}

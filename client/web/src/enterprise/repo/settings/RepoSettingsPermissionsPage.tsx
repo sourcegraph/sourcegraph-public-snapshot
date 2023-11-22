@@ -1,10 +1,11 @@
-import React, { FC, useEffect, useState, useCallback } from 'react'
+import React, { type FC, useEffect, useState, useCallback } from 'react'
 
-import { mdiChevronDown } from '@mdi/js'
+import { mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     PageHeader,
@@ -15,7 +16,6 @@ import {
     Link,
     Input,
     Badge,
-    BadgeProps,
     useDebounce,
     PageSwitcher,
     Icon,
@@ -23,12 +23,13 @@ import {
     PopoverContent,
     Popover,
     Position,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../../../components/PageTitle'
-import {
+import type {
     SettingsAreaRepositoryFields,
     RepoPermissionsInfoResult,
     RepoPermissionsInfoVariables,
@@ -39,8 +40,9 @@ import { useURLSyncedState } from '../../../hooks'
 import { ActionContainer } from '../../../repo/settings/components/ActionContainer'
 import { scheduleRepositoryPermissionsSync } from '../../../site-admin/backend'
 import { PermissionsSyncJobsTable } from '../../../site-admin/permissions-center/PermissionsSyncJobsTable'
-import { Table, IColumn } from '../../../site-admin/UserManagement/components/Table'
+import { Table, type IColumn } from '../../../site-admin/UserManagement/components/Table'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { PermissionReasonBadgeProps } from '../../settings/permissons'
 
 import { RepoPermissionsInfoQuery } from './backend'
 
@@ -48,14 +50,18 @@ import styles from './RepoSettingsPermissionsPage.module.scss'
 
 type IUser = INode['user']
 
-export interface RepoSettingsPermissionsPageProps extends TelemetryProps {
+export interface RepoSettingsPermissionsPageProps extends TelemetryProps, TelemetryV2Props {
     repo: SettingsAreaRepositoryFields
 }
 
 /**
  * The repository settings permissions page.
  */
-export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> = ({ repo, telemetryService }) => {
+export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> = ({
+    repo,
+    telemetryService,
+    telemetryRecorder,
+}) => {
     useEffect(() => eventLogger.logViewEvent('RepoSettingsPermissions'))
 
     const [{ query }, setSearchQuery] = useURLSyncedState({ query: '' })
@@ -90,9 +96,9 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
 
     return (
         <>
-            <PageTitle title="Permissions" />
+            <PageTitle title="Repo Permissions" />
             <PageHeader
-                path={[{ text: 'Permissions' }]}
+                path={[{ text: 'Repo Permissions' }]}
                 headingElement="h2"
                 className="mb-3"
                 description={
@@ -120,7 +126,12 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                         <table className="table">
                             <tbody>
                                 <tr>
-                                    <th>Last complete sync</th>
+                                    <th>
+                                        Last complete sync{' '}
+                                        <Tooltip content="Syncs repository permissions from the code host. All users that have access to the repository on the code host will have access on Sourcegraph as well.">
+                                            <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
+                                        </Tooltip>
+                                    </th>
                                     <td>
                                         {permissionsInfo.syncedAt ? (
                                             <Timestamp date={permissionsInfo.syncedAt} />
@@ -128,14 +139,23 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                                             'Never'
                                         )}
                                     </td>
-                                    <td className="text-muted">Updated by repository permissions syncing</td>
+                                    <td className="text-muted">Updated by repository-centric permission sync.</td>
                                 </tr>
                                 <tr>
-                                    <th>Last incremental sync</th>
+                                    <th>
+                                        Last partial sync{' '}
+                                        <Tooltip content="Syncs user permissions from the code host. If a user-centric sync returns this repository as accessible, it is noted here as partial sync. Partial syncs do not show in the list of permission sync jobs below.">
+                                            <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
+                                        </Tooltip>
+                                    </th>
                                     <td>
-                                        <Timestamp date={permissionsInfo.updatedAt} />
+                                        {permissionsInfo.updatedAt === null ? (
+                                            'Never'
+                                        ) : (
+                                            <Timestamp date={permissionsInfo.updatedAt} />
+                                        )}
                                     </td>
-                                    <td className="text-muted">Updated by user permissions syncing</td>
+                                    <td className="text-muted">Partial update done by user-centric permission sync.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -155,7 +175,12 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                 className="my-3 pt-3"
             />
             <Container className="mb-3">
-                <PermissionsSyncJobsTable telemetryService={telemetryService} minimal={true} repoID={repo.id} />
+                <PermissionsSyncJobsTable
+                    telemetryService={telemetryService}
+                    telemetryRecorder={telemetryRecorder}
+                    minimal={true}
+                    repoID={repo.id}
+                />
             </Container>
             <PageHeader
                 headingElement="h2"
@@ -236,15 +261,6 @@ export const RenderUsernameAndEmail: FC<{ user: IUser }> = ({ user }) => {
             </Popover>
         </div>
     )
-}
-
-const PermissionReasonBadgeProps: { [reason: string]: BadgeProps } = {
-    'Permissions Sync': {
-        variant: 'success',
-        tooltip: 'The repository is accessible to the user due to permissions syncing from code host.',
-    },
-    Unrestricted: { variant: 'primary', tooltip: 'The repository is accessible to all the users. ' },
-    'Site Admin': { variant: 'secondary', tooltip: 'The user is site admin and has access to all the repositories.' },
 }
 
 interface ScheduleRepositoryPermissionsSyncActionContainerProps {

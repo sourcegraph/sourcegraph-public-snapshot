@@ -8,16 +8,16 @@ import { animated, useSpring } from 'react-spring'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { Connection } from '../../../../../components/FilteredConnection'
+import type { Connection } from '../../../../../components/FilteredConnection'
 import {
     BatchSpecWorkspaceResolutionState,
-    PreviewHiddenBatchSpecWorkspaceFields,
-    PreviewVisibleBatchSpecWorkspaceFields,
+    type PreviewHiddenBatchSpecWorkspaceFields,
+    type PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
 import { useBatchChangesLicense } from '../../../useBatchChangesLicense'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
-import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
+import { type BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
 
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { PreviewLoadingSpinner } from './PreviewLoadingSpinner'

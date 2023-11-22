@@ -1,9 +1,9 @@
-import { Fragment, FC } from 'react'
+import { Fragment, type FC } from 'react'
 
 import { formatDistanceToNowStrict } from 'date-fns'
 
 import { prettifySystemRole } from '../../util/settings'
-import { UserAreaRouteContext } from '../area/UserArea'
+import type { UserAreaRouteContext } from '../area/UserArea'
 
 type UserData =
     | {

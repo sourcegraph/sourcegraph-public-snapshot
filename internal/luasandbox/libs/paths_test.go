@@ -8,30 +8,64 @@ import (
 
 func TestDirWithoutDot(t *testing.T) {
 	testCases := []struct {
-		actual   string
+		input    string
 		expected string
 	}{
-		{dirWithoutDot("foo.txt"), ""},
-		{dirWithoutDot("foo/bar.txt"), "foo"},
-		{dirWithoutDot("foo/baz"), "foo"},
+		{"file.txt", ""},
+		{"simple/file.txt", "simple"},
+		{"longer/ancestor/paths/file.txt", "longer/ancestor/paths"},
+		{"longer/ancestor/paths/subdir", "longer/ancestor/paths"},
 	}
 
-	for _, testCase := range testCases {
-		if testCase.actual != testCase.expected {
-			t.Errorf("unexpected dirname: want=%s got=%s", testCase.expected, testCase.actual)
+	t.Run("edge cases", func(t *testing.T) {
+		for _, input := range []string{"", "/", "."} {
+			if actual := dirWithoutDot(input); actual != "" {
+				t.Errorf("unexpected dirname: want=%s got=%s", "", actual)
+			}
 		}
-	}
+	})
+
+	t.Run("un-rooted", func(t *testing.T) {
+		for _, testCase := range testCases {
+			if actual := dirWithoutDot(testCase.input); actual != testCase.expected {
+				t.Errorf("unexpected dirname: want=%s got=%s", testCase.expected, actual)
+			}
+		}
+	})
+
+	t.Run("rooted", func(t *testing.T) {
+		for _, testCase := range testCases {
+			if actual := dirWithoutDot("/" + testCase.input); actual != testCase.expected {
+				t.Errorf("unexpected dirname: want=%s got=%s", testCase.expected, actual)
+			}
+		}
+	})
 }
 
 func TestAncestorDirs(t *testing.T) {
-	expectedAncestors := []string{
-		"foo/bar/baz",
-		"foo/bar",
-		"foo",
-		"",
+	testCases := []struct {
+		input    string
+		expected []string
+	}{
+		{"", []string{""}},
+		{"file.txt", []string{""}},
+		{"simple/file.txt", []string{"simple", ""}},
+		{"longer/ancestor/paths/file.txt", []string{"longer/ancestor/paths", "longer/ancestor", "longer", ""}},
 	}
-	if diff := cmp.Diff(expectedAncestors, ancestorDirs("foo/bar/baz/bonk.txt")); diff != "" {
-		t.Errorf("unexpected ancestor dirs (-want +got):\n%s", diff)
 
-	}
+	t.Run("un-rooted", func(t *testing.T) {
+		for _, testCase := range testCases {
+			if diff := cmp.Diff(testCase.expected, ancestorDirs(testCase.input)); diff != "" {
+				t.Errorf("unexpected ancestor for %q dirs (-want +got):\n%s", testCase.input, diff)
+			}
+		}
+	})
+
+	t.Run("rooted", func(t *testing.T) {
+		for _, testCase := range testCases {
+			if diff := cmp.Diff(testCase.expected, ancestorDirs("/"+testCase.input)); diff != "" {
+				t.Errorf("unexpected ancestor for %q dirs (-want +got):\n%s", testCase.input, diff)
+			}
+		}
+	})
 }

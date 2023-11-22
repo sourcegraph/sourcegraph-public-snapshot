@@ -20,7 +20,7 @@ import (
 func TestTeams_CreateUpdateDelete(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)
@@ -34,7 +34,7 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 		ReadOnly:    true,
 		CreatorID:   user.ID,
 	}
-	if err := store.CreateTeam(ctx, team); err != nil {
+	if _, err := store.CreateTeam(ctx, team); err != nil {
 		t.Fatal(err)
 	}
 
@@ -61,7 +61,7 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 	})
 
 	t.Run("duplicate team names are forbidden", func(t *testing.T) {
-		err := store.CreateTeam(ctx, team)
+		_, err := store.CreateTeam(ctx, team)
 		if err == nil {
 			t.Fatal("got no error")
 		}
@@ -75,7 +75,7 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 			Name:      user.Username,
 			CreatorID: user.ID,
 		}
-		err := store.CreateTeam(ctx, tm)
+		_, err := store.CreateTeam(ctx, tm)
 		if err == nil {
 			t.Fatal("got no error")
 		}
@@ -95,7 +95,7 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 			Name:      name,
 			CreatorID: user.ID,
 		}
-		err = store.CreateTeam(ctx, tm)
+		_, err = store.CreateTeam(ctx, tm)
 		if err == nil {
 			t.Fatal("got no error")
 		}
@@ -106,7 +106,7 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 
 	t.Run("update", func(t *testing.T) {
 		otherTeam := &types.Team{Name: "own2", CreatorID: user.ID}
-		err := store.CreateTeam(ctx, otherTeam)
+		_, err := store.CreateTeam(ctx, otherTeam)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -143,7 +143,7 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 		}
 
 		// Check that we can create a new team with the same name now.
-		err := store.CreateTeam(ctx, team)
+		_, err := store.CreateTeam(ctx, team)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -153,7 +153,7 @@ func TestTeams_CreateUpdateDelete(t *testing.T) {
 func TestTeams_GetListCount(t *testing.T) {
 	internalCtx := actor.WithInternalActor(context.Background())
 	logger := logtest.NoOp(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	johndoe, err := db.Users().Create(internalCtx, NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)
@@ -167,7 +167,7 @@ func TestTeams_GetListCount(t *testing.T) {
 
 	createTeam := func(team *types.Team, members ...int32) *types.Team {
 		team.CreatorID = johndoe.ID
-		if err := store.CreateTeam(internalCtx, team); err != nil {
+		if _, err := store.CreateTeam(internalCtx, team); err != nil {
 			t.Fatal(err)
 		}
 		for _, m := range members {

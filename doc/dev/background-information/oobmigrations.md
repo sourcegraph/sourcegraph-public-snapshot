@@ -77,7 +77,7 @@ The first step is to declare metadata for a new migration. Add a new entry to th
   component: db.skunk_payloads            -- Component being migrated
   description: Re-encode our skunky data  -- Human-readable description
   non_destructive: true                   -- Can be read with previous version without down migration
-  is_enterprise: true                     -- Should not run in OSS versions or the migration code is only available in enterprise
+  is_enterprise: true                     -- Should not run in OSS versions or the migration code is only available in enterprise (as of 5.1, OSS is removed)
   introduced_major_version: 3             -- The current major release
   introduced_minor_version: 34            -- The current minor release
 ```
@@ -164,7 +164,7 @@ func (m *migrator) Progress(ctx context.Context, _ bool) (float64, error) {
 }
 ```
 
-In the case of enterprise migrations you will want your `Progress` function to report success [if your enterprise feature is disabled](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/oobmigration/migrations/insights/migrator.go?L36-38). 
+In the case of enterprise migrations you will want your `Progress` function to report success [if your enterprise feature is disabled](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/oobmigration/migrations/insights/migrator.go?L36-38). 
 
 In the forward migration direction, we want to select a record that is in the previous format (we can tell here by the absence of a `payload2` field), and update that record with the result of some external computation. Here, we're going to rely on an oracle function `oldToNew` that converts the old format into the new format.
 
@@ -276,7 +276,7 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 }
 ```
 
-Lastly, in order for this migration to run, we need to [register it to the out of band migrator runner instance](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:.*.go+%28outOfBandMigration%29%3Frunner%5C.Register%5C%28&patternType=regexp) in the OSS or enterprise `worker` service.
+Lastly, in order for this migration to run, we need to [register it to the out of band migrator runner instance](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:.*.go+%28outOfBandMigration%29%3Frunner%5C.Register%5C%28&patternType=regexp) in the enterprise `worker` service.
 
 ```go
 // `db` is the database.DB
@@ -316,7 +316,7 @@ Note that it is not advised to set the deprecated version to the minor release o
 
 Despite an out of band migration being marked deprecated, it may still need to be executed by multi-version upgrades in a later version. For this reason it is not safe to delete any code from the out of band migrations until _after_ the deprecation version falls out of the [supported multi-version upgrade window](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/blob/internal/database/migration/shared/data/cmd/generator/consts.go?L24).
 
-As an alternative to deleting the code, the out of band migration can be isolated from any dependencies outside of the out of band migration. For example copying any types, functions, and other code that is used to execute the migration. Once isolated, the migration can be considered frozen and effectively ignored. To see an example, [see the Code Insights settings migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/tree/enterprise/internal/oobmigration/migrations/insights)
+As an alternative to deleting the code, the out of band migration can be isolated from any dependencies outside of the out of band migration. For example copying any types, functions, and other code that is used to execute the migration. Once isolated, the migration can be considered frozen and effectively ignored. To see an example, [see the Code Insights settings migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@39996f3159a0466624bc3a57689560c6bdebb60c/-/tree/internal/oobmigration/migrations/insights)
 
 It is important to note that breaking changes to the database using an in-band migration are safe to execute after the marked deprecation version for the out of band migration, even if they would logically break the code of the out of band migration. This is because [the multi-version upgrade will execute the out of band migration sequentially with in-band migrations](https://storage.googleapis.com/sourcegraph-assets/blog/multi-version-upgrades/mvu-oobmigrations.png). Once executed, the out of band migration will see the database in the state it was at when prior to being marked deprecated.
 

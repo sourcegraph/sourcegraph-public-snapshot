@@ -1,5 +1,5 @@
-import { MinimalLangStatsInsightData, InsightType } from '../../../../../core'
-import { LangStatsCreationFormFields } from '../types'
+import { type MinimalLangStatsInsightData, InsightType } from '../../../../../core'
+import type { LangStatsCreationFormFields } from '../types'
 
 /**
  * Converter from creation UI form values to real insight object.

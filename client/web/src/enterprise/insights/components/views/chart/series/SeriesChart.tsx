@@ -1,8 +1,8 @@
-import React, { SVGProps, useCallback } from 'react'
+import React, { type SVGProps, useCallback } from 'react'
 
-import { LineChart, SeriesLikeChart, LineChartProps } from '@sourcegraph/wildcard'
+import { LineChart, type SeriesLikeChart, type LineChartProps } from '@sourcegraph/wildcard'
 
-import { UseSeriesToggleReturn } from '../../../../../../insights/utils/use-series-toggle'
+import type { UseSeriesToggleReturn } from '../../../../../../insights/utils/use-series-toggle'
 import { LockedChart } from '../locked/LockedChart'
 
 export enum SeriesBasedChartTypes {

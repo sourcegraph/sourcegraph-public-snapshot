@@ -1,0 +1,131 @@
+$primary: #b52626;
+$secondary: #fbeaea;
+$tertiary: #c92b2a;
+$quaternary: #e6ebf2;
+$quinary: #ffffff;
+
+.button {
+    outline: none;
+    background-color: $secondary;
+    border: 1px solid $primary;
+    color: $tertiary;
+    display: grid;
+    grid-template-columns: 15px 37px 10px;
+    column-gap: 5px;
+    align-items: center;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 16.32px;
+    padding: 0.3125rem 0.5625rem;
+    box-shadow: none;
+
+    div {
+        padding-left: 0.1875rem;
+    }
+
+    &:not(:disabled):not(.disabled):not([aria-disabled='true']) svg:not([data-caret]) {
+        fill: var(--danger);
+    }
+
+    &:focus {
+        background-color: $secondary;
+        color: $tertiary;
+        border: 1px solid $primary;
+
+        svg:not([data-caret]) {
+            fill: var(--danger);
+        }
+    }
+
+    &:hover {
+        opacity: 0.8;
+        background-color: $secondary;
+        color: $tertiary;
+    }
+}
+
+.alert {
+    margin: 0;
+}
+
+:global(.theme-light) {
+    .button:not(:disabled):not(.disabled):not([aria-disabled='true']) {
+        box-shadow: none;
+        &:focus,
+        &:hover:not(.focus):not(:focus) {
+            box-shadow: none;
+            background-color: $secondary;
+            color: $tertiary;
+            border: 1px solid $primary;
+            svg:not([data-caret]) {
+                fill: var(--danger);
+            }
+        }
+    }
+
+    .container {
+        background: $quinary;
+        border: 1px solid $quaternary;
+    }
+
+    .item {
+        border-bottom: 1px solid $quaternary;
+    }
+}
+
+.container {
+    margin: 0.5rem 0.5rem 0 0;
+    padding: 1rem;
+    max-width: 330px;
+}
+
+.list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.item {
+    border-bottom: 1px solid var(--border-color-2);
+    &:last-child {
+        border-bottom: none;
+    }
+}
+
+.wrapper {
+    display: grid;
+    grid-template-columns: 15px 1fr;
+    column-gap: 10px;
+    padding: 0.5rem;
+
+    svg {
+        margin-top: 0.125rem;
+        fill: #798baf;
+
+        &.checked {
+            fill: var(--success);
+        }
+    }
+}
+
+.content {
+    white-space: pre-wrap;
+    h4 {
+        margin-bottom: 0.25rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        line-height: 17.5px;
+        letter-spacing: -0.25px;
+    }
+    p {
+        margin: 0;
+        font-size: 0.75rem;
+        line-height: 16.32px;
+        font-weight: 400;
+        padding-bottom: 0.25rem;
+    }
+    a {
+        font-weight: 300;
+    }
+}

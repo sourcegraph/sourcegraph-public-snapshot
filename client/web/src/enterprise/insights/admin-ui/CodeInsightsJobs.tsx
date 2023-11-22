@@ -1,4 +1,4 @@
-import { ChangeEvent, FC, useState } from 'react'
+import { type ChangeEvent, type FC, useState } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 
@@ -16,7 +16,7 @@ import {
 
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../../../components/PageTitle'
-import { GetCodeInsightsJobsResult, GetCodeInsightsJobsVariables, InsightJob } from '../../../graphql-operations'
+import type { GetCodeInsightsJobsResult, GetCodeInsightsJobsVariables, InsightJob } from '../../../graphql-operations'
 
 import { CodeInsightsJobsActions } from './components/job-actions'
 import { CodeInsightsJobCard } from './components/job-card'

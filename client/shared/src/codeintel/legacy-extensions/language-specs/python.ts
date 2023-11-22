@@ -1,7 +1,7 @@
 import * as path from 'path'
 
 import { pythonStyleComment } from './comments'
-import { FilterContext, LanguageSpec, Result } from './language-spec'
+import type { FilterContext, LanguageSpec, Result } from './language-spec'
 import { extractFromLines, filterResultsByImports, removeExtension } from './util'
 
 /**
@@ -33,7 +33,7 @@ function filterDefinitions<T extends Result>(results: T[], { filePath, fileConte
  * @param importPath The absolute Python import path.
  */
 function absoluteImportPath(importPath: string): string {
-    return importPath.replace(/\./g, '/')
+    return importPath.replaceAll('.', '/')
 }
 
 /**
@@ -51,7 +51,7 @@ export function relativeImportPath(sourcePath: string, importPath: string): stri
     }
     const [, parentDots, rest] = match
 
-    return path.join(path.dirname(sourcePath), '../'.repeat(parentDots.length), rest.replace(/\./g, '/'))
+    return path.join(path.dirname(sourcePath), '../'.repeat(parentDots.length), rest.replaceAll('.', '/'))
 }
 
 export const pythonSpec: LanguageSpec = {

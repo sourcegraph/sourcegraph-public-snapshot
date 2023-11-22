@@ -1,6 +1,6 @@
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
-import { EditorReplacements, EditorSettings } from './editor-settings'
+import type { EditorReplacements, EditorSettings } from './editor-settings'
 
 interface LegacySettings {
     basePath?: string

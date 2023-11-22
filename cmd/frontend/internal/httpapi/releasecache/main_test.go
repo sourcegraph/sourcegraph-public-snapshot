@@ -32,8 +32,7 @@ func TestMain(m *testing.M) {
 func newClientFactory(t testing.TB, name string) (*httpcli.Factory, func(testing.TB)) {
 	cassetteName := filepath.Join("testdata", strings.ReplaceAll(name, " ", "-"))
 	rec := newRecorder(t, cassetteName, update(name))
-	mw := httpcli.NewMiddleware(httpcli.GitHubProxyRedirectMiddleware)
-	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
+	return httpcli.NewFactory(httpcli.NewMiddleware(), httptestutil.NewRecorderOpt(rec)),
 		func(t testing.TB) { save(t, rec) }
 }
 

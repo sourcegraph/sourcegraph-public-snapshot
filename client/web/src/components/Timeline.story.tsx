@@ -1,5 +1,5 @@
 import { mdiCheck, mdiAlertCircle } from '@mdi/js'
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 import { parseISO } from 'date-fns'
 
 import { Icon, Text } from '@sourcegraph/wildcard'
@@ -7,7 +7,7 @@ import { Icon, Text } from '@sourcegraph/wildcard'
 import { Timeline } from './Timeline'
 import { WebStory } from './WebStory'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="container mt-3" style={{ maxWidth: 600 }}>
         {story()}
     </div>
@@ -20,7 +20,7 @@ const config: Meta = {
 
 export default config
 
-export const Basic: Story = () => (
+export const Basic: StoryFn = () => (
     <WebStory>
         {() => (
             <Timeline
@@ -62,7 +62,7 @@ export const Basic: Story = () => (
     </WebStory>
 )
 
-export const Details: Story = () => (
+export const Details: StoryFn = () => (
     <WebStory>
         {() => (
             <Timeline
@@ -101,7 +101,7 @@ export const Details: Story = () => (
     </WebStory>
 )
 
-export const DetailsWithoutDurations: Story = () => (
+export const DetailsWithoutDurations: StoryFn = () => (
     <WebStory>
         {() => (
             <Timeline

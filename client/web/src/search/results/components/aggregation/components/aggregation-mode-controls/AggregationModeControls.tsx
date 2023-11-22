@@ -1,4 +1,4 @@
-import { FC, HTMLAttributes } from 'react'
+import type { FC, HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 import { useDebouncedCallback } from 'use-debounce'
@@ -6,7 +6,8 @@ import { useDebouncedCallback } from 'use-debounce'
 import { SearchAggregationMode } from '@sourcegraph/shared/src/graphql-operations'
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
-import { SearchAggregationModeAvailability } from '../../../../../../graphql-operations'
+import { useFeatureFlag } from '../../../../../../featureFlags/useFeatureFlag'
+import type { SearchAggregationModeAvailability } from '../../../../../../graphql-operations'
 
 import styles from './AggregationModeControls.module.scss'
 
@@ -23,6 +24,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
     const { mode, loading, availability = [], size, className, onModeChange, onModeHover, ...attributes } = props
 
     const debouncedOnModeHover = useDebouncedCallback(onModeHover, 1000)
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
     const availabilityGroups = availability.reduce((store, availability) => {
         store[availability.mode] = availability
@@ -126,6 +128,25 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
                     </Button>
                 </Tooltip>
             </div>
+            {enableRepositoryMetadata && (
+                <div
+                    onMouseEnter={() => handleModeEnter(SearchAggregationMode.REPO_METADATA)}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    <Tooltip content={availabilityGroups[SearchAggregationMode.REPO_METADATA]?.reasonUnavailable}>
+                        <Button
+                            variant="secondary"
+                            size={size}
+                            outline={mode !== SearchAggregationMode.REPO_METADATA}
+                            disabled={!isModeAvailable(SearchAggregationMode.REPO_METADATA)}
+                            data-testid="repoMetadata-aggregation-mode"
+                            onClick={() => onModeChange(SearchAggregationMode.REPO_METADATA)}
+                        >
+                            Repo metadata
+                        </Button>
+                    </Tooltip>
+                </div>
+            )}
         </div>
     )
 }

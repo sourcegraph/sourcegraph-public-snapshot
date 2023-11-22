@@ -1,4 +1,4 @@
-import { ReadableSpan, Span } from '@opentelemetry/sdk-trace-base'
+import type { ReadableSpan, Span } from '@opentelemetry/sdk-trace-base'
 
 /**
  * Read/write span: A function receiving this as argument must have

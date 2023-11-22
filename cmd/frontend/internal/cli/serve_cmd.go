@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-logr/stdr"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/keegancsmith/tmpfriend"
 	sglog "github.com/sourcegraph/log"
@@ -21,29 +22,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
+	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -51,7 +54,7 @@ import (
 )
 
 var (
-	printLogo = env.MustGetBool("LOGO", deploy.IsApp(), "print Sourcegraph logo upon startup")
+	printLogo = env.MustGetBool("LOGO", false, "print Sourcegraph logo upon startup")
 
 	httpAddr = env.Get("SRC_HTTP_ADDR", func() string {
 		if env.InsecureDev {
@@ -75,7 +78,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), "frontend", version.Version()); err != nil {
+	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), version.Version()); err != nil {
 		return nil, err
 	}
 
@@ -85,8 +88,12 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
 
 // Main is the main entrypoint for the frontend server program.
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc) error {
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc, enterpriseMigratorHook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	logger := observationCtx.Logger
+
+	if err := tryAutoUpgrade(ctx, observationCtx, ready, enterpriseMigratorHook); err != nil {
+		return errors.Wrap(err, "frontend.tryAutoUpgrade")
+	}
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {
@@ -94,8 +101,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 	db := database.NewDB(logger, sqlDB)
 
+	// Used by opentelemetry logging
+	stdr.SetVerbosity(10)
+
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		if !deploy.IsApp() {
+		if !deploy.IsSingleBinary() {
 			logger.Warn("Skipping out-of-band migrations check")
 		}
 	} else {
@@ -109,6 +119,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return errors.Wrap(err, "failed to validate out of band migrations")
 		}
 	}
+
+	userpasswd.Init()
+	highlight.Init()
 
 	// After our DB, redis is our next most important datastore
 	if err := redispoolRegisterDB(db); err != nil {
@@ -143,7 +156,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
-	ui.InitRouter(db, enterpriseServices.EnterpriseSearchJobs)
+	ui.InitRouter(db)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -192,30 +205,23 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	siteid.Init(db)
-
 	globals.WatchBranding()
 	globals.WatchExternalURL()
 	globals.WatchPermissionsUserMapping()
 
 	goroutine.Go(func() { bg.CheckRedisCacheEvictionPolicy() })
 	goroutine.Go(func() { bg.DeleteOldCacheDataInRedis() })
-	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
-	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
+	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), logger, db) })
+	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), logger, db) })
 	goroutine.Go(func() { bg.UpdatePermissions(ctx, logger, db) })
 	goroutine.Go(func() { updatecheck.Start(logger, db) })
 	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 	goroutine.Go(func() { users.StartUpdateAggregatedUsersStatisticsTable(context.Background(), db) })
 
-	if deploy.IsApp() {
-		enterpriseServices.OptionalResolver.AppResolver = graphqlbackend.NewAppResolver(logger, db)
-	}
-
 	schema, err := graphqlbackend.NewSchema(
 		db,
-		gitserver.NewClient(),
-		enterpriseServices.EnterpriseSearchJobs,
-		enterpriseServices.OptionalResolver,
+		gitserver.NewClient("graphql.schemaresolver"),
+		[]graphqlbackend.OptionalResolver{enterpriseServices.OptionalResolver},
 	)
 	if err != nil {
 		return err
@@ -263,9 +269,8 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 	}
 
 	// Create the external HTTP handler.
-	externalHandler := newExternalHTTPHandler(
+	externalHandler, err := newExternalHTTPHandler(
 		db,
-		enterprise.EnterpriseSearchJobs,
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
@@ -286,11 +291,18 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewCodeIntelUploadHandler:       enterprise.NewCodeIntelUploadHandler,
 			NewComputeStreamHandler:         enterprise.NewComputeStreamHandler,
 			CodeInsightsDataExportHandler:   enterprise.CodeInsightsDataExportHandler,
-			NewCompletionsStreamHandler:     enterprise.NewCompletionsStreamHandler,
+			SearchJobsDataExportHandler:     enterprise.SearchJobsDataExportHandler,
+			SearchJobsLogsHandler:           enterprise.SearchJobsLogsHandler,
+			NewDotcomLicenseCheckHandler:    enterprise.NewDotcomLicenseCheckHandler,
+			NewChatCompletionsStreamHandler: enterprise.NewChatCompletionsStreamHandler,
+			NewCodeCompletionsHandler:       enterprise.NewCodeCompletionsHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
 	)
+	if err != nil {
+		return nil, errors.Errorf("create external HTTP handler: %v", err)
+	}
 	httpServer := &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,
@@ -325,7 +337,6 @@ func makeInternalAPI(
 		schema,
 		db,
 		grpcServer,
-		enterprise.EnterpriseSearchJobs,
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,
@@ -371,20 +382,20 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 }
 
 func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
-	var store throttled.GCRAStore
+	var store throttled.GCRAStoreCtx
 	var err error
 	if pool, ok := redispool.Cache.Pool(); ok {
-		store, err = redigostore.New(pool, "gql:rl:", 0)
+		store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
 	} else {
-		// If redis is disabled we are in Sourcegraph App and can rely on an
+		// If redis is disabled we are in Cody App and can rely on an
 		// in-memory store.
-		store, err = memstore.New(0)
+		store, err = memstore.NewCtx(0)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), store), nil
+	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher"), store), nil
 }
 
 // redispoolRegisterDB registers our postgres backed redis. These package

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "indexers.go",
+        "indexers2.go",
+        "scip_compressor.go",
+        "scip_decompressor.go",
+        "scip_symbols.go",
+        "types.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/executor",
+        "//lib/codeintel/autoindex/config",
+        "//lib/errors",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)

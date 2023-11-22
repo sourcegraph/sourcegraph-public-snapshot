@@ -1,4 +1,4 @@
-import React, { AriaAttributes } from 'react'
+import React, { type AriaAttributes } from 'react'
 
 import classNames from 'classnames'
 

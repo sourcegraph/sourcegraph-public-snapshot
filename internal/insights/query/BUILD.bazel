@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "query",
+    srcs = [
+        "capture_group_executor.go",
+        "compute_executor.go",
+        "compute_graphql_results.go",
+        "preview_executor.go",
+        "streaming_query_executor.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights/query",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/insights/compression",
+        "//internal/insights/gitserver",
+        "//internal/insights/query/querybuilder",
+        "//internal/insights/query/streaming",
+        "//internal/insights/timeseries",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

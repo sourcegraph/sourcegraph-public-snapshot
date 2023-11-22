@@ -6,18 +6,18 @@ import {
     useMutation as useApolloMutation,
     useSuspenseQuery_experimental as useApolloSuspenseQuery,
     useLazyQuery as useApolloLazyQuery,
-    DocumentNode,
-    OperationVariables,
-    QueryHookOptions as ApolloQueryHookOptions,
-    QueryResult,
-    MutationHookOptions as ApolloMutationHookOptions,
-    MutationTuple,
-    QueryTuple,
-    UseSuspenseQueryResult,
-    SuspenseQueryHookOptions,
+    type DocumentNode,
+    type OperationVariables,
+    type QueryHookOptions as ApolloQueryHookOptions,
+    type QueryResult,
+    type MutationHookOptions as ApolloMutationHookOptions,
+    type MutationTuple,
+    type QueryTuple,
+    type UseSuspenseQueryResult,
+    type SuspenseQueryHookOptions,
 } from '@apollo/client'
 
-import { ApolloContext } from '../types'
+import type { ApolloContext } from '../types'
 
 type RequestDocument = string | DocumentNode
 

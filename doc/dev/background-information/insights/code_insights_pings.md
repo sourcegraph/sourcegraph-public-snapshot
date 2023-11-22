@@ -290,7 +290,7 @@ https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegrap
 
 **Intended purpose:** To track the number of insight views, grouped by presentation type.
 
-**Functional implementation:** This is calculated using the `insight_view` table. Unlike critical telemetry which only [shows the number of unlocked insights](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/pings/insights_ping_aggregators.go?L286) for customers without full access, this ping [shows the total number that are locked or unlocked](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/background/pings/insights_ping_aggregators.go?L243-247) (and may have been created during a trial or free beta phase).  
+**Functional implementation:** This is calculated using the `insight_view` table. Unlike critical telemetry which only [shows the number of unlocked insights](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/insights/background/pings/insights_ping_aggregators.go?L286) for customers without full access, this ping [shows the total number that are locked or unlocked](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/insights/background/pings/insights_ping_aggregators.go?L243-247) (and may have been created during a trial or free beta phase).  
 
 **Other considerations:** N/A
 

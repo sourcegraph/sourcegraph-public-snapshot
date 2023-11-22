@@ -1,4 +1,4 @@
-import React, { ChangeEventHandler, memo } from 'react'
+import React, { type ChangeEventHandler, memo } from 'react'
 
 import classNames from 'classnames'
 import { startCase } from 'lodash'
@@ -37,7 +37,6 @@ export const FormColorInput: React.FunctionComponent<React.PropsWithChildren<For
                 {COLORS_KEYS.map(key => (
                     <Label
                         key={key}
-                        /* eslint-disable-next-line react/forbid-dom-props */
                         style={{ color: DATA_SERIES_COLORS[key] }}
                         title={startCase(key.toLocaleLowerCase())}
                         className={styles.formColorPickerColorBlock}

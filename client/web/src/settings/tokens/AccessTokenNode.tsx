@@ -9,7 +9,7 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Button, Link, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     AccessTokenFields,
     CreateAccessTokenResult,
     DeleteAccessTokenResult,

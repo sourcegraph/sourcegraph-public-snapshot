@@ -1,6 +1,6 @@
-import { FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 
-import { TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
+import type { TourTaskStepType } from '@sourcegraph/shared/src/settings/temporary'
 import { ButtonLink, Link } from '@sourcegraph/wildcard'
 
 export interface NewTabLinkProps {
@@ -8,10 +8,7 @@ export interface NewTabLinkProps {
     variant: 'button' | 'link'
     className?: string
     to: string
-    onClick: (
-        event: React.MouseEvent<HTMLElement, MouseEvent> | React.KeyboardEvent<HTMLElement>,
-        step: TourTaskStepType
-    ) => void
+    onClick: (step: TourTaskStepType) => void
 }
 
 export const TourNewTabLink: FunctionComponent<NewTabLinkProps> = ({ step, onClick, variant, to }) => {
@@ -24,14 +21,14 @@ export const TourNewTabLink: FunctionComponent<NewTabLinkProps> = ({ step, onCli
 
     if (variant === 'button') {
         return (
-            <ButtonLink variant="primary" {...commonLinkProps} onSelect={event => onClick(event, step)}>
+            <ButtonLink variant="primary" {...commonLinkProps} onSelect={() => onClick(step)}>
                 {step.label}
             </ButtonLink>
         )
     }
 
     return (
-        <Link {...commonLinkProps} onClick={event => onClick(event, step)}>
+        <Link {...commonLinkProps} onClick={() => onClick(step)}>
             {step.label}
         </Link>
     )

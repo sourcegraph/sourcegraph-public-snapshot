@@ -15,7 +15,7 @@ go_library(
         "//internal/database/dbutil",
         "//internal/ratelimit",
         "//lib/errors",
-        "@com_github_google_go_github_v31//github",
+        "@com_github_google_go_github_v55//github",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_mattn_go_sqlite3//:go-sqlite3",
         "@com_github_prometheus_client_golang//prometheus",
@@ -31,4 +31,8 @@ go_binary(
     name = "ghe-feeder",
     embed = [":ghe-feeder_lib"],
     visibility = ["//:__subpackages__"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )

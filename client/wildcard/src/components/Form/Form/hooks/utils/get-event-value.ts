@@ -1,4 +1,4 @@
-import { ChangeEvent } from 'react'
+import type { ChangeEvent } from 'react'
 
 /**
  * Type guard for change event. Since useField might be used on custom element there's the case

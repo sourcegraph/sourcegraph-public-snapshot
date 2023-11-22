@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "migration",
+    srcs = ["runner.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/connections/live",
+        "//internal/database/migration/runner",
+        "//internal/database/migration/schemas",
+        "//internal/database/migration/store",
+        "//internal/database/postgresdsn",
+        "//internal/env",
+        "//internal/observation",
+        "//lib/output",
+    ],
+)

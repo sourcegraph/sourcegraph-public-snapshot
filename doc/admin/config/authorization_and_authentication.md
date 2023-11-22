@@ -17,20 +17,13 @@ Sourcegraph supports username/password auth by default and SAML, OAuth, HTTP Pro
 }
 ```
 
-For users using any of the other authentication mechanisms, removing `builtin` as an authentication mechanism is best practice. (Customers in a managed instance environment will need to leave `builtin` enabled for Sourcegraph employee access. Consult with your Customer Engineer for more info.)
+For users using any of the other authentication mechanisms, removing `builtin` as an authentication mechanism is best practice.
 
 > NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
 
-## Authorization in Sourcegraph
+## Repository permissions in Sourcegraph
 
-If you use GitHub, GitLab, Bitbucket Server / Bitbucket Data Center or Azure DevOps Services you can sync access permissions directly from the code host:
-
-- [GitHub](#github-enterprise-or-github-cloud-authentication-and-authorization)
-- [GitLab](#gitlab-enterprise-or-gilab-cloud-authentication-and-authorization)
-- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-authorization)
-- [Azure DevOps Services](#azure-devops-services)
-
-If you do not use one of those listed code hosts, you will need to control access using our [explicit permissions API](#explicit-permissions-api-authorization).
+See [repository permissions documentation](../permissions/index.md).
 
 ## Username normalization
 

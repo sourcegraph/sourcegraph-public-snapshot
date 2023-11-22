@@ -9,7 +9,7 @@ import { catchError, mapTo, switchMap } from 'rxjs/operators'
 import { useCallbackRef } from 'use-callback-ref'
 
 import { logger } from '@sourcegraph/common'
-import { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
+import type { SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Container,
@@ -25,8 +25,8 @@ import {
 
 import { usePageSwitcherPagination } from '../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { PageTitle } from '../components/PageTitle'
-import { SavedSearchFields, SavedSearchesResult, SavedSearchesVariables } from '../graphql-operations'
-import { NamespaceProps } from '../namespaces'
+import type { SavedSearchFields, SavedSearchesResult, SavedSearchesVariables } from '../graphql-operations'
+import type { NamespaceProps } from '../namespaces'
 import { deleteSavedSearch, savedSearchesQuery } from '../search/backend'
 import { useNavbarQueryState } from '../stores'
 import { eventLogger } from '../tracking/eventLogger'

@@ -1,140 +1,121 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`RequestAccessPage renders form if all conditions are met 1`] = `
+exports[`RequestAccessPage > renders form if all conditions are met 1`] = `
 <DocumentFragment>
   <div
-    class="signinSignupPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Request access to Sourcegraph
+    </h1>
     <div
-      class="heroPage lessPadding"
+      class="wrapper"
     >
       <div
-        class="iconWrapper bg-transparent"
+        class="container"
       >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline icon"
-          fill="none"
-          height="64"
-          role="img"
-          viewBox="0 0 52 52"
-          width="65"
-          xmlns="http://www.w3.org/2000/svg"
+        <form
+          autocapitalize="off"
+          autocomplete="name"
+          class="form-control with-invalid-icon"
+          name="<input id=\\"name\\">"
+          placeholder="Your name"
+          required=""
+          type="text"
+          value=""
         >
-          <path
-            d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-            fill="#FF5543"
-          />
-          <path
-            d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-            fill="#A112FF"
-          />
-          <path
-            d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-            fill="#00CBEC"
-          />
-        </svg>
-      </div>
-      <h1
-        class="h1 title"
-      >
-        Request access to Sourcegraph
-      </h1>
-      <div
-        class="mb-4 pb-5 signinPageContainer"
-      >
-        <div
-          class="rounded p-4 my-3 signinSignupForm mt-4"
-        >
-          <form
-            class=""
-            data-testid="request-access-form"
+          " class="mb-0" data-testid="request-access-form"&gt;
+          <label
+            class="label label"
           >
-            <label
-              class="label w-100"
-            >
-              <p
-                class="alignLeft mb-2"
-              >
-                Name
-              </p>
-              <div
-                class="container loader-input loaderInput form-group"
-              >
-                <input
-                  autocapitalize="off"
-                  autocomplete="name"
-                  class="form-control with-invalid-icon"
-                  id="name"
-                  placeholder="Your name"
-                  required=""
-                  type="text"
-                  value=""
-                />
-              </div>
-            </label>
-            <label
-              class="label w-100"
-            >
-              <p
-                class="alignLeft mb-2"
-              >
-                Email Address
-              </p>
-              <div
-                class="container loader-input loaderInput form-group"
-              >
-                <input
-                  autocapitalize="off"
-                  autocomplete="email"
-                  class="form-control with-invalid-icon"
-                  id="email"
-                  placeholder="Your work email to get access"
-                  required=""
-                  type="text"
-                  value=""
-                />
-              </div>
-            </label>
-            <label
-              class="label w-100"
-            >
-              <p
-                class="alignLeft mb-2"
-              >
-                Notes for administrator
-              </p>
-              <textarea
-                class="form-control textarea mb-4"
-                id="additionalInfo"
-                placeholder="Use this field to provide extra info for your access request"
-              />
-            </label>
             <div
-              class="form-group"
+              class="mb-2"
             >
-              <button
-                aria-disabled="false"
-                class="btn btnPrimary btnBlock"
-                type="submit"
-              >
-                Request access
-              </button>
+              Name
             </div>
-          </form>
-        </div>
-        <p
-          class="mt-3"
-        >
-          Already have an account? 
-          <a
-            class="anchorLink"
-            href="/sign-in"
+            <div
+              class="container loader-input loaderInput"
+            >
+              <input
+                autocapitalize="off"
+                autocomplete="name"
+                class="form-control with-invalid-icon"
+                id="name"
+                placeholder="Your name"
+                required=""
+                type="text"
+                value=""
+              />
+            </div>
+          </label>
+          <label
+            class="label label"
           >
-            Sign in
-          </a>
-        </p>
+            <div
+              class="mb-2"
+            >
+              Email Address
+            </div>
+            <div
+              class="container loader-input loaderInput"
+            >
+              <input
+                autocapitalize="off"
+                autocomplete="email"
+                class="form-control with-invalid-icon"
+                id="email"
+                placeholder="Your work email to get access"
+                required=""
+                type="text"
+                value=""
+              />
+            </div>
+          </label>
+          <label
+            class="label label mb-3"
+          >
+            <div
+              class="mb-2"
+            >
+              Notes for administrator
+            </div>
+            <textarea
+              class="textarea form-control"
+              id="additionalInfo"
+              placeholder="Use this field to provide extra info for your access request"
+            />
+          </label>
+          <button
+            aria-disabled="false"
+            class="btn btnPrimary btnBlock d-flex justify-content-center align-items-center"
+            type="submit"
+          >
+            Request access
+          </button>
+        </form>
       </div>
+      <p
+        class="text-center mt-3"
+      >
+        Already have an account? 
+        <a
+          class="anchorLink"
+          href="/sign-in"
+        >
+          Sign in
+        </a>
+      </p>
     </div>
   </div>
 </DocumentFragment>

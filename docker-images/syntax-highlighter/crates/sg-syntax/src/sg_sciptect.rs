@@ -1,7 +1,7 @@
 use std::{collections::HashSet, fmt::Debug};
 
 use once_cell::sync::OnceCell;
-use protobuf::{EnumOrUnknown, SpecialFields};
+use protobuf::EnumOrUnknown;
 use scip::types::{Document, Occurrence, SyntaxKind};
 use syntect::{
     parsing::{BasicScopeStackOp, ParseState, Scope, ScopeStack, SyntaxReference, SyntaxSet},
@@ -370,7 +370,10 @@ impl<'a> DocumentGenerator<'a> {
                     .find(|(_, (offset, _))| *offset == byte_offset)
                 {
                     Some(char) => char.0,
-                    None => line_contents.chars().count() - 1,
+                    None => {
+                        line_contents.chars().count()
+                            - (if line_contents.ends_with('\n') { 1 } else { 0 })
+                    }
                 };
 
                 stack.apply_with_hook(op, |basic_op, _stack| {
@@ -519,7 +522,7 @@ fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind, scope: Scope) -> Occu
         symbol,
         override_documentation: vec![],
         diagnostics: vec![],
-        special_fields: SpecialFields::default(),
+        ..Default::default()
     }
 }
 
@@ -601,9 +604,7 @@ mod test {
                 extension: filepath.extension().unwrap().to_str().unwrap().to_string(),
                 filepath: filepath.to_str().unwrap().to_string(),
                 filetype: None,
-                css: false,
                 line_length_limit: None,
-                theme: "".to_string(),
                 code: contents.clone(),
             };
             let syntax_def = determine_language(&q, &ss).unwrap();

@@ -12,23 +12,23 @@ import {
     AnchorLink,
     H4,
     LineChart,
-    Series,
+    type Series,
     BarChart,
     LegendList,
     LegendItem,
     Link,
 } from '@sourcegraph/wildcard'
 
-import { CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../../graphql-operations'
+import type { CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
-import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { ValueLegendList, type ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { formatNumber, StandardDatum } from '../utils'
+import { formatNumber, type StandardDatum } from '../utils'
 
 import { CODEINTEL_STATISTICS } from './queries'
 
@@ -432,11 +432,14 @@ export const AnalyticsCodeIntelPage: React.FC = () => {
 
 const color = (precision: string): string => {
     switch (precision) {
-        case 'precise':
+        case 'precise': {
             return 'rgb(255, 184, 109)'
-        case 'search-based':
+        }
+        case 'search-based': {
             return 'rgb(155, 211, 255)'
-        default:
+        }
+        default: {
             return 'gray'
+        }
     }
 }

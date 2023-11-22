@@ -4,7 +4,7 @@ In the eventuality of having to regenerate this patch if we bump the package ver
 
 ```
     # Shallow clone based on version
-    git clone --depth 1 --branch v2.15.0 https://github.com/grpc-ecosystem/grpc-gateway.git
+    git clone --depth 1 --branch v2.16.0 https://github.com/grpc-ecosystem/grpc-gateway.git
     cd ./grpc-gateway
 
     # (Optional)
@@ -32,5 +32,5 @@ In the eventuality of having to regenerate this patch if we bump the package ver
     #   - `repositories.bzl`
     #   - `runtime/BUILD.bazel`
     #   - `runtime/internal/examplepb/BUILD.bazel`
-    git diff -u repositories.bzl runtime/BUILD.bazel runtime/internal/examplepb/BUILD.bazel > ../grpc-gateway.patch
+    git diff -u repositories.bzl runtime/BUILD.bazel runtime/internal/examplepb/BUILD.bazel > ../grpc_gateway.patch
 ```

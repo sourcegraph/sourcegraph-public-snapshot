@@ -6,7 +6,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Tooltip } from '@sourcegraph/wildcard'
 
-import { SignatureFields } from '../../graphql-operations'
+import type { SignatureFields } from '../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
 
 interface Props {
@@ -18,6 +18,7 @@ interface Props {
     preferAbsoluteTimestamps?: boolean
     messageElement?: JSX.Element
     commitMessageBody?: JSX.Element
+    isPerforceDepot?: boolean
     as?: 'div' | 'td'
 }
 
@@ -33,9 +34,12 @@ export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildre
     preferAbsoluteTimestamps,
     messageElement,
     commitMessageBody,
+    isPerforceDepot,
     as = 'div',
 }) => {
     const Wrapper = as
+
+    const refActionType = isPerforceDepot ? 'submitted by' : 'committed by'
 
     // Omit GitHub as committer to reduce noise. (Edits and squash commits made in the GitHub UI
     // include GitHub as a committer.)
@@ -68,8 +72,8 @@ export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildre
                     {!compact ? (
                         <>
                             {messageElement}
-                            <PersonLink person={author.person} className="font-weight-bold" /> authored and commited by{' '}
-                            <PersonLink person={committer.person} className="font-weight-bold" />{' '}
+                            <PersonLink person={author.person} className="font-weight-bold" /> authored and{' '}
+                            {refActionType} <PersonLink person={committer.person} className="font-weight-bold" />{' '}
                             <Timestamp date={committer.date} preferAbsolute={preferAbsoluteTimestamps} />
                             {commitMessageBody}
                         </>
@@ -98,7 +102,7 @@ export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildre
                 {!compact && (
                     <>
                         {messageElement}
-                        committed by <PersonLink person={author.person} className="font-weight-bold" />{' '}
+                        {refActionType} <PersonLink person={author.person} className="font-weight-bold" />{' '}
                         <Timestamp date={author.date} preferAbsolute={preferAbsoluteTimestamps} />
                         {commitMessageBody}
                     </>

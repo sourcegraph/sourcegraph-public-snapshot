@@ -1,9 +1,9 @@
 import { from } from 'rxjs'
 import { first } from 'rxjs/operators'
 
-import { KeyPath } from '@sourcegraph/client-api'
+import type { KeyPath } from '@sourcegraph/client-api'
 
-import { PlatformContext } from '../../../platform/context'
+import type { PlatformContext } from '../../../platform/context'
 import { isSettingsValid } from '../../../settings/settings'
 
 /**
@@ -32,6 +32,6 @@ export async function updateSettings(
     if (!isSettingsValid(settings)) {
         throw new Error('invalid settings (internal error)')
     }
-    const subject = settings.subjects[settings.subjects.length - 1]
+    const subject = settings.subjects.at(-1)!
     await update(subject.subject.id, edit)
 }

@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import historyApiFallback from 'connect-history-api-fallback'
-import express, { RequestHandler } from 'express'
+import express, { type RequestHandler } from 'express'
 import expressStaticGzip from 'express-static-gzip'
 import { createProxyMiddleware } from 'http-proxy-middleware'
 import signale from 'signale'
@@ -10,7 +10,7 @@ import {
     ENVIRONMENT_CONFIG,
     HTTP_WEB_SERVER_URL,
     HTTPS_WEB_SERVER_URL,
-    getWebpackManifest,
+    getWebBuildManifest,
     STATIC_INDEX_PATH,
     getIndexHTML,
 } from '../utils'
@@ -41,9 +41,9 @@ function startProductionServer(): void {
 
     const { proxyRoutes, ...proxyConfig } = getAPIProxySettings({
         apiURL: SOURCEGRAPH_API_URL,
-        ...(ENVIRONMENT_CONFIG.WEBPACK_SERVE_INDEX && {
+        ...(ENVIRONMENT_CONFIG.WEB_BUILDER_SERVE_INDEX && {
             getLocalIndexHTML(jsContextScript) {
-                const manifestFile = getWebpackManifest()
+                const manifestFile = getWebBuildManifest()
                 return getIndexHTML({ manifestFile, jsContextScript })
             },
         }),

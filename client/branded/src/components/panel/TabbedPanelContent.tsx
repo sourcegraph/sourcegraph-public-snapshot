@@ -3,13 +3,13 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { BehaviorSubject, Observable } from 'rxjs'
+import { BehaviorSubject, type Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     useObservable,
@@ -21,7 +21,7 @@ import {
     Icon,
     Tooltip,
     useKeyboard,
-    ProductStatusType,
+    type ProductStatusType,
     ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 

@@ -30,33 +30,6 @@ Foreign-key constraints:
 
 ```
 
-# Table "public.commit_index"
-```
-    Column    |            Type             | Collation | Nullable |      Default      
---------------+-----------------------------+-----------+----------+-------------------
- committed_at | timestamp with time zone    |           | not null | 
- repo_id      | integer                     |           | not null | 
- commit_bytea | bytea                       |           | not null | 
- indexed_at   | timestamp without time zone |           |          | CURRENT_TIMESTAMP
- debug_field  | text                        |           |          | 
-Indexes:
-    "commit_index_pkey" PRIMARY KEY, btree (committed_at, repo_id, commit_bytea)
-    "commit_index_repo_id_idx" btree (repo_id, committed_at)
-
-```
-
-# Table "public.commit_index_metadata"
-```
-     Column      |           Type           | Collation | Nullable |                      Default                       
------------------+--------------------------+-----------+----------+----------------------------------------------------
- repo_id         | integer                  |           | not null | 
- enabled         | boolean                  |           | not null | true
- last_indexed_at | timestamp with time zone |           | not null | '1900-01-01 00:00:00+00'::timestamp with time zone
-Indexes:
-    "commit_index_metadata_pkey" PRIMARY KEY, btree (repo_id)
-
-```
-
 # Table "public.dashboard"
 ```
        Column       |            Type             | Collation | Nullable |                Default                

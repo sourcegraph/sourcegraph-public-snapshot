@@ -11,6 +11,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,26 +27,27 @@ const (
 )
 
 type MergeRequest struct {
-	ID                     ID `json:"id"`
-	IID                    ID `json:"iid"`
-	ProjectID              ID `json:"project_id"`
-	SourceProjectID        ID `json:"source_project_id"`
-	SourceProjectNamespace string
-	SourceProjectName      string
-	Title                  string            `json:"title"`
-	Description            string            `json:"description"`
-	State                  MergeRequestState `json:"state"`
-	CreatedAt              Time              `json:"created_at"`
-	UpdatedAt              Time              `json:"updated_at"`
-	MergedAt               *Time             `json:"merged_at"`
-	ClosedAt               *Time             `json:"closed_at"`
-	HeadPipeline           *Pipeline         `json:"head_pipeline"`
-	Labels                 []string          `json:"labels"`
-	SourceBranch           string            `json:"source_branch"`
-	TargetBranch           string            `json:"target_branch"`
-	WebURL                 string            `json:"web_url"`
-	WorkInProgress         bool              `json:"work_in_progress"`
-	Draft                  bool              `json:"draft"`
+	ID                      ID `json:"id"`
+	IID                     ID `json:"iid"`
+	ProjectID               ID `json:"project_id"`
+	SourceProjectID         ID `json:"source_project_id"`
+	SourceProjectNamespace  string
+	SourceProjectName       string
+	Title                   string            `json:"title"`
+	Description             string            `json:"description"`
+	State                   MergeRequestState `json:"state"`
+	CreatedAt               Time              `json:"created_at"`
+	UpdatedAt               Time              `json:"updated_at"`
+	MergedAt                *Time             `json:"merged_at"`
+	ClosedAt                *Time             `json:"closed_at"`
+	HeadPipeline            *Pipeline         `json:"head_pipeline"`
+	Labels                  []string          `json:"labels"`
+	SourceBranch            string            `json:"source_branch"`
+	TargetBranch            string            `json:"target_branch"`
+	WebURL                  string            `json:"web_url"`
+	WorkInProgress          bool              `json:"work_in_progress"`
+	Draft                   bool              `json:"draft"`
+	ForceRemoveSourceBranch bool              `json:"force_remove_source_branch"`
 	// We only get a partial User object back from the REST API. For example, it lacks
 	// `Email` and `Identities`. If we need more, we need to issue an additional API
 	// request. Otherwise, we should use a different type here.
@@ -106,11 +108,12 @@ var (
 )
 
 type CreateMergeRequestOpts struct {
-	SourceBranch    string `json:"source_branch"`
-	TargetBranch    string `json:"target_branch"`
-	TargetProjectID int    `json:"target_project_id,omitempty"`
-	Title           string `json:"title"`
-	Description     string `json:"description,omitempty"`
+	SourceBranch       string `json:"source_branch"`
+	TargetBranch       string `json:"target_branch"`
+	TargetProjectID    int    `json:"target_project_id,omitempty"`
+	Title              string `json:"title"`
+	Description        string `json:"description,omitempty"`
+	RemoveSourceBranch bool   `json:"remove_source_branch,omitempty"`
 	// TODO: other fields at
 	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr as needed.
 }
@@ -135,11 +138,12 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 		if code == http.StatusConflict {
 			return nil, ErrMergeRequestAlreadyExists
 		}
+
 		if aerr := c.convertToArchivedError(ctx, err, project); aerr != nil {
 			return nil, aerr
 		}
 
-		return nil, errors.Wrap(err, "sending request to create a merge request")
+		return nil, errors.Wrap(errcode.MaybeMakeNonRetryable(code, err), "sending request to create a merge request")
 	}
 
 	return resp, nil
@@ -214,10 +218,11 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 }
 
 type UpdateMergeRequestOpts struct {
-	TargetBranch string                       `json:"target_branch,omitempty"`
-	Title        string                       `json:"title,omitempty"`
-	Description  string                       `json:"description,omitempty"`
-	StateEvent   UpdateMergeRequestStateEvent `json:"state_event,omitempty"`
+	TargetBranch       string                       `json:"target_branch,omitempty"`
+	Title              string                       `json:"title,omitempty"`
+	Description        string                       `json:"description,omitempty"`
+	StateEvent         UpdateMergeRequestStateEvent `json:"state_event,omitempty"`
+	RemoveSourceBranch bool                         `json:"remove_source_branch,omitempty"`
 }
 
 type UpdateMergeRequestStateEvent string

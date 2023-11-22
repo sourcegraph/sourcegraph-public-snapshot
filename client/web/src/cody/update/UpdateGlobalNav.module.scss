@@ -1,0 +1,72 @@
+@keyframes tooltip-fade-in-out {
+    0% {
+        opacity: 0;
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    84% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+@keyframes background-fade-in-out {
+    0% {
+        opacity: 0;
+        transform: scale(1, 1);
+    }
+
+    11% {
+        opacity: 0;
+        transform: scale(1, 1);
+    }
+
+    27% {
+        opacity: 1;
+        transform: scale(1.5, 1.5);
+    }
+
+    84% {
+        opacity: 1;
+        transform: scale(1.5, 1.5);
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1, 1);
+    }
+}
+
+.dropdown-menu {
+    min-width: 12rem;
+}
+
+.dropdown-header {
+    font-size: 0.75rem;
+}
+
+.dropdown-divider {
+    border-top: 1px solid var(--border-color-2);
+}
+
+.menu-button {
+    --link-color: var(--violet-04);
+    padding: 0.25rem 0.4rem;
+    color: var(--violet-04);
+    background-color: var(--violet-01);
+
+    &:hover {
+        --link-hover-color: var(--violet-04);
+        color: var(--violet-04);
+        background-color: var(--violet-02);
+    }
+
+    div {
+        gap: 0.2rem;
+    }
+}

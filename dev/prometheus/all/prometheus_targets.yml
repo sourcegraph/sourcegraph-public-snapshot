@@ -59,12 +59,22 @@
     # postgres exporter
     - host.docker.internal:9187
 - labels:
-    job: github-proxy
-  targets:
-    # github proxy
-    - host.docker.internal:6090
-- labels:
     job: otel-collector
   targets:
     # opentelemetry collector
     - host.docker.internal:8888
+- labels:
+    job: embeddings
+  targets:
+    # embeddings
+    - host.docker.internal:6099
+- labels:
+    job: cody-gateway
+  targets:
+    # cody gateway
+    - host.docker.internal:6098
+- labels:
+    job: telemetry-gateway
+  targets:
+    # cody gateway
+    - host.docker.internal:6080

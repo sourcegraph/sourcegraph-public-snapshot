@@ -1,212 +1,74 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { EditorHint, QueryState } from '@sourcegraph/shared/src/search'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    Button,
-    H2,
-    Link,
-    Icon,
-    Tabs,
-    TabList,
-    TabPanels,
-    TabPanel,
-    Tab,
-    ProductStatusBadge,
-} from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
+import { H2, Link, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, ButtonLink } from '@sourcegraph/wildcard'
 
 import { exampleQueryColumns } from './QueryExamples.constants'
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
-import { useQueryExamples, QueryExamplesSection } from './useQueryExamples'
+import { useQueryExamples, type QueryExamplesSection } from './useQueryExamples'
 
 import styles from './QueryExamples.module.scss'
 
 export interface QueryExamplesProps extends TelemetryProps {
     selectedSearchContextSpec?: string
-    queryState?: QueryState
-    setQueryState: (newState: QueryState) => void
     isSourcegraphDotCom?: boolean
-    enableOwnershipSearch?: boolean
-}
-
-type Tip = 'rev' | 'lang' | 'before'
-
-export const queryToTip = (id: string | undefined): Tip | null => {
-    switch (id) {
-        case 'single-repo':
-        case 'org-repos':
-            return 'rev'
-        case 'exact-matches':
-        case 'regex-pattern':
-            return 'lang'
-        case 'type-diff-author':
-        case 'type-commit-message':
-        case 'type-diff-after':
-            return 'before'
-    }
-    return null
 }
 
 export const QueryExamples: React.FunctionComponent<QueryExamplesProps> = ({
     selectedSearchContextSpec,
     telemetryService,
-    queryState = { query: '' },
-    setQueryState,
     isSourcegraphDotCom = false,
-    enableOwnershipSearch = false,
 }) => {
-    const [selectedTip, setSelectedTip] = useState<Tip | null>(null)
-    const [selectTipTimeout, setSelectTipTimeout] = useState<NodeJS.Timeout>()
-    const [queryExampleTabActive, setQueryExampleTabActive] = useState<boolean>(false)
-    const navigate = useNavigate()
-
-    const exampleSyntaxColumns = useQueryExamples(
-        selectedSearchContextSpec ?? 'global',
-        isSourcegraphDotCom,
-        enableOwnershipSearch
-    )
-
-    const handleTabChange = (selectedTab: number): void => {
-        setQueryExampleTabActive(!!selectedTab)
-    }
+    const exampleSyntaxColumns = useQueryExamples(selectedSearchContextSpec ?? 'global', isSourcegraphDotCom)
 
     const onQueryExampleClick = useCallback(
-        (id: string | undefined, query: string, slug: string | undefined) => {
-            // Run search for dotcom longer query examples
-            if (isSourcegraphDotCom && queryExampleTabActive) {
-                telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
-                navigate(slug!)
-            }
-
-            setQueryState({ query: `${queryState.query} ${query}`.trimStart(), hint: EditorHint.Focus })
-
+        (query: string) => {
             telemetryService.log('QueryExampleClicked', { queryExample: query }, { queryExample: query })
-
-            // Clear any previously set timeout.
-            if (selectTipTimeout) {
-                clearTimeout(selectTipTimeout)
-            }
-
-            const newSelectedTip = queryToTip(id)
-            if (newSelectedTip) {
-                // If the user selected a query with a different tip, reset the currently selected tip, so that we
-                // can apply the fade-in transition.
-                if (newSelectedTip !== selectedTip) {
-                    setSelectedTip(null)
-                }
-
-                const timeoutId = setTimeout(() => setSelectedTip(newSelectedTip), 1000)
-                setSelectTipTimeout(timeoutId)
-            } else {
-                // Immediately reset the selected tip if the query does not have an associated tip.
-                setSelectedTip(null)
-            }
         },
-        [
-            telemetryService,
-            queryState.query,
-            setQueryState,
-            selectedTip,
-            setSelectedTip,
-            selectTipTimeout,
-            setSelectTipTimeout,
-            queryExampleTabActive,
-            navigate,
-            isSourcegraphDotCom,
-        ]
+        [telemetryService]
     )
 
-    return (
-        <div>
-            {isSourcegraphDotCom ? (
-                <>
-                    <Tabs size="medium" onChange={handleTabChange}>
-                        <TabList wrapperClassName={classNames('mb-4', styles.tabHeader)}>
-                            <Tab key="Code search basics">Code search basics</Tab>
-                            <Tab key="Search query examples">Search query examples</Tab>
-                        </TabList>
-                        <TabPanels>
-                            <TabPanel className={styles.tabPanel}>
-                                <QueryExamplesLayout
-                                    queryColumns={exampleSyntaxColumns}
-                                    onQueryExampleClick={onQueryExampleClick}
-                                />
-                            </TabPanel>
-                            <TabPanel className={styles.tabPanel}>
-                                <QueryExamplesLayout
-                                    queryColumns={exampleQueryColumns}
-                                    onQueryExampleClick={onQueryExampleClick}
-                                />
-                            </TabPanel>
-                        </TabPanels>
-                    </Tabs>
-                </>
-            ) : (
-                <div>
-                    <div className={classNames(styles.tip, selectedTip && styles.tipVisible)}>
-                        <strong>Tip</strong>
-                        <span className="mx-1">–</span>
-                        {selectedTip === 'rev' && (
-                            <>
-                                Add{' '}
-                                <QueryExampleChip
-                                    query="rev:branchname"
-                                    onClick={onQueryExampleClick}
-                                    className="mx-1"
-                                />{' '}
-                                to query accross a specific branch or commit
-                            </>
-                        )}
-                        {selectedTip === 'lang' && (
-                            <>
-                                Use <QueryExampleChip query="lang:" onClick={onQueryExampleClick} className="mx-1" /> to
-                                query for matches only in a given language
-                            </>
-                        )}
-                        {selectedTip === 'before' && (
-                            <>
-                                Use{' '}
-                                <QueryExampleChip
-                                    query={'before:"last week"'}
-                                    onClick={onQueryExampleClick}
-                                    className="mx-1"
-                                />{' '}
-                                to query within a time range
-                            </>
-                        )}
-                    </div>
+    return isSourcegraphDotCom ? (
+        <Tabs size="medium">
+            <TabList wrapperClassName={classNames('mb-4', styles.tabHeader)}>
+                <Tab>How to search</Tab>
+                <Tab>Popular queries</Tab>
+            </TabList>
+            <TabPanels>
+                <TabPanel className={styles.tabPanel}>
                     <QueryExamplesLayout
                         queryColumns={exampleSyntaxColumns}
                         onQueryExampleClick={onQueryExampleClick}
                     />
-                </div>
-            )}
-        </div>
+                </TabPanel>
+                <TabPanel className={styles.tabPanel}>
+                    <QueryExamplesLayout queryColumns={exampleQueryColumns} onQueryExampleClick={onQueryExampleClick} />
+                </TabPanel>
+            </TabPanels>
+        </Tabs>
+    ) : (
+        <QueryExamplesLayout queryColumns={exampleSyntaxColumns} onQueryExampleClick={onQueryExampleClick} />
     )
 }
 
 interface QueryExamplesLayout {
     queryColumns: QueryExamplesSection[][]
-    onQueryExampleClick: (id: string | undefined, query: string, slug: string | undefined) => void
+    onQueryExampleClick: (query: string) => void
 }
 
-export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({
-    queryColumns,
-    onQueryExampleClick,
-}) => (
+const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> = ({ queryColumns, onQueryExampleClick }) => (
     <div className={styles.queryExamplesSectionsColumns}>
         {queryColumns.map((column, index) => (
             <div key={`column-${queryColumns[index][0].title}`}>
-                {column.map(({ title, productStatus, queryExamples }) => (
+                {column.map(({ title, queryExamples }) => (
                     <ExamplesSection
                         key={title}
                         title={title}
-                        productStatus={productStatus}
                         queryExamples={queryExamples}
                         onQueryExampleClick={onQueryExampleClick}
                     />
@@ -226,66 +88,46 @@ export const QueryExamplesLayout: React.FunctionComponent<QueryExamplesLayout> =
 )
 
 interface ExamplesSection extends QueryExamplesSection {
-    onQueryExampleClick: (id: string | undefined, query: string, slug: string | undefined) => void
+    onQueryExampleClick: (query: string) => void
 }
 
-export const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({
-    title,
-    productStatus,
-    queryExamples,
-    onQueryExampleClick,
-}) => (
+const ExamplesSection: React.FunctionComponent<ExamplesSection> = ({ title, queryExamples, onQueryExampleClick }) => (
     <div className={styles.queryExamplesSection}>
-        <H2 className={styles.queryExamplesSectionTitle}>
-            {title}
-            {productStatus && (
-                <>
-                    {' '}
-                    <ProductStatusBadge status={productStatus} />
-                </>
-            )}
-        </H2>
+        <H2 className={styles.queryExamplesSectionTitle}>{title}</H2>
         <ul className={classNames('list-unstyled', styles.queryExamplesItems)}>
             {queryExamples
                 .filter(({ query }) => query.length > 0)
-                .map(({ id, query, helperText, slug }) => (
-                    <QueryExampleChip
-                        id={id}
-                        key={query}
-                        query={query}
-                        slug={slug}
-                        helperText={helperText}
-                        onClick={onQueryExampleClick}
-                    />
+                .map(({ query, helperText }) => (
+                    <QueryExampleChip key={query} query={query} helperText={helperText} onClick={onQueryExampleClick} />
                 ))}
         </ul>
     </div>
 )
 
 interface QueryExample {
-    id?: string
     query: string
     helperText?: string
-    slug?: string | undefined
 }
 
 interface QueryExampleChipProps extends QueryExample {
     className?: string
-    onClick: (id: string | undefined, query: string, slug: string | undefined) => void | undefined
+    onClick: (query: string) => void | undefined
 }
 
-export const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
-    id,
+const QueryExampleChip: React.FunctionComponent<QueryExampleChipProps> = ({
     query,
     helperText,
-    slug,
     className,
     onClick,
 }) => (
     <li className={classNames('d-flex align-items-center', className)}>
-        <Button type="button" className={styles.queryExampleChip} onClick={() => onClick(id, query, slug || '')}>
+        <ButtonLink
+            className={styles.queryExampleChip}
+            to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}
+            onClick={() => onClick(query)}
+        >
             <SyntaxHighlightedSearchQuery query={query} searchPatternType={SearchPatternType.standard} />
-        </Button>
+        </ButtonLink>
         {helperText && (
             <span className="text-muted ml-2">
                 <small>{helperText}</small>

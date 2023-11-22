@@ -3,7 +3,13 @@
     --streaming-skipped-item-message-border-size: 2px;
 }
 
+.nested-collapse-reasons {
+    margin-right: calc(var(--streaming-skipped-item-button-margin) * -1);
+}
+
 .streaming-skipped-item {
+    width: 100%;
+    padding-top: 0.5rem;
     padding-left: var(--streaming-skipped-item-button-margin);
     padding-right: var(--streaming-skipped-item-button-margin);
 
@@ -65,4 +71,32 @@
 
 .chevron {
     fill: currentColor !important;
+}
+
+.exhaustive-search {
+    padding: 1rem;
+
+    &-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    &-text {
+        margin-left: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    &-warning-list {
+        margin: 0;
+        padding: 0 1rem;
+    }
+
+    &-submit {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-top: 0.75rem;
+    }
 }

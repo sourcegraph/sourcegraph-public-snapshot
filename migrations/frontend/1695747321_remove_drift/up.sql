@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS event_logs_name_is_cody_active_event;
+DROP INDEX IF EXISTS event_logs_name_is_cody_explanation_event;
+DROP INDEX IF EXISTS event_logs_name_is_cody_generation_event;

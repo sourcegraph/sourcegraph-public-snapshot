@@ -1,17 +1,37 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiEarth, mdiBookOpenPageVariant, mdiCheckCircleOutline, mdiLock, mdiBlockHelper, mdiOpenInNew } from '@mdi/js'
-import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
+import {
+    mdiEarth,
+    mdiBookOpenPageVariant,
+    mdiCheckCircleOutline,
+    mdiLock,
+    mdiBlockHelper,
+    mdiOpenInNew,
+    mdiClose,
+} from '@mdi/js'
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
-import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Label, H4, Text, LoaderInput } from '@sourcegraph/wildcard'
+import { type InputValidationState, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import {
+    Combobox,
+    ComboboxInput,
+    ComboboxOption,
+    ComboboxPopover,
+    ComboboxList,
+    Button,
+    Link,
+    Icon,
+    Label,
+    H4,
+    Text,
+    InputStatus,
+} from '@sourcegraph/wildcard'
 
-import { CurrentUserResult } from '../../graphql-operations'
+import type { CurrentUserResult } from '../../graphql-operations'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
 
 import { OptionsPageContainer } from './components/OptionsPageContainer'
@@ -31,6 +51,7 @@ export interface OptionsPageProps {
 
     // Suggested Sourcegraph URLs
     suggestedSourcegraphUrls: string[]
+    onSuggestedSourcegraphUrlDelete: (url: string) => void
 
     // Option flags
     optionFlags: { key: string; label: string; value: boolean }[]
@@ -75,6 +96,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
     suggestedSourcegraphUrls,
     hasRepoSyncError,
     currentUser,
+    onSuggestedSourcegraphUrlDelete,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(initialShowAdvancedSettings)
 
@@ -110,6 +132,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
                 <SourcegraphURLForm
                     value={sourcegraphUrl}
                     suggestions={suggestedSourcegraphUrls}
+                    onSuggestionDelete={onSuggestedSourcegraphUrlDelete}
                     onChange={onChangeSourcegraphUrl}
                     validate={validateSourcegraphUrl}
                 />
@@ -129,7 +152,11 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
             )}
 
             <section className={styles.section}>
-                <Link to="/help/integration/browser_extension#privacy" {...NEW_TAB_LINK_PROPS} className="d-block mb-1">
+                <Link
+                    to="https://docs.sourcegraph.com/integration/browser_extension#privacy"
+                    {...NEW_TAB_LINK_PROPS}
+                    className="d-block mb-1"
+                >
                     <small>How do we keep your code private?</small>{' '}
                     <Icon
                         className="ml-2"
@@ -272,13 +299,32 @@ interface SourcegraphURLFormProps {
     value: OptionsPageProps['sourcegraphUrl']
     validate: OptionsPageProps['validateSourcegraphUrl']
     onChange: OptionsPageProps['onChangeSourcegraphUrl']
-    suggestions: OptionsPageProps['sourcegraphUrl'][]
+    suggestions: OptionsPageProps['suggestedSourcegraphUrls']
+    onSuggestionDelete: OptionsPageProps['onSuggestedSourcegraphUrlDelete']
+}
+
+const getInputStatusFromKind = (kind: InputValidationState['kind']): InputStatus => {
+    switch (kind) {
+        case 'INVALID': {
+            return InputStatus.error
+        }
+        case 'VALID': {
+            return InputStatus.valid
+        }
+        case 'LOADING': {
+            return InputStatus.loading
+        }
+        default: {
+            return InputStatus.initial
+        }
+    }
 }
 
 export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren<SourcegraphURLFormProps>> = ({
     value,
     validate,
     suggestions,
+    onSuggestionDelete,
     onChange,
 }) => {
     const urlInputReference = useRef<HTMLInputElement | null>(null)
@@ -328,29 +374,51 @@ export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren
         <form onSubmit={preventDefault} noValidate={true}>
             <Label htmlFor="sourcegraph-url">Sourcegraph URL</Label>
             <Combobox openOnFocus={true} onSelect={nextUrlFieldChange}>
-                <LoaderInput loading={urlState.kind === 'LOADING'} className={deriveInputClassName(urlState)}>
-                    <ComboboxInput
-                        type="url"
-                        required={true}
-                        spellCheck={false}
-                        autoComplete="off"
-                        autocomplete={false}
-                        pattern="^https://.*"
-                        placeholder="https://"
-                        onFocus={onFocus}
-                        id="sourcegraph-url"
-                        ref={urlInputElements}
-                        value={urlState.value}
-                        onChange={nextUrlFieldChange}
-                        className={classNames('form-control', 'test-sourcegraph-url', deriveInputClassName(urlState))}
-                    />
-                </LoaderInput>
+                <ComboboxInput
+                    type="url"
+                    required={true}
+                    spellCheck={false}
+                    autoComplete="off"
+                    autocomplete={false}
+                    status={getInputStatusFromKind(urlState.kind)}
+                    pattern="^https://.*"
+                    placeholder="https://"
+                    onFocus={onFocus}
+                    id="sourcegraph-url"
+                    ref={urlInputElements}
+                    value={urlState.value}
+                    onChange={nextUrlFieldChange}
+                    className="test-sourcegraph-url"
+                />
 
                 {suggestions.length > 1 && hasInteracted && (
-                    <ComboboxPopover className={styles.popover}>
+                    <ComboboxPopover>
                         <ComboboxList>
                             {suggestions.map(suggestion => (
-                                <ComboboxOption key={suggestion} value={suggestion} />
+                                <ComboboxOption
+                                    key={suggestion}
+                                    value={suggestion}
+                                    className="d-flex justify-content-between p-0"
+                                >
+                                    <Text className="py-2 pl-3 m-0">{suggestion}</Text>
+                                    <Button
+                                        className={classNames('m-0 py-0 px-2', styles.suggestionRemoveButton)}
+                                        onClick={event => {
+                                            // prevent click from becoming option selection
+                                            event.preventDefault()
+                                            event.stopPropagation()
+                                            if (
+                                                confirm(
+                                                    `Are you sure you want to remove ${suggestion} from auto suggestion list?`
+                                                )
+                                            ) {
+                                                onSuggestionDelete(suggestion)
+                                            }
+                                        }}
+                                    >
+                                        <Icon svgPath={mdiClose} aria-label="Remove suggestion" />
+                                    </Button>
+                                </ComboboxOption>
                             ))}
                         </ComboboxList>
                     </ComboboxPopover>

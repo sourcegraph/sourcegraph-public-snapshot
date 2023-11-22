@@ -52,20 +52,14 @@ func TestComputeRunType(t *testing.T) {
 		},
 		want: BextNightly,
 	}, {
-		name: "vsce nightly",
+		name: "wolfi base image rebuild",
 		args: args{
 			branch: "main",
 			env: map[string]string{
-				"VSCE_NIGHTLY": "true",
+				"WOLFI_BASE_REBUILD": "true",
 			},
 		},
-		want: VsceNightly,
-	}, {
-		name: "vsce release",
-		args: args{
-			branch: "vsce/release",
-		},
-		want: VsceReleaseBranch,
+		want: WolfiBaseRebuild,
 	}, {
 		name: "app release",
 		args: args{

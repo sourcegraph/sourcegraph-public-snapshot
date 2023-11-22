@@ -1,0 +1,109 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//dev:proto.bzl", "write_proto_stubs_to_source")
+
+proto_library(
+    name = "v1_proto",
+    srcs = ["telemetrygateway.proto"],
+    strip_import_prefix = "/internal",  # keep
+    visibility = ["//visibility:private"],
+    deps = [
+        "@com_google_protobuf//:struct_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+go_proto_library(
+    name = "v1_go_proto",
+    compilers = [
+        "//:gen-go-grpc",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1",
+    proto = ":v1_proto",
+    visibility = ["//visibility:private"],
+)
+
+go_library(
+    name = "telemetrygateway",
+    srcs = ["event.go"],
+    embed = [":v1_go_proto"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1",
+    visibility = [
+        "//cmd/frontend/internal/telemetry/resolvers:__pkg__",
+        "//cmd/telemetry-gateway/internal/events:__pkg__",
+        "//cmd/telemetry-gateway/internal/server:__pkg__",
+        "//cmd/telemetry-gateway/shared:__pkg__",
+        "//cmd/telemetrygateway/server:__pkg__",
+        "//cmd/telemetrygateway/shared:__pkg__",
+        "//internal/api:__pkg__",
+        "//internal/database:__pkg__",
+        "//internal/extsvc/gitolite:__pkg__",
+        "//internal/telemetry:__pkg__",
+        "//internal/telemetry/sensitivemetadataallowlist:__pkg__",
+        "//internal/telemetry/teestore:__pkg__",
+        "//internal/telemetry/telemetrytest:__pkg__",
+        "//internal/telemetrygateway:__pkg__",
+        "//internal/telemetrygateway/gitdomain:__pkg__",
+        "//internal/telemetrygateway/integration_tests:__pkg__",
+        "//internal/telemetrygateway/protocol:__pkg__",
+    ],
+    deps = [
+        "//internal/actor",
+        "//internal/featureflag",
+        "//internal/trace",
+        "//lib/pointers",
+        "@com_github_google_uuid//:uuid",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+# See https://github.com/sourcegraph/sourcegraph/issues/50032
+# write_proto_stubs_to_source(
+#     name = "v1_go_proto_stubs",
+#     output_files = ["telemetrygateway.pb.go"],
+#     target = ":v1_go_proto",
+# )
+
+buf_lint_test(
+    name = "v1_proto_lint",
+    timeout = "short",
+    config = "//internal:buf.yaml",
+    targets = [":v1_proto"],
+)
+
+go_test(
+    name = "telemetrygateway_test",
+    srcs = [
+        "backcompat_test.go",
+        "event_test.go",
+        "main_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":telemetrygateway"],
+    deps = [
+        "//internal/actor",
+        "//internal/trace",
+        "//internal/trace/tracetest",
+        "//lib/pointers",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_protobuf//encoding/protojson",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//types/known/structpb",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+load("@rules_proto_grpc//doc:defs.bzl", "doc_template_compile")
+
+doc_template_compile(
+    name = "protocol.md",
+    protos = [":v1_proto"],
+    template = "protoc-gen-doc.tmpl",
+    visibility = ["//doc/dev/background-information/telemetry:__pkg__"],
+)

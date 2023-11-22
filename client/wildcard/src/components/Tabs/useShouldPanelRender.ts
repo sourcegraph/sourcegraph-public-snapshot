@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, ReactNode } from 'react'
+import { useLayoutEffect, useState, type ReactNode } from 'react'
 
 import { useTabsContext as useReachTabsContext } from '@reach/tabs'
 

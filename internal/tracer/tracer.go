@@ -5,22 +5,18 @@ import (
 	"sync/atomic"
 	"text/template"
 
-	"github.com/opentracing/opentracing-go"
+	"github.com/go-logr/logr"
 	"github.com/sourcegraph/log"
-	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
-	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
 	"go.opentelemetry.io/otel"
-	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
-	w3cpropagator "go.opentelemetry.io/otel/propagation"
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
-	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // options control the behavior of a TracerType
@@ -57,8 +53,24 @@ func (t TracerType) isSetByUser() bool {
 	return false
 }
 
+type Configuration struct {
+	ExternalURL string
+	*schema.ObservabilityTracing
+}
+
+type ConfigurationSource interface {
+	Config() Configuration
+}
+
+type WatchableConfigurationSource interface {
+	ConfigurationSource
+
+	// Watchable allows the caller to be notified when the configuration changes.
+	conftypes.Watchable
+}
+
 // Init should be called from the main function of service
-func Init(logger log.Logger, c conftypes.WatchableSiteConfig) {
+func Init(logger log.Logger, c WatchableConfigurationSource) {
 	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
 	// so we tune for all of them.
 	//
@@ -85,10 +97,21 @@ func Init(logger log.Logger, c conftypes.WatchableSiteConfig) {
 	debugMode := &atomic.Bool{}
 	provider := newOtelTracerProvider(resource)
 
+	// Set up logging
+	otelLogger := logger.AddCallerSkip(2).Scoped("otel")
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		if debugMode.Load() {
+			otelLogger.Warn("error encountered", log.Error(err))
+		} else {
+			otelLogger.Debug("error encountered", log.Error(err))
+		}
+	}))
+	otel.SetLogger(logr.Discard()) // we only care about errors, handled above - discard everything else
+
 	// Create and set up global tracers from provider. We will be making updates to these
 	// tracers through the debugMode ref and underlying provider.
-	otTracer, otelTracerProvider := newBridgeTracers(logger, provider, debugMode)
-	opentracing.SetGlobalTracer(otTracer)
+	otelTracerProvider := newLoggedOtelTracerProvider(logger, provider, debugMode)
+	otel.SetTextMapPropagator(oteldefaults.Propagator())
 	otel.SetTracerProvider(otelTracerProvider)
 
 	// Initially everything is disabled since we haven't read conf yet - start a goroutine
@@ -106,55 +129,4 @@ func Init(logger log.Logger, c conftypes.WatchableSiteConfig) {
 		}
 		return nil
 	})
-}
-
-// newBridgeTracers creates an opentracing.Tracer that exports all OpenTracing traces,
-// allowing us to continue leveraging the OpenTracing API (which is a predecessor to
-// OpenTelemetry tracing) without making changes to existing tracing code. The returned
-// opentracing.Tracer and oteltrace.TracerProvider should be set as global defaults for
-// their respective libraries.
-//
-// All configuration should be sourced directly from the environment using the specification
-// laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
-func newBridgeTracers(logger log.Logger, provider *oteltracesdk.TracerProvider, debugMode *atomic.Bool) (opentracing.Tracer, oteltrace.TracerProvider) {
-	// Ensure propagation between services continues to work. This is also done by another
-	// project that uses the OpenTracing bridge:
-	// https://sourcegraph.com/github.com/thanos-io/thanos/-/blob/pkg/tracing/migration/bridge.go?L62
-	compositePropagator := w3cpropagator.NewCompositeTextMapPropagator(
-		jaegerpropagator.Jaeger{},
-		otpropagator.OT{},
-		w3cpropagator.TraceContext{},
-		w3cpropagator.Baggage{},
-	)
-	otel.SetTextMapPropagator(compositePropagator)
-
-	// Set up otBridgeTracer for converting OpenTracing API calls to OpenTelemetry, and
-	// otelTracerProvider for the inverse.
-	otBridgeTracer := otelbridge.NewBridgeTracer()
-	otBridgeTracer.SetTextMapPropagator(compositePropagator)
-	otelTracerProvider := otelbridge.NewTracerProvider(otBridgeTracer, provider)
-	otBridgeTracer.SetOpenTelemetryTracer(
-		otelTracerProvider.Tracer("sourcegraph/internal/tracer.opentracing-bridge"))
-
-	// Set up logging
-	otelLogger := logger.AddCallerSkip(2).Scoped("otel", "OpenTelemetry library")
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		if debugMode.Load() {
-			otelLogger.Warn("error encountered", log.Error(err))
-		} else {
-			otelLogger.Debug("error encountered", log.Error(err))
-		}
-	}))
-	bridgeLogger := logger.AddCallerSkip(2).Scoped("ot.bridge", "OpenTracing to OpenTelemetry compatibility layer")
-	otBridgeTracer.SetWarningHandler(func(msg string) {
-		if debugMode.Load() {
-			bridgeLogger.Warn(msg)
-		} else {
-			bridgeLogger.Debug(msg)
-		}
-	})
-
-	// Wrap each tracer in additional logging
-	return newLoggedOTTracer(logger, otBridgeTracer, debugMode),
-		newLoggedOtelTracerProvider(logger, otelTracerProvider, debugMode)
 }

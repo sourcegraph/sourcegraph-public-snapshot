@@ -1,5 +1,7 @@
-import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
-import { Context, parse, parseTemplate } from '@sourcegraph/template-parser'
+import { describe, expect, it, test } from 'vitest'
+
+import { ContributableMenu, type Contributions, type Evaluated } from '@sourcegraph/client-api'
+import { type Context, parse, parseTemplate } from '@sourcegraph/template-parser'
 
 import {
     evaluateContributions,

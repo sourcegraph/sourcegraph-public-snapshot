@@ -3,12 +3,12 @@ import React, { useCallback, useState } from 'react'
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 import { format } from 'date-fns'
-import { Optional } from 'utility-types'
+import type { Optional } from 'utility-types'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Button, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
 
-import { WebhookLogFields } from '../../graphql-operations'
+import type { WebhookLogFields } from '../../graphql-operations'
 
 import { MessagePanel } from './MessagePanel'
 import { StatusCode } from './StatusCode'

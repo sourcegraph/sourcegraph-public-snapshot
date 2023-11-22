@@ -2,10 +2,10 @@ import * as React from 'react'
 
 import { logger } from '@sourcegraph/common'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container } from '@sourcegraph/wildcard'
 
-import { SettingsAreaPageProps } from './SettingsArea'
+import type { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
 
 interface Props extends SettingsAreaPageProps, TelemetryProps {
@@ -28,7 +28,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
         return (
             <Container className="mb-3">
                 <SettingsFile
-                    settings={this.props.data.subjects[this.props.data.subjects.length - 1].latestSettings}
+                    settings={this.props.data.subjects.at(-1)!.latestSettings}
                     commitError={this.state.commitError}
                     onDidCommit={this.onDidCommit}
                     onDidDiscard={this.onDidDiscard}

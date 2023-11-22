@@ -19,7 +19,7 @@ import classNames from 'classnames'
 import { pluralize } from '@sourcegraph/common'
 import { H3, H4, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
+import { type ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 
 export interface PreviewActionsProps {
     node: ChangesetApplyPreviewFields
@@ -70,34 +70,47 @@ const PreviewAction: React.FunctionComponent<React.PropsWithChildren<PreviewActi
     className,
 }) => {
     switch (operation) {
-        case ChangesetSpecOperation.IMPORT:
+        case ChangesetSpecOperation.IMPORT: {
             return <PreviewActionImport className={className} />
-        case ChangesetSpecOperation.PUBLISH:
+        }
+        case ChangesetSpecOperation.PUBLISH: {
             return <PreviewActionPublish className={className} />
-        case ChangesetSpecOperation.PUBLISH_DRAFT:
+        }
+        case ChangesetSpecOperation.PUBLISH_DRAFT: {
             return <PreviewActionPublishDraft className={className} />
-        case ChangesetSpecOperation.CLOSE:
+        }
+        case ChangesetSpecOperation.CLOSE: {
             return <PreviewActionClose className={className} />
-        case ChangesetSpecOperation.REOPEN:
+        }
+        case ChangesetSpecOperation.REOPEN: {
             return <PreviewActionReopen className={className} />
-        case ChangesetSpecOperation.UNDRAFT:
+        }
+        case ChangesetSpecOperation.UNDRAFT: {
             return <PreviewActionUndraft className={className} />
-        case ChangesetSpecOperation.UPDATE:
+        }
+        case ChangesetSpecOperation.UPDATE: {
             return <PreviewActionUpdate className={className} />
-        case ChangesetSpecOperation.PUSH:
+        }
+        case ChangesetSpecOperation.PUSH: {
             return <PreviewActionPush className={className} />
-        case ChangesetSpecOperation.DETACH:
+        }
+        case ChangesetSpecOperation.DETACH: {
             return <PreviewActionDetach className={className} />
-        case ChangesetSpecOperation.ARCHIVE:
+        }
+        case ChangesetSpecOperation.ARCHIVE: {
             return <PreviewActionArchive className={className} />
-        case ChangesetSpecOperation.REATTACH:
+        }
+        case ChangesetSpecOperation.REATTACH: {
             return <PreviewActionReattach className={className} />
+        }
         case ChangesetSpecOperation.SYNC:
-        case ChangesetSpecOperation.SLEEP:
+        case ChangesetSpecOperation.SLEEP: {
             // We don't want to expose these states.
             return null
-        default:
+        }
+        default: {
             return <PreviewActionUnknown operations={operations.join(' => ')} className={className} />
+        }
     }
 }
 

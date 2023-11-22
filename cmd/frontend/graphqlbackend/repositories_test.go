@@ -17,7 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -44,6 +46,64 @@ func buildCursorBySize(node *types.Repo, size int64) *string {
 	return &cursor
 }
 
+func TestRepositoriesSourceType(t *testing.T) {
+	r1 := types.Repo{
+		ID:           1,
+		Name:         "repo1",
+		ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypeGitHub},
+	}
+	r2 := types.Repo{
+		ID:           2,
+		Name:         "repo2",
+		ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+	}
+
+	repos := dbmocks.NewMockRepoStore()
+	repos.ListFunc.SetDefaultReturn([]*types.Repo{&r1, &r2}, nil)
+	repos.GetFunc.SetDefaultHook(func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
+		if repoID == 1 {
+			return &r1, nil
+		}
+
+		return &r2, nil
+	})
+
+	db := dbmocks.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	RunTests(t, []*Test{
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+				{
+					repositories(first: 10) {
+						nodes {
+						  name
+						  sourceType
+						}
+					}
+				}
+			`,
+			ExpectedResult: `
+				{
+				  "repositories": {
+					"nodes": [
+					  {
+						"name": "repo1",
+						"sourceType": "GIT_REPOSITORY"
+					  },
+					  {
+						"name": "repo2",
+						"sourceType": "PERFORCE_DEPOT"
+					  }
+					]
+				  }
+				}
+			`,
+		},
+	})
+}
+
 func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 	mockRepos := []*types.Repo{
 		{ID: 1, Name: "repo1"}, // not_cloned
@@ -51,7 +111,7 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 		{ID: 3, Name: "repo3"}, // cloned
 	}
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 		if opt.NoCloned {
 			return mockRepos[0:2], nil
@@ -74,9 +134,9 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 	})
 	repos.CountFunc.SetDefaultReturn(len(mockRepos), nil)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 
@@ -345,7 +405,7 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 		sort.Sort(repos)
 		return repos
 	}
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
 		return filterRepos(t, opt), nil
 	})
@@ -354,9 +414,9 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 		return len(repos), nil
 	})
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 
@@ -498,8 +558,8 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		{ID: 2, Name: "repo3"},
 	}
 
-	repos := database.NewMockRepoStore()
-	db := database.NewMockDB()
+	repos := dbmocks.NewMockRepoStore()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	buildQuery := func(first int, after string) string {
@@ -650,7 +710,7 @@ func TestRepositories_Integration(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	schema := mustParseGraphQLSchema(t, db)
@@ -686,7 +746,7 @@ func TestRepositories_Integration(t *testing.T) {
 		}
 
 		if rsc.indexed {
-			err := db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+			err := db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
 				uint32(rsc.repo.ID): {},
 			})
 			if err != nil {
@@ -1065,17 +1125,17 @@ func runRepositoriesQuery(t *testing.T, ctx context.Context, schema *graphql.Sch
 	}
 
 	query := fmt.Sprintf(`
-	{ 
-		repositories(%s) { 
-			nodes { 
-				name 
-			} 
-			totalCount 
-			pageInfo { 
-				hasNextPage 
-				hasPreviousPage 
-				startCursor 
-				endCursor 
+	{
+		repositories(%s) {
+			nodes {
+				name
+			}
+			totalCount
+			pageInfo {
+				hasNextPage
+				hasPreviousPage
+				startCursor
+				endCursor
 			}
 		}
 	}`, want.args)

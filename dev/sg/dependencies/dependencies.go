@@ -8,11 +8,10 @@ import (
 )
 
 type CheckArgs struct {
-	Teammate bool
-
 	ConfigFile          string
 	ConfigOverwriteFile string
 	DisableOverwrite    bool
+	DisablePreCommits   bool
 }
 
 type category = check.Category[CheckArgs]

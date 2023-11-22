@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "oobmigration",
@@ -8,6 +9,7 @@ go_library(
         "interrupts.go",
         "migrator.go",
         "observability.go",
+        "progress.go",
         "registration.go",
         "runner.go",
         "store.go",
@@ -20,6 +22,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
+        "//internal/collections",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbutil",
@@ -29,14 +32,16 @@ go_library(
         "//internal/version",
         "//internal/version/upgradestore",
         "//lib/errors",
+        "//lib/output",
         "@com_github_derision_test_glock//:glock",
         "@com_github_jackc_pgconn//:pgconn",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
         "@com_github_masterminds_semver//:semver",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
         "@in_gopkg_yaml_v3//:yaml_v3",
+        "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_exp//slices",
     ],
 )
 
@@ -61,6 +66,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/observation",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_derision_test_glock//:glock",
         "@com_github_google_go_cmp//cmp",
         "@com_github_keegancsmith_sqlf//:sqlf",

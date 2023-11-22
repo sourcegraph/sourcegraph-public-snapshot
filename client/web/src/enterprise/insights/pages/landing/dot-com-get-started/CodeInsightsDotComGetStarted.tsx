@@ -2,8 +2,8 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Card, CardBody, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { CallToActionBanner } from '../../../../../components/CallToActionBanner'
@@ -11,7 +11,6 @@ import { Page } from '../../../../../components/Page'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
 import { eventLogger } from '../../../../../tracking/eventLogger'
-import { CodeInsightsLimitedAccessAppBanner } from '../../../components/code-insights-page/limit-access-banner/CodeInsightsLimitAccessAppBanner'
 import { CodeInsightsLandingPageContext, CodeInsightsLandingPageType } from '../CodeInsightsLandingPageContext'
 import { CodeInsightsDescription } from '../getting-started/components/code-insights-description/CodeInsightsDescription'
 
@@ -30,7 +29,6 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
 > = props => {
     const { telemetryService } = props
     const isSourcegraphDotCom = window.context.sourcegraphDotComMode
-    const isSourcegraphApp = window.context.sourcegraphAppMode
 
     useEffect(() => {
         telemetryService.logViewEvent('CloudInsightsGetStartedPage')
@@ -56,7 +54,6 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                     }
                     className="mb-4"
                 />
-                {isSourcegraphApp && <CodeInsightsLimitedAccessAppBanner authenticatedUser={props.authenticatedUser} />}
                 <main className="pb-5">
                     <Card as={CardBody} className={styles.heroSection}>
                         <aside className={styles.heroVideoBlock}>

@@ -6,6 +6,7 @@ import %workspace%/.aspect/bazelrc/correctness.bazelrc
 import %workspace%/.aspect/bazelrc/debug.bazelrc
 import %workspace%/.aspect/bazelrc/javascript.bazelrc
 import %workspace%/.aspect/bazelrc/performance.bazelrc
+import %workspace%/.aspect/bazelrc/rules_ts.bazelrc
 
 ### YOUR PROJECT SPECIFIC SETTINGS GO HERE ###
 
@@ -17,3 +18,36 @@ try-import %workspace%/.aspect/bazelrc/user.bazelrc
 
 # Enable bazel hack for autogold; apply to both build & test to avoid busting analysis cache
 build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
+
+# Needed by https://github.com/uber/bazel-zig-cc which we use to cross-compile
+# CGo code for cmd/symbols to be used in containers.
+build:incompat-zig-linux-amd64 --incompatible_enable_cc_toolchain_resolution
+build:incompat-zig-linux-amd64 --platforms @zig_sdk//platform:linux_amd64
+build:incompat-zig-linux-amd64 --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
+
+# Except in CI run E2E tests in headless mode
+try-import %workspace%/user.bazelrc
+
+# Some special sauce for the special NixOS users in your life :) set by dev-shell shell-hook
+try-import %workspace%/.bazelrc-nix
+
+# Used to locally cross compile, when targeting docker images
+build:darwin-docker --incompatible_enable_cc_toolchain_resolution
+build:darwin-docker --platforms @zig_sdk//platform:linux_amd64
+build:darwin-docker --extra_toolchains @zig_sdk//toolchain:linux_amd64_gnu.2.31
+ # build setting to tell some go test runner to force targeting to macos even if we're building containers with the linux/amd64 toolchain.
+build:darwin-docker --//:darwin_docker=True
+
+# Helper to run only fast go unit tests
+test:go-short --test_tag_filters=go --test_timeout_filters=short
+
+# Helper to run go tests verbosely, useful for debugging test timeouts
+test:go-verbose-test --test_env=GO_TEST_WRAP_TESTV=1
+
+# .aspect/bazelrc/correctness.bazelrc sets this, but this breaks with a lot of Go external deps, so
+# we instead disable it.
+common --noincompatible_disallow_empty_glob
+
+# Ensure clippy runs for rust targets
+build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build --output_groups=+clippy_checks

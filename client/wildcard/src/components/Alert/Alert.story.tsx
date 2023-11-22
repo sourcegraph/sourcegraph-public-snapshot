@@ -1,11 +1,11 @@
 import React from 'react'
 
 import { action } from '@storybook/addon-actions'
-import { Story, Meta } from '@storybook/react'
+import type { StoryFn, Meta } from '@storybook/react'
 import classNames from 'classnames'
 import { flow } from 'lodash'
 
-import 'storybook-addon-designs'
+import '@storybook/addon-designs'
 
 import { H1, H4, Text } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
@@ -45,7 +45,7 @@ const config: Meta = {
 
 export default config
 
-export const Alerts: Story = () => (
+export const Alerts: StoryFn = () => (
     <>
         <H1>Alerts</H1>
         <Text>
@@ -60,6 +60,16 @@ export const Alerts: Story = () => (
                 </Alert>
             ))}
             <Alert variant="info" className="d-flex align-items-center">
+                <div className="flex-grow-1">
+                    <H4>Too many matching repositories</H4>
+                    Use a 'repo:' filter to narrow your search.
+                </div>
+                <AlertLink className="mr-2" to="/" onClick={flow(preventDefault, action(classNames('link clicked')))}>
+                    Dismiss
+                </AlertLink>
+            </Alert>
+
+            <Alert variant="secondary" withIcon={false} className="d-flex align-items-center">
                 <div className="flex-grow-1">
                     <H4>Too many matching repositories</H4>
                     Use a 'repo:' filter to narrow your search.

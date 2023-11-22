@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "apitest",
+    srcs = ["types.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codemonitors/resolvers/apitest",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = ["//lib/errors"],
+)

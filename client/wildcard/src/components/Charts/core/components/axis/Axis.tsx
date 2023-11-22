@@ -3,9 +3,9 @@ import { forwardRef, memo, useEffect } from 'react'
 import {
     AxisLeft as VisxAxisLeft,
     AxisBottom as VisxAsixBottom,
-    TickLabelProps,
-    SharedAxisProps,
-    AxisScale,
+    type TickLabelProps,
+    type SharedAxisProps,
+    type AxisScale,
 } from '@visx/axis'
 import { GridRows } from '@visx/grid'
 import { Group } from '@visx/group'

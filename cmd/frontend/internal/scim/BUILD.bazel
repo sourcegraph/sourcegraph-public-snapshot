@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "scim",
+    srcs = ["scim.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/scim",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//internal/codeintel",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/observation",
+        "//internal/scim",
+    ],
+)

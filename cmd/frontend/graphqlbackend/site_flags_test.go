@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -26,8 +26,8 @@ func TestFreeUsersExceeded(t *testing.T) {
 	}
 
 	t.Run("Free users not exceeded", func(t *testing.T) {
-		db := database.NewMockDB()
-		users := database.NewMockUserStore()
+		db := dbmocks.NewMockDB()
+		users := dbmocks.NewMockUserStore()
 		users.CountFunc.SetDefaultReturn(5, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 		s := &siteResolver{db: db, gqlID: ""}
@@ -38,8 +38,8 @@ func TestFreeUsersExceeded(t *testing.T) {
 	})
 
 	t.Run("Free users exceeded", func(t *testing.T) {
-		db := database.NewMockDB()
-		users := database.NewMockUserStore()
+		db := dbmocks.NewMockDB()
+		users := dbmocks.NewMockUserStore()
 		users.CountFunc.SetDefaultReturn(10, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 		s := &siteResolver{db: db, gqlID: ""}

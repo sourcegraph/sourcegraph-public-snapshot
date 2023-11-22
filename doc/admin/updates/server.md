@@ -1,25 +1,105 @@
-# Updating a single-image Sourcegraph instance (`sourcegraph/server`)
+# Single-image Sourcegraph Upgrade Notes
 
-This document describes the exact changes needed to update a single-node Sourcegraph instance.
-**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
+This page lists the changes that are relevant for upgrading Sourcegraph on a **single-node Sourcegraph instance**.
 
-## Upgrade procedure
+For upgrade procedures or general info about sourcegraph versioning see the links below:
+- [Single Container Upgrade Procedures](../deploy/docker-single-container/index.md#upgrade)
+- [General Upgrade Info](./index.md)
+- [Product changelog](../../../CHANGELOG.md)
 
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
-1. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-single-container/index.md#standard-upgrades) to upgrade your instance.
-
-## Multi-version upgrade procedure
-
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, externalized databases).
-1. After checking the relevant update notes, refer to the [multi-version upgrade procedure](../deploy/docker-single-container/index.md#multi-version-upgrades) to upgrade your instance.
+> ***Attention:** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, externalized databases).*
+>
+> ***If the notes indicate a patch release exists, target the highest one.***
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## Unreleased
 
 <!-- Add changes changes to this section before release. -->
+
+## v5.2.2 ➔ v5.2.3
+
+#### Notes:
+
+## v5.2.1 ➔ v5.2.2
+
+#### Notes:
+
+## v5.2.0 ➔ v5.2.1
+
+#### Notes:
+
+## v5.1.9 ➔ v5.2.0
+
+#### Notes:
+
+## v5.1.8 ➔ v5.1.9
+
+#### Notes:
+
+## v5.1.7 ➔ v5.1.8
+
+#### Notes:
+
+## v5.1.6 ➔ v5.1.7
+
+#### Notes:
+
+## v5.1.5 ➔ v5.1.6
+
+#### Notes:
+
+## v5.1.4 ➔ v5.1.5
+
+#### Notes:
+
+## v5.1.3 ➔ v5.1.4
+
+#### Notes:
+
+## v5.1.2 ➔ v5.1.3
+
+#### Notes:
+
+## v5.1.1 ➔ v5.1.2
+
+#### Notes:
+
+## v5.1.0 ➔ v5.1.1
+
+#### Notes:
+
+## v5.0.6 ➔ v5.1.0
+
+#### Notes:
+
+#### Notes:
+
+- The Docker Single Container Deployment image has switched to a Wolfi-based container image. Upon upgrading, Sourcegraph will need to re-index the entire database. All users **must** read through the [5.1 upgrade guide](../migration/5_1.md) _before_ upgrading.
+
+## v5.0.5 ➔ v5.0.6
+
+#### Notes:
+
+## v5.0.4 ➔ v5.0.5
+
+#### Notes:
+
+## v5.0.3 ➔ v5.0.4
+
+#### Notes:
+
+## v5.0.2 ➔ v5.0.3
+
+#### Notes:
+
+## v5.0.1 ➔ v5.0.2
+
+#### Notes:
+
+## v5.0.0 ➔ v5.0.1
+
+#### Notes:
 
 ## v4.5.1 ➔ v5.0.0
 

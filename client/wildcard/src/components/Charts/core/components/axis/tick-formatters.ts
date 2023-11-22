@@ -1,5 +1,5 @@
 import { getTicks } from '@visx/scale'
-import { AnyD3Scale } from '@visx/scale/lib/types/Scale'
+import type { AnyD3Scale } from '@visx/scale/lib/types/Scale'
 import { format } from 'd3-format'
 
 const SI_PREFIX_FORMATTER = format('~s')

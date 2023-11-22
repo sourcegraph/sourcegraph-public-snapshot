@@ -1,6 +1,6 @@
-import { InputStatus, InputProps } from '../Input'
+import { InputStatus, type InputProps } from '../Input'
 
-import { useFieldAPI } from './hooks'
+import type { useFieldAPI } from './hooks'
 
 export function getDefaultInputStatus<T>({ meta }: useFieldAPI<T>, getValue?: (value: T) => unknown): InputStatus {
     const initialValue = getValue

@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 )
 
 func TestVirtualFile(t *testing.T) {

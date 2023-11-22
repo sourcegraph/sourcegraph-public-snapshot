@@ -1,15 +1,29 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
 load("@rules_buf//buf:defs.bzl", "buf_lint_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:proto.bzl", "write_proto_stubs_to_source")
 
 exports_files(["buf.gen.yaml"])
 
 proto_library(
     name = "v1_proto",
     srcs = ["symbols.proto"],
-    strip_import_prefix = "/internal",
-    visibility = ["//visibility:public"],
+    strip_import_prefix = "/internal",  # keep
+    visibility = ["//visibility:private"],
     deps = ["@com_google_protobuf//:duration_proto"],
+)
+
+go_proto_library(
+    name = "v1_go_proto",
+    compilers = [
+        "//:gen-go-grpc",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/symbols/v1",
+    proto = ":v1_proto",
+    visibility = ["//visibility:private"],
 )
 
 go_library(
@@ -17,9 +31,8 @@ go_library(
     srcs = [
         "conversion.go",
         "doc.go",
-        "symbols.pb.go",
-        "symbols_grpc.pb.go",
     ],
+    embed = [":v1_go_proto"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/symbols/v1",
     visibility = ["//:__subpackages__"],
     deps = [
@@ -27,14 +40,16 @@ go_library(
         "//internal/search",
         "//internal/search/result",
         "//internal/types",
-        "@org_golang_google_grpc//:go_default_library",
-        "@org_golang_google_grpc//codes",
-        "@org_golang_google_grpc//status",
-        "@org_golang_google_protobuf//reflect/protoreflect",
-        "@org_golang_google_protobuf//runtime/protoimpl",
         "@org_golang_google_protobuf//types/known/durationpb",
     ],
 )
+
+# See https://github.com/sourcegraph/sourcegraph/issues/50032
+# write_proto_stubs_to_source(
+#     name = "v1_go_proto_stubs",
+#     output_files = ["symbols.pb.go"],
+#     target = ":v1_go_proto",
+# )
 
 go_test(
     name = "symbols_test",

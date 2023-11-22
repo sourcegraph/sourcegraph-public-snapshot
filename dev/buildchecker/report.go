@@ -4,14 +4,12 @@ import (
 	"context"
 	"log"
 	"math"
-	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/honeycombio/libhoney-go"
 
-	"github.com/sourcegraph/sourcegraph/dev/okay"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -90,51 +88,6 @@ func reportToHoneycomb(
 		}
 	}
 
-	return nil
-}
-
-func reportToOkayHQ(
-	ctx context.Context,
-	historyFlags cmdHistoryFlags,
-	totals map[string]int,
-	incidents map[string]int,
-	flakes map[string]int,
-) error {
-	okayCli := okay.NewClient(http.DefaultClient, historyFlags.okayHQToken)
-
-	for _, record := range mapToRecords(totals) {
-		recordDateString := record[0]
-		eventTime, err := time.Parse("2006-01-02T00:00:00Z", recordDateString+"T00:00:00Z")
-		if err != nil {
-			return errors.Wrap(err, "time.Parse")
-		}
-
-		metrics := map[string]okay.Metric{
-			"totalCount":       okay.Count(totals[recordDateString]),
-			"incidentDuration": okay.Duration(time.Duration(incidents[recordDateString]) * time.Minute),
-			"flakeCount":       okay.Count(flakes[recordDateString]),
-		}
-		event := okay.Event{
-			Name:      "buildStats",
-			Timestamp: eventTime,
-			UniqueKey: []string{"ts", "pipeline", "branch"},
-			Properties: map[string]string{
-				"ts":           eventTime.Format(time.RFC3339),
-				"organization": "sourcegraph",
-				"pipeline":     "sourcegraph",
-				"branch":       "main",
-			},
-			Metrics: metrics,
-		}
-
-		err = okayCli.Push(&event)
-		if err != nil {
-			return errors.Wrap(err, "Error storing OKAYHQ event okay.Push")
-		}
-	}
-	if err := okayCli.Flush(); err != nil {
-		return errors.Wrap(err, "Error posting to OkayHQ okay.Flush")
-	}
 	return nil
 }
 

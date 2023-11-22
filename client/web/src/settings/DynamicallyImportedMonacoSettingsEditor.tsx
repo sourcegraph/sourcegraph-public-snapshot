@@ -1,17 +1,17 @@
 import * as React from 'react'
 
 // type only
-import * as _monaco from 'monaco-editor'
+import type * as _monaco from 'monaco-editor'
 import { Subscription } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, BeforeUnloadPrompt } from '@sourcegraph/wildcard'
 
-import { SaveToolbarProps, SaveToolbar, SaveToolbarPropsGenerator } from '../components/SaveToolbar'
+import { type SaveToolbarProps, SaveToolbar, type SaveToolbarPropsGenerator } from '../components/SaveToolbar'
 
-import { EditorAction, EditorActionsGroup } from './EditorActionsGroup'
-import * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
+import { type EditorAction, EditorActionsGroup } from './EditorActionsGroup'
+import type * as _monacoSettingsEditorModule from './MonacoSettingsEditor'
 
 /**
  * Converts a Monaco/vscode style Disposable object to a simple function that can be added to a rxjs Subscription
@@ -58,18 +58,21 @@ interface Props<T extends object>
 interface State {
     /** The current contents of the editor, if changed from Props.value. */
     value?: string
+    actionsAvailable: boolean
 }
 
 const MonacoSettingsEditor = React.lazy(async () => ({
     default: (await import('./MonacoSettingsEditor')).MonacoSettingsEditor,
 }))
 
-/** Displays a MonacoSettingsEditor component without loading Monaco in the current Webpack chunk. */
+/** Displays a MonacoSettingsEditor component without loading Monaco in the current chunk. */
 export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> extends React.PureComponent<
     Props<T>,
     State
 > {
-    public state: State = {}
+    public state: State = {
+        actionsAvailable: false,
+    }
 
     private subscriptions = new Subscription()
 
@@ -126,10 +129,15 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                 {blockNavigationIfDirty && (
                     <BeforeUnloadPrompt when={this.props.loading || this.isDirty} message="Discard changes?" />
                 )}
-                {this.props.actions && (
-                    <EditorActionsGroup actions={this.props.actions} onClick={this.runAction.bind(this)} />
-                )}
+
                 <React.Suspense fallback={<LoadingSpinner className="mt-2" />}>
+                    {this.props.actions && (
+                        <EditorActionsGroup
+                            actions={this.props.actions}
+                            onClick={this.runAction.bind(this)}
+                            actionsAvailable={this.state.actionsAvailable}
+                        />
+                    )}
                     <MonacoSettingsEditor
                         {...otherProps}
                         onDidSave={this.onSave}
@@ -208,6 +216,8 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
                                     this.props.telemetryService
                                 )
                             }
+
+                            this.setState({ actionsAvailable: true })
                         }
                     })
                 )
@@ -218,10 +228,12 @@ export class DynamicallyImportedMonacoSettingsEditor<T extends object = {}> exte
     private runAction(id: string): void {
         if (this.configEditor) {
             const action = this.configEditor.getAction(id)
-            action.run().then(
-                () => undefined,
-                error => logger.error(error)
-            )
+            if (action) {
+                action.run().then(
+                    () => undefined,
+                    error => logger.error(error)
+                )
+            }
         } else {
             alert('Wait for editor to load before running action.')
         }

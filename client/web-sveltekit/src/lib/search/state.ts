@@ -35,7 +35,7 @@ export class QueryState {
     private defaultQuery = ''
     private defaultSearchContext = 'global'
 
-    private constructor(private options: Partial<Options>, private settings: QuerySettings) {}
+    private constructor(private options: Partial<Options>, public settings: QuerySettings) {}
 
     public static init(options: Partial<Options>, settings: QuerySettings): QueryState {
         return new QueryState(options, settings)
@@ -111,6 +111,7 @@ export interface QueryStateStore extends Readable<QueryState> {
     setPatternType(update: Update<SearchPatternType>): void
     setSettings(settings: QuerySettings): void
     setMode(mode: SearchMode): void
+    set(options: Partial<Options>): void
 }
 
 export function queryStateStore(initial: Partial<Options> = {}, settings: QuerySettings): QueryStateStore {
@@ -131,6 +132,9 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
         },
         setMode(mode) {
             update(state => state.setMode(mode))
+        },
+        set(options: Partial<Options>) {
+            update(state => QueryState.init(options, state.settings))
         },
     }
 }

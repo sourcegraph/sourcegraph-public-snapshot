@@ -2,7 +2,7 @@ import React, { Fragment, useMemo } from 'react'
 
 import classNames from 'classnames'
 
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import { decorateQuery } from '../util/query'
 

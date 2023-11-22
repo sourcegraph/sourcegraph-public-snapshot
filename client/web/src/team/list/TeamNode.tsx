@@ -8,7 +8,7 @@ import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { Button, Link, Icon, Tooltip, useDebounce } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
-import { ListTeamFields } from '../../graphql-operations'
+import type { ListTeamFields } from '../../graphql-operations'
 
 import { useChildTeams } from './backend'
 import { DeleteTeamModal } from './DeleteTeamModal'

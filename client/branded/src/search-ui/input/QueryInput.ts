@@ -1,17 +1,17 @@
-import {
+import type {
     CaseSensitivityProps,
     QueryState,
     SearchContextProps,
     SearchPatternTypeProps,
 } from '@sourcegraph/shared/src/search'
-import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 
-import { IEditor } from './LazyQueryInput'
+import type { IEditor as BaseEditor } from './LazyQueryInput'
 
 /**
- * Props that the Monaco and CodeMirror implementation have in common.
+ * Props for the query input field.
  */
-export interface QueryInputProps
+export interface QueryInputProps<E extends BaseEditor = BaseEditor>
     extends Pick<CaseSensitivityProps, 'caseSensitive'>,
         SearchPatternTypeProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec'> {
@@ -21,8 +21,7 @@ export interface QueryInputProps
     onSubmit?: () => void
     onFocus?: () => void
     onBlur?: () => void
-    onCompletionItemSelected?: () => void
-    onEditorCreated?: (editor: IEditor) => void
+    onEditorCreated?: (editor: E) => void
     fetchStreamSuggestions?: typeof defaultFetchStreamSuggestions // Alternate implementation is used in the VS Code extension.
     autoFocus?: boolean
 
@@ -33,12 +32,6 @@ export interface QueryInputProps
 
     preventNewLine?: boolean
 
-    /**
-     * NOTE: This is currently only used for Insights code through
-     * the MonacoField component: client/web/src/enterprise/insights/components/form/monaco-field/MonacoField.tsx
-     *
-     * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
-     */
     placeholder?: string
 
     ariaLabel?: string

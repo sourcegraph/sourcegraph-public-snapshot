@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "externallink",
@@ -16,9 +17,9 @@ go_library(
         "//internal/extsvc",
         "//internal/gitserver",
         "//internal/repoupdater/protocol",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//internal/types",
-        "@com_github_opentracing_opentracing_go//ext",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -29,7 +30,7 @@ go_test(
     embed = [":externallink"],
     deps = [
         "//internal/api",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",

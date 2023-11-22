@@ -13,8 +13,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/inventory"
@@ -29,7 +28,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	rcache.SetupForTest(t)
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
+	gsClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
 		if commit != wantCommitID {
 			t.Errorf("got commit %q, want %q", commit, wantCommitID)
 		}
@@ -56,7 +55,7 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 		return wantCommitID, nil
 	})
 
-	gsClient.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, path string) (fs.FileInfo, error) {
+	gsClient.StatFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, _ api.CommitID, path string) (fs.FileInfo, error) {
 		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir}, nil
 	})
 
@@ -110,11 +109,11 @@ func TestSearchResultsStatsLanguages(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+			gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
 				return test.getFiles, nil
 			})
 
-			langs, err := searchResultsStatsLanguages(context.Background(), logger, database.NewMockDB(), gsClient, test.results)
+			langs, err := searchResultsStatsLanguages(context.Background(), logger, dbmocks.NewMockDB(), gsClient, test.results)
 			if err != nil {
 				t.Fatal(err)
 			}

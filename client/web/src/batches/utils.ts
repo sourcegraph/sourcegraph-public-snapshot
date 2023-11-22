@@ -1,6 +1,6 @@
 import { findIndex } from 'lodash'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { BatchChangesWritePermission } from '../rbac/constants'
 
 export const canWriteBatchChanges = (user: Pick<AuthenticatedUser, 'permissions'> | null): boolean =>

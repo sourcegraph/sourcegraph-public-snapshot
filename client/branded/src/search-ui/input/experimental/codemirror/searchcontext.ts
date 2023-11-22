@@ -1,15 +1,14 @@
-import { EditorState, Extension, StateField } from '@codemirror/state'
+import { EditorState, type Extension, StateField } from '@codemirror/state'
 import { mdiFilterOutline } from '@mdi/js'
 import { inRange } from 'lodash'
 
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter, getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter } from '@sourcegraph/shared/src/search/query/token'
 import { isFilterType } from '@sourcegraph/shared/src/search/query/validate'
 
 import { getQueryInformation, tokens } from '../../codemirror/parsedQuery'
-import { filterValueRenderer } from '../optionRenderer'
-import { suggestionSources } from '../suggestionsExtension'
+import { RenderAs, suggestionSources } from '../suggestionsExtension'
 
 /**
  * A suggestion extension which will show most recently entered context: filter if the
@@ -44,7 +43,7 @@ export function lastUsedContextSuggestion(config: { getContext: () => string | u
                                 {
                                     label,
                                     icon: mdiFilterOutline,
-                                    render: filterValueRenderer,
+                                    render: RenderAs.FILTER,
                                     kind: 'context',
                                     action: {
                                         type: 'completion',

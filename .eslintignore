@@ -1,8 +1,0 @@
-out/
-src/schema/*
-src/graphql-operations.ts
-GH2SG.bookmarklet.js
-**/vendor/*.js
-svelte.config.js
-vite.config.ts
-playwright.config.ts

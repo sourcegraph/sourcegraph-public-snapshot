@@ -31,7 +31,7 @@ WITH event_log_stats AS (
 	SELECT
         NULLIF(COUNT(*), 0) :: INT AS email_actions_enabled,
         NULLIF(COUNT(DISTINCT users.id), 0) :: INT as email_actions_enabled_unique_users
-	FROM cm_emails 
+	FROM cm_emails
     LEFT JOIN cm_monitors ON cm_emails.monitor = cm_monitors.id
     LEFT JOIN users ON cm_monitors.namespace_user_id = users.id
     WHERE cm_emails.enabled AND cm_monitors.enabled
@@ -39,7 +39,7 @@ WITH event_log_stats AS (
 	SELECT
         NULLIF(COUNT(*), 0) :: INT AS slack_actions_enabled,
         NULLIF(COUNT(DISTINCT users.id), 0) :: INT as slack_actions_enabled_unique_users
-	FROM cm_slack_webhooks 
+	FROM cm_slack_webhooks
     LEFT JOIN cm_monitors ON cm_slack_webhooks.monitor = cm_monitors.id
     LEFT JOIN users ON cm_monitors.namespace_user_id = users.id
     WHERE cm_slack_webhooks.enabled AND cm_monitors.enabled
@@ -47,7 +47,7 @@ WITH event_log_stats AS (
 	SELECT
         NULLIF(COUNT(*), 0) :: INT AS webhook_actions_enabled,
         NULLIF(COUNT(DISTINCT users.id), 0) :: INT as webhook_actions_enabled_unique_users
-	FROM cm_webhooks 
+	FROM cm_webhooks
     LEFT JOIN cm_monitors ON cm_webhooks.monitor = cm_monitors.id
     LEFT JOIN users ON cm_monitors.namespace_user_id = users.id
     WHERE cm_webhooks.enabled AND cm_monitors.enabled
@@ -73,11 +73,11 @@ WITH event_log_stats AS (
     SELECT
         NULLIF(COUNT(*), 0) :: INT AS trigger_runs,
         NULLIF(COUNT(*) FILTER (WHERE state = 'failed'), 0) :: INT AS trigger_runs_errored,
-        PERCENTILE_CONT(0.5) 
+        PERCENTILE_CONT(0.5)
             WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (finished_at - started_at)))
             FILTER (WHERE finished_at IS NOT NULL and started_at IS NOT NULL)
             AS p50_trigger_run_time,
-        PERCENTILE_CONT(0.9) 
+        PERCENTILE_CONT(0.9)
             WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (finished_at - started_at)))
             FILTER (WHERE finished_at IS NOT NULL and started_at IS NOT NULL)
             AS p90_trigger_run_time
@@ -122,8 +122,16 @@ SELECT
     trigger_jobs.trigger_runs,
     trigger_jobs.trigger_runs_errored,
     trigger_jobs.p50_trigger_run_time,
-    trigger_jobs.p90_trigger_run_time
-FROM 
+    trigger_jobs.p90_trigger_run_time,
+    -- monitors_enabled
+    COALESCE(slack_actions.slack_actions_enabled, 0) +
+    COALESCE(email_actions.email_actions_enabled, 0) +
+    COALESCE(webhook_actions.webhook_actions_enabled, 0) AS monitors_enabled,
+    -- monitors_enabled_unique_users
+    COALESCE(slack_actions.slack_actions_enabled_unique_users, 0) +
+    COALESCE(email_actions.email_actions_enabled_unique_users, 0) +
+    COALESCE(webhook_actions.webhook_actions_enabled_unique_users, 0) AS monitors_enabled_unique_users
+FROM
     event_log_stats,
     email_actions,
     slack_actions,

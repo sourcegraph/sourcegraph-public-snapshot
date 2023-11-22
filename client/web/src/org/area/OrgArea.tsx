@@ -1,40 +1,36 @@
 import * as React from 'react'
 
-import * as H from 'history'
+import type * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import { Route, Routes, NavigateFunction } from 'react-router-dom'
-import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { Route, Routes, type NavigateFunction } from 'react-router-dom'
+import { combineLatest, merge, type Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 
-import { ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike, asError, logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, ErrorMessage } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
-import { BatchChangesProps } from '../../batches'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { BatchChangesProps } from '../../batches'
+import type { BreadcrumbsProps, BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { RouteError } from '../../components/ErrorBoundary'
 import { HeroPage } from '../../components/HeroPage'
 import { Page } from '../../components/Page'
-import { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
-import { NamespaceProps } from '../../namespaces'
-import { RouteV6Descriptor } from '../../util/contributions'
-import { OrgSettingsAreaRoute } from '../settings/OrgSettingsArea'
-import { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
+import type { OrganizationResult, OrganizationVariables, OrgAreaOrganizationFields } from '../../graphql-operations'
+import type { NamespaceProps } from '../../namespaces'
+import type { RouteV6Descriptor } from '../../util/contributions'
+import type { OrgSettingsAreaRoute } from '../settings/OrgSettingsArea'
+import type { OrgSettingsSidebarItems } from '../settings/OrgSettingsSidebar'
 
-import { OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
+import { type OrgAreaHeaderNavItem, OrgHeader } from './OrgHeader'
 import { OrgInvitationPageLegacy } from './OrgInvitationPageLegacy'
 
-function queryOrganization(args: {
-    name: string
-    // id: string
-    // flagName: string organizationFeatureFlagValue(orgID: $orgID, flagName: $flagName)
-}): Observable<OrgAreaOrganizationFields> {
+function queryOrganization(args: { name: string }): Observable<OrgAreaOrganizationFields> {
     return requestGraphQL<OrganizationResult, OrganizationVariables>(
         gql`
             query Organization($name: String!) {
@@ -103,7 +99,7 @@ export interface OrgAreaProps
      */
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 
     location: H.Location
     navigate: NavigateFunction
@@ -138,7 +134,7 @@ export interface OrgAreaRouteContext
     authenticatedUser: AuthenticatedUser
 
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 
     orgSettingsSideBarItems: OrgSettingsSidebarItems
     orgSettingsAreaRoutes: readonly OrgSettingsAreaRoute[]
@@ -239,7 +235,7 @@ export class OrgArea extends React.Component<OrgAreaProps> {
             namespace: this.state.orgOrError,
             telemetryService: this.props.telemetryService,
             isSourcegraphDotCom: this.props.isSourcegraphDotCom,
-            isSourcegraphApp: this.props.isSourcegraphApp,
+            isCodyApp: this.props.isCodyApp,
             batchChangesEnabled: this.props.batchChangesEnabled,
             batchChangesExecutionEnabled: this.props.batchChangesExecutionEnabled,
             batchChangesWebhookLogsEnabled: this.props.batchChangesWebhookLogsEnabled,

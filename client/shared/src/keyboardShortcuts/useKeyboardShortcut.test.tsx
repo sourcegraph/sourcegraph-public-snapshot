@@ -1,8 +1,9 @@
 import { render } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
 import { MockTemporarySettings } from '../settings/temporary/testUtils'
 
-import { KEYBOARD_SHORTCUTS } from './keyboardShortcuts'
+import type { KEYBOARD_SHORTCUTS } from './keyboardShortcuts'
 import { useKeyboardShortcut } from './useKeyboardShortcut'
 
 const ShortcutUsageExample = ({ shortcut }: { shortcut: keyof typeof KEYBOARD_SHORTCUTS }) => {

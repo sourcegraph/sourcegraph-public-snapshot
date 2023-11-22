@@ -1,5 +1,5 @@
 import { mdiClose } from '@mdi/js'
-import { Story, Meta } from '@storybook/react'
+import type { StoryFn, Meta } from '@storybook/react'
 import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Icon } from '..'
@@ -28,7 +28,7 @@ const config: Meta = {
 }
 export default config
 
-export const Simple: Story = () => (
+export const Simple: StoryFn = () => (
     <>
         <H3>Small Icon</H3>
         <Icon as={SourcegraphIcon} size="sm" aria-label="Sourcegraph logo" />

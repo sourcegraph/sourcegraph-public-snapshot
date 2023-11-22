@@ -8,7 +8,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	sglog "github.com/sourcegraph/log"
 
@@ -77,8 +77,8 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 	payload, statusCode, err := func() (_ any, statusCode int, err error) {
 		ctx, trace, endObservation := h.operations.handleEnqueue.With(r.Context(), &err, observation.Args{})
 		defer func() {
-			endObservation(1, observation.Args{LogFields: []log.Field{
-				log.Int("statusCode", statusCode),
+			endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+				attribute.Int("statusCode", statusCode),
 			}})
 		}()
 
@@ -86,15 +86,16 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 		if err != nil {
 			return nil, statusCode, err
 		}
-		trace.Log( //nolint:staticcheck // Need to convert this to attribute.* methods, might be not so easy with metadata
-			log.Int("uploadID", uploadState.uploadID),
-			log.Int("numParts", uploadState.numParts),
-			log.Int("numUploadedParts", len(uploadState.uploadedParts)),
-			log.Bool("multipart", uploadState.multipart),
-			log.Bool("suppliedIndex", uploadState.suppliedIndex),
-			log.Int("index", uploadState.index),
-			log.Bool("done", uploadState.done),
-			log.Object("metadata", uploadState.metadata),
+		trace.AddEvent(
+			"finished constructUploadState",
+			attribute.Int("uploadID", uploadState.uploadID),
+			attribute.Int("numParts", uploadState.numParts),
+			attribute.Int("numUploadedParts", len(uploadState.uploadedParts)),
+			attribute.Bool("multipart", uploadState.multipart),
+			attribute.Bool("suppliedIndex", uploadState.suppliedIndex),
+			attribute.Int("index", uploadState.index),
+			attribute.Bool("done", uploadState.done),
+			attribute.String("metadata", fmt.Sprintf("%#v", uploadState.metadata)),
 		)
 
 		if uploadHandlerFunc := h.selectUploadHandlerFunc(uploadState); uploadHandlerFunc != nil {

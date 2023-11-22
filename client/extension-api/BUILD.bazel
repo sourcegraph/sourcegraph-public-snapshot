@@ -1,12 +1,17 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package")
-
-package(default_visibility = ["//visibility:public"])
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # Disable gazelle for the js/dts-only package
 # gazelle:js disabled
 # gazelle:js_files **/*.{ts,tsx}
+
+package(default_visibility = ["//visibility:public"])
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
 
 ts_config(
     name = "tsconfig",
@@ -17,13 +22,10 @@ ts_config(
     ],
 )
 
-npm_link_all_packages(name = "node_modules")
-
 npm_package(
     name = "extension-api_pkg",
     srcs = [
         "package.json",
-        "src/index.js",
         "src/sourcegraph.d.ts",
     ],
 )

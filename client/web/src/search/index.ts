@@ -1,6 +1,6 @@
 import { escapeRegExp, memoize } from 'lodash'
-import { Location } from 'react-router-dom'
-import { from, Observable, of, Subject } from 'rxjs'
+import type { Location } from 'react-router-dom'
+import { from, type Observable, of, type Subject } from 'rxjs'
 import { startWith, switchMap, map, distinctUntilChanged } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
@@ -12,7 +12,7 @@ import { findFilter, FilterKind, getGlobalSearchContextFilter } from '@sourcegra
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { createLiteral } from '@sourcegraph/shared/src/search/query/token'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 
 export type { SearchAggregationProps } from './results/sidebar/search-aggregation-types'
 
@@ -42,8 +42,10 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
         case SearchPatternType.regexp:
         case SearchPatternType.structural:
         case SearchPatternType.lucky:
-        case SearchPatternType.keyword:
+        case SearchPatternType.newStandardRC1:
+        case SearchPatternType.keyword: {
             return patternType
+        }
     }
     return undefined
 }
@@ -59,8 +61,9 @@ export function parseSearchURLSearchMode(query: string): SearchMode {
     const searchMode = parseInt(searchModeStr, 10)
     switch (searchMode) {
         case SearchMode.Precise:
-        case SearchMode.SmartSearch:
+        case SearchMode.SmartSearch: {
             return searchMode
+        }
     }
     return defaultSearchMode
 }

@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { BatchSpecWorkspaceState } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -6,7 +6,7 @@ import { WebStory } from '../../../../../components/WebStory'
 
 import { WorkspaceStateIcon } from './WorkspaceStateIcon'
 
-const decorator: DecoratorFn = story => <div className="p-3">{story()}</div>
+const decorator: Decorator = story => <div className="p-3">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/execute/workspaces/WorkspaceStateIcon',
@@ -15,14 +15,16 @@ const config: Meta = {
         cachedResultFound: {
             name: 'Cache Found',
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        cachedResultFound: false,
     },
 }
 
 export default config
 
-export const WorkspaceStateIconStory: Story = args => (
+export const WorkspaceStateIconStory: StoryFn = args => (
     <WebStory>
         {props => (
             <>

@@ -1,30 +1,31 @@
-import { from, Observable, of } from 'rxjs'
+import { from, type Observable, of } from 'rxjs'
 import { first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
-import * as sourcegraph from 'sourcegraph'
+import type * as sourcegraph from 'sourcegraph'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import { TextDocumentPositionParameters } from '@sourcegraph/client-api'
-import { HoveredToken, LOADER_DELAY, MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import type { TextDocumentPositionParameters } from '@sourcegraph/client-api'
+import { type HoveredToken, LOADER_DELAY, type MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-classes'
-import { Location } from '@sourcegraph/extension-api-types'
-import { GraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
+import type { Location } from '@sourcegraph/extension-api-types'
+import type { GraphQLResult, SuccessGraphQLResult } from '@sourcegraph/http-client'
 
-import { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
-import { PlatformContext, URLToFileContext } from '../platform/context'
+import type { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
+import type { PlatformContext, URLToFileContext } from '../platform/context'
 import {
-    FileSpec,
-    UIPositionSpec,
-    RawRepoSpec,
-    RepoSpec,
-    RevisionSpec,
-    ViewStateSpec,
+    type FileSpec,
+    type UIPositionSpec,
+    type RawRepoSpec,
+    type RepoSpec,
+    type RevisionSpec,
+    type ViewStateSpec,
     toPrettyBlobURL,
 } from '../util/url'
 
-import { getDefinitionURL, getHoverActionsContext, HoverActionsContext } from './actions'
-import { HoverContext } from './HoverOverlay'
+import { getDefinitionURL, getHoverActionsContext, type HoverActionsContext } from './actions'
+import type { HoverContext } from './HoverOverlay'
 
 const FIXTURE_PARAMS: TextDocumentPositionParameters & URLToFileContext = {
     textDocument: { uri: 'git://r?c#f' },

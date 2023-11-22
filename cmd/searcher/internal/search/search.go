@@ -14,7 +14,6 @@ package search
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"net"
 	"net/http"
@@ -142,15 +141,11 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	metricRunning.Inc()
 	defer metricRunning.Dec()
 
-	var tr *trace.Trace
-	tr, ctx = trace.New(ctx, "search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
-	defer tr.Finish()
-
-	tr.LazyPrintf("%s", p.Pattern)
-	tr.SetAttributes(
-		attribute.String("repo", string(p.Repo)),
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, "search",
+		p.Repo.Attr(),
+		p.Commit.Attr(),
 		attribute.String("url", p.URL),
-		attribute.String("commit", string(p.Commit)),
 		attribute.String("pattern", p.Pattern),
 		attribute.Bool("isRegExp", p.IsRegExp),
 		attribute.StringSlice("languages", p.Languages),
@@ -160,8 +155,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.Int("limit", p.Limit),
 		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
 		attribute.Bool("patternMatchesPath", p.PatternMatchesPath),
-		attribute.String("select", p.Select),
-	)
+		attribute.String("select", p.Select))
+	defer tr.End()
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to
@@ -179,10 +174,12 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 				code = "500"
 			}
 		}
-		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, sender.SentCount(), sender.LimitHit())
 		metricRequestTotal.WithLabelValues(code).Inc()
-		tr.AddEvent("matches", attribute.Int("matches.len", sender.SentCount()))
-		tr.SetAttributes(attribute.Bool("limitHit", sender.LimitHit()))
+		tr.AddEvent("done",
+			attribute.String("code", code),
+			attribute.Int("matches.len", sender.SentCount()),
+			attribute.Bool("limitHit", sender.LimitHit()),
+		)
 		s.Log.Debug("search request",
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
@@ -203,7 +200,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	if p.IsStructuralPat && p.Indexed {
 		// Execute the new structural search path that directly calls Zoekt.
 		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, s.Indexed, p, sender)
+		return structuralSearchWithZoekt(ctx, s.Log, s.Indexed, p, sender)
 	}
 
 	// Compile pattern before fetching from store incase it is bad.
@@ -230,25 +227,23 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		return path, zf, err
 	}
 
-	hybrid := !p.IsStructuralPat && p.FeatHybrid
+	// Hybrid search only works with our normal searcher code path, not
+	// structural search.
+	hybrid := !p.IsStructuralPat
 	if hybrid {
-		logger := logWithTrace(ctx, s.Log).Scoped("hybrid", "hybrid indexed and unindexed search").With(
+		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
 		)
 
 		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
 		if err != nil {
-			logger.Error("hybrid search failed",
-				log.String("repo", string(p.Repo)),
-				log.String("commit", string(p.Commit)),
-				log.Error(err))
+			// error logging is done inside of s.hybrid so we just return
+			// error here.
 			return errors.Wrap(err, "hybrid search failed")
 		}
 		if !ok {
-			logger.Debug("hybrid search is falling back to normal unindexed search",
-				log.String("repo", string(p.Repo)),
-				log.String("commit", string(p.Commit)))
+			logger.Debug("hybrid search is falling back to normal unindexed search")
 		} else {
 			// now we only need to search unsearched
 			if len(unsearched) == 0 {
@@ -282,7 +277,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	metricArchiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
-		return filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
+		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender)
 	} else {
 		return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 	}

@@ -1,10 +1,10 @@
 import { replaceRange } from '@sourcegraph/common'
 
 import { FILTERS, FilterType } from './filters'
-import { findFilters, findFilter, FilterKind } from './query'
+import { findFilters } from './query'
 import { scanSearchQuery } from './scanner'
-import { Filter, Token } from './token'
-import { operatorExists, filterExists } from './validate'
+import type { Filter, Token } from './token'
+import { filterExists } from './validate'
 
 export function appendContextFilter(query: string, searchContextSpec: string | undefined): string {
     return !filterExists(query, FilterType.context) && searchContextSpec
@@ -103,23 +103,4 @@ export const sanitizeQueryForTelemetry = (query: string): string => {
     }
 
     return newQuery
-}
-
-/**
- * Wraps a query in parenthesis if a global search context filter exists.
- * Example: context:ctx a or b -> context:ctx (a or b)
- */
-export function parenthesizeQueryWithGlobalContext(query: string): string {
-    if (!operatorExists(query)) {
-        // no need to parenthesize a flat, atomic query.
-        return query
-    }
-    const globalContextFilter = findFilter(query, FilterType.context, FilterKind.Global)
-    if (!globalContextFilter) {
-        // don't parenthesize a query that contains `context` subexpressions already.
-        return query
-    }
-    const searchContextSpec = globalContextFilter.value?.value || ''
-    const queryWithOmittedContext = omitFilter(query, globalContextFilter)
-    return appendContextFilter(`(${queryWithOmittedContext})`, searchContextSpec)
 }

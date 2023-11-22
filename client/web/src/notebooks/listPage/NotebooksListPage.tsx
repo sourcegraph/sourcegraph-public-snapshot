@@ -2,30 +2,28 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import { Location, Navigate, useNavigate, useLocation, NavigateFunction } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import { type Location, Navigate, useNavigate, useLocation, type NavigateFunction } from 'react-router-dom'
+import type { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { FilteredConnectionFilter } from '../../components/FilteredConnection'
-import { LimitedAccessBanner } from '../../components/LimitedAccessBanner'
+import type { AuthenticatedUser } from '../../auth'
+import type { FilteredConnectionFilter } from '../../components/FilteredConnection'
 import { Page } from '../../components/Page'
-import { CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
-import { EnterprisePageRoutes } from '../../routes.constants'
+import { type CreateNotebookVariables, NotebooksOrderBy } from '../../graphql-operations'
+import { PageRoutes } from '../../routes.constants'
 import { fetchNotebooks as _fetchNotebooks, createNotebook as _createNotebook } from '../backend'
 
 import { NotebooksGettingStartedTab } from './NotebooksGettingStartedTab'
-import { NotebooksList, NotebooksListProps } from './NotebooksList'
+import { NotebooksList, type NotebooksListProps } from './NotebooksList'
 import { NotebooksListPageHeader } from './NotebooksListPageHeader'
 
 export interface NotebooksListPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphApp: boolean
     fetchNotebooks?: typeof _fetchNotebooks
     createNotebook?: typeof _createNotebook
 }
@@ -37,10 +35,12 @@ type Tabs = { tab: NotebooksTab; title: string; isActive: boolean; logEventName:
 function getSelectedTabFromLocation(locationSearch: string, authenticatedUser: AuthenticatedUser | null): NotebooksTab {
     const urlParameters = new URLSearchParams(locationSearch)
     switch (urlParameters.get('tab')) {
-        case 'notebooks':
+        case 'notebooks': {
             return 'notebooks'
-        case 'getting-started':
+        }
+        case 'getting-started': {
             return 'getting-started'
+        }
     }
     return authenticatedUser ? 'notebooks' : 'getting-started'
 }
@@ -63,7 +63,6 @@ interface NotebooksFilter extends Pick<NotebooksListProps, 'creatorUserID' | 'st
 
 export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<NotebooksListPageProps>> = ({
     authenticatedUser,
-    isSourcegraphApp,
     telemetryService,
     fetchNotebooks = _fetchNotebooks,
     createNotebook = _createNotebook,
@@ -84,7 +83,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
     const [hasSeenGettingStartedTab] = useTemporarySetting('search.notebooks.gettingStartedTabSeen', false)
 
     useEffect(() => {
-        if (typeof hasSeenGettingStartedTab !== 'undefined' && !hasSeenGettingStartedTab) {
+        if (hasSeenGettingStartedTab !== undefined && !hasSeenGettingStartedTab) {
             setSelectedTab('getting-started')
         }
     }, [hasSeenGettingStartedTab, setSelectedTab])
@@ -237,7 +236,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
 
     if (importedNotebookOrError && importedNotebookOrError !== LOADING) {
         telemetryService.log('SearchNotebookImportedFromMarkdown')
-        return <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
+        return <Navigate to={PageRoutes.Notebook.replace(':id', importedNotebookOrError.id)} replace={true} />
     }
 
     return (
@@ -260,14 +259,6 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                         <PageHeader.Breadcrumb icon={mdiBookOutline}>Notebooks</PageHeader.Breadcrumb>
                     </PageHeader.Heading>
                 </PageHeader>
-
-                {isSourcegraphApp && (
-                    <LimitedAccessBanner storageKey="app.limitedAccessBannerDismissed.notebooks" className="my-4">
-                        Notebooks is currently available to try for free while Sourcegraph App is in beta. Pricing and
-                        availability for Notebooks is subject to change in future releases.
-                    </LimitedAccessBanner>
-                )}
-
                 {isErrorLike(importState) && (
                     <Alert variant="danger">
                         Error while importing the notebook: <strong>{importState.message}</strong>

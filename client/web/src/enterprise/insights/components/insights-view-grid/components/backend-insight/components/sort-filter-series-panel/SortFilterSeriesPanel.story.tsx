@@ -1,11 +1,11 @@
 import { useState } from 'react'
 
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { SeriesSortMode, SeriesSortDirection } from '@sourcegraph/shared/src/graphql-operations'
 
 import { WebStory } from '../../../../../../../../components/WebStory'
-import { DrillDownFiltersFormValues } from '../drill-down-filters-panel'
+import type { DrillDownFiltersFormValues } from '../drill-down-filters-panel'
 
 import { SortFilterSeriesPanel } from './SortFilterSeriesPanel'
 
@@ -18,7 +18,7 @@ const defaultStory: Meta = {
 
 export default defaultStory
 
-export const Primary: Story = () => {
+export const Primary: StoryFn = () => {
     const [value, setValue] = useState<DrillDownFiltersFormValues['seriesDisplayOptions']>({
         limit: 20,
         numSamples: null,

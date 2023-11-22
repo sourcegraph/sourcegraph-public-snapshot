@@ -25,6 +25,7 @@ import (
 func SearchGRPC(
 	ctx context.Context,
 	searcherURLs *endpoint.Map,
+	connectionCache *defaults.ConnectionCache,
 	repo api.RepoName,
 	repoID api.RepoID,
 	branch string,
@@ -59,7 +60,6 @@ func SearchGRPC(
 		},
 		Indexed:      indexed,
 		FetchTimeout: fetchTimeout,
-		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
 	}).ToProto()
 
 	// Searcher caches the file contents for repo@commit since it is
@@ -83,13 +83,12 @@ func SearchGRPC(
 			return false, errors.Wrap(err, "failed to parse URL")
 		}
 
-		clientConn, err := defaults.DialContext(ctx, parsed.Host)
+		conn, err := connectionCache.GetConnection(parsed.Host)
 		if err != nil {
 			return false, err
 		}
-		defer clientConn.Close()
 
-		client := proto.NewSearcherServiceClient(clientConn)
+		client := proto.NewSearcherServiceClient(conn)
 		resp, err := client.Search(ctx, r)
 		if err != nil {
 			return false, err

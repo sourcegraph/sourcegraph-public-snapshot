@@ -8,7 +8,7 @@ import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { BatchSpecWorkspaceStepFields } from '../../../../../graphql-operations'
+import type { BatchSpecWorkspaceStepFields } from '../../../../../graphql-operations'
 
 interface StepStateIconProps {
     step: BatchSpecWorkspaceStepFields

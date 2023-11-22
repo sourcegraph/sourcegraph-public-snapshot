@@ -8,98 +8,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
-
-func TestSiteConfigurationChangeResolverReproducedDiff(t *testing.T) {
-	testCases := []struct {
-		name     string
-		resolver SiteConfigurationChangeResolver
-		expected bool
-	}{
-		{
-			name:     "both siteConfig and previousSiteConfig are nil",
-			resolver: SiteConfigurationChangeResolver{},
-			expected: false,
-		},
-		{
-			name: "siteConfig is nil",
-			resolver: SiteConfigurationChangeResolver{
-				previousSiteConfig: &database.SiteConfig{},
-			},
-			expected: false,
-		},
-		{
-			name: "previousSiteConfig is nil",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig: &database.SiteConfig{},
-			},
-			expected: false,
-		},
-
-		{
-			name: "siteConfig.RedactedContents is non-empty but previousSiteConfig is nil",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig: &database.SiteConfig{
-					RedactedContents: "foo",
-				},
-			},
-			expected: true,
-		},
-
-		{
-			name: "both siteConfig.RedactedContents and previousSiteConfig.RedactedContents are empty",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig:         &database.SiteConfig{},
-				previousSiteConfig: &database.SiteConfig{},
-			},
-			expected: false,
-		},
-
-		{
-			name: "siteConfig.RedactedContents is empty",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig:         &database.SiteConfig{},
-				previousSiteConfig: &database.SiteConfig{RedactedContents: "foo"},
-			},
-			expected: false,
-		},
-		{
-			name: "previousSiteConfig.RedactedContents is empty",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig:         &database.SiteConfig{RedactedContents: "foo"},
-				previousSiteConfig: &database.SiteConfig{},
-			},
-			expected: false,
-		},
-
-		{
-			name: "both siteConfig.RedactedContents and previousSiteConfig.RedactedContents is non-empty",
-			resolver: SiteConfigurationChangeResolver{
-				siteConfig:         &database.SiteConfig{RedactedContents: "foo"},
-				previousSiteConfig: &database.SiteConfig{RedactedContents: "foo"},
-			},
-			expected: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			if tc.resolver.ReproducedDiff() != tc.expected {
-				t.Errorf("mismatched value for ReproducedDiff, expected %v, but got %v", tc.expected, tc.resolver.ReproducedDiff())
-			}
-		})
-	}
-
-}
 
 func TestSiteConfigurationDiff(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx)
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewTestClient(t)).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}
@@ -109,32 +26,32 @@ func TestSiteConfigurationDiff(t *testing.T) {
 	expectedNodes := []struct {
 		ID           int32
 		AuthorUserID int32
-		Diff         *string
+		Diff         string
 	}{
 		{
 			ID:           6,
-			AuthorUserID: 1,
-			Diff:         stringPtr(expectedDiffs[6]),
+			AuthorUserID: 3,
+			Diff:         expectedDiffs[6],
 		},
 		{
 			ID:           4,
 			AuthorUserID: 1,
-			Diff:         stringPtr(expectedDiffs[4]),
+			Diff:         expectedDiffs[4],
 		},
 		{
 			ID:           3,
 			AuthorUserID: 2,
-			Diff:         stringPtr(expectedDiffs[3]),
+			Diff:         expectedDiffs[3],
 		},
 		{
 			ID:           2,
 			AuthorUserID: 0,
-			Diff:         stringPtr(expectedDiffs[2]),
+			Diff:         expectedDiffs[2],
 		},
 		{
 			ID:           1,
 			AuthorUserID: 0,
-			Diff:         stringPtr(expectedDiffs[1]),
+			Diff:         expectedDiffs[1],
 		},
 	}
 
@@ -146,11 +63,11 @@ func TestSiteConfigurationDiff(t *testing.T) {
 		// the nodes in both the directions.
 		{
 			name: "first: 10",
-			args: &graphqlutil.ConnectionResolverArgs{First: int32Ptr(10)},
+			args: &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(10))},
 		},
 		{
 			name: "last: 10",
-			args: &graphqlutil.ConnectionResolverArgs{Last: int32Ptr(10)},
+			args: &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(10))},
 		},
 	}
 
@@ -182,12 +99,22 @@ func TestSiteConfigurationDiff(t *testing.T) {
 					t.Errorf("mismatched node AuthorUserID, expected: %d, but got: %d", siteConfig.ID, expectedNode.ID)
 				}
 
-				if !nodes[i].ReproducedDiff() {
-					t.Fatal("expected reproducedDiff to be true but got false")
+				if diff := cmp.Diff(expectedNode.Diff, nodes[i].Diff()); diff != "" {
+					t.Errorf("mismatched node diff (-want, +got):\n%s ", diff)
 				}
 
-				if diff := cmp.Diff(*expectedNode.Diff, *nodes[i].Diff()); diff != "" {
-					t.Errorf("mismatched node diff (-want, +got):\n%s ", diff)
+				author, err := nodes[i].Author(ctx)
+				if err != nil {
+					t.Fatalf("failed to get author: %v", err)
+				}
+				if siteConfig.AuthorUserID == 3 || siteConfig.AuthorUserID == 0 { // User with ID 3 is not created in the test setup
+					if author != nil {
+						t.Fatalf("expected author to be nil for user ID %d", siteConfig.AuthorUserID)
+					}
+				} else {
+					if author == nil {
+						t.Fatalf("expected non-nil author resolver for user ID %d", siteConfig.AuthorUserID)
+					}
 				}
 			}
 		})

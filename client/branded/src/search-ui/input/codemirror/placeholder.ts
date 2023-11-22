@@ -2,8 +2,15 @@
  * This is an adaption of the built-in CodeMirror placeholder to make it
  * configurable when the placeholder should be shown or not.
  */
-import { EditorState, Extension, Facet } from '@codemirror/state'
-import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate, WidgetType } from '@codemirror/view'
+import { type EditorState, type Extension, Facet } from '@codemirror/state'
+import {
+    Decoration,
+    type DecorationSet,
+    type EditorView,
+    ViewPlugin,
+    type ViewUpdate,
+    WidgetType,
+} from '@codemirror/view'
 
 class Placeholder extends WidgetType {
     constructor(private readonly content: string) {

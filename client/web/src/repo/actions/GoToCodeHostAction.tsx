@@ -8,19 +8,19 @@ import GitlabIcon from 'mdi-react/GitlabIcon'
 import { merge, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import type { Position, Range } from '@sourcegraph/extension-api-types'
 import { SimpleActionItem } from '@sourcegraph/shared/src/actions/SimpleActionItem'
 // TODO: Switch mdi icon
 import { HelixSwarmIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
-import { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
+import type { FileSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { type ButtonLinkProps, Icon, Link, Tooltip, useObservable } from '@sourcegraph/wildcard'
 
-import { ExternalLinkFields, ExternalServiceKind, RepositoryFields } from '../../graphql-operations'
+import { type ExternalLinkFields, ExternalServiceKind, type RepositoryFields } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchCommitMessage, fetchFileExternalLinks } from '../backend'
 import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../RepoHeader'
+import type { RepoHeaderContext } from '../RepoHeader'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
     repo?: Pick<RepositoryFields, 'name' | 'defaultBranch' | 'externalURLs' | 'externalRepository'> | null
@@ -91,9 +91,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
     const onClick = useCallback(() => eventLogger.log('GoToCodeHostClicked'), [])
 
     // If the default branch is undefined, set to HEAD
-    const defaultBranch =
-        (!isErrorLike(props.repo) && props.repo && props.repo.defaultBranch && props.repo.defaultBranch.displayName) ||
-        'HEAD'
+    const defaultBranch = (!isErrorLike(props.repo) && props.repo?.defaultBranch?.displayName) || 'HEAD'
 
     // If there's no repo or no file / commit message, return null to hide all code host icons
     if (!props.repo || (isErrorLike(fileExternalLinksOrError) && !perforceCommitMessage)) {
@@ -289,21 +287,29 @@ export function serviceKindDisplayNameAndIcon(serviceKind: ExternalServiceKind |
     }
 
     switch (serviceKind) {
-        case ExternalServiceKind.GITHUB:
+        case ExternalServiceKind.GITHUB: {
             return { displayName: 'GitHub', icon: GithubIcon }
-        case ExternalServiceKind.GITLAB:
+        }
+        case ExternalServiceKind.GITLAB: {
             return { displayName: 'GitLab', icon: GitlabIcon }
-        case ExternalServiceKind.BITBUCKETSERVER:
+        }
+        case ExternalServiceKind.BITBUCKETSERVER: {
             return { displayName: 'Bitbucket Server', icon: BitbucketIcon }
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case ExternalServiceKind.BITBUCKETCLOUD: {
             return { displayName: 'Bitbucket Cloud', icon: BitbucketIcon }
-        case ExternalServiceKind.PERFORCE:
+        }
+        case ExternalServiceKind.PERFORCE: {
             return { displayName: 'Swarm', icon: HelixSwarmIcon }
-        case ExternalServiceKind.PHABRICATOR:
+        }
+        case ExternalServiceKind.PHABRICATOR: {
             return { displayName: 'Phabricator', icon: PhabricatorIcon }
-        case ExternalServiceKind.AWSCODECOMMIT:
+        }
+        case ExternalServiceKind.AWSCODECOMMIT: {
             return { displayName: 'AWS CodeCommit' }
-        default:
+        }
+        default: {
             return { displayName: upperFirst(toLower(serviceKind)) }
+        }
     }
 }

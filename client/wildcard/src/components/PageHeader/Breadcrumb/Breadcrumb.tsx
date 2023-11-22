@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Icon, IconType } from '../../Icon'
+import { Icon, type IconType } from '../../Icon'
 import { LinkOrSpan } from '../../Link/LinkOrSpan'
 
 import styles from './Breadcrumb.module.scss'

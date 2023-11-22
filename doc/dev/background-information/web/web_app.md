@@ -21,23 +21,10 @@ To install it, [see the instructions](../../setup/quickstart.md).
     ```sh
     sg start web-standalone
     ```
-
-    For the open-source version:
-
-    ```sh
-    sg start oss-web-standalone
-    ```
-
     To use a public API that doesn't require authentication for most of the functionality:
 
     ```sh
     SOURCEGRAPH_API_URL=https://sourcegraph.com sg start web-standalone
-    ```
-
-    For open-source version:
-
-    ```sh
-    SOURCEGRAPH_API_URL=https://sourcegraph.com sg start oss-web-standalone
     ```
 
 2. Start all backend services with the frontend server.
@@ -46,22 +33,10 @@ To install it, [see the instructions](../../setup/quickstart.md).
     sg start # which defaults to `sg start enterprise`
     ```
 
-    For the open-source version:
-
-    ```sh
-    sg start oss
-    ```
-
 3. Regenerate GraphQL schema, Typescript types for GraphQL operations and CSS Modules.
 
     ```sh
     pnpm generate
-    ```
-
-    To regenerate on file change:
-
-    ```sh
-    pnpm watch-generate
     ```
 
 ### Storybook

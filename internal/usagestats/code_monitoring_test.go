@@ -24,7 +24,7 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 	}()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	_, err := db.ExecContext(ctx, `
 		INSERT INTO event_logs
@@ -72,7 +72,7 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = db.ExecContext(ctx, `
-		INSERT INTO users (id, username) 
+		INSERT INTO users (id, username)
 		VALUES (1, 'a'), (2, 'b'), (3, 'c'), (4, 'd'), (5, 'e');
 	`)
 	require.NoError(t, err)
@@ -104,20 +104,20 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 
 	_, err = db.ExecContext(ctx, `
 		INSERT INTO cm_queries (monitor, query, created_by, changed_by)
-		SELECT 
-			s as monitor, 
-			'', 
-			cm_monitors.created_by, 
-			cm_monitors.changed_by 
+		SELECT
+			s as monitor,
+			'',
+			cm_monitors.created_by,
+			cm_monitors.changed_by
 		FROM generate_series(1,14) s
 		JOIN cm_monitors ON cm_monitors.id = s
 	`)
 	require.NoError(t, err)
 
 	_, err = db.ExecContext(ctx, `
-		INSERT INTO cm_emails 
+		INSERT INTO cm_emails
 			(monitor, enabled, priority, header, created_by, changed_by)
-		SELECT 
+		SELECT
 			cm_monitors.id,
 			CASE WHEN cm_monitors.id = 2 THEN false ELSE true END,
 			'NORMAL',
@@ -130,7 +130,7 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = db.ExecContext(ctx, `
-		INSERT INTO cm_slack_webhooks 
+		INSERT INTO cm_slack_webhooks
 			(monitor, enabled, url, created_by, changed_by)
 		SELECT
 			cm_monitors.id,
@@ -144,7 +144,7 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = db.ExecContext(ctx, `
-		INSERT INTO cm_webhooks 
+		INSERT INTO cm_webhooks
 			(monitor, enabled, url, created_by, changed_by)
 		SELECT
 			cm_monitors.id,
@@ -159,10 +159,10 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 
 	_, err = db.ExecContext(ctx, `
 		INSERT INTO cm_trigger_jobs (query, state, finished_at, started_at)
-		SELECT 
-			cm_queries.id, 
-			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END, 
-			now() - s * '1 day'::interval, 
+		SELECT
+			cm_queries.id,
+			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END,
+			now() - s * '1 day'::interval,
 			now() - s * '1 day'::interval - s * '1 second'::interval
 		FROM cm_queries
 		JOIN cm_monitors ON cm_queries.monitor = cm_monitors.id
@@ -172,14 +172,14 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 	require.NoError(t, err)
 
 	_, err = db.ExecContext(ctx, `
-		INSERT INTO cm_action_jobs 
+		INSERT INTO cm_action_jobs
 			(email, webhook, slack_webhook, state, finished_at, started_at)
-		SELECT 
-			cm_emails.id, 
-			NULL::bigint, 
-			NULL::bigint, 
+		SELECT
+			cm_emails.id,
+			NULL::bigint,
+			NULL::bigint,
 			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END,
-			now() - s * '1 day'::interval, 
+			now() - s * '1 day'::interval,
 			now() - s * '1 day'::interval - s * '1 second'::interval
 		FROM cm_emails
 		CROSS JOIN generate_series(1, 10) s
@@ -187,12 +187,12 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 		WHERE cm_emails.enabled
 			AND cm_monitors.enabled
 		UNION ALL
-		SELECT 
-			NULL::bigint, 
-			cm_webhooks.id, 
-			NULL::bigint, 
+		SELECT
+			NULL::bigint,
+			cm_webhooks.id,
+			NULL::bigint,
 			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END,
-			now() - s * '1 day'::interval, 
+			now() - s * '1 day'::interval,
 			now() - s * '1 day'::interval - s * '1 second'::interval
 		FROM cm_webhooks
 		CROSS JOIN generate_series(1, 10) s
@@ -200,12 +200,12 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 		WHERE cm_webhooks.enabled
 			AND cm_monitors.enabled
 		UNION ALL
-		SELECT 
-			NULL::bigint, 
-			NULL::bigint, 
-			cm_slack_webhooks.id, 
+		SELECT
+			NULL::bigint,
+			NULL::bigint,
+			cm_slack_webhooks.id,
 			CASE WHEN s < 6 THEN 'completed' ELSE 'failed' END,
-			now() - s * '1 day'::interval, 
+			now() - s * '1 day'::interval,
 			now() - s * '1 day'::interval - s * '1 second'::interval
 		FROM cm_slack_webhooks
 		CROSS JOIN generate_series(1, 10) s
@@ -250,6 +250,8 @@ func TestCodeMonitoringUsageStatistics(t *testing.T) {
 		TriggerRunsErrored:                            ptr(int32(11)),
 		P50TriggerRunTimeSeconds:                      ptr(float32(3)),
 		P90TriggerRunTimeSeconds:                      ptr(float32(6)),
+		MonitorsEnabled:                               ptr(int32(8)),
+		MonitorsEnabledUniqueUsers:                    ptr(int32(8)),
 	}
 	require.Equal(t, want, have)
 }

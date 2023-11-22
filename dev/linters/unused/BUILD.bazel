@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "unused",
+    srcs = ["unused.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/unused",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/linters/nolint",
+        "//lib/errors",
+        "@co_honnef_go_tools//unused",
+        "@org_golang_x_tools//go/analysis",
+    ],
+)

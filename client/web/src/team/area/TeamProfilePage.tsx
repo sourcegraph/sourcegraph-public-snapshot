@@ -10,7 +10,7 @@ import { Button, ErrorAlert, Form, H3, Icon, Input, Label, Link, Modal, Text } f
 import { TEAM_DISPLAY_NAME_MAX_LENGTH } from '..'
 import { LoaderButton } from '../../components/LoaderButton'
 import { Page } from '../../components/Page'
-import { Scalars, TeamAreaTeamFields } from '../../graphql-operations'
+import type { Scalars, TeamAreaTeamFields } from '../../graphql-operations'
 
 import { useChangeTeamDisplayName } from './backend'
 import { EditParentTeamModal } from './EditParentTeamModal'

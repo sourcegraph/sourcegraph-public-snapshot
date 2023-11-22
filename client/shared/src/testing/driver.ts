@@ -8,23 +8,23 @@ import * as jsonc from 'jsonc-parser'
 import { escapeRegExp } from 'lodash'
 import { readFile } from 'mz/fs'
 import puppeteer, {
-    PageEventObject,
-    Page,
-    Serializable,
-    LaunchOptions,
-    ConsoleMessage,
-    Target,
-    BrowserLaunchArgumentOptions,
-    BrowserConnectOptions,
+    type PageEventObject,
+    type Page,
+    type Serializable,
+    type LaunchOptions,
+    type ConsoleMessage,
+    type Target,
+    type BrowserLaunchArgumentOptions,
+    type BrowserConnectOptions,
 } from 'puppeteer'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
 import { isDefined, logger } from '@sourcegraph/common'
-import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, gql, type GraphQLResult } from '@sourcegraph/http-client'
 
-import {
+import type {
     ExternalServiceKind,
     ExternalServicesForTestsResult,
     OverwriteSettingsForTestsResult,
@@ -33,7 +33,7 @@ import {
     UpdateSiteConfigurationForTestsResult,
     UserSettingsForTestsResult,
 } from '../graphql-operations'
-import { Settings } from '../settings/settings'
+import type { Settings } from '../settings/settings'
 
 import { getConfig } from './config'
 import { formatPuppeteerConsoleMessage } from './console'
@@ -47,10 +47,10 @@ export const oncePageEvent = <E extends keyof PageEventObject>(page: Page, event
 
 export const extractStyles = (page: puppeteer.Page): Promise<string> =>
     page.evaluate(() =>
-        [...document.styleSheets].reduce(
+        Array.from(document.styleSheets).reduce(
             (styleSheetRules, styleSheet) =>
                 styleSheetRules.concat(
-                    [...styleSheet.cssRules].reduce((rules, rule) => rules.concat(rule.cssText), '')
+                    Array.from(styleSheet.cssRules).reduce((rules, rule) => rules.concat(rule.cssText), '')
                 ),
             ''
         )
@@ -147,9 +147,17 @@ function findElementRegexpStrings(
 }
 
 function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement | null {
-    for (const regexpString of regexps) {
-        const regexp = new RegExp(regexpString)
-        for (const element of document.querySelectorAll<HTMLElement>(tag)) {
+    // This method is invoked via puppeteer.Page.eval* and runs in the browser context. This method
+    // must not use anything outside its own scope such as variables or functions. Therefore this
+    // method must be written in legacy-compatible JavaScript.
+    const elements = document.querySelectorAll<HTMLElement>(tag)
+
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
+    for (let regexI = 0; regexI < regexps.length; regexI++) {
+        const regexp = new RegExp(regexps[regexI])
+        // eslint-disable-next-line @typescript-eslint/prefer-for-of
+        for (let elementI = 0; elementI < elements.length; elementI++) {
+            const element = elements[elementI]
             if (!element.offsetParent) {
                 // Ignore hidden elements
                 continue
@@ -170,10 +178,7 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
 
 // Console logs with these keywords will be removed from the console output.
 const MUTE_CONSOLE_KEYWORDS = [
-    '[webpack-dev-server]',
     'Download the React DevTools',
-    '[HMR]',
-    '[WDS]',
     'Warning: componentWillReceiveProps has been renamed',
     'Download the Apollo DevTools',
     'Compiled in DEBUG mode',
@@ -281,7 +286,6 @@ export class Driver {
              */
             if (error.message.includes('waiting for selector `.test-signin-form` failed')) {
                 logger.log('Failed to use the signin form. Trying the signup form...')
-
                 await this.page.waitForSelector('.test-signup-form')
                 if (email) {
                     await this.page.type('input[name=email]', email)
@@ -378,12 +382,14 @@ export class Driver {
         // Pasting does not work on macOS. See:  https://github.com/GoogleChrome/puppeteer/issues/1313
         method = os.platform() === 'darwin' ? 'type' : method
         switch (method) {
-            case 'type':
+            case 'type': {
                 await this.page.keyboard.type(text)
                 break
-            case 'paste':
+            }
+            case 'paste': {
                 await this.paste(text)
                 break
+            }
         }
     }
 
@@ -509,9 +515,7 @@ export class Driver {
     }
 
     public async paste(value: string): Promise<void> {
-        await this.page.evaluate(async (value: string) => {
-            await navigator.clipboard.writeText(value)
-        }, value)
+        await this.page.evaluate((value: string) => navigator.clipboard.writeText(value), value)
         const modifier = os.platform() === 'darwin' ? Key.Meta : Key.Control
         await this.page.keyboard.down(modifier)
         await this.page.keyboard.press('v')
@@ -845,7 +849,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
 
     // Chrome
     args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
-    if (process.getuid() === 0) {
+    if (process.getuid?.() === 0) {
         // TODO don't run as root in CI
         logger.warn('Running as root, disabling sandbox')
         args.push('--no-sandbox', '--disable-setuid-sandbox')

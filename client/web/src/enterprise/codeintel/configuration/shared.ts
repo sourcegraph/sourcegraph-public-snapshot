@@ -1,4 +1,4 @@
-import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
+import type { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
 
 export const defaultDurationValues = [
     // These values match the output of date-fns#formatDuration

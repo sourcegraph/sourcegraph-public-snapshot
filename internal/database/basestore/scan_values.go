@@ -49,6 +49,7 @@ var (
 	ScanInt             = ScanAny[int]
 	ScanStrings         = NewSliceScanner(ScanAny[string])
 	ScanFirstString     = NewFirstScanner(ScanAny[string])
+	ScanNullStrings     = NewSliceScanner(ScanNullString)
 	ScanFirstNullString = NewFirstScanner(ScanNullString)
 	ScanInts            = NewSliceScanner(ScanAny[int])
 	ScanInt32s          = NewSliceScanner(ScanAny[int32])

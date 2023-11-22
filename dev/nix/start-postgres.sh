@@ -31,5 +31,5 @@ EOF
 fi
 if ! pg_isready --quiet; then
   echo 'Starting postgresql database...'
-  pg_ctl start -l "$PGHOST/log"
+  pg_ctl start -l "$PGHOST/log" 3>&-
 fi

@@ -1,14 +1,14 @@
 import React, { useState, useCallback, useMemo } from 'react'
 
-import * as H from 'history'
-import { Observable, concat, of } from 'rxjs'
+import type * as H from 'history'
+import { type Observable, concat, of } from 'rxjs'
 import { switchMap, catchError, startWith, takeUntil, tap, delay } from 'rxjs/operators'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike, asError } from '@sourcegraph/common'
 import { Button, LoadingSpinner, useEventObservable, Link, Alert } from '@sourcegraph/wildcard'
 
-import { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
+import type { CodeMonitorFields, ToggleCodeMonitorEnabledResult } from '../../graphql-operations'
 
 import { toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled } from './backend'
 
@@ -17,6 +17,7 @@ import styles from './CodeMonitoringNode.module.scss'
 export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
     location: H.Location
+    showOwner: boolean
 
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
 }
@@ -26,6 +27,7 @@ const LOADING = 'LOADING' as const
 export const CodeMonitorNode: React.FunctionComponent<React.PropsWithChildren<CodeMonitorNodeProps>> = ({
     location,
     node,
+    showOwner,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
 }: CodeMonitorNodeProps) => {
     const [enabled, setEnabled] = useState<boolean>(node.enabled)
@@ -65,14 +67,18 @@ export const CodeMonitorNode: React.FunctionComponent<React.PropsWithChildren<Co
             node.actions.nodes
                 .map(action => {
                     switch (action.__typename) {
-                        case 'MonitorEmail':
+                        case 'MonitorEmail': {
                             return 'Sends email notification'
-                        case 'MonitorSlackWebhook':
+                        }
+                        case 'MonitorSlackWebhook': {
                             return 'Sends Slack notification'
-                        case 'MonitorWebhook':
+                        }
+                        case 'MonitorWebhook': {
                             return 'Calls webhook'
-                        default:
+                        }
+                        default: {
                             return ''
+                        }
                     }
                 })
                 .filter(string => string !== '')
@@ -86,6 +92,19 @@ export const CodeMonitorNode: React.FunctionComponent<React.PropsWithChildren<Co
                 <div className="d-flex flex-column">
                     <div className="font-weight-bold">
                         <Link to={`${location.pathname}/${node.id}`}>{node.description}</Link>
+                        {showOwner && (
+                            <>
+                                {' '}
+                                <Link
+                                    className="text-muted"
+                                    to={`${node.owner.url}/profile`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    (owned by {node.owner.namespaceName})
+                                </Link>
+                            </>
+                        )}
                     </div>
                     {node.actions.nodes.length > 0 && (
                         <div className="d-flex text-muted align-items-center">New search result → {actions}</div>

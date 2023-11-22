@@ -9,21 +9,31 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service"
 )
 
-type svc struct{}
+type svc struct {
+	ready                chan struct{}
+	debugServerEndpoints LazyDebugserverEndpoint
+}
 
 func (svc) Name() string { return "gitserver" }
 
-func (svc) Configure() (env.Config, []debugserver.Endpoint) {
+func (s *svc) Configure() (env.Config, []debugserver.Endpoint) {
+	s.ready = make(chan struct{})
+
 	c := LoadConfig()
-	endpoints := []debugserver.Endpoint{
-		GRPCWebUIDebugEndpoint(),
-	}
 
-	return c, endpoints
+	return c, createDebugServerEndpoints(s.ready, c.ListenAddress, &s.debugServerEndpoints)
 }
 
-func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	return Main(ctx, observationCtx, ready, config.(*Config), nil)
+func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, signalReadyToParent service.ReadyFunc, config env.Config) error {
+	// This service's debugserver endpoints should start responding when this service is ready (and
+	// not ewait for *all* services to be ready). Therefore, we need to track whether we are ready
+	// separately.
+	ready := service.ReadyFunc(func() {
+		close(s.ready)
+		signalReadyToParent()
+	})
+
+	return Main(ctx, observationCtx, ready, &s.debugServerEndpoints, config.(*Config))
 }
 
-var Service service.Service = svc{}
+var Service service.Service = &svc{}

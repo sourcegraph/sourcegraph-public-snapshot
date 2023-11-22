@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "prom-wrapper_lib",
@@ -41,7 +42,17 @@ go_library(
 go_binary(
     name = "prom-wrapper",
     embed = [":prom-wrapper_lib"],
+    gotags = [
+        "netgo",
+        "dist",
+    ],
+    pure = "on",
+    static = "on",
     visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )
 
 go_test(

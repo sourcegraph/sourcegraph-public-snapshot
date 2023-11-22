@@ -19,6 +19,12 @@ Same if any of the assertions fail.
 
 If there is a problem, we should either investigate right away (typically, if a developer does the manual testing), or create an issue with the error message / specifying which test case failed, and any additional helpful context.
 
+### Operating systems
+
+We test on macOS by default, but we should also test on Windows and Linux more often.
+We have three test instances to test the plugin on a Linux server, an Ubuntu Desktop machine, and on Windows Server. They are all on GCP, [here](https://console.cloud.google.com/compute/instances?cloudshell=true&project=david-veszelovszki-temp-env).
+- For the Windows instance, follow [this guide](https://www.snel.com/support/how-to-connect-to-your-server-via-rdp-on-macos/) to connect, then use the login/password you find in 1Password by the name "GCP: JetBrains plugin testing Windows". 
+
 ## Test cases
 
 ### Website-related features
@@ -30,10 +36,10 @@ If there is a problem, we should either investigate right away (typically, if a 
 * Use [https://cse-k8s.sgdev.org/](https://cse-k8s.sgdev.org/) as your Sourcegraph URL
 * Generate an access token for yourself for CSE-K8S (admin user in 1Password), set that
 * Set up a Perforce client
-* Set `perforce.sgdev.org:1666` for the port. User is “admin”, password is in 1Password.
+* Set `perforce-tests.sgdev.org:1666` for the port. User is “admin”, password is in 1Password.
 * Make sure your connection work, and _actually connect_ in P4V (connection didn’t work without this step  in IntelliJ for me)
 * Create a workspace for yourself (delete an old one if you bump into the 20-workspace limit), and include the `test-large-depot` depot
-* In the JetBrains plugin settings, set the replacement string to `perforce.sgdev.org:,perforce.beatrix.com:app/,.perforce,/patch/core.perforce`.
+* In the JetBrains plugin settings, set the replacement string to `perforce-tests.sgdev.org:,perforce.beatrix.com:app/,.perforce,/patch/core.perforce`.
 * At this point, your files should open properly in your browser.
 
 #### Search Selection and Open/Copy features

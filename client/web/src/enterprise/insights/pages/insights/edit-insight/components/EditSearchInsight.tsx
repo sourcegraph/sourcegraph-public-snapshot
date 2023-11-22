@@ -1,10 +1,10 @@
-import { FC, useMemo } from 'react'
+import { type FC, useMemo } from 'react'
 
-import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+import { FORM_ERROR, type SubmissionErrors } from '@sourcegraph/wildcard'
 
 import { createDefaultEditSeries, CodeInsightsCreationActions, CodeInsightCreationMode } from '../../../../components'
-import { MinimalSearchBasedInsightData, SearchBasedInsight } from '../../../../core'
-import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
+import type { MinimalSearchBasedInsightData, SearchBasedInsight } from '../../../../core'
+import type { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
 import { SearchInsightCreationContent } from '../../creation/search-insight/components/SearchInsightCreationContent'
 import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/insight-sanitizer'
 

@@ -2,11 +2,11 @@ import React, { useCallback, useEffect, useState } from 'react'
 
 import { mdiCheck } from '@mdi/js'
 import * as jsonc from 'jsonc-parser'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { delay, mergeMap, startWith, tap } from 'rxjs/operators'
 
-import { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, useEventObservable, Alert, Icon } from '@sourcegraph/wildcard'
 
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -108,7 +108,7 @@ export const SearchContextRepositoriesFormArea: React.FunctionComponent<
             : 'Test configuration'
 
     const isValidConfig =
-        hasTestedConfig && typeof triggerTestConfigErrors !== 'undefined' && triggerTestConfigErrors.length === 0
+        hasTestedConfig && triggerTestConfigErrors !== undefined && triggerTestConfigErrors.length === 0
 
     const [repositoriesConfig, setRepositoriesConfig] = useState('')
     useEffect(

@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"google.golang.org/grpc/status"
 )
 
 // addHandlers adds handlers that do not require cgo, which speeds up compile times but omits local
@@ -38,8 +39,14 @@ func jsonResponseHandler(v any) http.HandlerFunc {
 }
 
 // LocalCodeIntel is a no-op in the non-cgo variant.
-func (s *grpcService) LocalCodeIntel(ctx context.Context, p *proto.LocalCodeIntelRequest) (*proto.LocalCodeIntelResponse, error) {
-	return &proto.LocalCodeIntelResponse{}, nil
+func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss proto.SymbolsService_LocalCodeIntelServer) error {
+	select {
+	case <-ss.Context().Done():
+		return status.FromContextError(ss.Context().Err()).Err()
+	default:
+		ss.Send(&proto.LocalCodeIntelResponse{})
+	}
+	return nil
 }
 
 // SymbolInfo is a no-op in the non-cgo variant.

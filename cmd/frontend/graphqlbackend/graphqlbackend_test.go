@@ -24,9 +24,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestMain(m *testing.M) {
@@ -62,8 +63,8 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 }
 
 func TestRepository(t *testing.T) {
-	db := database.NewMockDB()
-	repos := database.NewMockRepoStore()
+	db := dbmocks.NewMockDB()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
 	db.ReposFunc.SetDefaultReturn(repos)
 	RunTests(t, []*Test{
@@ -104,20 +105,24 @@ func TestRecloneRepository(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		ServiceConnectionConfig: conftypes.ServiceConnections{
 			GitServers: []string{serverURL.Host},
+		}, SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: boolPointer(false),
+			},
 		},
 	})
 	defer conf.Mock(nil)
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/gorilla/mux"}, nil)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-	gitserverRepos := database.NewMockGitserverRepoStore()
+	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
 	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
@@ -153,16 +158,16 @@ func TestRecloneRepository(t *testing.T) {
 func TestDeleteRepositoryFromDisk(t *testing.T) {
 	resetMocks()
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
-	gitserverRepos := database.NewMockGitserverRepoStore()
+	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
 	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
@@ -192,11 +197,11 @@ func TestDeleteRepositoryFromDisk(t *testing.T) {
 }
 
 func TestResolverTo(t *testing.T) {
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
-	// codecov coverage reports are noisy.
+	// code coverage reports are noisy.
 	resolvers := []any{
 		&FileMatchResolver{db: db},
 		&NamespaceResolver{},
@@ -204,7 +209,7 @@ func TestResolverTo(t *testing.T) {
 		&RepositoryResolver{db: db, logger: logtest.Scoped(t)},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
-		&settingsSubject{},
+		&settingsSubjectResolver{},
 		&statusMessageResolver{db: db},
 	}
 	for _, r := range resolvers {
@@ -245,20 +250,6 @@ func TestResolverTo(t *testing.T) {
 	})
 }
 
-type roundTripFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripFunc) RoundTrip(r *http.Request) (*http.Response, error) {
-	return f(r)
-}
-
-// copied from the github client, just the fields we need
-type githubRepository struct {
-	FullName string `json:"full_name"`
-	Private  bool   `json:"private"`
-}
-
-type gitlabRepository struct {
-	Visibility        string `json:"visibility"`
-	ID                int    `json:"id"`
-	PathWithNamespace string `json:"path_with_namespace"`
+func boolPointer(b bool) *bool {
+	return &b
 }

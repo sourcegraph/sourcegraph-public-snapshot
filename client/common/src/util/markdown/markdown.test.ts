@@ -1,41 +1,48 @@
-import { renderMarkdown, registerHighlightContributions } from '.'
+import { describe, expect, it, test } from 'vitest'
+
+import { renderMarkdown, registerHighlightContributions, escapeMarkdown } from '.'
 
 registerHighlightContributions()
 
+const complicatedMarkdown = [
+    '# This is a heading',
+    '',
+    '## This is a subheading',
+    '',
+    'Some text',
+    'in the same paragraph',
+    'with a [link](./destination).',
+    '',
+    '```ts',
+    'const someTypeScriptCode = funcCall()',
+    '```',
+    '',
+    '- bullet list item 1',
+    '- bullet list item 2',
+    '',
+    '1. item 1',
+    '  ```ts',
+    '  const codeInsideTheBulletPoint = "string"',
+    '  ```',
+    '1. item 2',
+    '',
+    '> quoted',
+    '> text',
+    '',
+    '| col 1 | col 2 |',
+    '|-------|-------|',
+    '| A     | B     |',
+    '',
+    '![image alt text](./src.jpg)',
+    '',
+    '<b>inline html</b>',
+    '',
+    'Escaped \\* markdown and escaped html code \\&gt\\;',
+].join('\n')
+
 describe('renderMarkdown', () => {
     it('renders code blocks, with syntax highlighting', () => {
-        const markdown = [
-            '# This is a heading',
-            '',
-            '## This is a subheading',
-            '',
-            'Some text',
-            'in the same paragraph',
-            'with a [link](./destination).',
-            '',
-            '```ts',
-            'const someTypeScriptCode = funcCall()',
-            '```',
-            '',
-            '- bullet list item 1',
-            '- bullet list item 2',
-            '',
-            '1. item 1',
-            '  ```ts',
-            '  const codeInsideTheBulletPoint = "string"',
-            '  ```',
-            '1. item 2',
-            '',
-            '> quoted',
-            '> text',
-            '',
-            '| col 1 | col 2 |',
-            '|-------|-------|',
-            '| A     | B     |',
-            '',
-            '![image alt text](./src.jpg)',
-        ].join('\n')
-        expect(renderMarkdown(markdown)).toMatchInlineSnapshot(`
+        expect(renderMarkdown(complicatedMarkdown)).toMatchInlineSnapshot(`
             "<h1 id=\\"this-is-a-heading\\">This is a heading</h1>
             <h2 id=\\"this-is-a-subheading\\">This is a subheading</h2>
             <p>Some text
@@ -69,40 +76,86 @@ describe('renderMarkdown', () => {
             <td>B</td>
             </tr>
             </tbody></table>
-            <p><img src=\\"./src.jpg\\" alt=\\"image alt text\\" /></p>
-            "
+            <p><img alt=\\"image alt text\\" src=\\"./src.jpg\\"></p>
+            <p><b>inline html</b></p>
+            <p>Escaped * markdown and escaped html code &amp;gt;</p>"
         `)
     })
     it('renders to plain text with plainText: true', () => {
-        expect(renderMarkdown('A **b**', { plainText: true })).toBe('A b\n')
+        expect(renderMarkdown('A **b**', { plainText: true })).toBe('A b')
     })
     it('sanitizes script tags', () => {
         expect(renderMarkdown('<script>evil();</script>')).toBe('')
     })
     it('sanitizes event handlers', () => {
-        expect(renderMarkdown('<svg><rect onclick="evil()"></rect></svg>')).toBe('<p><svg><rect></rect></svg></p>\n')
+        expect(renderMarkdown('<b onclick="evil()">test</b></svg>')).toBe('<p><b>test</b></p>')
     })
     it('does not allow arbitrary <object> tags', () => {
-        expect(renderMarkdown('<object data="something"></object>')).toBe('<p></p>\n')
+        expect(renderMarkdown('<object data="something"></object>')).toBe('<p></p>')
     })
     it('drops SVG <object> tags', () => {
-        expect(renderMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe('<p></p>\n')
+        expect(renderMarkdown('<object data="something" type="image/svg+xml"></object>')).toBe('<p></p>')
     })
-    it('allows <svg> tags', () => {
+    it('forbids <svg> tags', () => {
         const input =
             '<svg viewbox="10 10 10 10" width="100"><rect x="37.5" y="7.5" width="675.0" height="16.875" fill="#e05d44" stroke="white" stroke-width="1"><title>/</title></rect></svg>'
-        expect(renderMarkdown(input)).toBe(`<p>${input}</p>\n`)
+        expect(renderMarkdown(input)).toBe('<p></p>')
     })
+    it('forbids rel and style attributes', () => {
+        const input = '<a href="/" rel="evil" style="foo:bar">Link</a><script>alert("x")</script>'
+        expect(renderMarkdown(input)).toBe('<p><a href="/">Link</a></p>')
+    })
+    it('forbids target attribute on links', () => {
+        const input = '<a href="/" target="_blank">Link</a>'
+        expect(renderMarkdown(input)).toBe('<p><a href="/">Link</a></p>')
+    })
+    it('adds target="_blank" attribute on links with addTargetBlankToAllLinks: true', () => {
+        const input = '<a href="/">Link</a>'
+        expect(renderMarkdown(input, { addTargetBlankToAllLinks: true })).toBe(
+            '<p><a href="/" target="_blank" rel="noopener">Link</a></p>'
+        )
+    })
+    test('forbids data URI links', () => {
+        const input = '<a href="data:text/plain,foobar" download>D</a>\n[D2](data:text/plain,foobar)'
+        expect(renderMarkdown(input)).toBe('<p><a download="">D</a>\n<a>D2</a></p>')
+    })
+})
 
-    describe('allowDataUriLinksAndDownloads option', () => {
-        const MARKDOWN_WITH_DOWNLOAD = '<a href="data:text/plain,foobar" download>D</a>\n[D2](data:text/plain,foobar)'
-        test('default disabled', () => {
-            expect(renderMarkdown(MARKDOWN_WITH_DOWNLOAD)).toBe('<p><a>D</a>\n<a>D2</a></p>\n')
-        })
-        test('enabled', () => {
-            expect(renderMarkdown(MARKDOWN_WITH_DOWNLOAD, { allowDataUriLinksAndDownloads: true })).toBe(
-                '<p><a href="data:text/plain,foobar" download>D</a>\n<a href="data:text/plain,foobar">D2</a></p>\n'
-            )
-        })
+describe('escapeMarkdown', () => {
+    it('handles complicated document', () => {
+        expect(escapeMarkdown(complicatedMarkdown)).toBe(`\
+\\# This is a heading
+
+\\#\\# This is a subheading
+
+Some text
+in the same paragraph
+with a \\[link\\]\\(\\.\\/destination\\)\\.
+
+\\\`\\\`\\\`ts
+const someTypeScriptCode \\= funcCall\\(\\)
+\\\`\\\`\\\`
+
+\\- bullet list item 1
+\\- bullet list item 2
+
+1\\. item 1
+  \\\`\\\`\\\`ts
+  const codeInsideTheBulletPoint \\= \\"string\\"
+  \\\`\\\`\\\`
+1\\. item 2
+
+&gt; quoted
+&gt; text
+
+\\| col 1 \\| col 2 \\|
+\\|\\-\\-\\-\\-\\-\\-\\-\\|\\-\\-\\-\\-\\-\\-\\-\\|
+\\| A     \\| B     \\|
+
+\\!\\[image alt text\\]\\(\\.\\/src\\.jpg\\)
+
+&lt;b&gt;inline html&lt;\\/b&gt;
+
+Escaped \\\\\\* markdown and escaped html code \\\\\\&gt\\\\\\;`)
     })
 })

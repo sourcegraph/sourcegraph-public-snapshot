@@ -14,7 +14,7 @@ type gitServer struct{}
 // src_gitserver_api_duration_seconds_bucket
 // src_gitserver_api_errors_total
 func (gitServer) NewAPIGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerRepoManagement, ObservationGroupOptions{
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerSource, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "gitserver",
 			DescriptionRoot: "Gitserver API (powered by internal/observation)",
@@ -46,7 +46,7 @@ func (gitServer) NewAPIGroup(containerName string) monitoring.Group {
 // src_gitserver_client_duration_seconds_bucket
 // src_gitserver_client_errors_total
 func (gitServer) NewClientGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerRepoManagement, ObservationGroupOptions{
+	return Observation.NewGroup(containerName, monitoring.ObservableOwnerSource, ObservationGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "gitserver",
 			DescriptionRoot: "Gitserver Client",
@@ -55,7 +55,7 @@ func (gitServer) NewClientGroup(containerName string) monitoring.Group {
 			ObservableConstructorOptions: ObservableConstructorOptions{
 				MetricNameRoot:        "gitserver_client",
 				MetricDescriptionRoot: "graphql",
-				By:                    []string{"op"},
+				By:                    []string{"op", "scope"},
 			},
 		},
 
@@ -84,7 +84,7 @@ func (gitServer) NewBatchLogSemaphoreWait(containerName string) monitoring.Group
 				NoAlertsOption("none")(Observation.Duration(ObservableConstructorOptions{
 					MetricNameRoot:        "batch_log_semaphore_wait",
 					MetricDescriptionRoot: "batch log semaphore",
-				})(containerName, monitoring.ObservableOwnerRepoManagement)).Observable(),
+				})(containerName, monitoring.ObservableOwnerSource)).Observable(),
 			},
 		},
 	}

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "outbound",
@@ -25,7 +26,7 @@ go_test(
     srcs = ["outbound_test.go"],
     embed = [":outbound"],
     deps = [
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/types",
         "//lib/errors",
         "@com_github_derision_test_go_mockgen//testutil/assert",

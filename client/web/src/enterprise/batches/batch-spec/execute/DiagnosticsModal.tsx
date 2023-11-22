@@ -7,8 +7,8 @@ import { Button, Modal, Icon, H3, H4 } from '@sourcegraph/wildcard'
 
 import { isDefined } from '../../../../codeintel/util/helpers'
 import { ExecutionLogEntry } from '../../../../components/ExecutionLogEntry'
-import { Timeline, TimelineStage } from '../../../../components/Timeline'
-import { BatchSpecWorkspaceState, VisibleBatchSpecWorkspaceFields } from '../../../../graphql-operations'
+import { Timeline, type TimelineStage } from '../../../../components/Timeline'
+import { BatchSpecWorkspaceState, type VisibleBatchSpecWorkspaceFields } from '../../../../graphql-operations'
 import { ExecutorNode } from '../../../executors/instances/ExecutorNode'
 
 import styles from './DiagnosticsModal.module.scss'

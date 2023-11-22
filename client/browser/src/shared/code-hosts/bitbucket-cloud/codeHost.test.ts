@@ -1,4 +1,6 @@
-import { LineOrPositionOrRange } from '@sourcegraph/common'
+import { describe, expect, test } from 'vitest'
+
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 
 import { parseHash } from './codeHost'
 

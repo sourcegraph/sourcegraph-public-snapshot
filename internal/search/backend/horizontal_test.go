@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestHorizontalSearcher(t *testing.T) {
@@ -108,12 +107,12 @@ func TestHorizontalSearcher(t *testing.T) {
 			t.Errorf("list mismatch (-want +got):\n%s", cmp.Diff(want, got))
 		}
 
-		rle, err = searcher.List(context.Background(), nil, &zoekt.ListOptions{Minimal: true})
+		rle, err = searcher.List(context.Background(), nil, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 		if err != nil {
 			t.Fatal(err)
 		}
 		got = []string{}
-		for r := range rle.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		for r := range rle.ReposMap {
 			got = append(got, strconv.Itoa(int(r)))
 		}
 		sort.Strings(got)
@@ -390,85 +389,6 @@ func TestZoektRolloutErrors(t *testing.T) {
 	_, err = searcher.List(context.Background(), nil, nil)
 	if err == nil {
 		t.Fatal("List: expected error")
-	}
-}
-
-func TestResultQueueSettingsFromConfig(t *testing.T) {
-	dummy := 100
-
-	cases := []struct {
-		name                   string
-		siteConfig             schema.SiteConfiguration
-		wantMaxQueueDepth      int
-		wantMaxReorderDuration time.Duration
-		wantMaxQueueMatchCount int
-		wantMaxSizeBytes       int
-	}{
-		{
-			name:                   "defaults",
-			siteConfig:             schema.SiteConfiguration{},
-			wantMaxQueueDepth:      24,
-			wantMaxQueueMatchCount: -1,
-			wantMaxSizeBytes:       -1,
-		},
-		{
-			name: "MaxReorderDurationMS",
-			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxReorderDurationMS: 5,
-			}}},
-			wantMaxQueueDepth:      24,
-			wantMaxReorderDuration: 5 * time.Millisecond,
-			wantMaxQueueMatchCount: -1,
-			wantMaxSizeBytes:       -1,
-		},
-		{
-			name: "MaxReorderQueueSize",
-			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxReorderQueueSize: &dummy}}},
-			wantMaxQueueDepth:      dummy,
-			wantMaxQueueMatchCount: -1,
-			wantMaxSizeBytes:       -1,
-		},
-		{
-			name: "MaxQueueMatchCount",
-			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxQueueMatchCount: &dummy,
-			}}},
-			wantMaxQueueDepth:      24,
-			wantMaxQueueMatchCount: dummy,
-			wantMaxSizeBytes:       -1,
-		},
-		{
-			name: "MaxSizeBytes",
-			siteConfig: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{Ranking: &schema.Ranking{
-				MaxQueueSizeBytes: &dummy,
-			}}},
-			wantMaxQueueDepth:      24,
-			wantMaxQueueMatchCount: -1,
-			wantMaxSizeBytes:       dummy,
-		},
-	}
-
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			settings := newRankingSiteConfig(tt.siteConfig)
-
-			if settings.maxQueueDepth != tt.wantMaxQueueDepth {
-				t.Fatalf("want %d, got %d", tt.wantMaxQueueDepth, settings.maxQueueDepth)
-			}
-
-			if settings.maxReorderDuration != tt.wantMaxReorderDuration {
-				t.Fatalf("want %d, got %d", tt.wantMaxReorderDuration, settings.maxReorderDuration)
-			}
-
-			if settings.maxMatchCount != tt.wantMaxQueueMatchCount {
-				t.Fatalf("want %d, got %d", tt.wantMaxQueueMatchCount, settings.maxMatchCount)
-			}
-
-			if settings.maxSizeBytes != tt.wantMaxSizeBytes {
-				t.Fatalf("want %d, got %d", tt.wantMaxSizeBytes, settings.maxSizeBytes)
-			}
-		})
 	}
 }
 

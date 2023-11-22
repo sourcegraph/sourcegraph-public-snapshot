@@ -5,9 +5,10 @@ import (
 	"context"
 	"io"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -47,18 +48,18 @@ type gitserverClient struct {
 	operations  *operations
 }
 
-func NewClient(observationCtx *observation.Context) GitserverClient {
+func NewClient(observationCtx *observation.Context, db database.DB) GitserverClient {
 	return &gitserverClient{
-		innerClient: gitserver.NewClient(),
+		innerClient: gitserver.NewClient("symbols"),
 		operations:  newOperations(observationCtx),
 	}
 }
 
 func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (_ io.ReadCloser, err error) {
-	ctx, _, endObservation := c.operations.fetchTar.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(repo)),
-		log.String("commit", string(commit)),
-		log.Int("paths", len(paths)),
+	ctx, _, endObservation := c.operations.fetchTar.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		repo.Attr(),
+		commit.Attr(),
+		attribute.Int("paths", len(paths)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -74,14 +75,14 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	}
 
 	// Note: the sub-repo perms checker is nil here because we do the sub-repo filtering at a higher level
-	return c.innerClient.ArchiveReader(ctx, nil, repo, opts)
+	return c.innerClient.ArchiveReader(ctx, repo, opts)
 }
 
 func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ Changes, err error) {
-	ctx, _, endObservation := c.operations.gitDiff.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(repo)),
-		log.String("commitA", string(commitA)),
-		log.String("commitB", string(commitB)),
+	ctx, _, endObservation := c.operations.gitDiff.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		repo.Attr(),
+		attribute.String("commitA", string(commitA)),
+		attribute.String("commitB", string(commitB)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -96,19 +97,19 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 }
 
 func (c *gitserverClient) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	data, err := c.innerClient.ReadFile(ctx, nil, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
+	data, err := c.innerClient.ReadFile(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get file contents")
 	}
 	return data, nil
 }
 
-func (g *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	return g.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
+func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	return c.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
 }
 
-func (g *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	return g.innerClient.RevList(ctx, repo, commit, onCommit)
+func (c *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	return c.innerClient.RevList(ctx, repo, commit, onCommit)
 }
 
 var NUL = []byte{0}

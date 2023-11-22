@@ -1,4 +1,4 @@
-import { Literal } from './token'
+import type { Literal } from './token'
 
 interface Access {
     name: string

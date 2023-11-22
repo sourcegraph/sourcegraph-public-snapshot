@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -20,7 +21,7 @@ func TestRolePermissionAssign(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 
@@ -96,7 +97,7 @@ func TestRolePermissionAssignToSystemRole(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	_, p := createRoleAndPermission(ctx, t, db)
@@ -151,7 +152,7 @@ func TestRolePermissionBulkAssignPermissionsToSystemRoles(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	_, p := createRoleAndPermission(ctx, t, db)
@@ -195,7 +196,7 @@ func TestRolePermissionBulkAssignPermissionsToSystemRoles(t *testing.T) {
 func TestRolePermissionGetByRoleIDAndPermissionID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	r, p := createRoleAndPermission(ctx, t, db)
@@ -253,14 +254,15 @@ func TestRolePermissionGetByRoleIDAndPermissionID(t *testing.T) {
 func TestRolePermissionGetByRoleID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	r := createTestRoleForRolePermission(ctx, "TEST ROLE", t, db)
 
 	totalRolePermissions := 5
 	for i := 1; i <= totalRolePermissions; i++ {
-		p := createTestPermissionForRolePermission(ctx, fmt.Sprintf("action-%d", i), t, db)
+		action := rtypes.NamespaceAction(fmt.Sprintf("%s-%d", rtypes.BatchChangesReadAction, i))
+		p := createTestPermissionForRolePermission(ctx, action, t, db)
 		err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
@@ -296,7 +298,7 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 func TestRolePermissionGetByPermissionID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 
 	p := createTestPermissionForRolePermission(ctx, "READ", t, db)
@@ -341,7 +343,7 @@ func TestRolePermissionRevoke(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 
@@ -433,7 +435,7 @@ func TestBulkAssignPermissionsToRole(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 
@@ -448,7 +450,8 @@ func TestBulkAssignPermissionsToRole(t *testing.T) {
 	numberOfPerms := 4
 	var perms []int32
 	for i := 0; i < numberOfPerms; i++ {
-		perm := createTestPermissionForRolePermission(ctx, fmt.Sprintf("READ-%d", i), t, db)
+		action := rtypes.NamespaceAction(fmt.Sprintf("%s-%d", rtypes.BatchChangesReadAction, i))
+		perm := createTestPermissionForRolePermission(ctx, action, t, db)
 		perms = append(perms, perm.ID)
 	}
 
@@ -508,7 +511,7 @@ func TestBulkRevokePermissionsForRole(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 
@@ -577,7 +580,7 @@ func TestSetPermissionsForRole(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.RolePermissions()
 	roleStore := db.Roles()
 
@@ -690,10 +693,10 @@ func TestSetPermissionsForRole(t *testing.T) {
 	})
 }
 
-func createTestPermissionForRolePermission(ctx context.Context, action string, t *testing.T, db DB) *types.Permission {
+func createTestPermissionForRolePermission(ctx context.Context, action rtypes.NamespaceAction, t *testing.T, db DB) *types.Permission {
 	t.Helper()
 	p, err := db.Permissions().Create(ctx, CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    action,
 	})
 	if err != nil {

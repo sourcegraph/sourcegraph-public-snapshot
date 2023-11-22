@@ -1,4 +1,4 @@
-import { OrgAreaOrganizationFields, UserAreaUserFields } from '../graphql-operations'
+import type { OrgAreaOrganizationFields, UserAreaUserFields } from '../graphql-operations'
 
 /**
  * Common props for components underneath a namespace (e.g., a user or organization).

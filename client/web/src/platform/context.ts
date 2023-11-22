@@ -1,29 +1,38 @@
-import { ApolloQueryResult, ObservableQuery } from '@apollo/client'
+import type { ApolloQueryResult, ObservableQuery } from '@apollo/client'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
 import { createAggregateError, asError, logger } from '@sourcegraph/common'
 import { fromObservableQueryPromise, getDocumentNode } from '@sourcegraph/http-client'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
-import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { mutateSettings, updateSettings } from '@sourcegraph/shared/src/settings/edit'
-import { gqlToCascade, SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
+import { gqlToCascade, type SettingsSubject } from '@sourcegraph/shared/src/settings/settings'
 import {
     toPrettyBlobURL,
-    RepoFile,
-    UIPositionSpec,
-    ViewStateSpec,
-    RenderModeSpec,
-    UIRangeSpec,
+    type RepoFile,
+    type UIPositionSpec,
+    type ViewStateSpec,
+    type RenderModeSpec,
+    type UIRangeSpec,
 } from '@sourcegraph/shared/src/util/url'
+import { CallbackTelemetryProcessor } from '@sourcegraph/telemetry'
 
 import { getWebGraphQLClient, requestGraphQL } from '../backend/graphql'
+import type { TelemetryRecorderProvider } from '../telemetry'
 import { eventLogger } from '../tracking/eventLogger'
 
 /**
  * Creates the {@link PlatformContext} for the web app.
  */
-export function createPlatformContext(): PlatformContext {
+export function createPlatformContext(props: {
+    /**
+     * The {@link TelemetryRecorderProvider} for the platform. Callers should
+     * make sure to configure desired buffering and add the teardown of the
+     * provider to a subscription or similar.
+     */
+    telemetryRecorderProvider: TelemetryRecorderProvider
+}): PlatformContext {
     const settingsQueryWatcherPromise = watchViewerSettingsQuery()
 
     const context: PlatformContext = {
@@ -78,6 +87,15 @@ export function createPlatformContext(): PlatformContext {
         sourcegraphURL: window.context.externalURL,
         clientApplication: 'sourcegraph',
         telemetryService: eventLogger,
+        telemetryRecorder: props.telemetryRecorderProvider.getRecorder(
+            window.context.debug
+                ? [
+                      new CallbackTelemetryProcessor(event =>
+                          logger.info(`telemetry: ${event.feature}/${event.action}`, { event })
+                      ),
+                  ]
+                : undefined
+        ),
     }
 
     return context

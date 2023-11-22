@@ -1,8 +1,8 @@
-import { RefObject, useEffect, useState } from 'react'
+import { type RefObject, useEffect, useState } from 'react'
 
-import { ObservableInput } from 'rxjs'
+import type { ObservableInput } from 'rxjs'
 
-import { LazyQueryState, useLazyParallelRequest } from '../../../hooks/use-parallel-requests/use-parallel-request'
+import { type LazyQueryState, useLazyParallelRequest } from '../../../hooks/use-parallel-requests/use-parallel-request'
 
 export interface UseInsightDataResult<T> {
     isVisible: boolean
@@ -29,7 +29,6 @@ export function useInsightData<D>(
 
     useEffect(() => {
         if (hasIntersected) {
-            // eslint-disable-next-line @typescript-eslint/unbound-method
             const { unsubscribe } = query(request)
 
             return unsubscribe

@@ -1,0 +1,30 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "drift",
+    srcs = [
+        "compare.go",
+        "compare_columns.go",
+        "compare_constraints.go",
+        "compare_enums.go",
+        "compare_extensions.go",
+        "compare_functions.go",
+        "compare_indexes.go",
+        "compare_sequences.go",
+        "compare_tables.go",
+        "compare_triggers.go",
+        "compare_views.go",
+        "summary.go",
+        "util.go",
+        "util_search.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/migration/drift",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/migration/schemas",
+        "//lib/errors",
+        "//lib/output",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_grafana_regexp//:regexp",
+    ],
+)

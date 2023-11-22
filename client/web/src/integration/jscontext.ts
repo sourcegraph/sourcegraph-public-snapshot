@@ -1,6 +1,6 @@
 import { currentUserMock } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 export const siteID = 'TestSiteID'
 export const siteGQLID = 'TestGQLSiteID'
@@ -25,11 +25,13 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     batchChangesWebhookLogsEnabled: true,
     codeInsightsEnabled: true,
     executorsEnabled: true,
+    codyEnabled: true,
+    codyEnabledForCurrentUser: true,
+    codyRequiresVerifiedEmail: false,
     extsvcConfigAllowEdits: false,
     extsvcConfigFileExists: false,
     codeIntelAutoIndexingEnabled: true,
     codeIntelAutoIndexingAllowGlobalPolicies: true,
-    externalServicesUserMode: 'disabled',
     productResearchPageEnabled: true,
     assetsRoot: new URL('/.assets', sourcegraphBaseUrl).href,
     deployType: 'dev',
@@ -37,7 +39,13 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     emailEnabled: false,
     experimentalFeatures: {},
     isAuthenticatedUser: true,
-    likelyDockerOnMac: false,
+    licenseInfo: {
+        currentPlan: 'team-0',
+        batchChanges: {
+            maxNumChangesets: -1,
+            unrestricted: true,
+        },
+    },
     needServerRestart: false,
     needsSiteInit: false,
     needsRepositoryConfiguration: false,
@@ -47,7 +55,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     siteID,
     siteGQLID,
     sourcegraphDotComMode: false,
-    sourcegraphAppMode: false,
+    codyAppMode: false,
     userAgentIsBot: false,
     version: '0.0.0',
     xhrHeaders: {},
@@ -55,6 +63,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     authMinPasswordLength: 12,
     embeddingsEnabled: false,
     runningOnMacOS: true,
-    localFilePickerAvailable: false,
     srcServeGitUrl: 'http://127.0.0.1:3434',
+    primaryLoginProvidersCount: 5,
 })

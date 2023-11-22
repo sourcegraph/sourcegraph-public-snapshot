@@ -110,7 +110,8 @@ func (f *featureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.Featu
 		SET
 			flag_type = %s,
 			bool_value = %s,
-			rollout = %s
+			rollout = %s,
+			updated_at = NOW()
 		WHERE flag_name = %s
 		RETURNING
 			flag_name,
@@ -145,6 +146,7 @@ func (f *featureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.Featu
 		rollout,
 		flag.Name,
 	))
+	clearRedisCache(flag.Name)
 	return scanFeatureFlag(row)
 }
 

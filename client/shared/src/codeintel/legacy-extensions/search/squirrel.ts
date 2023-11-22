@@ -3,8 +3,8 @@
 import { sortBy } from 'lodash'
 
 import * as sourcegraph from '../api'
-import { PromiseProviders } from '../providers'
-import { API, Range, RepoCommitPath } from '../util/api'
+import type { PromiseProviders } from '../providers'
+import type { API, Range, RepoCommitPath } from '../util/api'
 import { parseGitURI } from '../util/uri'
 
 export const mkSquirrel = (api: API): PromiseProviders => ({
@@ -12,7 +12,7 @@ export const mkSquirrel = (api: API): PromiseProviders => ({
         const local = await api.findLocalSymbol(document, position)
 
         if (local?.def) {
-            return mkSourcegraphLocation({ ...parseGitURI(new URL(document.uri)), range: local.def })
+            return mkSourcegraphLocation({ ...parseGitURI(document.uri), range: local.def })
         }
 
         const symbolInfo = await api.fetchSymbolInfo(document, position)
@@ -30,7 +30,7 @@ export const mkSquirrel = (api: API): PromiseProviders => ({
                 length: symbolInfo.definition.range.length,
             },
         }
-        return mkSourcegraphLocation({ ...parseGitURI(new URL(document.uri)), ...location })
+        return mkSourcegraphLocation({ ...parseGitURI(document.uri), ...location })
     },
     async references(document, position) {
         const symbol = await api.findLocalSymbol(document, position)
@@ -40,9 +40,7 @@ export const mkSquirrel = (api: API): PromiseProviders => ({
 
         symbol.refs = sortBy(symbol.refs, reference => reference.row)
 
-        return symbol.refs.map(reference =>
-            mkSourcegraphLocation({ ...parseGitURI(new URL(document.uri)), range: reference })
-        )
+        return symbol.refs.map(reference => mkSourcegraphLocation({ ...parseGitURI(document.uri), range: reference }))
     },
     async hover(document, position) {
         const symbol = await api.findLocalSymbol(document, position)

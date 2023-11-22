@@ -1,0 +1,66 @@
+- steps:
+    - root: foo/bar
+      image: sourcegraph/scip-go@sha256:4f82e2490c4385a3c47ac0d062c9c53ce5a0bfc5acf0c4032ad07486b39163ec
+      commands:
+        - |
+          if [ "$NETRC_DATA" ]; then
+            echo "Writing netrc config to $HOME/.netrc"
+            echo "$NETRC_DATA" > ~/.netrc
+          else
+            echo "No netrc config set, continuing"
+          fi
+        - go mod download
+  local_steps:
+    - |
+      if [ "$NETRC_DATA" ]; then
+        echo "Writing netrc config to $HOME/.netrc"
+        echo "$NETRC_DATA" > ~/.netrc
+      else
+        echo "No netrc config set, continuing"
+      fi
+  root: foo/bar
+  indexer: sourcegraph/scip-go@sha256:4f82e2490c4385a3c47ac0d062c9c53ce5a0bfc5acf0c4032ad07486b39163ec
+  indexer_args:
+    - scip-go
+    - --no-animation
+  outfile: index.scip
+  requestedEnvVars:
+    - GOPRIVATE
+    - GOPROXY
+    - GONOPROXY
+    - GOSUMDB
+    - GONOSUMDB
+    - NETRC_DATA
+- steps:
+    - root: foo/baz
+      image: sourcegraph/scip-go@sha256:4f82e2490c4385a3c47ac0d062c9c53ce5a0bfc5acf0c4032ad07486b39163ec
+      commands:
+        - |
+          if [ "$NETRC_DATA" ]; then
+            echo "Writing netrc config to $HOME/.netrc"
+            echo "$NETRC_DATA" > ~/.netrc
+          else
+            echo "No netrc config set, continuing"
+          fi
+        - go mod download
+  local_steps:
+    - |
+      if [ "$NETRC_DATA" ]; then
+        echo "Writing netrc config to $HOME/.netrc"
+        echo "$NETRC_DATA" > ~/.netrc
+      else
+        echo "No netrc config set, continuing"
+      fi
+  root: foo/baz
+  indexer: sourcegraph/scip-go@sha256:4f82e2490c4385a3c47ac0d062c9c53ce5a0bfc5acf0c4032ad07486b39163ec
+  indexer_args:
+    - scip-go
+    - --no-animation
+  outfile: index.scip
+  requestedEnvVars:
+    - GOPRIVATE
+    - GOPROXY
+    - GONOPROXY
+    - GOSUMDB
+    - GONOSUMDB
+    - NETRC_DATA

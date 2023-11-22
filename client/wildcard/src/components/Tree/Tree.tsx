@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Icon, LoadingSpinner } from '..'
 
-import TreeView, { INode, ITreeViewProps } from './react-accessible-treeview'
+import TreeView, { type INode, type ITreeViewProps } from './react-accessible-treeview'
 
 import styles from './Tree.module.scss'
 

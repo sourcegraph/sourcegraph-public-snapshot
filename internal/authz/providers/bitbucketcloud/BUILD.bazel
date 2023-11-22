@@ -1,0 +1,53 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bitbucketcloud",
+    srcs = [
+        "authz.go",
+        "provider.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/bitbucketcloud",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/authz",
+        "//internal/authz/types",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/bitbucketcloud",
+        "//internal/httpcli",
+        "//internal/licensing",
+        "//internal/oauthtoken",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+    ],
+)
+
+go_test(
+    name = "bitbucketcloud_test",
+    timeout = "short",
+    srcs = [
+        "authz_test.go",
+        "provider_test.go",
+    ],
+    embed = [":bitbucketcloud"],
+    tags = [
+        "requires-network",
+    ],
+    deps = [
+        "//internal/authz",
+        "//internal/database/dbmocks",
+        "//internal/extsvc",
+        "//internal/extsvc/bitbucketcloud",
+        "//internal/licensing",
+        "//internal/ratelimit",
+        "//internal/types",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_oauth2//:oauth2",
+    ],
+)

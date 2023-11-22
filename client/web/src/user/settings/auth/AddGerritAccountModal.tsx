@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { AddExternalAccountResult, AddExternalAccountVariables } from 'src/graphql-operations'
+import type { AddExternalAccountResult, AddExternalAccountVariables } from 'src/graphql-operations'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { Alert, Button, Form, H3, Input, Modal, Text } from '@sourcegraph/wildcard'

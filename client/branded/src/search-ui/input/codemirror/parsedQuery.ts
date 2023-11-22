@@ -1,38 +1,19 @@
-import { EditorState, Extension, Facet, StateEffect, StateField } from '@codemirror/state'
+import { type EditorState, type Extension, Facet, StateEffect, StateField } from '@codemirror/state'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
-import { decorate, DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
-import { ParseResult, parseSearchQuery, Node } from '@sourcegraph/shared/src/search/query/parser'
+import { decorate, type DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { type ParseResult, parseSearchQuery, type Node } from '@sourcegraph/shared/src/search/query/parser'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 
 export interface QueryTokens {
     patternType: SearchPatternType
     tokens: Token[]
 }
 
-/**
- * Use this effect to update parse options.
- */
-export const setQueryParseOptions = StateEffect.define<{
-    patternType: SearchPatternType
-    interpretComments?: boolean
-}>()
-
-/**
- * Facet representing the parsed query. Other extensions can use this to access
- * the parsed query.
- */
-export const queryTokens = Facet.define<QueryTokens, QueryTokens>({
-    combine(input) {
-        // There will always only be one extension which parses this query
-        return input[0] ?? { patternType: SearchPatternType.standard, tokens: [] }
-    },
-})
-
 export const parsedQuery = Facet.define<ParseResult, Node | null>({
     combine(input) {
-        return input[0]?.type === 'success' ? input[0].nodes[0] : null
+        return input[0]?.type === 'success' ? input[0].node : null
     },
 })
 
@@ -47,26 +28,21 @@ export const decoratedTokens = Facet.define<DecoratedToken[], DecoratedToken[]>(
 })
 
 /**
- * Returns the token at the current position (if any)
+ * Facet representing the parsed query. Other extensions can use this to access
+ * the parsed query. Populates the {@link parsedQuery} and {@link decoratedTokens} facets.
  */
-export function tokenAt(tokens: Token[], position: number): Token | undefined {
-    // We do a exclusive end check for whitespace tokens so that the token that
-    // possibly follows the whitespace token is picked instead.
-    return tokens.find(({ range, type }) =>
-        range.start <= position && type === 'whitespace' ? range.end > position : range.end >= position
-    )
-}
-
-/**
- * Returns the current query tokens
- */
-export function tokens(state: EditorState): Token[] {
-    return state.facet(queryTokens).tokens
-}
-
-export function getParsedQuery(state: EditorState): Node | null {
-    return state.facet(parsedQuery)
-}
+export const queryTokens: Facet<QueryTokens, QueryTokens> = Facet.define<QueryTokens, QueryTokens>({
+    combine(input) {
+        // There will always only be one extension which parses this query
+        return input[0] ?? { patternType: SearchPatternType.standard, tokens: [] }
+    },
+    enables(self) {
+        return [
+            parsedQuery.compute([self], state => parseSearchQuery({ type: 'success', term: state.facet(self).tokens })),
+            decoratedTokens.compute([self], state => state.facet(self).tokens.flatMap(decorate)),
+        ]
+    },
+})
 
 interface ParseOptions {
     patternType: SearchPatternType
@@ -96,27 +72,51 @@ export function parseInputAsQuery(initialParseOptions: ParseOptions): Extension 
             // Parse the query using our existing parser. It depends on the
             // current input (obviously) and the current parse options. It gets
             // recomputed whenever one of those values changes.
-            return [
-                queryTokens.compute(['doc', parseOptions], state => {
-                    const textDocument = state.sliceDoc()
-                    const { patternType, interpretComments } = state.field(parseOptions)
-                    if (!textDocument) {
-                        return { patternType, tokens: [] }
-                    }
+            return queryTokens.compute(['doc', parseOptions], state => {
+                const textDocument = state.sliceDoc()
+                const { patternType, interpretComments } = state.field(parseOptions)
+                if (!textDocument) {
+                    return { patternType, tokens: [] }
+                }
 
-                    const result = scanSearchQuery(textDocument, interpretComments, patternType)
-                    return {
-                        patternType,
-                        tokens: result.type === 'success' ? result.term : [],
-                    }
-                }),
-                parsedQuery.compute([queryTokens], state =>
-                    parseSearchQuery({ type: 'success', term: state.facet(queryTokens).tokens })
-                ),
-                decoratedTokens.compute([queryTokens], state => state.facet(queryTokens).tokens.flatMap(decorate)),
-            ]
+                const result = scanSearchQuery(textDocument, interpretComments, patternType)
+                return {
+                    patternType,
+                    tokens: result.type === 'success' ? result.term : [],
+                }
+            })
         },
     })
+}
+
+/**
+ * Use this effect to update parse options.
+ */
+export const setQueryParseOptions = StateEffect.define<{
+    patternType: SearchPatternType
+    interpretComments?: boolean
+}>()
+
+/**
+ * Returns the token at the current position (if any)
+ */
+export function tokenAt(tokens: Token[], position: number): Token | undefined {
+    // We do a exclusive end check for whitespace tokens so that the token that
+    // possibly follows the whitespace token is picked instead.
+    return tokens.find(({ range, type }) =>
+        range.start <= position && type === 'whitespace' ? range.end > position : range.end >= position
+    )
+}
+
+/**
+ * Returns the current query tokens
+ */
+export function tokens(state: EditorState): Token[] {
+    return state.facet(queryTokens).tokens
+}
+
+export function getParsedQuery(state: EditorState): Node | null {
+    return state.facet(parsedQuery)
 }
 
 /**
@@ -155,7 +155,7 @@ export function collapseOpenFilterValues(tokens: Token[], input: string): Token[
             // For simplicity but this should never occure
             return filter
         }
-        const end = values[values.length - 1]?.range.end ?? filter.value.range.end
+        const end = values.at(-1)?.range.end ?? filter.value.range.end
         return {
             ...filter,
             range: {
@@ -176,7 +176,7 @@ export function collapseOpenFilterValues(tokens: Token[], input: string): Token[
 
     for (const token of tokens) {
         switch (token.type) {
-            case 'filter':
+            case 'filter': {
                 {
                     if (token.value?.value.startsWith('"') && !token.value.quoted) {
                         openFilter = token
@@ -190,21 +190,24 @@ export function collapseOpenFilterValues(tokens: Token[], input: string): Token[
                     }
                 }
                 break
+            }
             case 'pattern':
-            case 'whitespace':
+            case 'whitespace': {
                 if (openFilter) {
                     hold.push(token)
                 } else {
                     result.push(token)
                 }
                 break
-            default:
+            }
+            default: {
                 if (openFilter?.value) {
                     result.push(mergeFilter(openFilter, hold))
                     openFilter = null
                     hold = []
                 }
                 result.push(token)
+            }
         }
     }
 

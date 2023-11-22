@@ -1,11 +1,15 @@
-import { FunctionComponent, useCallback, useMemo, useState } from 'react'
+import { type FunctionComponent, useCallback, useMemo, useState } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { screenReaderAnnounce, ErrorAlert } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../../auth'
-import { SaveToolbar, SaveToolbarProps, SaveToolbarPropsGenerator } from '../../../../../components/SaveToolbar'
+import type { AuthenticatedUser } from '../../../../../auth'
+import {
+    SaveToolbar,
+    type SaveToolbarProps,
+    type SaveToolbarPropsGenerator,
+} from '../../../../../components/SaveToolbar'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 import { INFERENCE_SCRIPT } from '../../hooks/useInferenceScript'
 import { useUpdateInferenceScript } from '../../hooks/useUpdateInferenceScript'

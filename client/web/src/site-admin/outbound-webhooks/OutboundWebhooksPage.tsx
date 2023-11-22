@@ -1,9 +1,9 @@
-import { FC, useEffect } from 'react'
+import { type FC, useEffect } from 'react'
 
 import { mdiAlertCircle, mdiWebhook, mdiMapSearch, mdiPencil, mdiPlus } from '@mdi/js'
 
 import { pluralize } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ButtonLink, Container, H3, Icon, Link, PageHeader, Tooltip } from '@sourcegraph/wildcard'
 
 import {
@@ -16,7 +16,7 @@ import {
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
-import { OutboundWebhookFieldsWithStats } from '../../graphql-operations'
+import type { OutboundWebhookFieldsWithStats } from '../../graphql-operations'
 
 import { useOutboundWebhooksConnection } from './backend'
 import { DeleteButton } from './delete/DeleteButton'

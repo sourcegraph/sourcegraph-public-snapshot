@@ -13,8 +13,10 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -80,6 +82,31 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 	// KeyValuePairs is the set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string `json:",omitempty"`
+}
+
+func (r *Repo) IDName() RepoIDName {
+	return RepoIDName{
+		ID:   r.ID,
+		Name: r.Name,
+	}
+}
+
+type GitHubAppDomain string
+
+func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
+const (
+	ReposGitHubAppDomain   GitHubAppDomain = "repos"
+	BatchesGitHubAppDomain GitHubAppDomain = "batches"
+)
+
+// RepoCommit is a record of a repo and a corresponding commit.
+type RepoCommit struct {
+	ID                   int64
+	RepoID               api.RepoID
+	CommitSHA            dbutil.CommitBytea
+	PerforceChangelistID int64
+	CreatedAt            time.Time
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
@@ -165,13 +192,13 @@ func (r *Repo) IsBlocked() error {
 	return nil
 }
 
-// RepoModified is a bitfield that tracks which fields were modified while
+// RepoModifiedFields is a bitfield that tracks which fields were modified while
 // syncing a repository.
-type RepoModified uint64
+type RepoModifiedFields uint64
 
 const (
-	RepoUnmodified   RepoModified = 0
-	RepoModifiedName              = 1 << iota
+	RepoUnmodified   RepoModifiedFields = 0
+	RepoModifiedName                    = 1 << iota
 	RepoModifiedURI
 	RepoModifiedDescription
 	RepoModifiedExternalRepo
@@ -183,7 +210,7 @@ const (
 	RepoModifiedSources
 )
 
-func (m RepoModified) String() string {
+func (m RepoModifiedFields) String() string {
 	if m == RepoUnmodified {
 		return "repo unmodified"
 	}
@@ -219,9 +246,6 @@ func (m RepoModified) String() string {
 	if m&RepoModifiedSources == RepoModifiedSources {
 		modifications = append(modifications, "sources")
 	}
-	if m&RepoUnmodified == RepoUnmodified {
-		modifications = append(modifications, "unmodified")
-	}
 
 	return "repo modifications: " + strings.Join(modifications, ", ")
 }
@@ -229,7 +253,7 @@ func (m RepoModified) String() string {
 // Update updates Repo r with the fields from the given newer Repo n, returning
 // RepoUnmodified (0) if no fields were modified, and a non-zero value if one
 // or more fields were modified.
-func (r *Repo) Update(n *Repo) (modified RepoModified) {
+func (r *Repo) Update(n *Repo) (modified RepoModifiedFields) {
 	if !r.Name.Equal(n.Name) {
 		r.Name = n.Name
 		modified |= RepoModifiedName
@@ -485,6 +509,12 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
+// RepoIDName combines a repo name and ID into a single struct
+type RepoIDName struct {
+	ID   api.RepoID
+	Name api.RepoName
+}
+
 // MinimalRepo represents a source code repository name, its ID and number of stars.
 type MinimalRepo struct {
 	ID    api.RepoID
@@ -551,12 +581,13 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 	return ParseCloneStatus(strings.ToLower(s))
 }
 
-// GitserverRepo  represents the data gitserver knows about a repo
+// GitserverRepo represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
 	// Usually represented by a gitserver hostname
-	ShardID     string
-	CloneStatus CloneStatus
+	ShardID         string
+	CloneStatus     CloneStatus
+	CloningProgress string
 	// The last error that occurred or empty if the last action was successful
 	LastError string
 	// The last time fetch was called.
@@ -596,14 +627,13 @@ type ExternalService struct {
 	CloudDefault   bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	CodeHostID     *int32
 }
 
 type ExternalServiceRepo struct {
 	ExternalServiceID int64      `json:"externalServiceID"`
 	RepoID            api.RepoID `json:"repoID"`
 	CloneURL          string     `json:"cloneURL"`
-	UserID            int32      `json:"userID"`
-	OrgID             int32      `json:"orgID"`
 	CreatedAt         time.Time  `json:"createdAt"`
 }
 
@@ -821,11 +851,11 @@ type User struct {
 	UpdatedAt             time.Time
 	SiteAdmin             bool
 	BuiltinAuth           bool
-	Tags                  []string
 	InvalidatedSessionsAt time.Time
 	TosAccepted           bool
-	Searchable            bool
+	CompletedPostSignup   bool
 	SCIMControlled        bool
+	CodyProEnabledAt      *time.Time
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.
@@ -834,6 +864,7 @@ type UserForSCIM struct {
 	Emails          []string
 	SCIMExternalID  string
 	SCIMAccountData string
+	Active          bool
 }
 
 type SystemRole string
@@ -862,31 +893,10 @@ func (r Role) IsUser() bool {
 	return r.Name == string(UserSystemRole)
 }
 
-// A PermissionNamespace represents a distinct context within which permission policies
-// are defined and enforced.
-type PermissionNamespace string
-
-func (n PermissionNamespace) String() string {
-	return string(n)
-}
-
-// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
-func (n PermissionNamespace) Valid() bool {
-	switch n {
-	case BatchChangesNamespace:
-		return true
-	default:
-		return false
-	}
-}
-
-// BatchChangesNamespace represents the Batch Changes namespace.
-const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
-
 type Permission struct {
 	ID        int32
-	Namespace PermissionNamespace
-	Action    string
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
 	CreatedAt time.Time
 }
 
@@ -911,7 +921,7 @@ type UserRole struct {
 
 type NamespacePermission struct {
 	ID         int64
-	Namespace  PermissionNamespace
+	Namespace  rtypes.PermissionNamespace
 	ResourceID int64
 	UserID     int32
 	CreatedAt  time.Time
@@ -977,6 +987,88 @@ type UserDates struct {
 	UserID    int32
 	CreatedAt time.Time
 	DeletedAt time.Time
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyUsageStatistics struct {
+	Daily   []*CodyUsagePeriod
+	Weekly  []*CodyUsagePeriod
+	Monthly []*CodyUsagePeriod
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler. This struct is marshalled and sent to
+// BigQuery, which requires the input match its schema exactly.
+type CodyUsagePeriod struct {
+	StartTime              time.Time
+	TotalUsers             *CodyCountStatistics
+	TotalRequests          *CodyCountStatistics
+	CodeGenerationRequests *CodyCountStatistics
+	ExplanationRequests    *CodyCountStatistics
+	InvalidRequests        *CodyCountStatistics
+}
+
+type CodyCountStatistics struct {
+	UserCount   *int32
+	EventsCount *int32
+}
+
+// CodyAggregatedEvent represents the total requests, unique users, code
+// generation requests, explanation requests, and invalid requests over
+// the current month, week, and day for a single search event.
+type CodyAggregatedEvent struct {
+	Name                string
+	Month               time.Time
+	Week                time.Time
+	Day                 time.Time
+	TotalMonth          int32
+	TotalWeek           int32
+	TotalDay            int32
+	UniquesMonth        int32
+	UniquesWeek         int32
+	UniquesDay          int32
+	CodeGenerationMonth int32
+	CodeGenerationWeek  int32
+	CodeGenerationDay   int32
+	ExplanationMonth    int32
+	ExplanationWeek     int32
+	ExplanationDay      int32
+	InvalidMonth        int32
+	InvalidWeek         int32
+	InvalidDay          int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler.
+// RepoMetadataAggregatedStats represents the total number of repo metadata,
+// number of repositories with any metadata, total and unique number of
+// events for repo metadata usage related events over the current day, week, month.
+type RepoMetadataAggregatedStats struct {
+	Summary *RepoMetadataAggregatedSummary
+	Daily   *RepoMetadataAggregatedEvents
+	Weekly  *RepoMetadataAggregatedEvents
+	Monthly *RepoMetadataAggregatedEvents
+}
+
+type RepoMetadataAggregatedSummary struct {
+	IsEnabled              bool
+	RepoMetadataCount      *int32
+	ReposWithMetadataCount *int32
+}
+
+type RepoMetadataAggregatedEvents struct {
+	StartTime          time.Time
+	CreateRepoMetadata *EventStats
+	UpdateRepoMetadata *EventStats
+	DeleteRepoMetadata *EventStats
+	SearchFilterUsage  *EventStats
+}
+
+type EventStats struct {
+	UsersCount  *int32
+	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -1555,6 +1647,28 @@ type ExtensionUsageStatistics struct {
 	ExtensionID        *string
 }
 
+type SearchJobsUsageStatistics struct {
+	WeeklySearchJobsPageViews            *int32
+	WeeklySearchJobsCreateClick          *int32
+	WeeklySearchJobsDownloadClicks       *int32
+	WeeklySearchJobsViewLogsClicks       *int32
+	WeeklySearchJobsUniquePageViews      *int32
+	WeeklySearchJobsUniqueDownloadClicks *int32
+	WeeklySearchJobsUniqueViewLogsClicks *int32
+	WeeklySearchJobsSearchFormShown      []SearchJobsSearchFormShownPing
+	WeeklySearchJobsValidationErrors     []SearchJobsValidationErrorPing
+}
+
+type SearchJobsSearchFormShownPing struct {
+	ValidState string
+	TotalCount int
+}
+
+type SearchJobsValidationErrorPing struct {
+	Errors     []string
+	TotalCount int
+}
+
 type CodeInsightsUsageStatistics struct {
 	WeeklyUsageStatisticsByInsight                 []*InsightUsageStatistics
 	WeeklyInsightsPageViews                        *int32
@@ -1721,12 +1835,14 @@ type CodeMonitoringUsageStatistics struct {
 	WebhookActionsEnabledUniqueUsers              *int32
 	MonitorsEnabled                               *int32
 	MonitorsEnabledUniqueUsers                    *int32
-	MonitorsEnabledLastRunErrored                 *int32
-	ReposMonitored                                *int32
-	TriggerRuns                                   *int32
-	TriggerRunsErrored                            *int32
-	P50TriggerRunTimeSeconds                      *float32
-	P90TriggerRunTimeSeconds                      *float32
+	// (TODO @jasonhawkharris ) Currently, MonitorsEnabledLastRunErrored is unpopulated
+	// It will require adjusting the query to select a row inside of a group
+	MonitorsEnabledLastRunErrored *int32
+	ReposMonitored                *int32
+	TriggerRuns                   *int32
+	TriggerRunsErrored            *int32
+	P50TriggerRunTimeSeconds      *float32
+	P90TriggerRunTimeSeconds      *float32
 }
 
 type NotebooksUsageStatistics struct {
@@ -1742,9 +1858,6 @@ type NotebooksUsageStatistics struct {
 }
 
 type OwnershipUsageStatistics struct {
-	// Whether the `search-ownership` feature flag is on anywhere on the instance.
-	FeatureFlagOn *bool `json:"feature_flag_on,omitempty"`
-
 	// Statistics about ownership data in repositories
 	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
 
@@ -1757,6 +1870,11 @@ type OwnershipUsageStatistics struct {
 
 	// Opening ownership panel.
 	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+
+	// AssignedOwnersCount is the total number of assigned owners. For instance
+	// if an owner is assigned to a single file - that counts as one,
+	// for the whole repo - also counts as one.
+	AssignedOwnersCount *int32 `json:"assigned_owners_count"`
 }
 
 type OwnershipUsageReposCounts struct {
@@ -1959,3 +2077,97 @@ const (
 	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
 	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
 )
+
+type PerforceChangelist struct {
+	CommitSHA    api.CommitID
+	ChangelistID int64
+}
+
+// CodeHost represents a signle code source, usually defined by url e.g. github.com, gitlab.com, bitbucket.sgdev.org.
+type CodeHost struct {
+	ID                          int32
+	Kind                        string
+	URL                         string
+	APIRateLimitQuota           *int32
+	APIRateLimitIntervalSeconds *int32
+	GitRateLimitQuota           *int32
+	GitRateLimitIntervalSeconds *int32
+	CreatedAt                   time.Time
+	UpdatedAt                   time.Time
+}
+
+// RepoSyncDiff is the difference found by a sync between what is in the store and
+// what is returned from sources.
+type RepoSyncDiff struct {
+	Added      Repos
+	Deleted    Repos
+	Modified   ReposModified
+	Unmodified Repos
+}
+
+// Sort sorts all Diff elements by Repo.IDs.
+func (d *RepoSyncDiff) Sort() {
+	for _, ds := range []Repos{
+		d.Added,
+		d.Deleted,
+		d.Modified.Repos(),
+		d.Unmodified,
+	} {
+		sort.Sort(ds)
+	}
+}
+
+// Repos returns all repos in the Diff.
+func (d *RepoSyncDiff) Repos() Repos {
+	all := make(Repos, 0, len(d.Added)+
+		len(d.Deleted)+
+		len(d.Modified)+
+		len(d.Unmodified))
+
+	for _, rs := range []Repos{
+		d.Added,
+		d.Deleted,
+		d.Modified.Repos(),
+		d.Unmodified,
+	} {
+		all = append(all, rs...)
+	}
+
+	return all
+}
+
+func (d *RepoSyncDiff) Len() int {
+	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
+}
+
+// RepoModified tracks the modifications applied to a single repository after a
+// sync.
+type RepoModified struct {
+	Repo     *Repo
+	Modified RepoModifiedFields
+}
+
+type ReposModified []RepoModified
+
+// Repos returns all modified repositories.
+func (rm ReposModified) Repos() Repos {
+	repos := make(Repos, len(rm))
+	for i := range rm {
+		repos[i] = rm[i].Repo
+	}
+
+	return repos
+}
+
+// ReposModified returns only the repositories that had a specific field
+// modified in the sync.
+func (rm ReposModified) ReposModified(modified RepoModifiedFields) Repos {
+	repos := Repos{}
+	for _, pair := range rm {
+		if pair.Modified&modified == modified {
+			repos = append(repos, pair.Repo)
+		}
+	}
+
+	return repos
+}

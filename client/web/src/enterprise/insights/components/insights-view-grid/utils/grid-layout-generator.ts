@@ -1,15 +1,15 @@
-import { Layout, Layouts as ReactGridLayouts } from 'react-grid-layout'
+import type { Layout, Layouts as ReactGridLayouts } from 'react-grid-layout'
 
 import {
-    CaptureGroupInsight,
-    Insight,
+    type CaptureGroupInsight,
+    type Insight,
     isCaptureGroupInsight,
     isComputeInsight,
     isSearchBasedInsight,
-    SearchBasedInsight,
+    type SearchBasedInsight,
 } from '../../../core'
 import {
-    BreakpointName,
+    type BreakpointName,
     BREAKPOINTS_NAMES,
     COLUMNS,
     DEFAULT_HEIGHT,
@@ -17,7 +17,7 @@ import {
     MIN_WIDTHS,
 } from '../components/view-grid/ViewGrid'
 
-const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
+const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 4
 const MIN_WIDTHS_LANDSCAPE_MODE: Record<BreakpointName, number> = { xs: 1, sm: 3, md: 4, lg: 4 }
 
 type InsightWithLegend = SearchBasedInsight | CaptureGroupInsight
@@ -25,20 +25,10 @@ type InsightWithLegend = SearchBasedInsight | CaptureGroupInsight
 const isManySeriesInsight = (insight: Insight): insight is InsightWithLegend =>
     isCaptureGroupInsight(insight) ||
     isComputeInsight(insight) ||
-    (isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND)
+    (isSearchBasedInsight(insight) && insight.series.length >= MINIMAL_SERIES_FOR_ASIDE_LEGEND)
 
 const getMinWidth = (breakpoint: BreakpointName, insight: Insight): number =>
     isManySeriesInsight(insight) ? MIN_WIDTHS_LANDSCAPE_MODE[breakpoint] : MIN_WIDTHS[breakpoint]
-
-const getMinHeight = (insight: Insight): number => {
-    if (!isManySeriesInsight(insight)) {
-        return DEFAULT_HEIGHT
-    }
-
-    return isSearchBasedInsight(insight)
-        ? Math.min(DEFAULT_HEIGHT + insight.series.length * 0.1, DEFAULT_HEIGHT * 2)
-        : DEFAULT_HEIGHT * 2
-}
 
 /**
  * Custom Code Insight Grid layout generator. For different screens (xs, sm, md, lg) it
@@ -69,113 +59,110 @@ const getMinHeight = (insight: Insight): number => {
  * └────────────┘ └────────────┘                                  └────────────┘ └────────────┘
  * </pre>
  */
-export const insightLayoutGenerator = (insights: Insight[]): ReactGridLayouts => {
+export const insightLayoutGenerator = (
+    insights: Insight[],
+    persistedLayouts: ReactGridLayouts | null
+): ReactGridLayouts => {
     return Object.fromEntries(
-        BREAKPOINTS_NAMES.map(breakpointName => [breakpointName, generateLayout(breakpointName)] as const)
+        BREAKPOINTS_NAMES.map(
+            breakpointName => [breakpointName, generateLayout(breakpointName, persistedLayouts)] as const
+        )
     )
 
-    function generateLayout(breakpointName: BreakpointName): Layout[] {
+    function generateLayout(breakpointName: BreakpointName, persistedLayouts: ReactGridLayouts | null): Layout[] {
         switch (breakpointName) {
-            case 'xs':
-            case 'sm':
-            case 'md': {
-                return insights.map((insight, index) => {
-                    const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
-
-                    return {
-                        i: insight.id,
-                        // Increase height of chart block if view has many data series
-                        h: getMinHeight(insight),
-                        w: width,
-                        x: (index * width) % COLUMNS[breakpointName],
-                        y: Math.floor((index * width) / COLUMNS[breakpointName]),
-                        minW: getMinWidth(breakpointName, insight),
-                        minH: getMinHeight(insight),
-                    }
-                })
-            }
-
             case 'lg': {
-                return insights
-                    .reduce<Layout[][]>(
-                        (grid, insight) => {
-                            const itemsPerRow = isManySeriesInsight(insight) ? 2 : DEFAULT_ITEMS_PER_ROW[breakpointName]
-                            const columnsPerRow = COLUMNS[breakpointName]
-                            const width = columnsPerRow / itemsPerRow
-                            const lastRow = grid[grid.length - 1]
-                            const lastRowCurrentWidth = lastRow.reduce((sumWidth, element) => sumWidth + element.w, 0)
-
-                            // Move element on new line (row)
-                            if (lastRowCurrentWidth + width > columnsPerRow) {
-                                // Adjust elements width on the same row if no more elements don't
-                                // fit in this row
-                                for (const [index, element] of lastRow.entries()) {
-                                    element.w = columnsPerRow / lastRow.length
-                                    element.x = (index * columnsPerRow) / lastRow.length
-                                }
-
-                                // Create new row
-                                grid.push([
-                                    {
-                                        i: insight.id,
-                                        h: DEFAULT_HEIGHT,
-                                        w: width,
-                                        x: 0,
-                                        y: grid.length,
-                                        minW: getMinWidth(breakpointName, insight),
-                                        minH: DEFAULT_HEIGHT,
-                                    },
-                                ])
-                            } else {
-                                // Add another element to the last row of the grid
-                                lastRow.push({
-                                    i: insight.id,
-                                    h: DEFAULT_HEIGHT,
-                                    w: width,
-                                    x: lastRowCurrentWidth,
-                                    y: grid.length - 1,
-                                    minW: getMinWidth(breakpointName, insight),
-                                    minH: DEFAULT_HEIGHT,
-                                })
-                            }
-
-                            return grid
-                        },
-                        [[]]
-                    )
-                    .flat()
+                return generateComplexLayout(insights, breakpointName, persistedLayouts?.lg ?? [])
+            }
+            default: {
+                return generatePlainLayout(insights, breakpointName)
             }
         }
     }
 }
 
-export const recalculateGridLayout = (nextLayouts: ReactGridLayouts, insights: Insight[]): ReactGridLayouts => {
-    const keys = Object.keys(nextLayouts) as unknown as BreakpointName[]
-    const insightsMap = Object.fromEntries(insights.map(insight => [insight.id, insight]))
-    const adjustedLayouts: ReactGridLayouts = {}
+function generatePlainLayout(insights: Insight[], breakpointName: BreakpointName): Layout[] {
+    return insights.map((insight, index) => {
+        const width = COLUMNS[breakpointName] / DEFAULT_ITEMS_PER_ROW[breakpointName]
 
-    for (const key of keys) {
-        const layout = nextLayouts[key]
+        return {
+            i: insight.id,
+            // Increase height of chart block if view has many data series
+            h: DEFAULT_HEIGHT,
+            w: width,
+            x: (index * width) % COLUMNS[breakpointName],
+            y: Math.floor((index * width) / COLUMNS[breakpointName]),
+            minW: getMinWidth(breakpointName, insight),
+            minH: DEFAULT_HEIGHT,
+        }
+    })
+}
 
-        adjustedLayouts[key] = layout.map(item => {
-            const insight = insightsMap[item.i]
+function generateComplexLayout(
+    insights: Insight[],
+    breakpointName: BreakpointName,
+    persistedLayouts: Layout[]
+): Layout[] {
+    // Filter out insights that we don't have in persisted layouts grid already
+    const newInsights = insights.filter(insight => !persistedLayouts.find(lsInsight => lsInsight.i === insight.id))
 
-            if (!insight) {
-                return item
-            }
+    // Filter out layouts that we don't have in the most recent list of insights,
+    // like in case if some insight has been deleted from dashboard we shouldn't
+    // generate a card item for it anymore
+    const existingLayouts = persistedLayouts.filter(insight => insights.find(item => item.id === insight.i))
 
-            if (isManySeriesInsight(insight) && item.minW === item.w) {
-                item.minH = getMinHeight(insight)
-                item.h = item.h > (item.minH ?? 0) ? item.h : getMinHeight(insight)
-            } else {
-                item.minH = DEFAULT_HEIGHT
-            }
+    // Calculate the Y coordinate for new row (there will be added all new insights
+    // that we don't have in the persisted insight layouts)
+    const persistedInsightsY = existingLayouts.reduce((maxY, layout) => Math.max(maxY, layout.y), 0) + 1
 
-            item.h = item.minH > item.h ? item.minH : item.h
+    const newLayouts = newInsights
+        .reduce<Layout[][]>(
+            (grid, insight) => {
+                const itemsPerRow = isManySeriesInsight(insight) ? 2 : DEFAULT_ITEMS_PER_ROW[breakpointName]
+                const columnsPerRow = COLUMNS[breakpointName]
+                const width = columnsPerRow / itemsPerRow
+                const lastRow = grid.at(-1)!
+                const lastRowCurrentWidth = lastRow.reduce((sumWidth, element) => sumWidth + element.w, 0)
 
-            return item
-        })
-    }
+                // Move element on new line (row)
+                if (lastRowCurrentWidth + width > columnsPerRow) {
+                    // Adjust elements width on the same row if no more elements don't
+                    // fit in this row
+                    for (const [index, element] of lastRow.entries()) {
+                        element.w = columnsPerRow / lastRow.length
+                        element.x = (index * columnsPerRow) / lastRow.length
+                    }
 
-    return adjustedLayouts
+                    // Create new row
+                    grid.push([
+                        {
+                            i: insight.id,
+                            h: DEFAULT_HEIGHT,
+                            w: width,
+                            x: 0,
+                            y: persistedInsightsY + grid.length,
+                            minW: getMinWidth(breakpointName, insight),
+                            minH: DEFAULT_HEIGHT,
+                        },
+                    ])
+                } else {
+                    // Add another element to the last row of the grid
+                    lastRow.push({
+                        i: insight.id,
+                        h: DEFAULT_HEIGHT,
+                        w: width,
+                        x: lastRowCurrentWidth,
+                        y: persistedInsightsY + grid.length - 1,
+                        minW: getMinWidth(breakpointName, insight),
+                        minH: DEFAULT_HEIGHT,
+                    })
+                }
+
+                return grid
+            },
+            [[]]
+        )
+        .flat()
+
+    return [...existingLayouts, ...newLayouts]
 }

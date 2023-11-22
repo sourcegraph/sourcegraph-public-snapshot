@@ -1,6 +1,6 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
-import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
+import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { H2 } from '@sourcegraph/wildcard'
 
@@ -9,7 +9,7 @@ import { WebStory } from '../../components/WebStory'
 import { SmartSearch } from './SmartSearch'
 
 const config: Meta = {
-    title: 'web/searc/suggestion/SmartSearch',
+    title: 'web/search/suggestion/SmartSearch',
     parameters: {
         chromatic: { viewports: [480, 993], disableSnapshot: false },
     },
@@ -78,7 +78,7 @@ const twoItemPureAlert: Required<AggregateStreamingSearchResults>['alert'] = {
     ],
 }
 
-export const DefaultStory: Story = () => (
+export const DefaultStory: StoryFn = () => (
     <WebStory>
         {() => (
             <div style={{ padding: '1rem' }}>

@@ -10,9 +10,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/unpack"
 )
 
@@ -29,6 +31,7 @@ func newTestHTTPClient(t *testing.T) (client *Client, stop func()) {
 	recorderFactory, stop := httptestutil.NewRecorderFactory(t, *updateRecordings, t.Name())
 
 	client, _ = NewClient("rubygems_urn", "https://rubygems.org", recorderFactory)
+	client.limiter = ratelimit.NewInstrumentedLimiter("rubygems", rate.NewLimiter(100, 10))
 	return client, stop
 }
 

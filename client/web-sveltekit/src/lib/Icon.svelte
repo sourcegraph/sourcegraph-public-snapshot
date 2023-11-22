@@ -9,6 +9,7 @@
 -->
 <script lang="ts">
     import type { SVGAttributes } from 'svelte/elements'
+
     interface $$Props extends SVGAttributes<SVGElement> {
         svgPath: string
         inline?: boolean

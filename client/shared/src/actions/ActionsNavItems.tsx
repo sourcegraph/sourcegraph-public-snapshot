@@ -1,22 +1,26 @@
 import React, { useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
+import * as H from 'history'
 import { identity } from 'lodash'
 import { combineLatest, from, ReplaySubject } from 'rxjs'
 import { map, switchMap } from 'rxjs/operators'
 import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect'
 
-import { Contributions, Evaluated } from '@sourcegraph/client-api'
-import { Context } from '@sourcegraph/template-parser'
+import type { Contributions, Evaluated } from '@sourcegraph/client-api'
+import { ContributableMenu } from '@sourcegraph/client-api'
+import type { Context } from '@sourcegraph/template-parser'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { wrapRemoteObservable } from '../api/client/api/common'
-import { ContributionScope } from '../api/extension/api/context/context'
+import type { ContributionScope } from '../api/extension/api/context/context'
+import { ContributionOptions } from '../api/extension/extensionHostApi'
 import { getContributedActionItems } from '../contributions/contributions'
-import { TelemetryProps } from '../telemetry/telemetryService'
+import { RequiredExtensionsControllerProps } from '../extensions/controller'
+import { PlatformContextProps } from '../platform/context'
+import type { TelemetryProps } from '../telemetry/telemetryService'
 
-import { ActionItem, ActionItemProps } from './ActionItem'
-import { ActionsProps } from './ActionsContainer'
+import { ActionItem, type ActionItemProps } from './ActionItem'
 
 import styles from './ActionsNavItems.module.scss'
 
@@ -37,6 +41,15 @@ export interface ActionNavItemsClassProps {
      * CSS class name for each `<li>` element wrapping the action item.
      */
     listItemClass?: string
+}
+
+interface ActionsProps
+    extends RequiredExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
+        PlatformContextProps<'settings'>,
+        ContributionOptions {
+    menu: ContributableMenu
+    listClass?: string
+    location: H.Location
 }
 
 export interface ActionsNavItemsProps

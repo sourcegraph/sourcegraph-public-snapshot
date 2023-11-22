@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
@@ -9,10 +9,10 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
 import { Link, Markdown } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables } from '../graphql-operations'
-import { DockerForMacAlert } from '../site/DockerForMacAlert'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
+import type { GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables } from '../graphql-operations'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
 import { NeedsRepositoryConfigurationAlert } from '../site/NeedsRepositoryConfigurationAlert'
@@ -25,7 +25,7 @@ import styles from './GlobalAlerts.module.scss'
 
 interface Props {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
+    isCodyApp: boolean
 }
 
 // NOTE: The name of the query is also added in the refreshSiteFlags() function
@@ -35,35 +35,44 @@ const QUERY = gql`
         site {
             ...SiteFlagFields
         }
+        codeIntelligenceConfigurationPolicies(forEmbeddings: true) {
+            totalCount
+        }
     }
 
     ${siteFlagFieldsFragment}
 `
 /**
+ * Alerts that should not be visible when admin onboarding is enabled
+ */
+const adminOnboardingRemovedAlerts = ['externalURL', 'email.smtp', 'enable repository permissions']
+
+/**
  * Fetches and displays relevant global alerts at the top of the page
  */
-export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphDotCom }) => {
+export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isCodyApp }) => {
     const settings = useSettings()
+    const [isAdminOnboardingEnabled] = useFeatureFlag('admin-onboarding', true)
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
         fetchPolicy: 'cache-and-network',
     })
     const siteFlagsValue = data?.site
+    let alerts = siteFlagsValue?.alerts ?? []
+    if (isAdminOnboardingEnabled) {
+        alerts =
+            siteFlagsValue?.alerts.filter(
+                ({ message }) => !adminOnboardingRemovedAlerts.some(alt => message.includes(alt))
+            ) ?? []
+    }
 
-    const verifyEmailProps = useMemo(() => {
-        if (!authenticatedUser || !isSourcegraphDotCom) {
-            return
-        }
-        return {
-            emails: authenticatedUser.emails.filter(({ verified }) => !verified).map(({ email }) => email),
-            settingsURL: authenticatedUser.settingsURL as string,
-        }
-    }, [authenticatedUser, isSourcegraphDotCom])
+    const showNoEmbeddingPoliciesAlert =
+        window.context?.codyEnabled && data?.codeIntelligenceConfigurationPolicies.totalCount === 0
 
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && (
+                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && !isCodyApp && (
                         <NeedsRepositoryConfigurationAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.freeUsersExceeded && (
@@ -72,11 +81,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                             className={styles.alert}
                         />
                     )}
-                    {/* Only show if the user has already added repositories; if not yet, the user wouldn't experience any Docker for Mac perf issues anyway. */}
-                    {window.context.likelyDockerOnMac && window.context.deployType === 'docker-container' && (
-                        <DockerForMacAlert className={styles.alert} />
-                    )}
-                    {siteFlagsValue.alerts.map((alert, index) => (
+                    {alerts.map((alert, index) => (
                         <GlobalAlert key={index} alert={alert} className={styles.alert} />
                     ))}
                     {siteFlagsValue.productSubscription.license &&
@@ -122,10 +127,27 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                     .
                 </DismissibleAlert>
             )}
-            <Notices alertClassName={styles.alert} location="top" />
-            {!!verifyEmailProps?.emails.length && (
-                <VerifyEmailNotices alertClassName={styles.alert} {...verifyEmailProps} />
+            {/* Cody app creates a global policy during setup but this alert is flashing during connection to dotcom account */}
+            {showNoEmbeddingPoliciesAlert && authenticatedUser?.siteAdmin && !isCodyApp && (
+                <DismissibleAlert
+                    key="no-embeddings-policies-alert"
+                    partialStorageKey="no-embeddings-policies-alert"
+                    variant="danger"
+                    className={styles.alert}
+                >
+                    <div>
+                        <strong>Warning!</strong> No embeddings policies have been configured. This will lead to poor
+                        results from Cody, Sourcegraph’s AI assistant. Add an{' '}
+                        <Link to="/site-admin/embeddings/configuration">embedding policy</Link>
+                    </div>
+                    .
+                </DismissibleAlert>
             )}
+            <Notices alertClassName={styles.alert} location="top" />
+
+            {/* The link in the notice doesn't work in the Cody app since it's rendered by Markdown,
+            so don't show it there for now. */}
+            {!isCodyApp && <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />}
         </div>
     )
 }

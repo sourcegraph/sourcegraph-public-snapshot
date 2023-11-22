@@ -1,0 +1,2 @@
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_repo_topics
+ON repo USING GIN(topics);

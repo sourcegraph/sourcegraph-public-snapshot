@@ -4,18 +4,18 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, H2, Text, H4, AnchorLink, LineChart, Series } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, H2, Text, H4, AnchorLink, LineChart, type Series } from '@sourcegraph/wildcard'
 
-import { NotebooksStatisticsResult, NotebooksStatisticsVariables } from '../../../graphql-operations'
+import type { NotebooksStatisticsResult, NotebooksStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
-import { TimeSavedCalculator, TimeSavedCalculatorProps } from '../components/TimeSavedCalculatorGroup'
+import { TimeSavedCalculator, type TimeSavedCalculatorProps } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
-import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { ValueLegendList, type ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { StandardDatum } from '../utils'
+import type { StandardDatum } from '../utils'
 
 import { NOTEBOOKS_STATISTICS } from './queries'
 
@@ -164,7 +164,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent = () => {
                             <AnchorLink to="https://about.sourcegraph.com/blog/notebooks-ci" target="_blank">
                                 Learn more
                             </AnchorLink>{' '}
-                            about how notebooks improves onbaording, code reuse and saves developers time.
+                            about how notebooks improves onboarding, code reuse and saves developers time.
                         </Text>
                     </ul>
                 </div>

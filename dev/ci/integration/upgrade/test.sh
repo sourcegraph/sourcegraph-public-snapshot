@@ -72,7 +72,7 @@ fi
 # Upgrade to current candidate image. Capture logs for the attempted upgrade.
 echo "--- start candidate"
 CONTAINER="sourcegraph-new-${IDENT}"
-IMAGE=us.gcr.io/sourcegraph-dev/server:$CANDIDATE_VERSION CLEAN="false" ./dev/run-server-image.sh -d --name "$CONTAINER"
+IMAGE=us.gcr.io/sourcegraph-dev/server:bazel-${CANDIDATE_VERSION} CLEAN="false" ./dev/run-server-image.sh -d --name "$CONTAINER"
 sleep 15
 
 # Run tests

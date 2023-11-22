@@ -2,22 +2,22 @@ import React, { useCallback, useMemo } from 'react'
 
 import { mdiMagnify } from '@mdi/js'
 import { useParams } from 'react-router-dom'
-import { Observable, of, throwError } from 'rxjs'
+import { type Observable, of, throwError } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import {
+import type {
     Scalars,
     SearchContextEditInput,
     SearchContextRepositoryRevisionsInput,
     SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, LoadingSpinner, useObservable, Alert } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
@@ -58,7 +58,7 @@ export const AuthenticatedEditSearchContextPage: React.FunctionComponent<
     const searchContextOrError = useObservable(
         useMemo(
             () =>
-                fetchSearchContextBySpec(spec!, platformContext).pipe(
+                fetchSearchContextBySpec(spec, platformContext).pipe(
                     switchMap(searchContext => {
                         if (!searchContext.viewerCanManage) {
                             return throwError(new Error('You do not have sufficient permissions to edit this context.'))

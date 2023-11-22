@@ -4,15 +4,14 @@ import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Menu, MenuList, Position, Icon } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { Breadcrumbs, BreadcrumbsProps } from '../components/Breadcrumbs'
+import type { AuthenticatedUser } from '../auth'
+import { Breadcrumbs, type BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { ActionButtonDescriptor } from '../util/contributions'
 import { useBreakpoint } from '../util/dom'
 
 import { RepoHeaderActionDropdownToggle } from './components/RepoHeaderActions'
@@ -115,15 +114,7 @@ export interface RepoHeaderContext {
     actionType: 'nav' | 'dropdown'
 }
 
-export interface RepoHeaderActionButton extends ActionButtonDescriptor<RepoHeaderContext> {}
-
 interface Props extends PlatformContextProps, TelemetryProps, BreadcrumbsProps {
-    /**
-     * An array of render functions for action buttons that can be configured *in addition* to action buttons
-     * contributed through {@link RepoHeaderContributionsLifecycleProps} and through extensions.
-     */
-    actionButtons: readonly RepoHeaderActionButton[]
-
     /** The repoName from the URL */
     repoName: string
 
@@ -196,21 +187,23 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
 
     return (
         <nav data-testid="repo-header" className={classNames('navbar navbar-expand', 'px-3', styles.repoHeader)}>
-            <div className="d-flex align-items-center flex-shrink-past-contents">
-                {/* Breadcrumb for the nav elements */}
-                <Breadcrumbs
-                    breadcrumbs={props.breadcrumbs}
-                    className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
-                />
-            </div>
-            <ul className="navbar-nav">
-                {leftActions.map((a, index) => (
-                    <li className="nav-item" key={a.id || index}>
-                        {a.element}
-                    </li>
-                ))}
-            </ul>
-            <div className={styles.spacer} />
+            <Breadcrumbs
+                breadcrumbs={props.breadcrumbs}
+                className={classNames(
+                    'justify-content-start flex-grow-1',
+                    !props.forceWrap ? styles.breadcrumbWrap : ''
+                )}
+            />
+
+            {leftActions.length !== 0 && (
+                <ul className="navbar-nav">
+                    {leftActions.map((a, index) => (
+                        <li className="nav-item" key={a.id || index}>
+                            {a.element}
+                        </li>
+                    ))}
+                </ul>
+            )}
             <ErrorBoundary
                 location={location}
                 // To be clear to users that this isn't an error reported by extensions

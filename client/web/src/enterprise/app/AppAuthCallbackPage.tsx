@@ -5,10 +5,23 @@ import { useSearchParams } from 'react-router-dom'
 
 import { Container, ErrorAlert, Text, Link } from '@sourcegraph/wildcard'
 
+import { tauriInvoke } from '../../app/tauriIcpUtils'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { fetchSite, updateSiteConfiguration } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
+
+/**
+ * Redirect to a relative URL if provided, or redirect to "/" otherwise.
+ */
+function safelyRedirectToDestination(destination: string | null): void {
+    // A safe destination must be a relative URL
+    if (destination?.startsWith('/')) {
+        location.href = destination
+    } else {
+        location.href = '/'
+    }
+}
 
 export const AppAuthCallbackPage: React.FC = () => {
     useEffect(() => eventLogger.logPageView('AppAuthCallbackPage'), [])
@@ -31,7 +44,7 @@ export const AppAuthCallbackPage: React.FC = () => {
         }
         didSaveRef.current = true
 
-        saveAccessToken(code, destination).catch(setError)
+        saveAccessTokenAndRedirect(code, destination).catch(setError)
     }, [code, isInvalidUrl, destination])
 
     return (
@@ -60,7 +73,7 @@ const defaultModificationOptions: jsonc.ModificationOptions = {
     },
 }
 
-async function saveAccessToken(accessToken: string, destination: string | null): Promise<void> {
+export async function saveAccessToken(accessToken: string): Promise<void> {
     const site = await fetchSite().toPromise()
 
     const content = site.configuration.effectiveContents
@@ -71,5 +84,13 @@ async function saveAccessToken(accessToken: string, destination: string | null):
 
     await updateSiteConfiguration(id, modifiedContent).toPromise()
 
-    location.href = destination ?? '/'
+    // If the Cody window is open, we need to reload it so it gets the new site config
+    tauriInvoke('reload_cody_window')
+}
+
+const saveAccessTokenAndRedirect = async (accessToken: string, destination: string | null): Promise<void> => {
+    await saveAccessToken(accessToken)
+
+    // Also reload the main window so it gets the new site config, and redirect to the destination
+    safelyRedirectToDestination(destination)
 }

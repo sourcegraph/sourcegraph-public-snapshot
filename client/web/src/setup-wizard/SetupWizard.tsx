@@ -1,20 +1,25 @@
-import { FC, useCallback, useMemo } from 'react'
+import { type FC, useCallback } from 'react'
 
-import { ApolloClient } from '@apollo/client'
+import type { ApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H1, H2, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 
-import { LocalRepositoriesStep } from './components/local-repositories-step'
-import { RemoteRepositoriesStep } from './components/remote-repositories-step'
-import { SetupStepsRoot, SetupStepsContent, SetupStepsFooter, StepConfiguration } from './components/setup-steps'
-import { SyncRepositoriesStep } from './components/SyncRepositoriesStep'
+import {
+    type StepConfiguration,
+    SetupStepsRoot,
+    SetupStepsHeader,
+    SetupStepsContent,
+    SetupStepsFooter,
+    RemoteRepositoriesStep,
+    SyncRepositoriesStep,
+} from './components'
 
 import styles from './Setup.module.scss'
 
@@ -24,13 +29,9 @@ const CORE_STEPS: StepConfiguration[] = [
         name: 'Add remote repositories',
         path: '/setup/remote-repositories',
         component: RemoteRepositoriesStep,
-    },
-    {
-        id: 'sync-repositories',
-        name: 'Sync repositories',
-        path: '/setup/sync-repositories',
-        nextURL: '/search',
-        component: SyncRepositoriesStep,
+        // If user clicked next button in setup remote repositories
+        // this mean that setup was completed, and they're ready to go
+        // to app UI. See https://github.com/sourcegraph/sourcegraph/issues/50122
         onNext: (client: ApolloClient<{}>) => {
             // Mutate initial needsRepositoryConfiguration value
             // in order to avoid loop in Layout page redirection logic
@@ -45,24 +46,19 @@ const CORE_STEPS: StepConfiguration[] = [
             )
         },
     },
-]
-
-const SOURCEGRAPH_APP_STEPS = [
     {
-        id: 'local-repositories',
-        name: 'Add local repositories',
-        path: '/setup/local-repositories',
-        component: LocalRepositoriesStep,
+        id: 'sync-repositories',
+        name: 'Sync repositories',
+        path: '/setup/sync-repositories',
+        nextURL: '/search',
+        component: SyncRepositoriesStep,
     },
-    ...CORE_STEPS,
 ]
 
-interface SetupWizardProps extends TelemetryProps {
-    isSourcegraphApp: boolean
-}
+interface SetupWizardProps extends TelemetryProps {}
 
 export const SetupWizard: FC<SetupWizardProps> = props => {
-    const { isSourcegraphApp, telemetryService } = props
+    const { telemetryService } = props
 
     const navigate = useNavigate()
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
@@ -72,7 +68,7 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     // about the setup wizard availability and redirect to the wizard if it wasn't skipped already.
     // eslint-disable-next-line no-restricted-syntax
     const [, setSkipWizardState] = useLocalStorage('setup.skipped', false)
-    const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_APP_STEPS : CORE_STEPS), [isSourcegraphApp])
+    const steps = CORE_STEPS
 
     const handleStepChange = useCallback(
         (nextStep: StepConfiguration): void => {
@@ -114,7 +110,12 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
                         </H2>
                     </header>
 
-                    <SetupStepsContent telemetryService={telemetryService} />
+                    <SetupStepsHeader className={styles.steps} />
+                    <SetupStepsContent
+                        contentContainerClass={styles.contentContainer}
+                        telemetryService={telemetryService}
+                        isCodyApp={false}
+                    />
                 </div>
 
                 <SetupStepsFooter className={styles.footer} />

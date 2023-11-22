@@ -1,16 +1,16 @@
 import classNames from 'classnames'
 import { fromEvent, of } from 'rxjs'
 import { map, startWith } from 'rxjs/operators'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
-import { LineOrPositionOrRange } from '@sourcegraph/common'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { AdjustmentDirection, type PositionAdjuster } from '@sourcegraph/codeintellify'
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
+import type { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { querySelectorOrSelf } from '../../util/dom'
-import { CodeHost } from '../shared/codeHost'
-import { CodeView, DOMFunctions } from '../shared/codeViews'
-import { ViewResolver } from '../shared/views'
+import type { CodeHost } from '../shared/codeHost'
+import type { CodeView, DOMFunctions } from '../shared/codeViews'
+import type { ViewResolver } from '../shared/views'
 
 import { getContext } from './context'
 import { diffDOMFunctions, newDiffDOMFunctions, singleFileDOMFunctions } from './domFunctions'

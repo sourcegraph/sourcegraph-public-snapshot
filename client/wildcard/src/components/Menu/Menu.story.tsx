@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { BrandedStory } from '../../stories/BrandedStory'
@@ -22,7 +22,7 @@ const config: Meta = {
 
 export default config
 
-export const MenuExample: Story = () => (
+export const MenuExample: StoryFn = () => (
     <Menu>
         <MenuButton variant="primary" outline={true}>
             Actions <span aria-hidden={true}>▾</span>

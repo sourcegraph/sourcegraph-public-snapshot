@@ -5,6 +5,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -40,6 +41,12 @@ type FeatureFlagBooleanResolver struct {
 
 func (f *FeatureFlagBooleanResolver) Name() string { return f.inner.Name }
 func (f *FeatureFlagBooleanResolver) Value() bool  { return f.inner.Bool.Value }
+func (f *FeatureFlagBooleanResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: f.inner.CreatedAt}
+}
+func (f *FeatureFlagBooleanResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: f.inner.UpdatedAt}
+}
 func (f *FeatureFlagBooleanResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
 	overrides, err := f.db.FeatureFlags().GetOverridesForFlag(ctx, f.inner.Name)
 	if err != nil {
@@ -56,6 +63,12 @@ type FeatureFlagRolloutResolver struct {
 
 func (f *FeatureFlagRolloutResolver) Name() string              { return f.inner.Name }
 func (f *FeatureFlagRolloutResolver) RolloutBasisPoints() int32 { return f.inner.Rollout.Rollout }
+func (f *FeatureFlagRolloutResolver) CreatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: f.inner.CreatedAt}
+}
+func (f *FeatureFlagRolloutResolver) UpdatedAt() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: f.inner.UpdatedAt}
+}
 func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
 	overrides, err := f.db.FeatureFlags().GetOverridesForFlag(ctx, f.inner.Name)
 	if err != nil {

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand"
 	"net/http"
 	"os"
 	"strings"
@@ -16,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Responds to /localCodeIntel
+// LocalCodeIntelHandler responds to /localCodeIntel
 func LocalCodeIntelHandler(readFile readFileFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Read the args from the request body.
@@ -57,7 +56,7 @@ func LocalCodeIntelHandler(readFile readFileFunc) func(w http.ResponseWriter, r 
 			_ = json.NewEncoder(w).Encode(nil)
 
 			// Log the error if it's not an unrecognized file extension or unsupported language error.
-			if !errors.Is(err, unrecognizedFileExtensionError) && !errors.Is(err, UnsupportedLanguageError) {
+			if !errors.Is(err, UnrecognizedFileExtensionError) && !errors.Is(err, UnsupportedLanguageError) {
 				log15.Error("failed to generate local code intel payload", "err", err)
 			}
 
@@ -75,7 +74,7 @@ func LocalCodeIntelHandler(readFile readFileFunc) func(w http.ResponseWriter, r 
 	}
 }
 
-// Responds to /symbolInfo
+// NewSymbolInfoHandler responds to /symbolInfo
 func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc, readFile readFileFunc) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Read the args from the request body.
@@ -125,8 +124,4 @@ func NewSymbolInfoHandler(symbolSearch symbolsTypes.SearchFunc, readFile readFil
 			return
 		}
 	}
-}
-
-func sample[T any](xs []T) T {
-	return xs[rand.Intn(len(xs))]
 }

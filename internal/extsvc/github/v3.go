@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/log"
 
@@ -112,18 +112,18 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 		tokenHash = a.Hash()
 	}
 
-	rl := ratelimit.DefaultRegistry.Get(urn)
+	rl := ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitHubClient"), urn))
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
 	return &V3Client{
-		log: logger.Scoped("github.v3", "github v3 client").
+		log: logger.Scoped("github.v3").
 			With(
 				log.String("urn", urn),
 				log.String("resource", resource),
 			),
 		urn:                 urn,
 		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
+		githubDotCom:        URLIsGitHubDotCom(apiURL),
 		auth:                a,
 		httpClient:          cli,
 		internalRateLimiter: rl,
@@ -168,6 +168,22 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	}
 
 	req, err := http.NewRequest("POST", requestURI, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	return c.request(ctx, req, result)
+}
+
+func (c *V3Client) patch(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling payload")
+	}
+
+	req, err := http.NewRequest("PATCH", requestURI, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -222,14 +238,25 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		c.externalRateLimiter.WaitForRateLimit(ctx, 1) // We don't care whether we waited or not, this is a preventative measure.
 	}
 
+	// Store request Body and URL because we might call `doRequest` twice and
+	// can't guarantee that `doRequest` doesn't modify them. (In fact: it does
+	// modify them!)
+	// So when we retry, we can reset to the original state.
 	var reqBody []byte
+	var reqURL *url.URL
 	if req.Body != nil {
 		reqBody, err = io.ReadAll(req.Body)
 		if err != nil {
 			return nil, err
 		}
 	}
+	if req.URL != nil {
+		u := *req.URL
+		reqURL = &u
+	}
+
 	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+
 	var resp *httpResponseState
 	resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 
@@ -241,9 +268,28 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 	// 3. We succeed
 	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
 		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
-		// If we end up waiting because of an external rate limit, we need to retry the request.
+		// Because GitHub responds with http.StatusForbidden when a rate limit is hit, we cannot
+		// say with absolute certainty that a rate limit was hit. It might have been an honest
+		// http.StatusForbidden. So we use the externalRateLimiter's WaitForRateLimit function
+		// to calculate the amount of time we need to wait before retrying the request.
+		// If that calculated time is zero or in the past, we have to assume that the
+		// rate limiting information we have is old and no longer relevant.
+		//
+		// There is an extremely unlikely edge case where we will falsely not retry a request.
+		// If a request is rejected because we have no more rate limit tokens, but the token reset
+		// time is just around the corner (like 1 second from now), and for some reason the time
+		// between reading the headers and doing this "should we retry" check is greater than
+		// that time, the rate limit information we will have will look like old information and
+		// we won't retry the request.
 		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
+			// Reset Body/URL to ignore changes that the first `doRequest`
+			// might have made.
 			req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+			// Create a copy of the URL, because this loop might execute
+			// multiple times.
+			reqURLCopy := *reqURL
+			req.URL = &reqURLCopy
+
 			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
 			numRetries++
 		} else {
@@ -339,9 +385,9 @@ var MockGetAuthenticatedUserOrgs struct {
 	PagesMock map[int][]*Org
 }
 
-// GetAuthenticatedUserOrgsForPage returns given page of 100 organizations associated with the currently
+// GetAuthenticatedUserOrgs returns given page of 100 organizations associated with the currently
 // authenticated user.
-func (c *V3Client) GetAuthenticatedUserOrgsForPage(ctx context.Context, page int) (
+func (c *V3Client) GetAuthenticatedUserOrgs(ctx context.Context, page int) (
 	orgs []*Org,
 	hasNextPage bool,
 	rateLimitCost int,
@@ -385,7 +431,7 @@ func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Cont
 	rateLimitCost int,
 	err error,
 ) {
-	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgsForPage(ctx, page)
+	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgs(ctx, page)
 	if err != nil {
 		return
 	}
@@ -785,6 +831,55 @@ func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, fo
 	return convertRestRepo(restRepo), nil
 }
 
+// DeleteBranch deletes the given branch from the given repository.
+func (c *V3Client) DeleteBranch(ctx context.Context, owner, repo, branch string) error {
+	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/heads/"+branch); err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetRef gets the contents of a single commit reference in a repository. The ref should
+// be supplied in a fully qualified format, such as `refs/heads/branch` or
+// `refs/tags/tag`.
+func (c *V3Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommitRef, error) {
+	var commit restCommitRef
+	if _, err := c.get(ctx, "repos/"+owner+"/"+repo+"/commits/"+ref, &commit); err != nil {
+		return nil, err
+	}
+	return &commit, nil
+}
+
+// CreateCommit creates a commit in the given repository based on a tree object.
+func (c *V3Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*RestCommit, error) {
+	payload := struct {
+		Message   string              `json:"message"`
+		Tree      string              `json:"tree"`
+		Parents   []string            `json:"parents"`
+		Author    *restAuthorCommiter `json:"author,omitempty"`
+		Committer *restAuthorCommiter `json:"committer,omitempty"`
+	}{Message: message, Tree: tree, Parents: parents, Author: author, Committer: committer}
+
+	var commit RestCommit
+	if _, err := c.post(ctx, "repos/"+owner+"/"+repo+"/git/commits", payload, &commit); err != nil {
+		return nil, err
+	}
+	return &commit, nil
+}
+
+// UpdateRef updates the ref of a branch to point to the given commit. The ref should be
+// supplied in a fully qualified format, such as `refs/heads/branch` or `refs/tags/tag`.
+func (c *V3Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdatedRef, error) {
+	var updatedRef restUpdatedRef
+	if _, err := c.patch(ctx, "repos/"+owner+"/"+repo+"/git/"+ref, struct {
+		SHA   string `json:"sha"`
+		Force bool   `json:"force"`
+	}{SHA: commit, Force: true}, &updatedRef); err != nil {
+		return nil, err
+	}
+	return &updatedRef, nil
+}
+
 // GetAppInstallation gets information of a GitHub App installation.
 //
 // API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
@@ -794,6 +889,18 @@ func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64)
 		return nil, err
 	}
 	return &ins, nil
+}
+
+// GetAppInstallations fetches a list of GitHub App instalaltions for the
+// authenticated GitHub App.
+//
+// API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
+func (c *V3Client) GetAppInstallations(ctx context.Context) ([]*github.Installation, error) {
+	var ins []*github.Installation
+	if _, err := c.get(ctx, "app/installations", &ins); err != nil {
+		return nil, err
+	}
+	return ins, nil
 }
 
 // CreateAppInstallationAccessToken creates an access token for the installation.

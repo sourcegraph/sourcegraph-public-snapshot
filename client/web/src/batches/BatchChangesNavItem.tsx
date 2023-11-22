@@ -1,7 +1,7 @@
 import React from 'react'
 
 import { NavItem, NavLink } from '../nav'
-import { NavLinkProps } from '../nav/NavBar'
+import type { NavLinkProps } from '../nav/NavBar'
 
 import { BatchChangesIconNav } from './icons'
 

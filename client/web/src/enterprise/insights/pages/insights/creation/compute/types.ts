@@ -1,6 +1,6 @@
-import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
+import type { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
 
-import { EditableDataSeries } from '../../../../components'
+import type { EditableDataSeries } from '../../../../components'
 
 export interface CreateComputeInsightFormFields {
     /**

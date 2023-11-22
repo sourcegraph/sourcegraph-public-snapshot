@@ -1,8 +1,10 @@
+import { describe, expect, test } from 'vitest'
+
 import { SearchPatternType } from '../../graphql-operations'
 
 import { getDiagnostics } from './diagnostics'
-import { scanSearchQuery, ScanSuccess, ScanResult } from './scanner'
-import { Token } from './token'
+import { scanSearchQuery, type ScanSuccess, type ScanResult } from './scanner'
+import type { Token } from './token'
 
 expect.addSnapshotSerializer({
     serialize: value => JSON.stringify(value, null, 2),

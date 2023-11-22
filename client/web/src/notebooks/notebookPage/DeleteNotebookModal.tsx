@@ -1,14 +1,14 @@
-import React, { FC, useCallback, useEffect } from 'react'
+import React, { type FC, useCallback, useEffect } from 'react'
 
 import { useNavigate } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { mergeMap, startWith, tap, catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useEventObservable, Modal, Button, Alert, H3, Text } from '@sourcegraph/wildcard'
 
-import { deleteNotebook as _deleteNotebook } from '../backend'
+import type { deleteNotebook as _deleteNotebook } from '../backend'
 
 interface DeleteNotebookModalProps extends TelemetryProps {
     notebookId: string

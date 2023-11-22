@@ -3,7 +3,7 @@ name: Security release approval
 about: An issue that security must close before releases to approve it.
 title: '$RELEASE_VERSION Security approval'
 labels: release-blocker
-assignees: andreeleuterio, evict, willdollman, mohammadualam
+assignees: andreeleuterio, evict, willdollman, mohammadualam, shivasurya
 
 ---
 

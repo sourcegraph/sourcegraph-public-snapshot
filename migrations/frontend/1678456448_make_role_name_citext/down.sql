@@ -18,3 +18,6 @@ EXCEPTION
     WHEN undefined_column THEN RAISE NOTICE 'column name_text does not exist in table roles';
     WHEN duplicate_object THEN RAISE NOTICE 'constrant roles_name already exists';
 END $$;
+
+ALTER TABLE roles ALTER COLUMN name SET NOT NULL;
+ALTER TABLE roles ADD CONSTRAINT name_not_blank CHECK (name <> ''::text);

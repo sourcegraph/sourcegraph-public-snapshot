@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import type { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 
 export interface IconProps {
     className?: string
@@ -128,7 +128,7 @@ export const WrapDisabledIcon: React.FunctionComponent<React.PropsWithChildren<I
 )
 
 // TODO: Rename name when refresh design is complete
-// eslint-disable-next-line react/display-name
+
 export const CloudAlertIconRefresh = React.forwardRef((props, reference) => (
     <svg
         ref={reference}
@@ -158,7 +158,7 @@ export const CloudAlertIconRefresh = React.forwardRef((props, reference) => (
 CloudAlertIconRefresh.displayName = 'CloudAlertIconRefresh'
 
 // TODO: Rename name when refresh design is complete
-// eslint-disable-next-line react/display-name
+
 export const CloudSyncIconRefresh = React.forwardRef((props, reference) => (
     <svg
         ref={reference}
@@ -207,14 +207,14 @@ export const CloudInfoIconRefresh = React.forwardRef((props, reference) => (
         />
         <path
             d="M19.9649 9.49464C19.9649 11.7987 18.097 13.6665 15.793 13.6665C13.4889 13.6665 11.6211 11.7987 11.6211 9.49464C11.6211 7.19057 13.4889 5.32275 15.793 5.32275C18.097 5.32275 19.9649 7.19057 19.9649 9.49464Z"
-            fill="#72dbe8"
+            fill="#0B70DB"
         />
     </svg>
 )) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
 CloudInfoIconRefresh.displayName = 'CloudInfoIconRefresh'
 
 // TODO: Rename name when refresh design is complete
-// eslint-disable-next-line react/display-name
+
 export const CloudCheckIconRefresh = React.forwardRef((props, reference) => (
     <svg
         ref={reference}

@@ -2,10 +2,11 @@
     import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
 
     import { mark } from '$lib/images'
-    import UserAvatar from '$lib/UserAvatar.svelte'
     import type { AuthenticatedUser } from '$lib/shared'
 
     import HeaderNavLink from './HeaderNavLink.svelte'
+    import { Button } from '$lib/wildcard'
+    import UserMenu from './UserMenu.svelte'
 
     export let authenticatedUser: AuthenticatedUser | null | undefined
 </script>
@@ -17,20 +18,17 @@
     <nav class="ml-2">
         <ul>
             <HeaderNavLink href="/search" svgIconPath={mdiMagnify}>Code search</HeaderNavLink>
-            <HeaderNavLink href="/notebooks" svgIconPath={mdiBookOutline}>Notebooks</HeaderNavLink>
-            <HeaderNavLink href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
+            <HeaderNavLink external href="/notebooks" svgIconPath={mdiBookOutline}>Notebooks</HeaderNavLink>
+            <HeaderNavLink external href="/insights" svgIconPath={mdiChartBar}>Insights</HeaderNavLink>
         </ul>
     </nav>
     <div class="user">
         {#if authenticatedUser}
-            <UserAvatar user={authenticatedUser} />
-            <!--
-                Needs data-sveltekit-reload to force hitting the server and
-                proxying the request to the Sourcegraph instance.
-            -->
-            <a href="/-/sign-out" data-sveltekit-reload>Sign out</a>
+            <UserMenu {authenticatedUser} />
         {:else}
-            <a href="/sign-in" data-sveltekit-reload>Sign in</a>
+            <Button variant="secondary" outline>
+                <a slot="custom" let:className class={className} href="/sign-in" data-sveltekit-reload>Sign in</a>
+            </Button>
         {/if}
     </div>
 </header>
@@ -42,7 +40,7 @@
         border-bottom: 1px solid var(--border-color-2);
         height: var(--navbar-height);
         min-height: 40px;
-        padding: 0 1rem;
+        padding: 0 0.5rem;
         background-color: var(--color-bg-1);
     }
 
@@ -67,12 +65,6 @@
         display: flex;
         align-self: stretch;
         flex: 1;
-    }
-
-    svg {
-        width: 1rem;
-        height: 1rem;
-        margin-right: 0.5rem;
     }
 
     ul {

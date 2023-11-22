@@ -1,9 +1,13 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "sass", "ts_project")
+load("//dev:defs.bzl", "sass", "ts_project", "vitest_test")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
+load("//client/shared/dev:build_code_intel_extensions.bzl", "build_code_intel_extensions")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -17,6 +21,27 @@ load("//client/shared/dev:tools.bzl", "module_style_typings")
 # gazelle:js_resolve **/branded.scss :src/branded.css
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root(
+    config_deps = [
+        "//client/browser/src/end-to-end:tsconfig",
+    ],
+)
+
+# Temporary ESLint target to lint stories. This will be removed once we have a
+# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
+eslint_test_with_types(
+    name = "stories_eslint",
+    srcs = glob([
+        "src/**/*.story.tsx",
+        "src/**/*.fixtures.ts",
+    ]),
+    config = ":eslint_config",
+    deps = [
+        ":node_modules/@sourcegraph/shared",  # required for import/extensions rule not to fail.
+        "//:node_modules/@types/node",
+    ],
+)
 
 ts_config(
     name = "tsconfig",
@@ -85,7 +110,6 @@ generate_graphql_operations(
     name = "graphql_operations_ts",
     srcs = [
         ":graphql_operations_files",
-        "//client/browser/src/browser-extension/scripts:graphql_operations_files",
         "//client/browser/src/integration:graphql_operations_files",
     ],
     out = "src/graphql-operations.ts",
@@ -114,15 +138,24 @@ ts_project(
         "src/browser-extension/options-menu/OptionsPage.tsx",
         "src/browser-extension/options-menu/OptionsPageAdvancedSettings.tsx",
         "src/browser-extension/options-menu/components/OptionsPageContainer.tsx",
+        "src/browser-extension/scripts/afterInstallPage.main.tsx",
+        "src/browser-extension/scripts/backgroundPage.main.ts",
+        "src/browser-extension/scripts/contentPage.main.ts",
+        "src/browser-extension/scripts/optionsPage.main.tsx",
         "src/browser-extension/util/index.ts",
         "src/browser-extension/web-extension-api/ExtensionStorageSubject.ts",
         "src/browser-extension/web-extension-api/fromBrowserEvent.ts",
         "src/browser-extension/web-extension-api/runtime.ts",
         "src/browser-extension/web-extension-api/storage.ts",
         "src/browser-extension/web-extension-api/types.ts",
+        "src/config/background.entry.ts",
+        "src/config/content.entry.ts",
+        "src/config/extension.entry.ts",
+        "src/config/options.entry.ts",
+        "src/config/page.entry.ts",
         "src/globals.d.ts",
-        "src/native-integration/integration.main.ts",
-        "src/native-integration/phabricator/integration.main.ts",
+        "src/native-integration/nativeIntegration.main.ts",
+        "src/native-integration/phabricator/phabricatorNativeIntegration.main.ts",
         "src/native-integration/phabricator/util.ts",
         "src/shared/backend/diffs.tsx",
         "src/shared/backend/extension-api-conversion.tsx",
@@ -182,6 +215,7 @@ ts_project(
         "src/shared/components/TrackAnchorClick.tsx",
         "src/shared/components/WildcardThemeProvider.tsx",
         "src/shared/context.ts",
+        "src/shared/extensionHostWorker.ts",
         "src/shared/platform/context.ts",
         "src/shared/platform/extensionHost.ts",
         "src/shared/platform/inlineExtensionsService.ts",
@@ -201,7 +235,6 @@ ts_project(
         "src/types/webextension-polyfill/index.d.ts",
     ],
     tsconfig = ":tsconfig",
-    # TODO(bazel): type-only #keep imports
     deps = [
         ":graphql_operations",
         ":module_style_typings",
@@ -209,7 +242,7 @@ ts_project(
         ":node_modules/@sourcegraph/client-api",
         ":node_modules/@sourcegraph/codeintellify",
         ":node_modules/@sourcegraph/common",
-        ":node_modules/@sourcegraph/extension-api-types",  #keep
+        ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
@@ -218,7 +251,6 @@ ts_project(
         "//:node_modules/@sentry/browser",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/history",
-        "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mz",
         "//:node_modules/@types/node",
@@ -227,10 +259,9 @@ ts_project(
         "//:node_modules/@types/simmerjs",
         "//:node_modules/@types/uuid",
         "//:node_modules/classnames",
-        "//:node_modules/comlink",  #keep
+        "//:node_modules/comlink",
         "//:node_modules/graphql",
         "//:node_modules/history",
-        "//:node_modules/jest",  #keep
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
         "//:node_modules/mdi-react",
@@ -239,9 +270,11 @@ ts_project(
         "//:node_modules/react-dom",
         "//:node_modules/rxjs",
         "//:node_modules/simmerjs",
-        "//:node_modules/utility-types",  #keep
+        "//:node_modules/utility-types",
         "//:node_modules/uuid",
-        "//:node_modules/webextension-polyfill",
+        "//:node_modules/vitest",
+        "//:node_modules/webext-domain-permission-toggle",
+        "//:node_modules/webextension-polyfill",  #keep
     ],
 )
 
@@ -268,36 +301,113 @@ ts_project(
         "src/shared/code-hosts/shared/codeViews.test.ts",
         "src/shared/code-hosts/shared/views.test.ts",
         "src/shared/code-hosts/sourcegraph/inject.test.tsx",
+        "src/testSetup.test.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
         ":browser",
+        ":graphql_operations",
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/shared",
+        ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",  #keep
+        ":node_modules/sourcegraph",
+        "//:node_modules/@testing-library/jest-dom",  #keep
         "//:node_modules/@testing-library/react",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/mz",
         "//:node_modules/@types/node",
         "//:node_modules/@types/sinon",
-        "//:node_modules/jest-fetch-mock",
+        "//:node_modules/comlink",
         "//:node_modules/lodash",
         "//:node_modules/mz",
         "//:node_modules/process",
         "//:node_modules/rxjs",
         "//:node_modules/sinon",
         "//:node_modules/util",
+        "//:node_modules/utility-types",
+        "//:node_modules/vitest",
+        "//:node_modules/vitest-fetch-mock",
     ],
 )
 
-jest_test(
+filegroup(
+    name = "snapshots",
+    srcs = glob(["src/**/__snapshots__/*"]),
+)
+
+vitest_test(
     name = "test",
     timeout = "moderate",
     data = [
         ":browser_tests",
+        ":module_styles",
+        ":snapshots",
     ],
-    patch_node_fs = False,
-    shard_count = 6,
-    tags = ["no-sandbox"],
+)
+
+filegroup(
+    name = "entry-configs",
+    srcs = glob(["src/config/*.js"]),
+)
+
+esbuild(
+    name = "bundle",
+    srcs = [
+        # JSON imports
+        "code-intel-extensions.json",
+
+        # SRCS
+        ":browser",
+        ":entry-configs",
+        ":module_styles",
+        ":package_styles",
+
+        # BUNDLE CONFIG
+        "//:package_json",
+
+        # STATIC ASSETS
+        "//client/browser/assets",
+    ],
+    config = "//client/browser/config:esbuild-config_bundle",
+    entry_points = [
+        "src/browser-extension/scripts/backgroundPage.main.js",
+        "src/browser-extension/scripts/contentPage.main.js",
+        "src/browser-extension/scripts/optionsPage.main.js",
+        "src/browser-extension/scripts/afterInstallPage.main.js",
+        "src/native-integration/nativeIntegration.main.js",
+        "src/native-integration/phabricator/phabricatorNativeIntegration.main.js",
+        "src/app.css",
+        "src/branded.css",
+        "src/shared/extensionHostWorker.js",
+    ],
+    deps = [
+        "//:postcss_config_js",  #keep
+        "//client/browser/config",
+    ],
+)
+
+# Mirror `client/browser/scripts/build-inline-extensions.js`
+build_code_intel_extensions(
+    name = "code-intel-extensions",
+    out = "build/extensions",
+    revision = "v5.0.1",
+)
+
+# Mirror `copyIntegrationAssets` from `client/browser/scripts/tasks.ts`
+copy_to_directory(
+    name = "integration-assets",
+    srcs = [
+        "src/native-integration/extensionHostFrame.html",
+        ":bundle",
+        ":code-intel-extensions",
+    ],
+    out = "integration-assets/extension",
+    root_paths = [
+        "client/browser/src/native-integration",
+        "client/browser/bundle",
+        "client/browser/build",
+    ],
+    visibility = ["//visibility:public"],
 )

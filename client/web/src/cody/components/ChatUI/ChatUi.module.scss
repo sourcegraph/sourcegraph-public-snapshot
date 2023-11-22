@@ -1,0 +1,184 @@
+.container {
+    font-size: var(--font-size-base);
+    flex: 1;
+    height: auto !important;
+    min-height: 0.1rem;
+    background-color: var(--body-bg);
+}
+
+.transcript-item {
+    border-bottom: 1px solid var(--border-color);
+    background: var(--input-bg);
+}
+
+.human-transcript-item {
+    background-color: var(--bg-color);
+}
+
+.human-transcript-item::before {
+    background-color: var(--border-color-2);
+}
+
+.transcript-action {
+    border: 1px solid var(--border-color);
+    background-color: var(--body-bg);
+}
+
+.transcript-item pre,
+.transcript-item span > code,
+.transcript-item p > code {
+    /* Our syntax highlighter emits colors intended for dark backgrounds only. */
+    background-color: var(--code-background);
+    word-break: break-all;
+}
+
+.transcript-item pre {
+    border-top: solid 1px var(--border-color-2);
+    border-bottom: solid 1px var(--border-color-2);
+    border-radius: 0 !important;
+    padding: 0.625rem !important;
+    background: var(--subtle-bg);
+}
+
+.transcript-item code {
+    color: var(--code-background);
+}
+
+.transcript-item p {
+    /* Default typography is too spaced out */
+    margin-bottom: 0.75rem;
+}
+
+.transcript-item ul,
+.transcript-item ol {
+    padding-left: 2rem;
+
+    /* Often there's paragraphs in list items, and the margin becomes too huge, so we reduce it to something sensible */
+    p {
+        margin-bottom: 0.5rem;
+    }
+}
+
+.transcript-item .transcript-action {
+    ol,
+    li {
+        padding: 0;
+    }
+}
+
+.scroll-button-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    padding-right: 1.25rem;
+    bottom: 5.625rem;
+    z-index: 5;
+    width: 100%;
+    position: sticky;
+}
+
+.scroll-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.25rem;
+    padding: 0.3125rem;
+
+    border: var(--btn-border-width) solid var(--border-color-2);
+    color: var(--body-color);
+    background-color: var(--input-bg);
+
+    cursor: pointer;
+}
+
+.input-row {
+    position: sticky;
+    padding: 0.8rem 1rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--input-bg);
+}
+
+.chat-input {
+    padding: 0.6rem 1.5rem 0.8rem 0.8rem;
+    max-height: 200px;
+    border-color: var(--border-color-2);
+    background-color: var(--body-bg);
+    border-radius: var(--border-radius) !important;
+}
+
+.submit-button {
+    right: 0 !important;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    bottom: 1px !important;
+    color: var(--body-color) !important;
+}
+
+.edit-button {
+    border: none;
+    background: none;
+
+    svg {
+        color: var(--text-muted);
+
+        &:hover {
+            color: var(--body-color);
+        }
+    }
+}
+
+.code-blocks-copy-button {
+    top: 8px !important;
+    right: 8px !important;
+    border: 1px solid var(--border-color-2) !important;
+    border-radius: 4px !important;
+    font-size: 0.8rem !important;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    padding: 1px 8px;
+    background-color: var(--color-bg-2) !important;
+}
+
+:global(.cody-chat-error) {
+    color: var(--danger);
+    background-color: var(--danger-4);
+    padding: 0.5rem;
+}
+
+:global(.cody-chat-error) > span {
+    font-weight: bold;
+}
+
+.feedback-buttons-wrapper {
+    button {
+        svg {
+            color: var(--text-muted);
+
+            &:hover {
+                color: var(--body-color);
+            }
+        }
+    }
+}
+
+.cody-message-header {
+    font-size: 0.8rem;
+    font-weight: bold;
+    height: 2rem;
+    svg {
+        height: 1.5rem;
+        width: 1.5rem;
+    }
+}
+
+.not-enabled-block {
+    background-color: var(--body-bg);
+}
+
+.storage-quota-error {
+    margin-top: 8rem;
+    text-align: center;
+    max-width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}

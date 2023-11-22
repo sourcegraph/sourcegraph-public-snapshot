@@ -8,7 +8,7 @@
 	<meta name="google" content="notranslate">
 	<meta http-equiv="Content-Language" content="en">
 	<meta name="viewport" content="width=device-width, viewport-fit=cover" />
-	<meta name="referrer" content="origin-when-cross-origin"/>
+	<meta name="referrer" content="strict-origin-when-cross-origin"/>
 	<meta name="color-scheme" content="light dark"/>
 	{{with .Metadata}}
 	<meta name='description' content="{{.Description}}" />
@@ -28,7 +28,7 @@
 		{{end}}
 	{{end}}
 	<title>{{.Title}}</title>
-	{{if .Manifest.AppCSSBundlePath}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
+	{{if .Manifest.MainCSSBundlePath}}<link rel="stylesheet" href="{{assetURL .Manifest.MainCSSBundlePath}}">{{end}}
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
 	{{if .PreloadedAssets}}
@@ -56,13 +56,6 @@
 		window.pageError = {{.Error }}
 	</script>
 	{{.Injected.HeadBottom}}
-</head>
-
-<body>
-	{{ if .Context.SourcegraphDotComMode }}
-	<!-- Google Tag Manager (noscript) -->
-	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-	<!-- End Google Tag Manager (noscript) -->
 
 	<!-- Google Search Result SearchBox -->
 	<!-- See https://developers.google.com/search/docs/advanced/structured-data/sitelinks-searchbox -->
@@ -70,6 +63,7 @@
 		{
 			"@context": "https://schema.org",
 			"@type": "WebSite",
+			"name": "Sourcegraph",
 			"url": "https://sourcegraph.com",
 			"potentialAction": {
 				"@type": "SearchAction",
@@ -82,6 +76,13 @@
 		}
 	</script>
 	<!-- End Google Search Result SearchBox -->
+</head>
+
+<body>
+	{{ if .Context.SourcegraphDotComMode }}
+	<!-- Google Tag Manager (noscript) -->
+	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<!-- End Google Tag Manager (noscript) -->
 
 	{{ end }}
 	{{.Injected.BodyTop}}
@@ -106,10 +107,7 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-	{{if .Manifest.AppJSRuntimeBundlePath}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
-	<script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
-	<script src="{{.Manifest.OpenTelemetryJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
-	<script src="{{.Manifest.AppJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
+	<script src="{{assetURL .Manifest.MainJSBundlePath}}" type="module"></script>
 	{{.Injected.BodyBottom}}
 </body>
 

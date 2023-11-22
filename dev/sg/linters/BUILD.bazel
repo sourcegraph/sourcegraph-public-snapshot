@@ -1,12 +1,11 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "linters",
     srcs = [
         "buf.go",
         "client.go",
-        "dockerfiles.go",
-        "enterprise.go",
         "go_checks.go",
         "godirective.go",
         "gogenerate.go",
@@ -25,7 +24,6 @@ go_library(
     deps = [
         "//dev/sg/buf",
         "//dev/sg/internal/check",
-        "//dev/sg/internal/docker",
         "//dev/sg/internal/generate/golang",
         "//dev/sg/internal/generate/proto",
         "//dev/sg/internal/repo",

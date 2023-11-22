@@ -3,7 +3,7 @@ import React from 'react'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { Link } from '@sourcegraph/wildcard'
 
-import { BatchSpecFields } from '../../../graphql-operations'
+import type { BatchSpecFields } from '../../../graphql-operations'
 
 interface Props extends Pick<BatchSpecFields, 'createdAt' | 'creator'> {}
 

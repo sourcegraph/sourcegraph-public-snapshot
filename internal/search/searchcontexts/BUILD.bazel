@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "searchcontexts",
@@ -20,6 +21,7 @@ go_library(
         "//internal/types",
         "//lib/errors",
         "@com_github_inconshreveable_log15//:log15",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_sync//errgroup",
         "@org_golang_x_sync//semaphore",
     ],
@@ -37,6 +39,7 @@ go_test(
         "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/types",
         "//lib/errors",

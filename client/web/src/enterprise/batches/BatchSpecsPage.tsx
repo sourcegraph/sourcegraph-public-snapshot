@@ -1,19 +1,19 @@
-import React, { FC, useCallback, useMemo } from 'react'
+import React, { type FC, useCallback, useMemo } from 'react'
 
 import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Container, PageHeader, H3, H5, Icon } from '@sourcegraph/wildcard'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { BatchSpecListFields, Scalars } from '../../graphql-operations'
+import type { BatchSpecListFields, Scalars } from '../../graphql-operations'
 
 import {
     queryBatchSpecs as _queryBatchSpecs,
     queryBatchChangeBatchSpecs as _queryBatchChangeBatchSpecs,
 } from './backend'
-import { BatchSpecNode, BatchSpecNodeProps } from './BatchSpecNode'
+import { BatchSpecNode, type BatchSpecNodeProps } from './BatchSpecNode'
 
 import styles from './BatchSpecsPage.module.scss'
 

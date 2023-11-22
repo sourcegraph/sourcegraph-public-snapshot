@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { mdiAlertCircle, mdiDelete } from '@mdi/js'
 import { noop } from 'lodash'
@@ -6,7 +6,7 @@ import { noop } from 'lodash'
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { DeleteOutboundWebhookResult, DeleteOutboundWebhookVariables } from '../../../graphql-operations'
+import type { DeleteOutboundWebhookResult, DeleteOutboundWebhookVariables } from '../../../graphql-operations'
 import { DELETE_OUTBOUND_WEBHOOK } from '../backend'
 
 export interface DeleteButtonProps {

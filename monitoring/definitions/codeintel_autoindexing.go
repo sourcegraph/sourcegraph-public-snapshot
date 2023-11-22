@@ -20,7 +20,7 @@ func CodeIntelAutoIndexing() *monitoring.Dashboard {
 	return &monitoring.Dashboard{
 		Name:        "codeintel-autoindexing",
 		Title:       "Code Intelligence > Autoindexing",
-		Description: "The service at `enterprise/internal/codeintel/autoindexing`.",
+		Description: "The service at `internal/codeintel/autoindexing`.",
 		Variables: []monitoring.ContainerVariable{
 			{
 				Label: "Source",

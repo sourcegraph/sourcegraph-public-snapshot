@@ -10,13 +10,14 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/jackc/pgx/v4"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -60,9 +61,12 @@ sg db reset-pg -db=all
 sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
-sg db add-user -name=foo
+sg db add-user -username=foo
+
+# Create an access token for the user created above.
+sg db add-access-token -username=foo
 `,
-		Category: CategoryDev,
+		Category: category.Dev,
 		Subcommands: []*cli.Command{
 			{
 				Name:   "delete-test-dbs",
@@ -150,13 +154,39 @@ sg db add-user -name=foo
 				},
 				Action: dbAddUserAction,
 			},
+
+			{
+				Name:        "add-access-token",
+				Usage:       "Create a sourcegraph access token",
+				Description: `Run 'sg db add-access-token -username bob' to create an access token for the given username. The access token will be printed if the operation succeeds`,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "username",
+						Value: "sourcegraph",
+						Usage: "Username for user",
+					},
+					&cli.BoolFlag{
+						Name:     "sudo",
+						Value:    false,
+						Usage:    "Set true to make a site-admin level token",
+						Required: false,
+					},
+					&cli.StringFlag{
+						Name:     "note",
+						Value:    "",
+						Usage:    "Note attached to the token",
+						Required: false,
+					},
+				},
+				Action: dbAddAccessTokenAction,
+			},
 		},
 	}
 )
 
 func dbAddUserAction(cmd *cli.Context) error {
 	ctx := cmd.Context
-	logger := log.Scoped("dbAddUserAction", "")
+	logger := log.Scoped("dbAddUserAction")
 
 	// Read the configuration.
 	conf, _ := getConfig()
@@ -209,8 +239,53 @@ func dbAddUserAction(cmd *cli.Context) error {
 	})
 }
 
+func dbAddAccessTokenAction(cmd *cli.Context) error {
+	ctx := cmd.Context
+	logger := log.Scoped("dbAddAccessTokenAction")
+
+	// Read the configuration.
+	conf, _ := getConfig()
+	if conf == nil {
+		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+	}
+
+	// Connect to the database.
+	conn, err := connections.EnsureNewFrontendDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
+	if err != nil {
+		return err
+	}
+
+	db := database.NewDB(logger, conn)
+	return db.WithTransact(ctx, func(tx database.DB) error {
+		username := cmd.String("username")
+		sudo := cmd.Bool("sudo")
+		note := cmd.String("note")
+
+		scopes := []string{"user:all"}
+		if sudo {
+			scopes = []string{"site-admin:sudo"}
+		}
+
+		// Fetch user
+		user, err := tx.Users().GetByUsername(ctx, username)
+		if err != nil {
+			return err
+		}
+
+		// Generate the token
+		_, token, err := tx.AccessTokens().Create(ctx, user.ID, scopes, note, user.ID)
+		if err != nil {
+			return err
+		}
+
+		// Print token
+		std.Out.WriteSuccessf("New token created: %q", token)
+		return nil
+	})
+}
+
 func dbUpdateUserExternalAccount(cmd *cli.Context) error {
-	logger := log.Scoped("dbUpdateUserExternalAccount", "")
+	logger := log.Scoped("dbUpdateUserExternalAccount")
 	ctx := cmd.Context
 	username := cmd.String("sg.username")
 	serviceName := cmd.String("extsvc.display-name")
@@ -289,18 +364,20 @@ func dbUpdateUserExternalAccount(cmd *cli.Context) error {
 
 	logger.Info("Writing external account to the DB")
 
-	err = db.UserExternalAccounts().AssociateUserAndSave(
+	_, err = db.UserExternalAccounts().Upsert(
 		ctx,
-		user.ID,
-		extsvc.AccountSpec{
-			ServiceType: strings.ToLower(service.Kind),
-			ServiceID:   serviceID,
-			ClientID:    clientID,
-			AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
-		},
-		extsvc.AccountData{
-			AuthData: authData,
-			Data:     nil,
+		&extsvc.Account{
+			UserID: user.ID,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: strings.ToLower(service.Kind),
+				ServiceID:   serviceID,
+				ClientID:    clientID,
+				AccountID:   fmt.Sprintf("%d", ghUser.GetID()),
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: authData,
+				Data:     nil,
+			},
 		},
 	)
 	return err
@@ -336,7 +413,7 @@ func githubClient(ctx context.Context, baseurl string, token string) (*github.Cl
 	}
 	baseURL.Path = "/api/v3"
 
-	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+	gh, err := github.NewClient(tc).WithEnterpriseURLs(baseURL.String(), baseURL.String())
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +450,7 @@ func deleteTestDBsExec(ctx *cli.Context) error {
 	}
 	dsn := config.String()
 
-	db, err := dbconn.ConnectInternal(log.Scoped("sg", ""), dsn, "", "")
+	db, err := dbconn.ConnectInternal(log.Scoped("sg"), dsn, "", "")
 	if err != nil {
 		return err
 	}
@@ -460,7 +537,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
-	r, err := connections.RunnerFromDSNs(log.Scoped("migrations.runner", ""), dsnMap, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(std.Out.Output, log.Scoped("migrations.runner"), dsnMap, "sg", storeFactory)
 	if err != nil {
 		return err
 	}

@@ -6,9 +6,11 @@ import (
 	"time"
 
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -41,11 +43,11 @@ func TestWebhookLogsArgs(t *testing.T) {
 			"OnlyErrors false": {
 				id: WebhookLogsUnmatchedExternalService,
 				input: WebhookLogsArgs{
-					OnlyErrors: boolPtr(false),
+					OnlyErrors: pointers.Ptr(false),
 				},
 				want: database.WebhookLogListOpts{
 					Limit:             50,
-					ExternalServiceID: int64Ptr(0),
+					ExternalServiceID: pointers.Ptr(int64(0)),
 					OnlyErrors:        false,
 				},
 			},
@@ -53,22 +55,22 @@ func TestWebhookLogsArgs(t *testing.T) {
 				id: webhookLogsExternalServiceID(1),
 				input: WebhookLogsArgs{
 					ConnectionArgs: graphqlutil.ConnectionArgs{
-						First: int32Ptr(25),
+						First: pointers.Ptr(int32(25)),
 					},
-					After:      stringPtr("40"),
-					OnlyErrors: boolPtr(true),
-					Since:      timePtr(now),
-					Until:      timePtr(later),
-					WebhookID:  gqlIDPtr(webhookID),
+					After:      pointers.Ptr("40"),
+					OnlyErrors: pointers.Ptr(true),
+					Since:      pointers.Ptr(now),
+					Until:      pointers.Ptr(later),
+					WebhookID:  pointers.Ptr(webhookID),
 				},
 				want: database.WebhookLogListOpts{
 					Limit:             25,
 					Cursor:            40,
-					ExternalServiceID: int64Ptr(1),
+					ExternalServiceID: pointers.Ptr(int64(1)),
 					OnlyErrors:        true,
-					Since:             timePtr(now),
-					Until:             timePtr(later),
-					WebhookID:         int32Ptr(123),
+					Since:             pointers.Ptr(now),
+					Until:             pointers.Ptr(later),
+					WebhookID:         pointers.Ptr(int32(123)),
 				},
 			},
 		} {
@@ -99,10 +101,10 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 	// We'll test everything else below, but let's just make sure the admin
 	// check occurs.
 	t.Run("unauthenticated user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsUnmatchedExternalService)
@@ -110,10 +112,10 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 	})
 
 	t.Run("regular user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsUnmatchedExternalService)
@@ -121,10 +123,10 @@ func TestNewWebhookLogConnectionResolver(t *testing.T) {
 	})
 
 	t.Run("admin user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		_, err := NewWebhookLogConnectionResolver(context.Background(), db, nil, WebhookLogsAllExternalServices)
@@ -141,8 +143,8 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 		logs = append(logs, &types.WebhookLog{})
 	}
 
-	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *database.MockWebhookLogStore {
-		store := database.NewMockWebhookLogStore()
+	createMockStore := func(logs []*types.WebhookLog, next int64, err error) *dbmocks.MockWebhookLogStore {
+		store := dbmocks.NewMockWebhookLogStore()
 		store.ListFunc.SetDefaultReturn(logs, next, err)
 		store.HandleFunc.SetDefaultReturn(nil)
 
@@ -155,7 +157,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 		r := &WebhookLogConnectionResolver{
 			args: &WebhookLogsArgs{
 				ConnectionArgs: graphqlutil.ConnectionArgs{
-					First: int32Ptr(20),
+					First: pointers.Ptr(int32(20)),
 				},
 			},
 			externalServiceID: webhookLogsExternalServiceID(1),
@@ -175,7 +177,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 			mockassert.Values(
 				mockassert.Skip,
 				database.WebhookLogListOpts{
-					ExternalServiceID: int64Ptr(1),
+					ExternalServiceID: pointers.Ptr(int64(1)),
 					Limit:             20,
 				},
 			),
@@ -188,7 +190,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 		r := &WebhookLogConnectionResolver{
 			args: &WebhookLogsArgs{
 				ConnectionArgs: graphqlutil.ConnectionArgs{
-					First: int32Ptr(20),
+					First: pointers.Ptr(int32(20)),
 				},
 			},
 			externalServiceID: webhookLogsExternalServiceID(1),
@@ -210,7 +212,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 			mockassert.Values(
 				mockassert.Skip,
 				database.WebhookLogListOpts{
-					ExternalServiceID: int64Ptr(1),
+					ExternalServiceID: pointers.Ptr(int64(1)),
 					Limit:             20,
 				},
 			),
@@ -224,7 +226,7 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 		r := &WebhookLogConnectionResolver{
 			args: &WebhookLogsArgs{
 				ConnectionArgs: graphqlutil.ConnectionArgs{
-					First: int32Ptr(20),
+					First: pointers.Ptr(int32(20)),
 				},
 			},
 			externalServiceID: webhookLogsExternalServiceID(1),
@@ -238,12 +240,12 @@ func TestWebhookLogConnectionResolver(t *testing.T) {
 
 func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		store := database.NewMockWebhookLogStore()
+		store := dbmocks.NewMockWebhookLogStore()
 		store.CountFunc.SetDefaultReturn(40, nil)
 
 		r := &WebhookLogConnectionResolver{
 			args: &WebhookLogsArgs{
-				OnlyErrors: boolPtr(true),
+				OnlyErrors: pointers.Ptr(true),
 			},
 			externalServiceID: webhookLogsExternalServiceID(1),
 			store:             store,
@@ -258,7 +260,7 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 			mockassert.Values(
 				mockassert.Skip,
 				database.WebhookLogListOpts{
-					ExternalServiceID: int64Ptr(1),
+					ExternalServiceID: pointers.Ptr(int64(1)),
 					Limit:             50,
 					OnlyErrors:        true,
 				},
@@ -268,12 +270,12 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 
 	t.Run("errors", func(t *testing.T) {
 		want := errors.New("error")
-		store := database.NewMockWebhookLogStore()
+		store := dbmocks.NewMockWebhookLogStore()
 		store.CountFunc.SetDefaultReturn(0, want)
 
 		r := &WebhookLogConnectionResolver{
 			args: &WebhookLogsArgs{
-				OnlyErrors: boolPtr(true),
+				OnlyErrors: pointers.Ptr(true),
 			},
 			externalServiceID: webhookLogsExternalServiceID(1),
 			store:             store,
@@ -285,20 +287,20 @@ func TestWebhookLogConnectionResolver_TotalCount(t *testing.T) {
 }
 
 func TestListWebhookLogs(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	webhookLogsStore := database.NewMockWebhookLogStore()
+	webhookLogsStore := dbmocks.NewMockWebhookLogStore()
 	webhookLogs := []*types.WebhookLog{
-		{ID: 1, WebhookID: int32Ptr(1), StatusCode: 200},
-		{ID: 2, WebhookID: int32Ptr(1), StatusCode: 500},
-		{ID: 3, WebhookID: int32Ptr(1), StatusCode: 200},
-		{ID: 4, WebhookID: int32Ptr(2), StatusCode: 200},
-		{ID: 5, WebhookID: int32Ptr(2), StatusCode: 200},
-		{ID: 6, WebhookID: int32Ptr(2), StatusCode: 200},
-		{ID: 7, WebhookID: int32Ptr(3), StatusCode: 500},
-		{ID: 8, WebhookID: int32Ptr(3), StatusCode: 500},
+		{ID: 1, WebhookID: pointers.Ptr(int32(1)), StatusCode: 200},
+		{ID: 2, WebhookID: pointers.Ptr(int32(1)), StatusCode: 500},
+		{ID: 3, WebhookID: pointers.Ptr(int32(1)), StatusCode: 200},
+		{ID: 4, WebhookID: pointers.Ptr(int32(2)), StatusCode: 200},
+		{ID: 5, WebhookID: pointers.Ptr(int32(2)), StatusCode: 200},
+		{ID: 6, WebhookID: pointers.Ptr(int32(2)), StatusCode: 200},
+		{ID: 7, WebhookID: pointers.Ptr(int32(3)), StatusCode: 500},
+		{ID: 8, WebhookID: pointers.Ptr(int32(3)), StatusCode: 500},
 	}
 	webhookLogsStore.ListFunc.SetDefaultHook(func(_ context.Context, options database.WebhookLogListOpts) ([]*types.WebhookLog, int64, error) {
 		var logs []*types.WebhookLog
@@ -340,7 +342,7 @@ func TestListWebhookLogs(t *testing.T) {
 		return int64(len(logs)), err
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.WebhookLogsFunc.SetDefaultReturn(webhookLogsStore)
 	db.UsersFunc.SetDefaultReturn(users)
 	schema := mustParseGraphQLSchema(t, db)
@@ -418,11 +420,3 @@ func TestListWebhookLogs(t *testing.T) {
 		},
 	})
 }
-
-func boolPtr(v bool) *bool              { return &v }
-func intPtr(v int) *int                 { return &v }
-func int32Ptr(v int32) *int32           { return &v }
-func int64Ptr(v int64) *int64           { return &v }
-func stringPtr(v string) *string        { return &v }
-func timePtr(v time.Time) *time.Time    { return &v }
-func gqlIDPtr(v graphql.ID) *graphql.ID { return &v }

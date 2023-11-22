@@ -3,12 +3,12 @@ import React from 'react'
 import {
     MenuItem as ReachMenuItem,
     MenuLink as ReachMenuLink,
-    MenuItemProps as ReachMenuItemProps,
-    MenuLinkProps as ReachMenuLinkProps,
+    type MenuItemProps as ReachMenuItemProps,
+    type MenuLinkProps as ReachMenuLinkProps,
 } from '@reach/menu-button'
 import { noop } from 'lodash'
 
-import { ForwardReferenceComponent } from '../../types'
+import type { ForwardReferenceComponent } from '../../types'
 import { AnchorLink } from '../Link/AnchorLink'
 
 export type MenuDisabledItemProps = Omit<ReachMenuItemProps, 'onSelect' | 'disabled'>

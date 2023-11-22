@@ -1,11 +1,23 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
 
-# gazelle:js_files **/*.ts
+# gazelle:js_files **/*.js
 
 npm_link_all_packages(name = "node_modules")
 
+js_library(
+    name = "eslint-plugin-wildcard_lib",
+    srcs = [
+        "lib/index.js",
+        "lib/rules/forbid-class-name.js",
+    ],
+)
+
 npm_package(
     name = "eslint-plugin-wildcard_pkg",
-    srcs = ["package.json"],
+    srcs = [
+        "package.json",
+        ":eslint-plugin-wildcard_lib",
+    ],
 )

@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -22,7 +22,7 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = () => {
+export const Simple: StoryFn = () => {
     const { url, requestMocks } = buildReferencePanelMocks()
 
     return (

@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestRepoContainsFilePredicate(t *testing.T) {
@@ -145,6 +147,58 @@ func TestRepoHasTopicPredicate(t *testing.T) {
 	})
 }
 
+func TestRepoHasKVPMetaPredicate(t *testing.T) {
+	t.Run("Unmarshal", func(t *testing.T) {
+		type test struct {
+			name     string
+			params   string
+			expected *RepoHasMetaPredicate
+		}
+
+		valid := []test{
+			{`key:value`, `key:value`, &RepoHasMetaPredicate{Key: "key", Value: pointers.Ptr("value"), Negated: false, KeyOnly: false}},
+			{`double quoted special characters`, `"key:colon":"value:colon"`, &RepoHasMetaPredicate{Key: "key:colon", Value: pointers.Ptr("value:colon"), Negated: false, KeyOnly: false}},
+			{`single quoted special characters`, `'  key:':'value : '`, &RepoHasMetaPredicate{Key: `  key:`, Value: pointers.Ptr(`value : `), Negated: false, KeyOnly: false}},
+			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasMetaPredicate{Key: `key"quote`, Value: pointers.Ptr(`value"quote`), Negated: false, KeyOnly: false}},
+			{`space padding`, `  key:value  `, &RepoHasMetaPredicate{Key: `key`, Value: pointers.Ptr(`value`), Negated: false, KeyOnly: false}},
+			{`only key`, `key`, &RepoHasMetaPredicate{Key: `key`, Value: nil, Negated: false, KeyOnly: true}},
+			{`key tag`, `key:`, &RepoHasMetaPredicate{Key: "key", Value: nil, Negated: false, KeyOnly: false}},
+		}
+
+		for _, tc := range valid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &RepoHasMetaPredicate{}
+				err := p.Unmarshal(tc.params, false)
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+
+				if !reflect.DeepEqual(tc.expected, p) {
+					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+				}
+			})
+		}
+
+		invalid := []test{
+			{`empty`, ``, nil},
+			{`no key`, `:value`, nil},
+			{`no key or value`, `:`, nil},
+			{`content outside of qutoes`, `key:"quoted value" abc`, nil},
+			{`bonus colons`, `key:value:other`, nil},
+		}
+
+		for _, tc := range invalid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &RepoHasMetaPredicate{}
+				err := p.Unmarshal(tc.params, false)
+				if err == nil {
+					t.Fatal("expected error but got none")
+				}
+			})
+		}
+	})
+}
+
 func TestRepoHasKVPPredicate(t *testing.T) {
 	t.Run("Unmarshal", func(t *testing.T) {
 		type test struct {
@@ -267,6 +321,42 @@ func TestFileHasOwnerPredicate(t *testing.T) {
 				err := p.Unmarshal(tc.params, false)
 				if err != nil {
 					t.Fatalf("unexpected error: %s", err)
+				}
+
+				if !reflect.DeepEqual(tc.expected, p) {
+					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+				}
+			})
+		}
+	})
+}
+
+func TestFileHasContributorPredicate(t *testing.T) {
+	t.Run("Unmarshal", func(t *testing.T) {
+		type test struct {
+			name     string
+			params   string
+			expected *FileHasContributorPredicate
+			error    string
+		}
+
+		valid := []test{
+			{`text`, `test`, &FileHasContributorPredicate{Contributor: "test"}, ""},
+			{`error parsing regexp`, `(((test`, &FileHasContributorPredicate{}, "the file:has.contributor() predicate has invalid argument: error parsing regexp: missing closing ): `(((test`"},
+			{`email to regex`, `test@example.com`, &FileHasContributorPredicate{Contributor: "test@example.com"}, ""},
+			{`regex`, `(?i)te.t@mails.*`, &FileHasContributorPredicate{Contributor: "(?i)te.t@mails.*"}, ""},
+		}
+
+		for _, tc := range valid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &FileHasContributorPredicate{}
+				err := p.Unmarshal(tc.params, false)
+				if err != nil {
+					if tc.error == "" {
+						t.Fatalf("unexpected error: %s", err)
+					} else if tc.error != err.Error() {
+						t.Fatalf("expected error %s, got %s", tc.error, err.Error())
+					}
 				}
 
 				if !reflect.DeepEqual(tc.expected, p) {

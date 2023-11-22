@@ -1,4 +1,4 @@
-import { CaptureGroupFormFields } from '../../types'
+import type { CaptureGroupFormFields } from '../../types'
 
 type UnsupportedFields = 'step' | 'stepValue' | 'repoQuery' | 'repoMode'
 
@@ -24,8 +24,9 @@ export function encodeCaptureInsightURL(values: Partial<CaptureInsightUrlValues>
                 break
             }
 
-            default:
+            default: {
                 parameters.set(key, fields[key].toString())
+            }
         }
     }
 

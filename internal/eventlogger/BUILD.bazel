@@ -5,9 +5,4 @@ go_library(
     srcs = ["event_logger.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/eventlogger",
     visibility = ["//:__subpackages__"],
-    deps = [
-        "//internal/api/internalapi",
-        "@com_github_inconshreveable_log15//:log15",
-        "@org_golang_x_net//context",
-    ],
 )

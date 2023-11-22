@@ -1,11 +1,31 @@
 import { type Diagnostic as CMDiagnostic, linter, type LintSource } from '@codemirror/lint'
-import { Compartment, Extension } from '@codemirror/state'
+import { Compartment, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { type Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 
 import { queryTokens } from './parsedQuery'
+
+const theme = EditorView.theme({
+    '.cm-diagnosticText': {
+        display: 'block',
+    },
+    '.cm-diagnosticAction': {
+        color: 'var(--body-color)',
+        borderColor: 'var(--secondary)',
+        backgroundColor: 'var(--secondary)',
+        borderRadius: 'var(--border-radius)',
+        padding: 'var(--btn-padding-y-sm) .5rem',
+        fontSize: 'calc(min(0.75rem, 0.9166666667em))',
+        lineHeight: '1rem',
+        margin: '0.5rem 0 0 0',
+
+        '& + .cm-diagnosticAction': {
+            marginLeft: '1rem',
+        },
+    },
+})
 
 /**
  * Sets up client side query validation.
@@ -39,24 +59,7 @@ export function queryDiagnostic(): Extension {
                 update.view.dispatch({ effects: linterCompartment.reconfigure(linter(source, config)) })
             }
         }),
-        EditorView.theme({
-            '.cm-diagnosticText': {
-                display: 'block',
-            },
-            '.cm-diagnosticAction': {
-                color: 'var(--body-color)',
-                borderColor: 'var(--secondary)',
-                backgroundColor: 'var(--secondary)',
-                borderRadius: 'var(--border-radius)',
-                padding: 'var(--btn-padding-y-sm) .5rem',
-                fontSize: 'calc(min(0.75rem, 0.9166666667em))',
-                lineHeight: '1rem',
-                margin: '0.5rem 0 0 0',
-            },
-            '.cm-diagnosticAction + .cm-diagnosticAction': {
-                marginLeft: '1rem',
-            },
-        }),
+        theme,
     ]
 }
 

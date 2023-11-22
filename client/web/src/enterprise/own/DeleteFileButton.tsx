@@ -2,12 +2,12 @@ import { useCallback, useState } from 'react'
 
 import { mdiTrashCan } from '@mdi/js'
 
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, ErrorAlert, H3, Icon, Modal } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
-import {
+import type {
     DeleteIngestedCodeownersResult,
     DeleteIngestedCodeownersVariables,
     RepositoryFields,

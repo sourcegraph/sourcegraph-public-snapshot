@@ -1,6 +1,6 @@
-import { QueryState } from '@sourcegraph/shared/src/search'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 
-import { EditableDataSeries } from '../../../../components'
+import type { EditableDataSeries } from '../../../../components'
 
 export type InsightStep = 'hours' | 'days' | 'weeks' | 'months' | 'years'
 export type RepoMode = 'search-query' | 'urls-list'

@@ -1,43 +1,43 @@
 {
-  "Core-Plugins": {
+  "All-Projects": {
    "description": "",
-   "id": "Core-Plugins",
+   "id": "All-Projects",
    "name": "",
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
    "labels": null
   },
-  "Public-Plugins": {
+  "All-Users": {
    "description": "",
-   "id": "Public-Plugins",
+   "id": "All-Users",
    "name": "",
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
    "labels": null
   },
-  "Public-Projects": {
+  "beatrix": {
    "description": "",
-   "id": "Public-Projects",
+   "id": "beatrix",
    "name": "",
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
    "labels": null
   },
-  "TestRepo": {
+  "idan-temp": {
    "description": "",
-   "id": "TestRepo",
+   "id": "idan-temp",
    "name": "",
    "parent": "",
    "state": "ACTIVE",
    "branches": null,
    "labels": null
   },
-  "apps/analytics-etl": {
+  "k8s-gerrit": {
    "description": "",
-   "id": "apps%2Fanalytics-etl",
+   "id": "k8s-gerrit",
    "name": "",
    "parent": "",
    "state": "ACTIVE",

@@ -74,6 +74,17 @@
         font-size: 1.5rem;
     }
 }
+.commit-message {
+    display: flex;
+    flex: column wrap;
+    align-items: left;
+    word-wrap: break-word;
+}
+
+.spacer {
+    width: 6.25rem;
+    justify-self: end;
+}
 
 .message {
     display: flex;
@@ -119,13 +130,14 @@
     }
 
     &-body {
+        font-size: 0.75rem;
+        color: var(--text-muted);
         margin-top: 0.5rem;
         margin-bottom: 1.5rem;
-        font-size: 0.75rem;
         overflow: visible;
-        max-width: 100%;
-        word-wrap: break-word;
+        max-width: 85%;
         white-space: pre-wrap;
+        padding-left: 0.34375rem;
     }
 }
 
@@ -141,6 +153,7 @@
     display: block;
     /* stylelint-disable-next-line declaration-property-unit-allowed-list */
     margin-top: 2px;
+    min-width: 1.85rem;
 }
 
 .sha-and-parents {
@@ -185,7 +198,6 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: nowrap;
-
     color: var(--list-group-color);
     text-decoration: var(--list-group-text-decoration);
     background-color: var(--list-group-bg);

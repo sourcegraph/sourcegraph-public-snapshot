@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
+import classNames from 'classnames'
 
 import {
     ProductStatusBadge,
@@ -17,6 +18,8 @@ import {
     Text,
     Icon,
 } from '@sourcegraph/wildcard'
+
+import { useBatchChangesRolloutWindowConfig } from './backend'
 
 import styles from './DropdownButton.module.scss'
 
@@ -169,12 +172,19 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
     action,
     setSelectedType,
 }) => {
+    const { rolloutWindowConfig, loading } = useBatchChangesRolloutWindowConfig()
     const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])
+    const shouldDisplayRolloutInfo = action.type === 'publish' && rolloutWindowConfig && rolloutWindowConfig.length > 0
+
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
-            <H4 className="mb-1">
+            <H4
+                className={classNames('mb-1', {
+                    'text-muted': action.disabled,
+                })}
+            >
                 {action.dropdownTitle}
                 {action.experimental && (
                     <>
@@ -184,7 +194,18 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                 )}
             </H4>
             <Text className="text-wrap text-muted mb-0">
-                <small>{action.dropdownDescription}</small>
+                <small>
+                    {action.dropdownDescription}
+                    {!loading && shouldDisplayRolloutInfo && (
+                        <>
+                            <br />
+                            <strong>
+                                Note: Rollout windows have been set up by the admin. This means that some of the
+                                selected changesets won't be processed until a time in the future.
+                            </strong>
+                        </>
+                    )}
+                </small>
             </Text>
         </MenuItem>
     )

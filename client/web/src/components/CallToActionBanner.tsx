@@ -1,4 +1,4 @@
-import { FunctionComponent, ReactNode } from 'react'
+import type { FunctionComponent, ReactNode } from 'react'
 
 import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'

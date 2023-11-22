@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "workerutil",
@@ -18,13 +19,12 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/trace",
-        "//internal/trace/ot",
         "//internal/trace/policy",
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

@@ -10,9 +10,12 @@ import (
 )
 
 func Searcher() *monitoring.Dashboard {
-	const containerName = "searcher"
+	const (
+		containerName   = "searcher"
+		grpcServiceName = "searcher.v1.SearcherService"
+	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+	grpcMethodVariable := shared.GRPCMethodVariable("searcher", grpcServiceName)
 
 	// instanceSelector is a helper for inserting the instance selector.
 	// Should be used on strings created via `` since you can't escape in
@@ -220,13 +223,28 @@ regularly above 0 it is a sign for further investigation.`,
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					ServiceName:       "searcher",
-					MetricNamespace:   "searcher",
+					HumanServiceName:   "searcher",
+					RawGRPCServiceName: grpcServiceName,
+
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 
-					InstanceFilterRegex: `${instance:regex}`,
+					InstanceFilterRegex:  `${instance:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSearchCore),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+
+			shared.NewGRPCInternalErrorMetricsGroup(
+				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   "searcher",
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+				}, monitoring.ObservableOwnerSearchCore),
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "searcher",
+				InstanceFilterRegex: `${instance:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),

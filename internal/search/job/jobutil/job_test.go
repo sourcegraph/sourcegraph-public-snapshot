@@ -75,13 +75,14 @@ func TestNewPlanJob(t *testing.T) {
                 (SEARCHERTEXTSEARCH
                   (indexed . false))))
             (REPOSEARCH
-              (repoOpts.repoFilters . [foo])(repoOpts.searchContextSpec . @userA)
+              (repoOpts.repoFilters . [foo])
+              (repoOpts.searchContextSpec . @userA)
               (repoNamePatterns . [(?i)foo])))
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.searchContextSpec . @userA))
           (PARALLEL
-            NoopJob
-            NoopJob))))))`),
+            NOOP
+            NOOP))))))`),
 	}, {
 		query:      `foo context:global`,
 		protocol:   search.Streaming,
@@ -104,11 +105,12 @@ func TestNewPlanJob(t *testing.T) {
               (type . text)
               (repoOpts.searchContextSpec . global))
             (REPOSEARCH
-              (repoOpts.repoFilters . [foo])(repoOpts.searchContextSpec . global)
+              (repoOpts.repoFilters . [foo])
+              (repoOpts.searchContextSpec . global)
               (repoNamePatterns . [(?i)foo])))
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.searchContextSpec . global))
-          NoopJob)))))`),
+          NOOP)))))`),
 	}, {
 		query:      `foo`,
 		protocol:   search.Streaming,
@@ -128,14 +130,12 @@ func TestNewPlanJob(t *testing.T) {
             (ensureUnique . false)
             (ZOEKTGLOBALTEXTSEARCH
               (query . substr:"foo")
-              (type . text)
-              )
+              (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [foo])
               (repoNamePatterns . [(?i)foo])))
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `foo repo:sourcegraph/sourcegraph`,
 		protocol:   search.Streaming,
@@ -170,8 +170,8 @@ func TestNewPlanJob(t *testing.T) {
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.repoFilters . [sourcegraph/sourcegraph]))
           (PARALLEL
-            NoopJob
-            NoopJob))))))`),
+            NOOP
+            NOOP))))))`),
 	}, {
 		query:      `ok ok`,
 		protocol:   search.Streaming,
@@ -191,14 +191,12 @@ func TestNewPlanJob(t *testing.T) {
             (ensureUnique . false)
             (ZOEKTGLOBALTEXTSEARCH
               (query . regex:"ok(?-s:.)*?ok")
-              (type . text)
-              )
+              (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [(?:ok).*?(?:ok)])
               (repoNamePatterns . [(?i)(?:ok).*?(?:ok)])))
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `ok @thing`,
 		protocol:   search.Streaming,
@@ -218,14 +216,12 @@ func TestNewPlanJob(t *testing.T) {
             (ensureUnique . false)
             (ZOEKTGLOBALTEXTSEARCH
               (query . substr:"ok @thing")
-              (type . text)
-              )
+              (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [ok ])
               (repoNamePatterns . [(?i)ok ])))
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `@nope`,
 		protocol:   search.Streaming,
@@ -243,11 +239,9 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . substr:"@nope")
-            (type . text)
-            )
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+            (type . text))
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `repo:sourcegraph/sourcegraph rev:*refs/heads/*`,
 		protocol:   search.Streaming,
@@ -307,11 +301,9 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . regex:"foo(?-s:.)*?@bar")
-            (type . text)
-            )
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+            (type . text))
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `type:symbol test`,
 		protocol:   search.Streaming,
@@ -329,11 +321,9 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           (ZOEKTGLOBALSYMBOLSEARCH
             (query . sym:substr:"test")
-            (type . symbol)
-            )
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+            (type . symbol))
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `type:commit test`,
 		protocol:   search.Streaming,
@@ -351,12 +341,11 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
-            (repoOpts.onlyCloned . true)
             (diff . false)
-            (limit . 500))
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+            (limit . 500)
+            (repoOpts.onlyCloned . true))
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `type:diff test`,
 		protocol:   search.Streaming,
@@ -374,12 +363,11 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           (DIFFSEARCH
             (query . *protocol.DiffMatches(test))
-            (repoOpts.onlyCloned . true)
             (diff . true)
-            (limit . 500))
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+            (limit . 500)
+            (repoOpts.onlyCloned . true))
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `type:file type:commit test`,
 		protocol:   search.Streaming,
@@ -397,16 +385,14 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . content_substr:"test")
-            (type . text)
-            )
+            (type . text))
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
-            (repoOpts.onlyCloned . true)
             (diff . false)
-            (limit . 500))
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+            (limit . 500)
+            (repoOpts.onlyCloned . true))
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
 		protocol:   search.Streaming,
@@ -445,21 +431,25 @@ func TestNewPlanJob(t *testing.T) {
                 (query . sym:substr:"test"))))
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
-            (repoOpts.repoFilters . [test])(repoOpts.onlyCloned . true)
             (diff . false)
-            (limit . 500))
+            (limit . 500)
+            (repoOpts.repoFilters . [test])
+            (repoOpts.onlyCloned . true))
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.repoFilters . [test]))
           (PARALLEL
-            NoopJob
+            NOOP
             (REPOPAGER
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERSYMBOLSEARCH
-                  (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
+                  (patternInfo.pattern . test)
+                  (patternInfo.isRegexp . true)
+                  (patternInfo.fileMatchLimit . 500)
+                  (patternInfo.patternMatchesPath . true)
                   (numRepos . 0)
                   (limit . 500))))
-            NoopJob))))))`),
+            NOOP))))))`),
 	}, {
 		query:      `type:file type:commit test`,
 		protocol:   search.Streaming,
@@ -477,16 +467,14 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . content_substr:"test")
-            (type . text)
-            )
+            (type . text))
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
-            (repoOpts.onlyCloned . true)
             (diff . false)
-            (limit . 500))
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
+            (limit . 500)
+            (repoOpts.onlyCloned . true))
+          REPOSCOMPUTEEXCLUDED
+          NOOP)))))`),
 	}, {
 		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
 		protocol:   search.Streaming,
@@ -525,21 +513,25 @@ func TestNewPlanJob(t *testing.T) {
                 (query . sym:substr:"test"))))
           (COMMITSEARCH
             (query . *protocol.MessageMatches(test))
-            (repoOpts.repoFilters . [test])(repoOpts.onlyCloned . true)
             (diff . false)
-            (limit . 500))
+            (limit . 500)
+            (repoOpts.repoFilters . [test])
+            (repoOpts.onlyCloned . true))
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.repoFilters . [test]))
           (PARALLEL
-            NoopJob
+            NOOP
             (REPOPAGER
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERSYMBOLSEARCH
-                  (patternInfo.pattern . test)(patternInfo.isRegexp . true)(patternInfo.fileMatchLimit . 500)(patternInfo.patternMatchesPath . true)
+                  (patternInfo.pattern . test)
+                  (patternInfo.isRegexp . true)
+                  (patternInfo.fileMatchLimit . 500)
+                  (patternInfo.patternMatchesPath . true)
                   (numRepos . 0)
                   (limit . 500))))
-            NoopJob))))))`),
+            NOOP))))))`),
 	}, {
 		query:      `(type:commit or type:diff) (a or b)`,
 		protocol:   search.Streaming,
@@ -559,14 +551,13 @@ func TestNewPlanJob(t *testing.T) {
           (PARALLEL
             (COMMITSEARCH
               (query . (*protocol.MessageMatches((?:a)|(?:b))))
-              (repoOpts.onlyCloned . true)
               (diff . false)
-              (limit . 500))
-            (REPOSCOMPUTEEXCLUDED
-              )
+              (limit . 500)
+              (repoOpts.onlyCloned . true))
+            REPOSCOMPUTEEXCLUDED
             (OR
-              NoopJob
-              NoopJob))))
+              NOOP
+              NOOP))))
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
@@ -574,14 +565,13 @@ func TestNewPlanJob(t *testing.T) {
           (PARALLEL
             (DIFFSEARCH
               (query . (*protocol.DiffMatches((?:a)|(?:b))))
-              (repoOpts.onlyCloned . true)
               (diff . true)
-              (limit . 500))
-            (REPOSCOMPUTEEXCLUDED
-              )
+              (limit . 500)
+              (repoOpts.onlyCloned . true))
+            REPOSCOMPUTEEXCLUDED
             (OR
-              NoopJob
-              NoopJob)))))))`),
+              NOOP
+              NOOP)))))))`),
 	}, {
 		query:      `(type:repo a) or (type:file b)`,
 		protocol:   search.Streaming,
@@ -598,8 +588,7 @@ func TestNewPlanJob(t *testing.T) {
         (LIMIT
           (limit . 500)
           (PARALLEL
-            (REPOSCOMPUTEEXCLUDED
-              )
+            REPOSCOMPUTEEXCLUDED
             (REPOSEARCH
               (repoOpts.repoFilters . [a])
               (repoNamePatterns . [(?i)a])))))
@@ -610,11 +599,9 @@ func TestNewPlanJob(t *testing.T) {
           (PARALLEL
             (ZOEKTGLOBALTEXTSEARCH
               (query . content_substr:"b")
-              (type . text)
-              )
-            (REPOSCOMPUTEEXCLUDED
-              )
-            NoopJob))))))`),
+              (type . text))
+            REPOSCOMPUTEEXCLUDED
+            NOOP))))))`),
 	}, {
 		query:      `type:symbol a or b`,
 		protocol:   search.Streaming,
@@ -632,13 +619,11 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           (ZOEKTGLOBALSYMBOLSEARCH
             (query . (or sym:substr:"a" sym:substr:"b"))
-            (type . symbol)
-            )
-          (REPOSCOMPUTEEXCLUDED
-            )
+            (type . symbol))
+          REPOSCOMPUTEEXCLUDED
           (OR
-            NoopJob
-            NoopJob))))))`),
+            NOOP
+            NOOP))))))`),
 	},
 		{
 			query:      `repo:contains.path(a) repo:contains.content(b)`,
@@ -656,9 +641,11 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 500)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b))
+            (repoOpts.hasFileContent[0].path . a)
+            (repoOpts.hasFileContent[1].content . b))
           (REPOSEARCH
-            (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[1].content . b)
+            (repoOpts.hasFileContent[0].path . a)
+            (repoOpts.hasFileContent[1].content . b)
             (repoNamePatterns . [])))))))`),
 		}, {
 			query:      `repo:contains.file(path:a content:b)`,
@@ -676,9 +663,11 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 500)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b))
+            (repoOpts.hasFileContent[0].path . a)
+            (repoOpts.hasFileContent[0].content . b))
           (REPOSEARCH
-            (repoOpts.hasFileContent[0].path . a)(repoOpts.hasFileContent[0].content . b)
+            (repoOpts.hasFileContent[0].path . a)
+            (repoOpts.hasFileContent[0].content . b)
             (repoNamePatterns . [])))))))`),
 		}, {
 			query:      `repo:has(key:value)`,
@@ -696,9 +685,11 @@ func TestNewPlanJob(t *testing.T) {
         (limit . 500)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value))
+            (repoOpts.hasKVPs[0].key . key)
+            (repoOpts.hasKVPs[0].value . value))
           (REPOSEARCH
-            (repoOpts.hasKVPs[0].key . key)(repoOpts.hasKVPs[0].value . value)
+            (repoOpts.hasKVPs[0].key . key)
+            (repoOpts.hasKVPs[0].value . value)
             (repoNamePatterns . [])))))))`),
 		}, {
 			query:      `repo:has.tag(tag)`,
@@ -769,13 +760,14 @@ func TestNewPlanJob(t *testing.T) {
                 (SEARCHERTEXTSEARCH
                   (indexed . false))))
             (REPOSEARCH
-              (repoOpts.repoFilters . [foo])(repoOpts.hasKVPs[0].key . tag)
+              (repoOpts.repoFilters . [foo])
+              (repoOpts.hasKVPs[0].key . tag)
               (repoNamePatterns . [(?i)foo])))
           (REPOSCOMPUTEEXCLUDED
             (repoOpts.hasKVPs[0].key . tag))
           (PARALLEL
-            NoopJob
-            NoopJob))))))`),
+            NOOP
+            NOOP))))))`),
 		}, {
 			query:      `(...)`,
 			protocol:   search.Streaming,
@@ -791,11 +783,11 @@ func TestNewPlanJob(t *testing.T) {
       (LIMIT
         (limit . 500)
         (PARALLEL
-          (REPOSCOMPUTEEXCLUDED
-            )
+          REPOSCOMPUTEEXCLUDED
           (STRUCTURALSEARCH
-            (patternInfo.pattern . (:[_]))(patternInfo.isStructural . true)(patternInfo.fileMatchLimit . 500)
-            ))))))`),
+            (patternInfo.pattern . (:[_]))
+            (patternInfo.isStructural . true)
+            (patternInfo.fileMatchLimit . 500)))))))`),
 		},
 	}
 
@@ -812,7 +804,7 @@ func TestNewPlanJob(t *testing.T) {
 				OnSourcegraphDotCom: true,
 			}
 
-			j, err := NewPlanJob(inputs, plan, NewUnimplementedEnterpriseJobs())
+			j, err := NewPlanJob(inputs, plan)
 			require.NoError(t, err)
 
 			tc.want.Equal(t, "\n"+printer.SexpPretty(j))
@@ -1002,9 +994,8 @@ func TestToTextPatternInfo(t *testing.T) {
 			return "Empty"
 		}
 		b := plan[0]
-		mode := search.Batch
 		resultTypes := computeResultTypes(b, query.SearchTypeLiteral)
-		p := toTextPatternInfo(b, resultTypes, mode)
+		p := toTextPatternInfo(b, resultTypes, limits.DefaultMaxSearchResults)
 		v, _ := json.Marshal(p)
 		return string(v)
 	}
@@ -1038,19 +1029,27 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 }
 
 func Test_computeResultTypes(t *testing.T) {
-	test := func(input string) string {
-		plan, _ := query.Pipeline(query.Init(input, query.SearchTypeStandard))
+	test := func(input string, searchType query.SearchType) string {
+		plan, _ := query.Pipeline(query.Init(input, searchType))
 		b := plan[0]
-		resultTypes := computeResultTypes(b, query.SearchTypeStandard)
+		resultTypes := computeResultTypes(b, searchType)
 		return resultTypes.String()
 	}
 
-	t.Run("only search file content when type not set", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar")))
+	t.Run("standard, only search file content when type not set", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeStandard)))
 	})
 
-	t.Run("plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar")))
+	t.Run("standard, plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeStandard)))
+	})
+
+	t.Run("newStandardRC1, only search file content when type not set", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar", query.SearchTypeNewStandardRC1)))
+	})
+
+	t.Run("newStandardRC1, plain pattern searches repo path file content", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar", query.SearchTypeNewStandardRC1)))
 	})
 }
 
@@ -1479,18 +1478,22 @@ func RunRepoSubsetTextSearch(
 		}
 
 		typ := search.TextRequest
-		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, nil, typ)
+		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, &search.Features{}, typ)
 		if err != nil {
 			return nil, streaming.Stats{}, err
 		}
 
-		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
-			Repos:          indexed,
-			Query:          zoektQuery,
-			Typ:            search.TextRequest,
+		zoektParams := &search.ZoektParameters{
 			FileMatchLimit: patternInfo.FileMatchLimit,
 			Select:         patternInfo.Select,
-			Since:          nil,
+		}
+
+		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
+			Repos:       indexed,
+			Query:       zoektQuery,
+			Typ:         search.TextRequest,
+			ZoektParams: zoektParams,
+			Since:       nil,
 		}
 
 		// Run literal and regexp searches on indexed repositories.

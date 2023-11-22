@@ -21,7 +21,7 @@ func TestInsertDependencyRepo(t *testing.T) {
 	instant := timeutil.Now()
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	batches := [][]shared.MinimalPackageRepoRef{
@@ -102,7 +102,7 @@ func TestListPackageRepoRefs(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	batches := [][]shared.MinimalPackageRepoRef{
@@ -185,6 +185,130 @@ func TestListPackageRepoRefs(t *testing.T) {
 	}
 }
 
+func TestListPackageRepoRefsFuzzy(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	store := New(&observation.TestContext, db)
+
+	pkgs := []shared.MinimalPackageRepoRef{
+		{Scheme: "npm", Name: "bar", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
+		{Scheme: "npm", Name: "foo", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.0.0"}}},
+		{Scheme: "npm", Name: "banana", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "2.0.0"}}},
+		{Scheme: "npm", Name: "turtle", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "4.2.0"}}},
+		{Scheme: "npm", Name: "applesauce", Versions: []shared.MinimalPackageRepoRefVersion{{Version: "1.2.3"}}},
+		{Scheme: "npm", Name: "burger", Versions: []shared.MinimalPackageRepoRefVersion{}},
+	}
+
+	if _, _, err := store.InsertPackageRepoRefs(ctx, pkgs); err != nil {
+		t.Fatal(err)
+	}
+
+	for _, test := range []struct {
+		opts    ListDependencyReposOpts
+		results []shared.PackageRepoReference
+	}{
+		{
+			opts: ListDependencyReposOpts{
+				Name:      "ba",
+				Fuzziness: FuzzinessWildcard,
+			},
+			results: []shared.PackageRepoReference{
+				{
+					ID:     2,
+					Scheme: "npm",
+					Name:   "banana",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           2,
+						PackageRefID: 2,
+						Version:      "2.0.0",
+					}},
+				},
+				{
+					ID:     3,
+					Scheme: "npm",
+					Name:   "bar",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           3,
+						PackageRefID: 3,
+						Version:      "2.0.0",
+					}},
+				},
+			},
+		},
+		{
+			opts: ListDependencyReposOpts{
+				Name:      "b?a.*",
+				Fuzziness: FuzzinessRegex,
+			},
+			results: []shared.PackageRepoReference{
+				{
+					ID:     1,
+					Scheme: "npm",
+					Name:   "applesauce",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           1,
+						PackageRefID: 1,
+						Version:      "1.2.3",
+					}},
+				},
+				{
+					ID:     2,
+					Scheme: "npm",
+					Name:   "banana",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           2,
+						PackageRefID: 2,
+						Version:      "2.0.0",
+					}},
+				},
+				{
+					ID:     3,
+					Scheme: "npm",
+					Name:   "bar",
+					Versions: []shared.PackageRepoRefVersion{{
+						ID:           3,
+						PackageRefID: 3,
+						Version:      "2.0.0",
+					}},
+				},
+			},
+		},
+		{
+			opts: ListDependencyReposOpts{
+				Name: "turtle",
+			},
+			results: []shared.PackageRepoReference{
+				{
+					ID:     6,
+					Scheme: "npm",
+					Name:   "turtle",
+					Versions: []shared.PackageRepoRefVersion{
+						{
+							ID:           5,
+							PackageRefID: 6,
+							Version:      "4.2.0",
+						},
+					},
+				},
+			},
+		},
+	} {
+		listedPkgs, _, _, err := store.ListPackageRepoRefs(ctx, test.opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if diff := cmp.Diff(test.results, listedPkgs); diff != "" {
+			t.Errorf("mismatch (-want, +got): %s", diff)
+		}
+	}
+}
+
 func TestDeletePackageRepoRefsByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -192,7 +316,7 @@ func TestDeletePackageRepoRefsByID(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	repos := []shared.MinimalPackageRepoRef{

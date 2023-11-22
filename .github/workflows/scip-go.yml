@@ -1,0 +1,59 @@
+name: scip-go
+on:
+  push:
+    paths:
+      - '**.go'
+      - '**/scip-go.yml'
+
+jobs:
+  scip-go:
+    # Skip running on forks
+    if: github.repository == 'sourcegraph/sourcegraph'
+    runs-on: ubuntu-latest
+    container: sourcegraph/scip-go
+    strategy:
+      matrix:
+        root:
+          - ''
+          - lib
+          - monitoring
+          - dev/ci/images
+    steps:
+      # Setup
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set directory to safe for git
+        run: git config --global --add safe.directory $GITHUB_WORKSPACE
+
+      - name: Get src-cli
+        run: |
+          curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
+          chmod +x /usr/local/bin/src
+
+      # Run scip-go
+      - name: Run scip-go
+        working-directory: ${{ matrix.root }}
+        run: scip-go --no-animation
+
+      # Upload scip-go data to Dotcom, S2, Dogfood, and Demo instances
+      - name: Upload scip-go dump to Dotcom
+        working-directory: ${{ matrix.root }}
+        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
+        env:
+          SRC_ENDPOINT: https://sourcegraph.com/
+      - name: Upload scip-go dump to S2
+        working-directory: ${{ matrix.root }}
+        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
+        env:
+          SRC_ENDPOINT: https://sourcegraph.sourcegraph.com/
+      - name: Upload scip-go dump to Dogfood
+        working-directory: ${{ matrix.root }}
+        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
+        env:
+          SRC_ENDPOINT: https://k8s.sgdev.org/
+      - name: Upload scip-go dump to Demo
+        working-directory: ${{ matrix.root }}
+        run: src code-intel upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress -repo=github.com/sourcegraph/sourcegraph
+        env:
+          SRC_ENDPOINT: https://demo.sourcegraph.com/

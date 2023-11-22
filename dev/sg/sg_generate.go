@@ -4,10 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -29,7 +31,7 @@ sg --verbose generate ... # Enable verbose output
 	Usage:       "Run code and docs generation tasks",
 	Description: "If no target is provided, all target are run with default arguments.",
 	Aliases:     []string{"gen"},
-	Category:    CategoryDev,
+	Category:    category.Dev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:        "quiet",
@@ -41,6 +43,18 @@ sg --verbose generate ... # Enable verbose output
 	Before: func(cmd *cli.Context) error {
 		if verbose && generateQuiet {
 			return errors.Errorf("-q and --verbose flags are exclusive")
+		}
+
+		// Propagate env from config. This is especially useful for 'sg gen go internal/database/gen.go'
+		// where database config is required.
+		config, _ := getConfig()
+		if config == nil {
+			return nil
+		}
+		for key, value := range config.Env {
+			if _, set := os.LookupEnv(key); !set {
+				os.Setenv(key, value)
+			}
 		}
 		return nil
 	},
@@ -91,7 +105,9 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 			}
 
 			fmt.Printf(report.Output)
-			std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "(%ds)", report.Duration/time.Second))
+			std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "%s (%ds)",
+				c.Name,
+				report.Duration/time.Second))
 			return nil
 		}
 	}

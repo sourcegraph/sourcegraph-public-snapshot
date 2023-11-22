@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -91,6 +92,7 @@ func (s *Service) createBucket(ctx context.Context, name string) error {
 
 type objectMetadata struct {
 	LastModified time.Time
+	Name         string
 }
 
 func (s *Service) putObject(ctx context.Context, bucketName, objectName string, data io.ReadCloser) (*objectMetadata, error) {
@@ -130,6 +132,7 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 		return nil, errors.Wrap(err, "sync tmp file")
 	}
 	objectFile := s.objectFilePath(bucketName, objectName)
+	tmpFile.Close()
 	if err := os.Rename(tmpFile.Name(), objectFile); err != nil {
 		return nil, errors.Wrap(err, "renaming object file")
 	}
@@ -139,21 +142,15 @@ func (s *Service) putObject(ctx context.Context, bucketName, objectName string, 
 		return nil, errors.Wrap(err, "sync bucket dir")
 	}
 	s.Log.Debug("put object", sglog.String("key", bucketName+"/"+objectName))
-	return &objectMetadata{
-		LastModified: time.Now().UTC(), // logically right now, no reason to consult filesystem
-	}, nil
-}
 
-func fsync(path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
+	age := time.Now().UTC() // logically right now, no reason to consult filesystem
+	if mock, ok := s.MockObjectAge[objectName]; ok {
+		age = mock
 	}
-	err = f.Sync()
-	if err1 := f.Close(); err == nil {
-		err = err1
-	}
-	return err
+	return &objectMetadata{
+		LastModified: age,
+		Name:         objectName,
+	}, nil
 }
 
 func (s *Service) getObject(ctx context.Context, bucketName, objectName string) (io.ReadCloser, error) {
@@ -199,6 +196,47 @@ func (s *Service) deleteObject(ctx context.Context, bucketName, objectName strin
 	return nil
 }
 
+func (s *Service) listObjects(_ context.Context, bucketName string, prefix string) ([]objectMetadata, error) {
+
+	// Ensure the bucket cannot be created/deleted while we look at it.
+	bucketLock := s.bucketLock(bucketName)
+	bucketLock.RLock()
+	defer bucketLock.RUnlock()
+
+	entries, err := os.ReadDir(s.bucketDir(bucketName))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrNoSuchBucket
+		}
+		return nil, errors.Wrap(err, "ReadDir")
+	}
+
+	var objects []objectMetadata
+	for _, entry := range entries {
+		objectName := fnameToObjectName(entry.Name())
+
+		// Skip objects that don't match the prefix.
+		if !strings.HasPrefix(objectName, prefix) {
+			continue
+		}
+
+		info, err := entry.Info()
+		if err != nil {
+			s.Log.Warn("error listing objects in bucket (ignoring)", sglog.String("key", bucketName+"/"+objectName), sglog.Error(err))
+			continue
+		}
+		age := info.ModTime().UTC()
+		if mock, ok := s.MockObjectAge[objectName]; ok {
+			age = mock
+		}
+		objects = append(objects, objectMetadata{
+			Name:         objectName,
+			LastModified: age,
+		})
+	}
+	return objects, nil
+}
+
 // Returns a bucket-level lock
 //
 // When locked for reading, you have shared access to the bucket, for reading/writing objects to it.
@@ -231,6 +269,11 @@ func (s *Service) objectFilePath(bucketName, objectName string) string {
 // we be able to perform prefix matching on object keys.
 func objectFileName(objectName string) string {
 	return url.QueryEscape(objectName)
+}
+
+func fnameToObjectName(fname string) string {
+	v, _ := url.QueryUnescape(fname)
+	return v
 }
 
 var metricRunning = promauto.NewGauge(prometheus.GaugeOpts{

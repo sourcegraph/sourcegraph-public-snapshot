@@ -1,11 +1,15 @@
-import { Observable, of, ReplaySubject, Subject } from 'rxjs'
+import { type Observable, of, ReplaySubject, Subject } from 'rxjs'
 import { catchError, map, switchMap, throttleTime } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { viewerSettingsQuery } from '@sourcegraph/shared/src/backend/settings'
-import { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { EMPTY_SETTINGS_CASCADE, gqlToCascade, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import type { ViewerSettingsResult, ViewerSettingsVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import {
+    EMPTY_SETTINGS_CASCADE,
+    gqlToCascade,
+    type SettingsCascadeOrError,
+} from '@sourcegraph/shared/src/settings/settings'
 
 // Throttle refreshes for one hour.
 const ONE_HOUR_MS = 60 * 60 * 1000

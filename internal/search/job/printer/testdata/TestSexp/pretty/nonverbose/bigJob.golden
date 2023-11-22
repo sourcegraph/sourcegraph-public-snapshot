@@ -3,11 +3,11 @@
     (TIMEOUT
       (PARALLEL
         (AND
-          LeafJob
-          LeafJob)
+          LEAF
+          LEAF)
         (OR
-          LeafJob
-          LeafJob)
+          LEAF
+          LEAF)
         (AND
-          LeafJob
-          LeafJob)))))
+          LEAF
+          LEAF)))))

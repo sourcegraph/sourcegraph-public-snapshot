@@ -1,35 +1,37 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn, StoryObj } from '@storybook/react'
 import classNames from 'classnames'
 
 import { WebStory } from '../../../../components/WebStory'
-import { HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import type { HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
 import { hiddenChangesetApplyPreviewStories } from './storyData'
 
 import styles from './PreviewList.module.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className={classNames(styles.previewListGrid, 'p-3 container')}>{story()}</div>
 )
-const config: Meta = {
+const config: Meta<typeof HiddenChangesetApplyPreviewNode> = {
     title: 'web/batches/preview/HiddenChangesetApplyPreviewNode',
     decorators: [decorator],
 }
 
 export default config
 
-const Template: Story<{ node: HiddenChangesetApplyPreviewFields }> = ({ node }) => (
+const Template: StoryFn<{ node: HiddenChangesetApplyPreviewFields }> = ({ node }) => (
     <WebStory>{props => <HiddenChangesetApplyPreviewNode {...props} node={node} />}</WebStory>
 )
 
-export const ImportChangeset = Template.bind({})
+type Story = StoryObj<typeof config>
+
+export const ImportChangeset: Story = Template.bind({})
 ImportChangeset.args = {
     node: hiddenChangesetApplyPreviewStories['Import changeset'],
 }
 ImportChangeset.storyName = 'Import changeset'
 
-export const CreateChangeset = Template.bind({})
+export const CreateChangeset: Story = Template.bind({})
 CreateChangeset.args = {
     node: hiddenChangesetApplyPreviewStories['Create changeset'],
 }

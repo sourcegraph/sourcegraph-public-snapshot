@@ -1,0 +1,109 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: dumped
+---
+  # TODO: Deal with duplicates (bruh = 10; bruh = 10;) being marked as definitions
+  
+  bruh = 10
+//^^^^ definition(Variable) scip-ctags bruh.
+  
+  class Bruh(object):
+//      ^^^^ definition(Class) scip-ctags Bruh#
+      a: int
+//    ^ definition(Variable) scip-ctags Bruh#a.
+  
+      def __init__(self) -> None:
+//        ^^^^^^^^ definition(Method) scip-ctags Bruh#__init__().
+          pass
+  
+      def dab():
+//        ^^^ definition(Method) scip-ctags Bruh#dab().
+          print("yay!")
+          def more():
+              print("a function in a function!!")
+              pass
+          more()
+  
+  if 1 == 1:
+      should_show_ifs = False
+//    ^^^^^^^^^^^^^^^ definition(Variable) scip-ctags should_show_ifs.
+  
+  # Don't show from whiles / fors
+  while False:
+      notHereEither = False
+  
+  for i in range(0, 0):
+      definitelyNotInHere = False
+  
+  with 1:
+      what = "contained in scope"
+  
+  
+  async def my_function():
+//          ^^^^^^^^^^^ definition(Function) scip-ctags my_function().
+      pass
+  
+  
+  class SomeAsyncStuffs:
+//      ^^^^^^^^^^^^^^^ definition(Class) scip-ctags SomeAsyncStuffs#
+      def __init__(self, obj):
+//        ^^^^^^^^ definition(Method) scip-ctags SomeAsyncStuffs#__init__().
+          pass
+  
+      def __aiter__(self):
+//        ^^^^^^^^^ definition(Method) scip-ctags SomeAsyncStuffs#__aiter__().
+          pass
+  
+      async def __anext__(self):
+//              ^^^^^^^^^ definition(Method) scip-ctags SomeAsyncStuffs#__anext__().
+          pass
+  
+  def does_nothing(f):
+//    ^^^^^^^^^^^^ definition(Function) scip-ctags does_nothing().
+      return f
+  
+  def does_nothingwrapper(*args):
+//    ^^^^^^^^^^^^^^^^^^^ definition(Function) scip-ctags does_nothingwrapper().
+      return does_nothing
+  
+  @does_nothing
+  def has_a_name():
+//    ^^^^^^^^^^ definition(Function) scip-ctags has_a_name().
+      pass
+  
+  @does_nothing
+  def func02(): pass
+//    ^^^^^^ definition(Function) scip-ctags func02().
+  
+  @does_nothing
+  class ClassWithDecorators(object):
+//      ^^^^^^^^^^^^^^^^^^^ definition(Class) scip-ctags ClassWithDecorators#
+      @staticmethod
+      def static_method():
+//        ^^^^^^^^^^^^^ definition(Method) scip-ctags ClassWithDecorators#static_method().
+          print("hello")
+  
+      @classmethod
+      def class_method(cls):
+//        ^^^^^^^^^^^^ definition(Method) scip-ctags ClassWithDecorators#class_method().
+          print("hi from %s" % cls.__name__)
+  
+      @does_nothingwrapper(1, 2, 3)
+  
+      @   staticmethod
+      @does_nothing
+      def prints_something():
+//        ^^^^^^^^^^^^^^^^ definition(Method) scip-ctags ClassWithDecorators#prints_something().
+          print("something")
+  
+  
+  foo, bar, baz = 1, 2, 3
+//^^^ definition(Variable) scip-ctags foo.
+//     ^^^ definition(Variable) scip-ctags bar.
+//          ^^^ definition(Variable) scip-ctags baz.
+  
+  # semi-colons haha
+  foo = 1; bar = foo
+//^^^ definition(Variable) scip-ctags foo.
+//         ^^^ definition(Variable) scip-ctags bar.
+

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Icon, Link, H3, Text, Tooltip, Badge, ProductStatusBadge } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceOptions } from './externalServices'
+import type { AddExternalServiceOptions } from './externalServices'
 
 import styles from './ExternalServiceCard.module.scss'
 

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
@@ -23,6 +24,8 @@ import (
 )
 
 func TestBitbucketCloudSource_ListRepos(t *testing.T) {
+	ratelimit.SetupForTest(t)
+
 	assertAllReposListed := func(want []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
@@ -52,6 +55,9 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			conf: &schema.BitbucketCloudConnection{
 				Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+				Teams: []string{
+					bbtest.GetenvTestBitbucketCloudUsername(),
+				},
 			},
 			err: "<nil>",
 		},
@@ -68,6 +74,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 				Teams: []string{
 					"sglocal",
+					bbtest.GetenvTestBitbucketCloudUsername(),
 				},
 			},
 			err: "<nil>",
@@ -78,20 +85,16 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 		tc := tc
 		tc.name = "BITBUCKETCLOUD-LIST-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
-			cf, save := newClientFactory(t, tc.name)
+			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
-			svc := &types.ExternalService{
-				Kind:   extsvc.KindBitbucketCloud,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
-			}
-
+			svc := typestest.MakeExternalService(t, extsvc.VariantBitbucketCloud, tc.conf)
 			bbcSrc, err := newBitbucketCloudSource(logtest.Scoped(t), svc, tc.conf, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			repos, err := listAll(context.Background(), bbcSrc)
+			repos, err := ListAll(context.Background(), bbcSrc)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
@@ -162,7 +165,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, Update(test.name), got)
 		})
 	}
 }
@@ -246,7 +249,7 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 			}
 
 			path := filepath.Join("testdata", "bitbucketcloud-repos-exclude-"+name+".golden")
-			testutil.AssertGolden(t, path, update(name), got)
+			testutil.AssertGolden(t, path, Update(name), got)
 		})
 	}
 }

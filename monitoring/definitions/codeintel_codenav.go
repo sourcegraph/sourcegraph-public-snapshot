@@ -9,7 +9,7 @@ func CodeIntelCodeNav() *monitoring.Dashboard {
 	return &monitoring.Dashboard{
 		Name:        "codeintel-codenav",
 		Title:       "Code Intelligence > Code Nav",
-		Description: "The service at `enterprise/internal/codeintel/codenav`.",
+		Description: "The service at internal/codeintel/codenav`.",
 		Variables: []monitoring.ContainerVariable{
 			{
 				Label: "Source",

@@ -2,25 +2,13 @@
   path: github.com/sourcegraph/sourcegraph/dev/team
   interfaces:
     - TeammateResolver
-- filename: docker-images/prometheus/cmd/prom-wrapper/mocks/mocks_temp.go
-  path: github.com/prometheus/client_golang/api/prometheus/v1
-  interfaces:
-    - API
-- filename: enterprise/internal/database/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/database
-  interfaces:
-    - CodeMonitorStore
-    - EnterpriseDB
-    - PermsStore
-    - SubRepoPermsStore
-    - CodeownersStore
-- filename: enterprise/internal/insights/discovery/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
+- filename: internal/insights/discovery/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/discovery
   interfaces:
     - IndexableReposLister
     - RepoStore
-- filename: enterprise/internal/insights/store/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
+- filename: internal/insights/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/store
   interfaces:
     - DataSeriesStore
     - InsightMetadataStore
@@ -29,20 +17,28 @@
   path: github.com/sourcegraph/sourcegraph/internal/authz
   interfaces:
     - SubRepoPermissionChecker
-- filename: enterprise/internal/authz/subrepoperms/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms
+- filename: internal/authz/subrepoperms/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms
   interfaces:
     - SubRepoPermissionsGetter
-- filename: internal/database/mocks_temp.go
+- filename: internal/database/dbmocks/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database
   interfaces:
     - AccessRequestStore
     - AccessTokenStore
+    - AssignedOwnersStore
+    - AssignedTeamsStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
+    - CodeHostStore
+    - CodeMonitorStore
+    - CodeownersStore
     - ConfStore
     - DB
     - EventLogStore
+    - ExecutorSecretAccessLogStore
+    - ExecutorSecretStore
+    - ExecutorStore
     - ExternalServiceStore
     - FeatureFlagStore
     - GitserverLocalCloneStore
@@ -52,33 +48,38 @@
     - OrgInvitationStore
     - OrgMemberStore
     - OrgStore
-    - OutboundWebhookStore
     - OutboundWebhookJobStore
     - OutboundWebhookLogStore
+    - OutboundWebhookStore
+    - OwnershipStatsStore
+    - PermissionStore
+    - PermissionSyncJobStore
+    - PermsStore
     - PhabricatorStore
+    - RecentContributionSignalStore
+    - RecentViewSignalStore
+    - RepoCommitsChangelistsStore
+    - RepoPathStore
+    - RepoStatisticsStore
     - RepoStore
+    - RolePermissionStore
+    - RoleStore
     - SavedSearchStore
     - SearchContextsStore
     - SecurityEventLogsStore
     - SettingsStore
+    - SignalConfigurationStore
+    - SubRepoPermsStore
+    - TeamStore
     - TemporarySettingsStore
     - UserCredentialsStore
     - UserEmailsStore
     - UserExternalAccountsStore
-    - UserStore
-    - WebhookStore
-    - WebhookLogStore
-    - ExecutorStore
-    - ExecutorSecretStore
-    - ExecutorSecretAccessLogStore
-    - ZoektReposStore
-    - PermissionSyncJobStore
-    - TeamStore
-    - RoleStore
     - UserRoleStore
-    - PermissionStore
-    - RolePermissionStore
-    - RepoStatisticsStore
+    - UserStore
+    - WebhookLogStore
+    - WebhookStore
+    - ZoektReposStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
@@ -113,11 +114,24 @@
   interfaces:
     - UserEmailsService
     - ReposService
-- filename: enterprise/internal/embeddings/background/repo/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo
-  interfaces:
-    - RepoEmbeddingJobsStore
-- filename: enterprise/internal/executor/store/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
+    - ExternalServicesService
+- filename: internal/executor/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/executor/store
   interfaces:
     - JobTokenStore
+- filename: internal/github_apps/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/github_apps/store
+  interfaces:
+    - GitHubAppsStore
+- filename: internal/embeddings/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/embeddings
+  interfaces:
+    - Client
+- filename: internal/embeddings/background/repo/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo
+  interfaces:
+    - RepoEmbeddingJobsStore
+- filename: internal/gitserver/mock.go
+  path: github.com/sourcegraph/sourcegraph/internal/gitserver/v1
+  interfaces:
+    - GitserverServiceClient

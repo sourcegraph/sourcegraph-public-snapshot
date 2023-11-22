@@ -1,0 +1,40 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://gerrit.sgdev.org/a/changes/I52bede3e6dd80b9048924d0416e5d1a7bf49cf5a
+    method: GET
+  response:
+    body: |
+      Multiple changes found for I52bede3e6dd80b9048924d0416e5d1a7bf49cf5a
+    headers:
+      Cache-Control:
+      - no-cache, no-store, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7db94b33fe83a232-YYZ
+      Content-Disposition:
+      - attachment
+      Content-Type:
+      - text/plain;charset=utf-8
+      Date:
+      - Fri, 23 Jun 2023 02:27:46 GMT
+      Expires:
+      - Mon, 01 Jan 1990 00:00:00 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 404 Not Found
+    code: 404
+    duration: ""

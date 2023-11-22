@@ -2,9 +2,9 @@ import React from 'react'
 
 import { H3, Text } from '@sourcegraph/wildcard'
 
-import { Insight, InsightDashboard } from '../../../../core'
+import type { Insight, InsightDashboard } from '../../../../core'
 import { useRemoveInsightFromDashboard } from '../../../../hooks/use-remove-insight'
-import { ConfirmationModal, ConfirmationModalProps } from '../../../modals/ConfirmationModal'
+import { ConfirmationModal, type ConfirmationModalProps } from '../../../modals/ConfirmationModal'
 
 interface ConfirmRemoveModalProps extends Pick<ConfirmationModalProps, 'showModal' | 'onCancel'> {
     insight: Insight

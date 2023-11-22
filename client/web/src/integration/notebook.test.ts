@@ -3,24 +3,28 @@ import path from 'path'
 
 import { subDays } from 'date-fns'
 import expect from 'expect'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { highlightFileResult, mixedSearchStreamEvents } from '@sourcegraph/shared/src/search/integration'
-import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import {
+    highlightFileResult,
+    mixedSearchStreamEvents,
+} from '@sourcegraph/shared/src/search/integration/streaming-search-mocks'
+import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import {
-    CreateNotebookBlockInput,
-    NotebookFields,
-    WebGraphQlOperations,
+    type CreateNotebookBlockInput,
+    type NotebookFields,
+    type WebGraphQlOperations,
     NotebookBlockType,
     SymbolKind,
 } from '../graphql-operations'
-import { BlockType } from '../notebooks'
+import type { BlockType } from '../notebooks'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { createResolveRepoRevisionResult } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { siteGQLID, siteID } from './jscontext'
@@ -69,6 +73,7 @@ const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = 
 }
 
 const now = new Date()
+const downloadPath = process.env.TEST_TMPDIR || __dirname
 
 const notebookFixture = (id: string, title: string, blocks: NotebookFields['blocks']): NotebookFields => ({
     __typename: 'Notebook',
@@ -88,11 +93,13 @@ const notebookFixture = (id: string, title: string, blocks: NotebookFields['bloc
 
 const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookFields['blocks'][number] => {
     switch (block.type) {
-        case NotebookBlockType.MARKDOWN:
+        case NotebookBlockType.MARKDOWN: {
             return { __typename: 'MarkdownBlock', id: block.id, markdownInput: block.markdownInput ?? '' }
-        case NotebookBlockType.QUERY:
+        }
+        case NotebookBlockType.QUERY: {
             return { __typename: 'QueryBlock', id: block.id, queryInput: block.queryInput ?? '' }
-        case NotebookBlockType.FILE:
+        }
+        case NotebookBlockType.FILE: {
             return {
                 __typename: 'FileBlock',
                 id: block.id,
@@ -108,7 +115,8 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookField
                     },
                 },
             }
-        case NotebookBlockType.SYMBOL:
+        }
+        case NotebookBlockType.SYMBOL: {
             return {
                 __typename: 'SymbolBlock',
                 id: block.id,
@@ -123,6 +131,7 @@ const GQLBlockInputToResponse = (block: CreateNotebookBlockInput): NotebookField
                     symbolKind: block.symbolInput?.symbolKind ?? SymbolKind.UNKNOWN,
                 },
             }
+        }
     }
 }
 
@@ -464,7 +473,7 @@ describe('Search Notebook', () => {
     })
 
     afterEach(() => {
-        const exportedNotebookPath = path.resolve(__dirname, 'Exported.snb.md')
+        const exportedNotebookPath = path.resolve(downloadPath, 'Exported.snb.md')
         // eslint-disable-next-line no-sync
         if (fs.existsSync(exportedNotebookPath)) {
             // eslint-disable-next-line no-sync
@@ -522,12 +531,12 @@ describe('Search Notebook', () => {
 query
 \`\`\`
 
-https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@main/-/blob/client/web/index.ts?L2-10
+${process.env.SOURCEGRAPH_BASE_URL}/github.com/sourcegraph/sourcegraph@main/-/blob/client/web/index.ts?L2-10
 
-https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
+${process.env.SOURCEGRAPH_BASE_URL}/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3#symbolName=func&symbolContainerName=class&symbolKind=FUNCTION&lineContext=3
 `
 
-        await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: __dirname })
+        await driver.page.client().send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath })
 
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-testid="export-notebook-markdown-button"]', { visible: true })
@@ -536,7 +545,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         // Wait for the download to complete.
         await driver.page.waitForTimeout(1000)
 
-        const exportedNotebookPath = path.resolve(__dirname, 'Exported.snb.md')
+        const exportedNotebookPath = path.resolve(downloadPath, 'Exported.snb.md')
         // eslint-disable-next-line no-sync
         expect(fs.existsSync(exportedNotebookPath)).toBeTruthy()
 

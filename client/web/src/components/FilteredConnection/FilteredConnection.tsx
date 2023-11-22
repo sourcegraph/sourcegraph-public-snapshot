@@ -1,9 +1,9 @@
 import * as React from 'react'
 
-import * as H from 'history'
+import type * as H from 'history'
 import { isEqual, uniq } from 'lodash'
-import { NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
-import { combineLatest, merge, Observable, of, Subject, Subscription } from 'rxjs'
+import { type NavigateFunction, useLocation, useNavigate } from 'react-router-dom'
+import { combineLatest, merge, type Observable, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
     debounceTime,
@@ -20,12 +20,17 @@ import {
     tap,
 } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 
-import { ConnectionNodes, ConnectionNodesDisplayProps, ConnectionNodesState, ConnectionProps } from './ConnectionNodes'
-import { Connection, ConnectionQueryArguments } from './ConnectionType'
+import {
+    ConnectionNodes,
+    type ConnectionNodesDisplayProps,
+    type ConnectionNodesState,
+    type ConnectionProps,
+} from './ConnectionNodes'
+import type { Connection, ConnectionQueryArguments } from './ConnectionType'
 import { QUERY_KEY } from './constants'
-import { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
+import type { FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
 import { ConnectionContainer, ConnectionError, ConnectionForm, ConnectionLoading } from './ui'
 import type { ConnectionFormProps } from './ui/ConnectionForm'
 import { getFilterFromURL, getUrlQuery, hasID, parseQueryInt } from './utils'
@@ -143,16 +148,16 @@ interface FilteredConnectionState<C extends Connection<N>, N> extends Connection
     visible?: number
 }
 
-export function FilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Connection<N>>(
-    props: Omit<FilteredConnectionProps<C, N, NP, HP>, 'location' | 'navigate'>
-): JSX.Element | null {
-    const location = useLocation()
-    const navigate = useNavigate()
-
-    return <InnerFilteredConnection<N, NP, HP, C> {...props} location={location} navigate={navigate} />
-}
-
 /**
+ * @deprecated Prefer using lower-level connection components exported from `./ui/index.ts`
+ *
+ * Check out usage examples:
+ * 1. https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4794d2ff1669a83bb15aa4e2ee8c448e53eae754/-/blob/client/web/src/team/list/TeamListPage.tsx?L106-148
+ * 2. https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4794d2ff1669a83bb15aa4e2ee8c448e53eae754/-/blob/client/web/src/repo/commits/RepositoryCommitsPage.tsx?L230-269
+ * 3. https://sourcegraph.com/github.com/sourcegraph/sourcegraph@4794d2ff1669a83bb15aa4e2ee8c448e53eae754/-/blob/client/web/src/site-admin/SiteAdminPackagesPage.tsx?L340-381
+ *
+ * ------------------------------------------
+ *
  * Displays a collection of items with filtering and pagination. It is called
  * "connection" because it is intended for use with GraphQL, which calls it that
  * (see http://graphql.org/learn/pagination/).
@@ -162,6 +167,15 @@ export function FilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> 
  * @template HP Props passed to `headComponent` in addition to `{ nodes: N[]; totalCount?: number | null }`.
  * @template C The GraphQL connection type, such as `GQL.IRepositoryConnection`.
  */
+export function FilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Connection<N>>(
+    props: Omit<FilteredConnectionProps<C, N, NP, HP>, 'location' | 'navigate'>
+): JSX.Element | null {
+    const location = useLocation()
+    const navigate = useNavigate()
+
+    return <InnerFilteredConnection<N, NP, HP, C> {...props} location={location} navigate={navigate} />
+}
+
 class InnerFilteredConnection<N, NP = {}, HP = {}, C extends Connection<N> = Connection<N>> extends React.PureComponent<
     FilteredConnectionProps<C, N, NP, HP>,
     FilteredConnectionState<C, N>

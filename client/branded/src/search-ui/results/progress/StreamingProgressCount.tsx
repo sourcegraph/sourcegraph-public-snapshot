@@ -5,10 +5,10 @@ import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { Progress } from '@sourcegraph/shared/src/search/stream'
+import type { Progress } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { StreamingProgressProps } from './StreamingProgress'
+import type { StreamingProgressProps } from './StreamingProgress'
 import { limitHit } from './utils'
 
 import styles from './StreamingProgressCount.module.scss'

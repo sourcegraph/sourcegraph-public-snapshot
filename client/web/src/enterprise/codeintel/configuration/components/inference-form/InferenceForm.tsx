@@ -23,7 +23,7 @@ import { ConfigurationInferButton } from '../ConfigurationInferButton'
 
 import { formDataToSchema } from './form-data-to-schema'
 import { IndexJobNode } from './IndexJobNode'
-import { InferenceFormData, InferenceFormJob, SchemaCompatibleInferenceFormData } from './types'
+import type { InferenceFormData, InferenceFormJob, SchemaCompatibleInferenceFormData } from './types'
 import { sanitizeIndexer, sanitizeRoot } from './util'
 
 import styles from './InferenceForm.module.scss'

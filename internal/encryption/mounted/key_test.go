@@ -2,17 +2,30 @@ package mounted
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
+	"hash/crc32"
+	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/apimachinery/pkg/util/rand"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestRoundTrip(t *testing.T) {
+	testKeyFile := filepath.Join(t.TempDir(), "testroundtrip_testkey_file")
+	secret := make([]byte, 32)
+	_, err := io.ReadFull(rand.Reader, secret)
+	require.NoError(t, err)
+
 	var tcs = []struct {
 		name   string
 		config schema.MountedEncryptionKey
@@ -26,7 +39,7 @@ func TestRoundTrip(t *testing.T) {
 				EnvVarName: "testroundtrip_testkey_env_var",
 			},
 			setup: func(t *testing.T) {
-				require.NoError(t, os.Setenv("testroundtrip_testkey_env_var", rand.String(32)))
+				t.Setenv("testroundtrip_testkey_env_var", string(secret))
 			},
 		},
 		{
@@ -34,14 +47,10 @@ func TestRoundTrip(t *testing.T) {
 			config: schema.MountedEncryptionKey{
 				Type:     "mounted",
 				Keyname:  "testkey/env_var",
-				Filepath: "/tmp/testroundtrip_testkey_file",
+				Filepath: testKeyFile,
 			},
 			setup: func(t *testing.T) {
-				require.NoError(t, os.WriteFile("/tmp/testroundtrip_testkey_file", []byte(rand.String(32)), 0644))
-
-				t.Cleanup(func() {
-					os.Remove("/tmp/testroundtrip_testkey_file")
-				})
+				require.NoError(t, os.WriteFile(testKeyFile, secret, 0644))
 			},
 		},
 	}
@@ -63,14 +72,62 @@ func TestRoundTrip(t *testing.T) {
 
 			assert.NotEqual(t, string(ciphertext), plaintext)
 
-			secret, err := k.Decrypt(ctx, ciphertext)
+			s, err := k.Decrypt(ctx, ciphertext)
+			require.NoError(t, err)
+			assert.Equal(t, plaintext, s.Secret())
+
+			// Now verify that the old encryption method we used to use still works.
+			oldEncryptedValue, err := oldEncrypt(ctx, tc.config.Keyname, secret, []byte(plaintext))
 			require.NoError(t, err)
 
-			assert.Equal(t, plaintext, secret.Secret())
-
+			s, err = k.Decrypt(ctx, oldEncryptedValue)
+			require.NoError(t, err)
+			assert.Equal(t, plaintext, s.Secret())
 		})
 	}
+}
 
+func oldEncrypt(ctx context.Context, keyname string, secret, plaintext []byte) ([]byte, error) {
+	block, err := aes.NewCipher(secret)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating AES cipher")
+	}
+
+	gcm, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating GCM block cipher")
+	}
+
+	nonce := make([]byte, gcm.NonceSize())
+	_, err = io.ReadFull(rand.Reader, nonce)
+	if err != nil {
+		return nil, err
+	}
+
+	ciphertext := gcm.Seal(nonce, nonce, plaintext, nil)
+
+	out := encryptedValue{
+		KeyName:    keyname,
+		Ciphertext: ciphertext,
+		Checksum:   crc32Sum(plaintext),
+	}
+	jsonKey, err := json.Marshal(out)
+	if err != nil {
+		return nil, err
+	}
+	buf := base64.StdEncoding.EncodeToString(jsonKey)
+	return []byte(buf), err
+}
+
+type encryptedValue struct {
+	KeyName    string
+	Ciphertext []byte
+	Checksum   uint32
+}
+
+func crc32Sum(data []byte) uint32 {
+	t := crc32.MakeTable(crc32.Castagnoli)
+	return crc32.Checksum(data, t)
 }
 
 var theScriptOfBeeMovie = `According to all known laws

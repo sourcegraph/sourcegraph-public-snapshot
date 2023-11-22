@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -11,11 +12,14 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SyncWorkerOptions struct {
@@ -25,8 +29,9 @@ type SyncWorkerOptions struct {
 	CleanupOldJobsInterval time.Duration // defaults to 1h
 }
 
-// NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler[*SyncJob], opts SyncWorkerOptions) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob]) {
+// NewSyncWorker creates a new external service sync worker, resetter, and janitor
+// to clean up old job records.
+func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler[*SyncJob], opts SyncWorkerOptions) (*workerutil.Worker[*SyncJob], *dbworker.Resetter[*SyncJob], goroutine.BackgroundRoutine) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -51,7 +56,7 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 		sqlf.Sprintf("next_sync_at"),
 	}
 
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("repo.sync.workerstore.Store", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("repo.sync.workerstore.Store"), observationCtx)
 
 	store := dbworkerstore.New(observationCtx, dbHandle, dbworkerstore.Options[*SyncJob]{
 		Name:              "repo_sync_worker_store",
@@ -74,21 +79,24 @@ func NewSyncWorker(ctx context.Context, observationCtx *observation.Context, dbH
 		Metrics:           newWorkerMetrics(observationCtx),
 	})
 
-	resetter := dbworker.NewResetter(observationCtx.Logger.Scoped("repo.sync.worker.Resetter", ""), store, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(observationCtx.Logger.Scoped("repo.sync.worker.Resetter"), store, dbworker.ResetterOptions{
 		Name:     "repo_sync_worker_resetter",
 		Interval: 5 * time.Minute,
 		Metrics:  newResetterMetrics(observationCtx),
 	})
 
+	var janitor goroutine.BackgroundRoutine
 	if opts.CleanupOldJobs {
-		go runJobCleaner(ctx, observationCtx.Logger, dbHandle, opts.CleanupOldJobsInterval)
+		janitor = newJobCleanerRoutine(ctx, dbHandle, opts.CleanupOldJobsInterval)
+	} else {
+		janitor = goroutine.NoopRoutine()
 	}
 
-	return worker, resetter
+	return worker, resetter, janitor
 }
 
 func newWorkerMetrics(observationCtx *observation.Context) workerutil.WorkerObservability {
-	observationCtx = observation.ContextWithLogger(log.Scoped("sync_worker", ""), observationCtx)
+	observationCtx = observation.ContextWithLogger(log.Scoped("sync_worker"), observationCtx)
 
 	return workerutil.NewMetrics(observationCtx, "repo_updater_external_service_syncer")
 }
@@ -115,25 +123,20 @@ DELETE FROM external_service_sync_jobs
 WHERE
 	finished_at < NOW() - INTERVAL '1 day'
   	AND
-  	state IN ('completed', 'failed')
+  	state IN ('completed', 'failed', 'canceled')
 `
 
-func runJobCleaner(ctx context.Context, logger log.Logger, handle basestore.TransactableHandle, interval time.Duration) {
-	t := time.NewTicker(interval)
-	defer t.Stop()
-
-	for {
-		_, err := handle.ExecContext(ctx, cleanSyncJobsQueryFmtstr)
-		if err != nil && err != context.Canceled {
-			logger.Error("error while running job cleaner", log.Error(err))
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-t.C:
-		}
-	}
+func newJobCleanerRoutine(ctx context.Context, handle basestore.TransactableHandle, interval time.Duration) goroutine.BackgroundRoutine {
+	return goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(ctx),
+		goroutine.HandlerFunc(func(ctx context.Context) error {
+			_, err := handle.ExecContext(ctx, cleanSyncJobsQueryFmtstr)
+			return errors.Wrap(err, "error while running job cleaner")
+		}),
+		goroutine.WithName("repo-updater.sync-job-cleaner"),
+		goroutine.WithDescription("periodically cleans old sync jobs from the database"),
+		goroutine.WithInterval(interval),
+	)
 }
 
 // SyncJob represents an external service that needs to be synced
@@ -153,4 +156,8 @@ type SyncJob struct {
 // RecordID implements workerutil.Record and indicates the queued item id
 func (s *SyncJob) RecordID() int {
 	return s.ID
+}
+
+func (s *SyncJob) RecordUID() string {
+	return strconv.Itoa(s.ID)
 }

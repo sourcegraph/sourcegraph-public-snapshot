@@ -4,20 +4,19 @@ import stringify from 'fast-json-stable-stringify'
 import { flatten, sortBy } from 'lodash'
 import LRU from 'lru-cache'
 
-import { createAggregateError, ErrorLike } from '@sourcegraph/common'
-import { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
+import { createAggregateError, type ErrorLike } from '@sourcegraph/common'
+import type { Range as ExtensionRange, Position as ExtensionPosition } from '@sourcegraph/extension-api-types'
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { Position as ScipPosition } from '@sourcegraph/shared/src/codeintel/scip'
-import { searchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
-import { Location, buildSearchBasedLocation, split } from '../../codeintel/location'
+import { type Location, buildSearchBasedLocation, split } from '../../codeintel/location'
 import { CODE_INTEL_SEARCH_QUERY, LOCAL_CODE_INTEL_QUERY } from '../../codeintel/ReferencesPanelQueries'
-import { SettingsGetter } from '../../codeintel/settings'
+import type { SettingsGetter } from '../../codeintel/settings'
 import { isDefined } from '../../codeintel/util/helpers'
-import { CodeIntelSearch2Variables } from '../../graphql-operations'
+import type { CodeIntelSearch2Variables } from '../../graphql-operations'
 import { syntaxHighlight } from '../../repo/blob/codemirror/highlight'
 import { getBlobEditView } from '../../repo/blob/use-blob-store'
 
@@ -26,7 +25,7 @@ import {
     isExternalPrivateSymbol,
     isSourcegraphDotCom,
     referencesQuery,
-    SearchResult,
+    type SearchResult,
     searchResultToResults,
     searchWithFallback,
 } from './searchBased'
@@ -37,6 +36,7 @@ type LocationHandler = (locations: Location[]) => void
 interface UseSearchBasedCodeIntelResult {
     fetch: (onReferences: LocationHandler, onDefinitions: LocationHandler) => void
     fetchReferences: (onReferences: LocationHandler) => void
+    fetchDefinitions: (onDefinitions: LocationHandler) => void
     loading: boolean
     error?: ErrorLike
 }
@@ -84,11 +84,10 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
         [options]
     )
 
-    const fetch = useCallback(
-        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
-            fetchReferences(onReferences)
-
+    const fetchDefinitions = useCallback(
+        (onDefinitions: LocationHandler) => {
             setLoadingDefinitions(true)
+
             searchBasedDefinitions(options)
                 .then(definitions => {
                     onDefinitions(definitions)
@@ -99,13 +98,22 @@ export const useSearchBasedCodeIntel = (options: UseSearchBasedCodeIntelOptions)
                     setLoadingDefinitions(false)
                 })
         },
-        [options, fetchReferences]
+        [options]
+    )
+
+    const fetch = useCallback(
+        (onReferences: LocationHandler, onDefinitions: LocationHandler) => {
+            fetchReferences(onReferences)
+            fetchDefinitions(onDefinitions)
+        },
+        [fetchReferences, fetchDefinitions]
     )
 
     const errors = [definitionsError, referencesError].filter(isDefined)
     return {
         fetch,
         fetchReferences,
+        fetchDefinitions,
         loading: loadingReferences || loadingDefinitions,
         error: createAggregateError(errors),
     }
@@ -306,7 +314,6 @@ export async function searchBasedDefinitions({
  * Perform a search query for definitions. Returns results converted to locations,
  * filtered by the language's definition filter, and sorted by proximity to the
  * current text document path.
- *
  * @param api The GraphQL API instance.
  * @param args Parameter bag.
  */
@@ -354,11 +361,6 @@ async function searchAndFilterReferences({
 }
 
 async function executeSearchQuery(terms: string[]): Promise<SearchResult[]> {
-    const context = searchContext()
-    if (context) {
-        terms.push(`context:${context}`)
-    }
-
     interface Response {
         search: {
             results: {
@@ -391,7 +393,7 @@ const findSymbol = async (
         return
     }
 
-    for (const symbol of payload.symbols) {
+    for (const symbol of payload.symbols ?? []) {
         if (isInRange(repositoryCommitPathPosition, symbol.def)) {
             return symbol
         }
@@ -446,7 +448,7 @@ const fetchLocalCodeIntelPayload = cache(
             return undefined
         }
 
-        for (const symbol of payload.symbols) {
+        for (const symbol of payload.symbols ?? []) {
             if (symbol.refs) {
                 symbol.refs = sortBy(symbol.refs, reference => reference.row)
             }
@@ -466,7 +468,7 @@ interface RepositoryCommitPath {
 type RepositoryCommitPathPosition = RepositoryCommitPath & Position
 
 type LocalCodeIntelPayload = {
-    symbols: LocalSymbol[]
+    symbols: LocalSymbol[] | null
 } | null
 
 interface LocalSymbol {

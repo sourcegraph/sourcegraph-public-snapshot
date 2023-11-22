@@ -1,6 +1,6 @@
-import { Primitive } from 'utility-types'
+import type { Primitive } from 'utility-types'
 
-import { Expression, TemplateExpression } from '@sourcegraph/template-parser'
+import type { Expression, TemplateExpression } from '@sourcegraph/template-parser'
 
 /**
  * A key path that refers to a location in a JSON document.
@@ -33,9 +33,6 @@ export interface Contributions {
 
     /** Menu items contributed by the extension. */
     menus?: MenuContributions
-
-    /** Views contributed by the extension. */
-    views?: ViewContribution[]
 
     /** Search filters contributed by the extension */
     searchFilters?: SearchFilters[]
@@ -138,10 +135,16 @@ export interface ActionContributionClientCommandOpen extends ActionContribution 
     command: 'open'
 
     /**
-     * The arguments for the `open` client command. The first array element is a URL, which is opened by the client
-     * using the default URL handler.
+     * The arguments for the `open` client command, which can either have one or two elements.
+     *
+     * - The first array element is always a string with the destination URL,
+     * which populates the `href` attribute of the link.
+     * - When defined, the second array element is an `(event: MouseEvent<HTMLElement> | KeyboardEvent<HTMlElement>) => boolean`
+     * handler that fires `onSelect`. The handler is responsible for handling low-level details like whether
+     * the user is holding down modifier keys, or if `event.preventDefault()` should be triggered. The handler
+     * can return `false` to fallback to the default event handler.
      */
-    commandArguments: [TemplateExpression]
+    commandArguments: [TemplateExpression] | [TemplateExpression, TemplateExpression]
 }
 
 /**
@@ -304,51 +307,4 @@ export interface SearchFilters {
      * The value of the search filter chip (i.e. the literal search query string).
      */
     value: string
-}
-
-/** The containers to which an extension can contribute views. */
-export const ContributableViewContainer = {
-    /**
-     * A view that is displayed in the panel for a window.
-     *
-     * Clients: The client should render this as a resizable panel in a window, with multiple tabs to switch
-     * between different panel views.
-     */
-    Panel: 'window/panel',
-
-    /**
-     * A global page view, displayed as a standalone page at `/views/ID`.
-     */
-    GlobalPage: 'global/page',
-
-    /**
-     * A view contributed to directory pages.
-     */
-    Directory: 'directory',
-
-    /**
-     * A view contributed to the area on the homepage below the search box.
-     */
-    Homepage: 'homepage',
-
-    /**
-     * A view contributed to the dashboard on the insights page.
-     */
-    InsightsPage: 'insightsPage',
-} as const
-export type ContributableViewContainer = typeof ContributableViewContainer[keyof typeof ContributableViewContainer]
-
-/**
- * A view contributed by an extension.
- */
-export interface ViewContribution {
-    /**
-     * The identifier for this view, which must be unique among all contributed views.
-     */
-    id: string
-
-    /**
-     * The container where this view will be displayed.
-     */
-    where: ContributableViewContainer
 }

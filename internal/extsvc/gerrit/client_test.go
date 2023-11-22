@@ -2,95 +2,58 @@ package gerrit
 
 import (
 	"context"
-	"flag"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 )
 
-var update = flag.Bool("update", false, "update testdata")
-
-func TestClient_ListProjects(t *testing.T) {
-	cli, save := NewTestClient(t, "ListProjects", *update)
-	defer save()
-
-	ctx := context.Background()
-
-	args := ListProjectsArgs{
-		Cursor: &Pagination{PerPage: 5, Page: 1},
-	}
-
-	resp, _, err := cli.ListProjects(ctx, args)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
-}
-
-func TestMain(m *testing.M) {
-	flag.Parse()
-	os.Exit(m.Run())
-}
-
-// NewTestClient returns a gerrit.Client that records its interactions
-// to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
-	t.Helper()
-
-	cassete := filepath.Join("testdata/vcr/", normalize(name))
-	rec, err := httptestutil.NewRecorder(cassete, update)
-	if err != nil {
-		t.Fatal(err)
-	}
-	rec.SetMatcher(ignoreHostMatcher)
-
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
-	if err != nil {
-		t.Fatal(err)
-	}
-	hc = httpcli.GerritUnauthenticateMiddleware(hc)
-
-	u, err := url.Parse("https://gerrit-review.googlesource.com")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cli, err := NewClient("urn", u, &AccountCredentials{}, hc)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return cli, func() {
-		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
+func TestClient_do(t *testing.T) {
+	// Setup test server with two routes
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/unauthorized" {
+			w.WriteHeader(http.StatusUnauthorized)
+			w.Write([]byte("Unauthorized"))
+			return
 		}
-	}
-}
+		w.Write([]byte(`)]}'{"key":"value"}`))
+	}))
+	srvURL, err := url.Parse(srv.URL)
+	require.NoError(t, err)
 
-var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
-
-func normalize(path string) string {
-	return normalizer.ReplaceAllLiteralString(path, "-")
-}
-
-func ignoreHostMatcher(r *http.Request, i cassette.Request) bool {
-	if r.Method != i.Method {
-		return false
+	c := &client{
+		httpClient: httpcli.ExternalDoer,
+		URL:        srvURL,
+		rateLimit:  &ratelimit.InstrumentedLimiter{Limiter: rate.NewLimiter(10, 10)},
 	}
-	u, err := url.Parse(i.URL)
-	if err != nil {
-		return false
-	}
-	u.Host = r.URL.Host
-	u.Scheme = r.URL.Scheme
-	return r.URL.String() == u.String()
+
+	t.Run("prefix does not get trimmed if not present", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, "/unauthorized", nil)
+		require.NoError(t, err)
+
+		resp, err := c.do(context.Background(), req, nil)
+		assert.Nil(t, resp)
+		assert.Equal(t, fmt.Sprintf("Gerrit API HTTP error: code=401 url=\"%s/unauthorized\" body=\"Unauthorized\"", srvURL), err.Error())
+	})
+
+	t.Run("prefix gets trimmed if present", func(t *testing.T) {
+		req, err := http.NewRequest(http.MethodGet, "/anything", nil)
+		require.NoError(t, err)
+
+		respStruct := struct {
+			Key string `json:"key"`
+		}{}
+
+		resp, err := c.do(context.Background(), req, &respStruct)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+		require.Equal(t, "value", respStruct.Key)
+	})
 }

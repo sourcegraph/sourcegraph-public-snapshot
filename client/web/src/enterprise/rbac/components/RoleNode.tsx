@@ -18,15 +18,15 @@ import {
     useCheckboxes,
     useForm,
     Form,
-    SubmissionResult,
+    type SubmissionResult,
     Alert,
     useStopwatch,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { RoleFields } from '../../../graphql-operations'
+import type { RoleFields } from '../../../graphql-operations'
 import { prettifySystemRole } from '../../../util/settings'
-import { PermissionsMap, useDeleteRole, useSetPermissions } from '../backend'
+import { type PermissionsMap, useDeleteRole, useSetPermissions } from '../backend'
 
 import { ConfirmDeleteRoleModal } from './ConfirmDeleteRoleModal'
 import { PermissionsList } from './Permissions'
@@ -192,6 +192,7 @@ const ModifiableRoleNode: React.FunctionComponent<RoleNodeProps> = ({ node, refe
                         isChecked={isChecked}
                         onBlur={onBlur}
                         onChange={onChange}
+                        roleName={node.name}
                     />
                     <LoaderButton
                         alwaysShowLabel={true}
@@ -258,7 +259,12 @@ const LockedRoleNode: React.FunctionComponent<Pick<RoleNodeProps, 'node' | 'allP
                 </div>
 
                 <CollapsePanel className={styles.roleNodePermissions} forcedRender={false}>
-                    <PermissionsList allPermissions={allPermissions} isChecked={isChecked} disabled={true} />
+                    <PermissionsList
+                        allPermissions={allPermissions}
+                        isChecked={isChecked}
+                        disabled={true}
+                        roleName={node.name}
+                    />
                 </CollapsePanel>
             </Collapse>
         </li>

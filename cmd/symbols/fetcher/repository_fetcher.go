@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -61,10 +60,10 @@ func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo api
 }
 
 func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string, callback func(request ParseRequest)) (err error) {
-	ctx, trace, endObservation := f.operations.fetchRepositoryArchive.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(repo)),
-		log.String("commitID", string(commit)),
-		log.Int("paths", len(paths)),
+	ctx, trace, endObservation := f.operations.fetchRepositoryArchive.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		repo.Attr(),
+		commit.Attr(),
+		attribute.Int("paths", len(paths)),
 	}})
 	defer endObservation(1, observation.Args{})
 

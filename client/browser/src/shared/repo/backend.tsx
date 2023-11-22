@@ -1,25 +1,25 @@
-import { from, Observable } from 'rxjs'
+import { from, type Observable } from 'rxjs'
 import { delay, filter, map, retryWhen, switchMap } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable, sha256 } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import {
     CloneInProgressError,
+    isCloneInProgressErrorLike,
     RepoNotFoundError,
     RevisionNotFoundError,
-    isCloneInProgressErrorLike,
 } from '@sourcegraph/shared/src/backend/errors'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
-    FileSpec,
+    type FileSpec,
     makeRepoURI,
-    RawRepoSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
+    type RawRepoSpec,
+    type RepoSpec,
+    type ResolvedRevisionSpec,
+    type RevisionSpec,
 } from '@sourcegraph/shared/src/util/url'
 
-import {
+import type {
     BlobContentResult,
     ResolvePrivateRepoResult,
     ResolveRepoResult,

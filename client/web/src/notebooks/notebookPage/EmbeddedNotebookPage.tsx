@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect, useMemo } from 'react'
+import { type FC, useCallback, useEffect, useMemo } from 'react'
 
 import { noop } from 'lodash'
 import { useParams } from 'react-router-dom'
@@ -7,10 +7,10 @@ import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import {
-    FetchFileParameters,
+    type FetchFileParameters,
     fetchHighlightedFileLineRanges as fetchHighlightedFileLineRangesShared,
 } from '@sourcegraph/shared/src/backend/file'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import { Alert, LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
@@ -18,7 +18,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { fetchNotebook } from '../backend'
 import { convertNotebookTitleToFileName } from '../serialize'
 
-import { NotebookContent, NotebookContentProps } from './NotebookContent'
+import { NotebookContent, type NotebookContentProps } from './NotebookContent'
 
 interface EmbeddedNotebookPageProps
     extends Pick<

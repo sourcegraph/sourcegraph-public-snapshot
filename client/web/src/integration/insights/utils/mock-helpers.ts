@@ -1,14 +1,14 @@
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import {
+import type {
     GetDashboardInsightsResult,
     GetInsightViewResult,
     InsightsDashboardNode,
     InsightViewNode,
 } from '../../../graphql-operations'
-import { WebIntegrationTestContext } from '../../context'
+import type { WebIntegrationTestContext } from '../../context'
 
-import { OverrideGraphQLExtensionsProps, overrideInsightsGraphQLApi } from './override-insights-graphql-api'
+import { type OverrideGraphQLExtensionsProps, overrideInsightsGraphQLApi } from './override-insights-graphql-api'
 
 interface MakeOverridesOptions {
     testContext: WebIntegrationTestContext

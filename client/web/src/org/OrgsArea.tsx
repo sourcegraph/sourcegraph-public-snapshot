@@ -2,22 +2,22 @@ import * as React from 'react'
 
 import { Routes, Route, useParams, useLocation, useNavigate } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
-import { BatchChangesProps } from '../batches'
-import { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
+import type { BatchChangesProps } from '../batches'
+import type { BreadcrumbsProps, BreadcrumbSetters } from '../components/Breadcrumbs'
 import { NotFoundPage } from '../components/HeroPage'
 
-import { OrgArea, type OrgAreaProps, OrgAreaRoute } from './area/OrgArea'
-import { OrgAreaHeaderNavItem } from './area/OrgHeader'
+import { OrgArea, type OrgAreaProps, type OrgAreaRoute } from './area/OrgArea'
+import type { OrgAreaHeaderNavItem } from './area/OrgHeader'
 import { OrgInvitationPage } from './invitations/OrgInvitationPage'
 import { NewOrganizationPage } from './new/NewOrganizationPage'
-import { OrgSettingsAreaRoute } from './settings/OrgSettingsArea'
-import { OrgSettingsSidebarItems } from './settings/OrgSettingsSidebar'
+import type { OrgSettingsAreaRoute } from './settings/OrgSettingsArea'
+import type { OrgSettingsSidebarItems } from './settings/OrgSettingsSidebar'
 
 export interface Props
     extends PlatformContextProps,
@@ -33,7 +33,7 @@ export interface Props
 
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /**

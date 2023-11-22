@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "builder",
+    srcs = ["builder.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun/internal/builder",
+    visibility = ["//dev/managedservicesplatform:__subpackages__"],
+    deps = [
+        "//dev/managedservicesplatform/internal/resource/privatenetwork",
+        "//dev/managedservicesplatform/internal/resource/random",
+        "//dev/managedservicesplatform/internal/resource/serviceaccount",
+        "//dev/managedservicesplatform/spec",
+        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
+    ],
+)

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestWebhookLogStore(t *testing.T) {
@@ -25,7 +26,7 @@ func TestWebhookLogStore(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("Create", func(t *testing.T) {
 		t.Parallel()
@@ -197,61 +198,61 @@ func TestWebhookLogStore(t *testing.T) {
 					want: []*types.WebhookLog{errLog},
 				},
 				"specific external service": {
-					opts: WebhookLogListOpts{ExternalServiceID: int64Ptr(es.ID)},
+					opts: WebhookLogListOpts{ExternalServiceID: pointers.Ptr(es.ID)},
 					want: []*types.WebhookLog{okLog},
 				},
 				"no external service": {
-					opts: WebhookLogListOpts{ExternalServiceID: int64Ptr(0)},
+					opts: WebhookLogListOpts{ExternalServiceID: pointers.Ptr(int64(0))},
 					want: []*types.WebhookLog{errLog},
 				},
 				"external service without results": {
-					opts: WebhookLogListOpts{ExternalServiceID: int64Ptr(es.ID + 1)},
+					opts: WebhookLogListOpts{ExternalServiceID: pointers.Ptr(es.ID + 1)},
 					want: []*types.WebhookLog{},
 				},
 				"specific webhook id": {
-					opts: WebhookLogListOpts{WebhookID: int32Ptr(wh.ID)},
+					opts: WebhookLogListOpts{WebhookID: pointers.Ptr(wh.ID)},
 					want: []*types.WebhookLog{okLog},
 				},
 				"no webhook id": {
-					opts: WebhookLogListOpts{WebhookID: int32Ptr(0)},
+					opts: WebhookLogListOpts{WebhookID: pointers.Ptr(int32(0))},
 					want: []*types.WebhookLog{errLog},
 				},
 				"webhook id without results": {
-					opts: WebhookLogListOpts{WebhookID: int32Ptr(wh.ID + 1)},
+					opts: WebhookLogListOpts{WebhookID: pointers.Ptr(wh.ID + 1)},
 					want: []*types.WebhookLog{},
 				},
 				"both within time range": {
 					opts: WebhookLogListOpts{
-						Since: timePtr(okTime.Add(-1 * time.Minute)),
-						Until: timePtr(errTime.Add(1 * time.Minute)),
+						Since: pointers.Ptr(okTime.Add(-1 * time.Minute)),
+						Until: pointers.Ptr(errTime.Add(1 * time.Minute)),
 					},
 					want: []*types.WebhookLog{errLog, okLog},
 				},
 				"neither within time range": {
 					opts: WebhookLogListOpts{
-						Since: timePtr(okTime.Add(-3 * time.Minute)),
-						Until: timePtr(okTime.Add(-2 * time.Minute)),
+						Since: pointers.Ptr(okTime.Add(-3 * time.Minute)),
+						Until: pointers.Ptr(okTime.Add(-2 * time.Minute)),
 					},
 					want: []*types.WebhookLog{},
 				},
 				"one before": {
 					opts: WebhookLogListOpts{
-						Until: timePtr(okTime.Add(30 * time.Second)),
+						Until: pointers.Ptr(okTime.Add(30 * time.Second)),
 					},
 					want: []*types.WebhookLog{okLog},
 				},
 				"one after": {
 					opts: WebhookLogListOpts{
-						Since: timePtr(okTime.Add(30 * time.Second)),
+						Since: pointers.Ptr(okTime.Add(30 * time.Second)),
 					},
 					want: []*types.WebhookLog{errLog},
 				},
 				"all options given": {
 					opts: WebhookLogListOpts{
-						ExternalServiceID: int64Ptr(0),
+						ExternalServiceID: pointers.Ptr(int64(0)),
 						OnlyErrors:        true,
-						Since:             timePtr(okTime.Add(-1 * time.Minute)),
-						Until:             timePtr(errTime.Add(1 * time.Minute)),
+						Since:             pointers.Ptr(okTime.Add(-1 * time.Minute)),
+						Until:             pointers.Ptr(errTime.Add(1 * time.Minute)),
 					},
 					want: []*types.WebhookLog{errLog},
 				},
@@ -354,7 +355,3 @@ func createWebhookLog(externalServiceID int64, webhookID int32, statusCode int, 
 		}),
 	}
 }
-
-func int64Ptr(v int64) *int64        { return &v }
-func int32Ptr(v int32) *int32        { return &v }
-func timePtr(v time.Time) *time.Time { return &v }

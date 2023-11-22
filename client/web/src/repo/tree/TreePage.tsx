@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo } from 'react'
+import React, { type FC, useEffect, useMemo } from 'react'
 
 import {
     mdiAccount,
@@ -11,21 +11,22 @@ import {
     mdiSourceFork,
     mdiSourceRepository,
     mdiTag,
+    mdiVectorPolyline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
-import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { asError, encodeURIPathComponent, type ErrorLike, isErrorLike, logger, basename } from '@sourcegraph/common'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { toPrettyBlobURL, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import {
     Badge,
@@ -37,27 +38,45 @@ import {
     Link,
     LoadingSpinner,
     PageHeader,
-    Text,
     Tooltip,
     useObservable,
 } from '@sourcegraph/wildcard'
 
-import { BatchChangesProps } from '../../batches'
+import type { AuthenticatedUser } from '../../auth'
+import type { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
-import { CodeIntelligenceProps } from '../../codeintel'
-import { BreadcrumbSetters } from '../../components/Breadcrumbs'
+import type { CodeIntelligenceProps } from '../../codeintel'
+import { isCodyEnabled } from '../../cody/isCodyEnabled'
+import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { RepositoryFields } from '../../graphql-operations'
-import { OwnConfigProps } from '../../own/OwnConfigProps'
-import { basename } from '../../util/path'
+import type { FileCommitsResult, FileCommitsVariables, RepositoryFields } from '../../graphql-operations'
+import type { SourcegraphContext } from '../../jscontext'
+import type { OwnConfigProps } from '../../own/OwnConfigProps'
+import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 
 import { TreePageContent } from './TreePageContent'
+import { treeHistoryFragment } from './TreePagePanels'
 
 import styles from './TreePage.module.scss'
 
+const FILE_COMMITS_QUERY = gql`
+    ${treeHistoryFragment}
+    query FileCommits($repoName: String!, $revision: String!, $filePath: String!, $first: Int) {
+        repository(name: $repoName) {
+            id
+            commit(rev: $revision) {
+                id
+                tree(path: $filePath) {
+                    entries(first: $first) {
+                        ...TreeHistoryFields
+                    }
+                }
+            }
+        }
+    }
+`
 export interface Props
     extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
@@ -76,6 +95,8 @@ export interface Props
     revision: string
     isSourcegraphDotCom: boolean
     className?: string
+    authenticatedUser: AuthenticatedUser | null
+    context: Pick<SourcegraphContext, 'authProviders'>
 }
 
 export const treePageRepositoryFragment = gql`
@@ -85,6 +106,11 @@ export const treePageRepositoryFragment = gql`
         description
         viewerCanAdminister
         url
+        metadata {
+            key
+            value
+        }
+        sourceType
     }
 `
 
@@ -99,8 +125,10 @@ export const TreePage: FC<Props> = ({
     codeIntelligenceEnabled,
     batchChangesEnabled,
     isSourcegraphDotCom,
+    authenticatedUser,
     ownEnabled,
     className,
+    context,
     ...props
 }) => {
     const isRoot = filePath === ''
@@ -108,7 +136,6 @@ export const TreePage: FC<Props> = ({
         () => isPackageServiceType(repo?.externalRepository.serviceType),
         [repo?.externalRepository.serviceType]
     )
-
     useEffect(() => {
         if (isRoot) {
             props.telemetryService.logViewEvent('Repository')
@@ -125,7 +152,7 @@ export const TreePage: FC<Props> = ({
 
             return {
                 key: 'treePath',
-                className: 'flex-shrink-past-contents',
+                className: 'flex-shrink-past-contents flex-grow-1',
                 element: (
                     <FilePathBreadcrumbs
                         key="path"
@@ -155,13 +182,22 @@ export const TreePage: FC<Props> = ({
         )
     )
 
+    const { data: fileCommitData } = useQuery<FileCommitsResult, FileCommitsVariables>(FILE_COMMITS_QUERY, {
+        variables: {
+            repoName,
+            revision,
+            filePath,
+            first: 2500,
+        },
+    })
+    const treeWithHistory = fileCommitData?.repository?.commit?.tree?.entries
+
     const showCodeInsights =
         !isErrorLike(settingsCascade.final) &&
         !!settingsCascade.final?.experimentalFeatures?.codeInsights &&
         settingsCascade.final['insights.displayLocation.directory'] === true
 
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
-    const showOwnership = ownEnabled && ownFeatureFlagEnabled && !isSourcegraphDotCom
+    const showOwnership = ownEnabled && !isSourcegraphDotCom
 
     // Add DirectoryViewer
     const uri = toURIWithPath({ repoName, commitID, filePath })
@@ -223,18 +259,17 @@ export const TreePage: FC<Props> = ({
                         <Icon aria-hidden={true} svgPath={getIcon()} className="mr-2" />
                         <span data-testid="repo-header">{displayRepoName(repo?.name || '')}</span>
                         {repo?.isFork && (
-                            <Badge variant="outlineSecondary" className="mx-2 mt-2" data-testid="repo-fork-badge">
+                            <Badge variant="outlineSecondary" className="mx-2 mt-1" data-testid="repo-fork-badge">
                                 Fork
                             </Badge>
                         )}
                     </PageHeader.Heading>
                 </PageHeader>
-                {repo?.description && <Text>{repo.description}</Text>}
             </div>
             <div className={styles.menu}>
                 <ButtonGroup>
                     {!isPackage && (
-                        <Tooltip content="Branches">
+                        <Tooltip content="Git branches">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/branches`}
@@ -247,7 +282,7 @@ export const TreePage: FC<Props> = ({
                             </Button>
                         </Tooltip>
                     )}
-                    <Tooltip content={isPackage ? 'Versions' : 'Tags'}>
+                    <Tooltip content={isPackage ? 'Package versions' : 'Git tags'}>
                         <Button
                             className="flex-shrink-0"
                             to={`/${encodeURIPathComponent(repoName)}/-${isPackage ? '/versions' : '/tags'}`}
@@ -259,7 +294,7 @@ export const TreePage: FC<Props> = ({
                             <span className={styles.text}>{isPackage ? 'Versions' : 'Tags'}</span>
                         </Button>
                     </Tooltip>
-                    <Tooltip content="Compare">
+                    <Tooltip content="Compare branches">
                         <Button
                             className="flex-shrink-0"
                             to={
@@ -291,6 +326,20 @@ export const TreePage: FC<Props> = ({
                             </Button>
                         </Tooltip>
                     )}
+                    {window.context?.codyEnabled && window.context?.embeddingsEnabled && (
+                        <Tooltip content="Embeddings">
+                            <Button
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/embeddings`}
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiVectorPolyline} />{' '}
+                                <span className={styles.text}>Embeddings</span>
+                            </Button>
+                        </Tooltip>
+                    )}
                     {batchChangesEnabled && !isPackage && (
                         <Tooltip content="Batch changes">
                             <RepoBatchChangesButton
@@ -301,7 +350,7 @@ export const TreePage: FC<Props> = ({
                         </Tooltip>
                     )}
                     {showOwnership && (
-                        <Tooltip content="Ownership">
+                        <Tooltip content="Repository ownership settings">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/own`}
@@ -316,7 +365,7 @@ export const TreePage: FC<Props> = ({
                         </Tooltip>
                     )}
                     {repo?.viewerCanAdminister && (
-                        <Tooltip content="Settings">
+                        <Tooltip content="Repository settings">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/settings`}
@@ -325,7 +374,7 @@ export const TreePage: FC<Props> = ({
                                 as={Link}
                                 aria-label="Repository settings"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiCog} />
+                                <Icon aria-hidden={true} svgPath={mdiCog} />{' '}
                                 <span className={styles.text}>Settings</span>
                             </Button>
                         </Tooltip>
@@ -337,6 +386,16 @@ export const TreePage: FC<Props> = ({
 
     return (
         <div className={classNames(styles.treePage, className)}>
+            {(isSourcegraphDotCom || isCodyEnabled()) && (
+                <TryCodyWidget
+                    className="mb-2"
+                    telemetryService={props.telemetryService}
+                    type="repo"
+                    authenticatedUser={authenticatedUser}
+                    context={context}
+                    isSourcegraphDotCom={isSourcegraphDotCom}
+                />
+            )}
             <Container className={styles.container}>
                 <div className={classNames(styles.header)}>
                     <PageTitle title={getPageTitle()} />
@@ -369,10 +428,12 @@ export const TreePage: FC<Props> = ({
                         <TreePageContent
                             filePath={filePath}
                             tree={treeOrError}
+                            treeWithHistory={treeWithHistory}
                             repo={repo}
                             revision={revision}
                             commitID={commitID}
                             isPackage={isPackage}
+                            authenticatedUser={authenticatedUser}
                             {...props}
                         />
                     )}

@@ -1,6 +1,6 @@
 import { flatMap } from 'lodash'
 
-import { MatchGroup, MatchItem, PerFileResultRanking, RankingResult } from './PerFileResultRanking'
+import type { MatchGroup, MatchItem, PerFileResultRanking, RankingResult } from './PerFileResultRanking'
 
 /**
  * LineRanking orders hunks purely by line number, disregarding the relevance ranking provided by Zoekt.
@@ -40,7 +40,7 @@ export const mergeContext = <
             // This context either overlaps with or is adjacent to the
             // previous context, so add this highlight to the previous
             // group.
-            groupsOfHighlights[groupsOfHighlights.length - 1].push(current)
+            groupsOfHighlights.at(-1)!.push(current)
         }
     }
 

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "summary",
+    srcs = [
+        "config.go",
+        "iface.go",
+        "job_summary_builder.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background/summary",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/codeintel/autoindexing/internal/inference",
+        "//internal/codeintel/autoindexing/internal/jobselector",
+        "//internal/codeintel/autoindexing/internal/store",
+        "//internal/codeintel/uploads/shared",
+        "//internal/conf",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//lib/errors",
+    ],
+)

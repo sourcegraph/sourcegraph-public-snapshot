@@ -1,4 +1,4 @@
-import { Line, StateEffect } from '@codemirror/state'
+import type { Line, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 
 import { shouldScrollIntoView } from './linenumbers'

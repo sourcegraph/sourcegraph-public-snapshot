@@ -31,7 +31,7 @@ func main() {
 
 	defer callbacks.Sync()
 
-	logger := log.Scoped("test", "logger with sampling config")
+	logger := log.Scoped("test")
 
 	logsCount, err := strconv.Atoi(os.Args[1])
 	if err != nil {
@@ -46,7 +46,8 @@ func main() {
 				GitserverAccess: true,
 				GraphQL:         true,
 				SeverityLevel:   "INFO",
-			}}}})
+			},
+		}}})
 	defer conf.Mock(nil)
 
 	for i := 0; i < logsCount; i++ {

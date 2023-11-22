@@ -1,19 +1,19 @@
 import * as React from 'react'
 
-import { Location, NavigateFunction } from 'react-router-dom'
-import { merge, Observable, of, Subject, Subscription } from 'rxjs'
+import type { Location, NavigateFunction } from 'react-router-dom'
+import { merge, type Observable, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
 
-import { asError, createAggregateError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { asError, createAggregateError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { LoadingSpinner, Text, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import { RepositoryComparisonFields, RepositoryComparisonResult, Scalars } from '../../graphql-operations'
+import type { RepositoryComparisonFields, RepositoryComparisonResult, Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
+import type { RepositoryCompareAreaPageProps } from './RepositoryCompareArea'
 import { RepositoryCompareCommitsPage } from './RepositoryCompareCommitsPage'
 import { RepositoryCompareDiffPage } from './RepositoryCompareDiffPage'
 

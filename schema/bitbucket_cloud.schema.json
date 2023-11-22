@@ -107,7 +107,7 @@
           "uuid": {
             "description": "The UUID of a Bitbucket Cloud repo (as returned by the Bitbucket Cloud's API) to exclude from mirroring.",
             "type": "string",
-            "pattern": "^\\{[0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12}\\}$"
+            "pattern": "^\\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\\}$"
           },
           "pattern": {
             "description": "Regular expression which matches against the name of a Bitbucket Cloud repo.",

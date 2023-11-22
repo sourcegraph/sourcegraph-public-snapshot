@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
 )
 
@@ -102,7 +103,7 @@ func (c *ContainerVariable) toGrafanaTemplateVar(injectLabelMatchers []*labels.M
 		Label: c.Label,
 		Multi: c.Multi,
 
-		Datasource: StringPtr("Prometheus"),
+		Datasource: pointers.Ptr("Prometheus"),
 		IncludeAll: true,
 
 		// Apply the AllValue to a template variable by default
@@ -130,7 +131,7 @@ func (c *ContainerVariable) toGrafanaTemplateVar(injectLabelMatchers []*labels.M
 		variable.Query = fmt.Sprintf("label_values(%s, %s)", expr, c.OptionsLabelValues.LabelName)
 		variable.Refresh = sdk.BoolInt{
 			Flag:  true,
-			Value: Int64Ptr(2), // Refresh on time range change
+			Value: pointers.Ptr(int64(2)), // Refresh on time range change
 		}
 		variable.Sort = 3
 		variable.Options = []sdk.Option{} // Cannot be null in later versions of Grafana

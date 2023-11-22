@@ -5,7 +5,7 @@ import type { UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 import { ExternalServiceKind } from '../graphql-operations'
 
 import type { EditorReplacements, EditorSettings } from './editor-settings'
-import { Editor, getEditor, supportedEditors } from './editors'
+import { type Editor, getEditor, supportedEditors } from './editors'
 
 // Just lowercasing these for now, it's a bit of a gamble because it's only a coincidence that ExternalServiceKind
 // and ExternalServiceType only differs in casing. But it works for now.

@@ -4,18 +4,18 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, Series } from '@sourcegraph/wildcard'
+import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, type Series } from '@sourcegraph/wildcard'
 
-import { SearchStatisticsResult, SearchStatisticsVariables } from '../../../graphql-operations'
+import type { SearchStatisticsResult, SearchStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
-import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { ValueLegendList, type ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { StandardDatum } from '../utils'
+import type { StandardDatum } from '../utils'
 
 import { SEARCH_STATISTICS } from './queries'
 
@@ -217,11 +217,11 @@ export const AnalyticsSearchPage: React.FC = () => {
                         <Text as="li">
                             Promote the{' '}
                             <AnchorLink to="/help/integration/editor" target="_blank">
-                                IDE extension
+                                editor extension
                             </AnchorLink>{' '}
                             and{' '}
                             <AnchorLink to="/help/cli" target="_blank">
-                                SRC CLI
+                                src CLI
                             </AnchorLink>{' '}
                             to your users to allow them to search where they work.
                         </Text>

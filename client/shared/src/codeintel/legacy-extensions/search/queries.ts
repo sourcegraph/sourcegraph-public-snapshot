@@ -3,7 +3,7 @@ import { extname } from 'path'
 
 import { escapeRegExp } from 'lodash'
 
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 import { parseGitURI } from '../util/uri'
 
 /**
@@ -72,7 +72,7 @@ const excludelist = new Set(['thrift', 'proto', 'graphql'])
  * @param includelist The file extensions for the current language.
  */
 function fileExtensionTerm(textDocument: sourcegraph.TextDocument, includelist: string[]): string {
-    const { path } = parseGitURI(new URL(textDocument.uri))
+    const { path } = parseGitURI(textDocument.uri)
     const extension = extname(path).slice(1)
     if (!extension || excludelist.has(extension) || !includelist.includes(extension)) {
         return ''

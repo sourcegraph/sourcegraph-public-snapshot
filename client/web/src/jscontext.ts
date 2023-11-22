@@ -1,7 +1,8 @@
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
-import { TemporarySettingsResult } from './graphql-operations'
+import type { TemporarySettingsResult } from './graphql-operations'
 
 export type DeployType = 'kubernetes' | 'docker-container' | 'docker-compose' | 'pure-docker' | 'dev' | 'helm'
 
@@ -22,9 +23,11 @@ export interface AuthProvider {
         | 'gerrit'
         | 'azuredevops'
     displayName: string
+    displayPrefix?: string
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
+    clientID: string
 }
 
 /**
@@ -44,17 +47,17 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'avatarURL'
     | 'displayName'
     | 'siteAdmin'
-    | 'tags'
     | 'url'
     | 'settingsURL'
     | 'viewerCanAdminister'
     | 'tosAccepted'
-    | 'searchable'
     | 'organizations'
     | 'session'
     | 'emails'
     | 'latestSettings'
     | 'permissions'
+    | 'hasVerifiedEmail'
+    | 'completedPostSignup'
 >
 
 /**
@@ -111,7 +114,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     debug: boolean
 
     sourcegraphDotComMode: boolean
-    sourcegraphAppMode: boolean
+    codyAppMode: boolean
 
     /**
      * siteID is the identifier of the Sourcegraph site.
@@ -151,17 +154,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     runningOnMacOS: boolean
 
     /**
-     * Likely running within a Docker container under a Mac host OS.
-     */
-    likelyDockerOnMac: boolean
-
-    /**
-     * Whether the setup wizard supports file picker query, it's used
-     * only for the Sourcegraph App (in all others deploy types it's always false)
-     */
-    localFilePickerAvailable: boolean
-
-    /**
      * Whether or not the server needs to restart in order to apply a pending
      * configuration change.
      */
@@ -184,6 +176,15 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     batchChangesWebhookLogsEnabled: boolean
 
+    /** Whether cody is enabled site-wide. */
+    codyEnabled: boolean
+
+    /** Whether cody is enabled for the user. */
+    codyEnabledForCurrentUser: boolean
+
+    /** Whether the site requires a verified email for cody. */
+    codyRequiresVerifiedEmail: boolean
+
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean
 
@@ -201,15 +202,15 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /**
      * Local git URL, it's used only to create a local external service
-     * in Sourcegraph App.
+     * in Cody App.
      */
     srcServeGitUrl: string
 
-    /** Whether users are allowed to add their own code and at what permission level. */
-    externalServicesUserMode: 'disabled' | 'public' | 'all' | 'unknown'
-
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
+
+    /** primaryLoginProvidersCount sets the max number of primary login providers on signin page */
+    primaryLoginProvidersCount: number
 
     /** What the minimum length for a password should be. */
     authMinPasswordLength: number
@@ -227,6 +228,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         /** Require at least an upper and a lowercase character password */
         requireUpperandLowerCase?: boolean
     }
+
+    authAccessRequest?: SiteConfiguration['auth.accessRequest']
 
     /** Custom branding for the homepage and search icon. */
     branding?: {
@@ -249,13 +252,24 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Contains information about the product license. */
     licenseInfo?: {
-        currentPlan: 'old-starter-0' | 'old-enterprise-0' | 'team-0' | 'enterprise-0' | 'business-0' | 'enterprise-1'
+        currentPlan:
+            | 'old-starter-0'
+            | 'old-enterprise-0'
+            | 'team-0'
+            | 'enterprise-0'
+            | 'business-0'
+            | 'enterprise-1'
+            | 'enterprise-air-gap-0'
 
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean
         codeScaleExceededLimit?: boolean
+        batchChanges?: BatchChangesLicenseInfo
         knownLicenseTags?: string[]
     }
+
+    /** sha256 hashed license key */
+    hashedLicenseKey?: string
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean

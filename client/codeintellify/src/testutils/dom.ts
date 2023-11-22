@@ -1,4 +1,4 @@
-import { DOMFunctions } from '../tokenPosition'
+import type { DOMFunctions } from '../tokenPosition'
 
 import { GITHUB_CODE_TABLE, SOURCEGRAPH_CODE_TABLE } from './generate'
 import { TEST_DATA_REVSPEC } from './revision'
@@ -64,7 +64,6 @@ const createGitHubCodeView = (): CodeViewProps => {
     codeView.innerHTML = GITHUB_CODE_TABLE
     codeView.style.clear = 'both'
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
     const getCodeElementFromTarget = (target: HTMLElement): HTMLElement | null => {
         const row = target.closest('tr')
         if (!row) {
@@ -81,7 +80,6 @@ const createGitHubCodeView = (): CodeViewProps => {
         return codeCell
     }
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
     const getCodeElementFromLineNumber = (b: HTMLElement, line: number): HTMLElement | null => {
         const numberCell = b.querySelector(`[data-line-number="${line}"]`)
         if (!numberCell) {
@@ -96,7 +94,6 @@ const createGitHubCodeView = (): CodeViewProps => {
         return row.children.item(1) as HTMLElement | null
     }
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
     const getLineNumberFromCodeElement = (codeCell: HTMLElement): number => {
         const row = codeCell.closest('tr')
         if (!row) {
@@ -127,7 +124,6 @@ const createSourcegraphCodeView = (): CodeViewProps => {
     codeView.innerHTML = SOURCEGRAPH_CODE_TABLE
     codeView.style.clear = 'both'
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
     const getCodeElementFromTarget = (target: HTMLElement): HTMLElement | null => {
         const row = target.closest('tr')
         if (!row) {
@@ -144,7 +140,6 @@ const createSourcegraphCodeView = (): CodeViewProps => {
         return codeCell
     }
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
     const getCodeElementFromLineNumber = (b: HTMLElement, line: number): HTMLElement | null => {
         const numberCell = b.querySelector(`[data-line="${line}"]`)
         if (!numberCell) {
@@ -159,7 +154,6 @@ const createSourcegraphCodeView = (): CodeViewProps => {
         return row.children.item(1) as HTMLElement | null
     }
 
-    // eslint-disable-next-line unicorn/consistent-function-scoping
     const getLineNumberFromCodeElement = (codeCell: HTMLElement): number => {
         const row = codeCell.closest('tr')
         if (!row) {

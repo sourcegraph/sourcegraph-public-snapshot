@@ -1,17 +1,17 @@
-import { FC, useCallback, useMemo, useRef, useState } from 'react'
+import { type FC, useCallback, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Code,
     Popover,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     Tooltip,
     PopoverContent,
     PopoverTrigger,
@@ -41,6 +41,7 @@ export interface SearchContextDropdownProps
     className?: string
     menuClassName?: string
     onEscapeMenuClose?: () => void
+    ignoreDefaultContextDoesNotExistError?: boolean
 }
 
 export const SearchContextDropdown: FC<SearchContextDropdownProps> = props => {

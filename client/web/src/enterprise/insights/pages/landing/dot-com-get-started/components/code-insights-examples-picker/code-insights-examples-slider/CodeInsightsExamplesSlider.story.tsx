@@ -1,4 +1,4 @@
-import { Meta } from '@storybook/react'
+import type { Meta } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -6,10 +6,12 @@ import { WebStory } from '../../../../../../../../components/WebStory'
 
 import { CodeInsightsExamplesSlider } from './CodeInsightsExamplesSlider'
 
-export default {
+const meta: Meta = {
     title: 'web/insights/dot-com-landing/CodeInsightsExampleSlider',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
-} as Meta
+}
+
+export default meta
 
 export const CodeInsightsExampleSliderExample = () => (
     <div style={{ width: 500 }}>

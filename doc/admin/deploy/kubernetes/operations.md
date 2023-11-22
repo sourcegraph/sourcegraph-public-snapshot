@@ -14,19 +14,19 @@ Operations guides specific to managing [Sourcegraph on Kubernetes](./index.md) i
 <div class="getting-started">
   <a href="configure" class="btn btn-primary" alt="Configure">
    <span>Configure</span>
-   </br>
+   <br>
    Configure your Sourcegraph deployment with our deployment reference.
   </a>
 
   <a href="#upgrade" class="btn" alt="Upgrade">
    <span>Upgrade</span>
-   </br>
+   <br>
    Upgrade your deployment to the latest Sourcegraph release.
   </a>
 
   <a href="troubleshoot" class="btn" alt="Backup and restore">
    <span>Troubleshoot</span>
-   </br>
+   <br>
    Troubleshoot common issues with your Sourcegraph instance.
   </a>
 </div>
@@ -49,7 +49,7 @@ In order to deploy Sourcegraph that is configured for your cluster:
 
 #### Building manifests
 
-Build a new set of manifests using an overlay you've created following our [configuration guide for Kustomize](kustomize/configure.md):
+Build a new set of manifests using an overlay you've created following our [configuration guide for Kustomize](kustomize/index.md):
    
 ```bash
 $ kubectl kustomize $PATH_TO_OVERLAY -o cluster.yaml
@@ -434,7 +434,6 @@ blobstore                       ClusterIP   10.72.3.144    <none>        9000/TC
 cadvisor                        ClusterIP   10.72.14.130   <none>        48080/TCP                    23h
 codeinsights-db                 ClusterIP   10.72.6.240    <none>        5432/TCP,9187/TCP            25h
 codeintel-db                    ClusterIP   10.72.5.10     <none>        5432/TCP,9187/TCP            25h
-github-proxy                    ClusterIP   10.72.10.117   <none>        80/TCP,6060/TCP              25h
 gitserver                       ClusterIP   None           <none>        10811/TCP                    25h
 grafana                         ClusterIP   10.72.6.245    <none>        30070/TCP                    25h
 indexed-search                  ClusterIP   None           <none>        6070/TCP                     25h
@@ -462,8 +461,8 @@ See the [migration docs for Kustomize](kustomize/migrate.md) for more informatio
 
 ## Upgrade
 
-- See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
-- See the [Updating a Kubernetes Sourcegraph instance docs](../../updates/kubernetes.md) for details on changes in each version to determine if manual migration steps are necessary.
+- See the [Updating Sourcegraph docs](../../updates/index.md) on how to upgrade.<br/>
+- See the [Updating a Kubernetes Sourcegraph instance docs](../kubernetes/upgrade.md) for details on changes in each version to determine if manual migration steps are necessary.
 
 ## Troubleshoot
 

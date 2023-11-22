@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from 'react'
+import React, { type FC, useMemo } from 'react'
 
 import { mdiProgressClock } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
@@ -8,32 +8,32 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Icon, LoadingSpinner, ErrorMessage, LinkOrSpan } from '@sourcegraph/wildcard'
 
 import { withAuthenticatedUser } from '../../../../auth/withAuthenticatedUser'
 import { HeroPage } from '../../../../components/HeroPage'
 import { Duration } from '../../../../components/time/Duration'
 import {
-    BatchSpecExecutionByIDResult,
-    BatchSpecExecutionByIDVariables,
-    BatchSpecExecutionFields,
+    type BatchSpecExecutionByIDResult,
+    type BatchSpecExecutionByIDVariables,
+    type BatchSpecExecutionFields,
     BatchSpecSource,
-    GetBatchChangeToEditResult,
-    GetBatchChangeToEditVariables,
+    type GetBatchChangeToEditResult,
+    type GetBatchChangeToEditVariables,
 } from '../../../../graphql-operations'
-import { NamespaceProps } from '../../../../namespaces'
+import type { NamespaceProps } from '../../../../namespaces'
 import { GET_BATCH_CHANGE_TO_EDIT } from '../../create/backend'
 import { ConfigurationForm } from '../../create/ConfigurationForm'
 import { NewBatchChangePreviewPage } from '../../preview/BatchChangePreviewPage'
-import { BatchSpecContextProvider, BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
+import { BatchSpecContextProvider, type BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
 import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
-import { TabBar, TabsConfig } from '../TabBar'
+import { TabBar, type TabsConfig } from '../TabBar'
 
 import { ActionsMenu } from './ActionsMenu'
-import { FETCH_BATCH_SPEC_EXECUTION, queryWorkspacesList as _queryWorkspacesList } from './backend'
+import { FETCH_BATCH_SPEC_EXECUTION, type queryWorkspacesList as _queryWorkspacesList } from './backend'
 import { BatchSpecStateBadge } from './BatchSpecStateBadge'
 import { ExecutionStat, ExecutionStatsBar } from './ExecutionStatsBar'
 import { ReadOnlyBatchSpecForm } from './ReadOnlyBatchSpecForm'

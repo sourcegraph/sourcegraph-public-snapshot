@@ -12,9 +12,8 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -27,12 +26,11 @@ func userCtx(userID int32) context.Context {
 
 func TestTeamNode(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{Username: "bob", SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -70,15 +68,14 @@ func TestTeamNode(t *testing.T) {
 
 func TestTeamNodeURL(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	team := &types.Team{
 		Name: "team-刺身", // team-sashimi
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, team); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, team); err != nil {
 		t.Fatalf("failed to create fake team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -103,11 +100,10 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 	for _, isAdmin := range []bool{true, false} {
 		t.Run(fmt.Sprintf("viewer is admin = %v", isAdmin), func(t *testing.T) {
 			fs := fakedb.New()
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			fs.Wire(db)
 			ctx := userCtx(fs.AddUser(types.User{SiteAdmin: isAdmin}))
-			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-			if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+			if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 				t.Fatalf("failed to create fake team: %s", err)
 			}
 			team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -140,12 +136,11 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 	for _, member := range []bool{true, false} {
 		t.Run(fmt.Sprintf("viewer is member = %v", member), func(t *testing.T) {
 			fs := fakedb.New()
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			fs.Wire(db)
 			userID := fs.AddUser(types.User{SiteAdmin: false})
 			ctx := userCtx(userID)
-			ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-			if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+			if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 				t.Fatalf("failed to create fake team: %s", err)
 			}
 			team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -183,12 +178,11 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 
 	t.Run("Non-site admin is not member but creator", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team", CreatorID: userID}); err != nil {
 			t.Fatalf("failed to create fake team: %s", err)
 		}
 		team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -206,12 +200,12 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 					}
 				}
 			}`,
-			ExpectedResult: fmt.Sprintf(`{
+			ExpectedResult: `{
 				"node": {
 					"__typename": "Team",
 					"viewerCanAdminister": true
 				}
-			}`),
+			}`,
 			Variables: map[string]any{
 				"id": string(relay.MarshalID("Team", team.ID)),
 			},
@@ -221,11 +215,10 @@ func TestTeamNodeViewerCanAdminister(t *testing.T) {
 
 func TestCreateTeamBare(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -255,11 +248,10 @@ func TestCreateTeamBare(t *testing.T) {
 
 func TestCreateTeamDisplayName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -282,11 +274,10 @@ func TestCreateTeamDisplayName(t *testing.T) {
 
 func TestCreateTeamReadOnlyDefault(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -309,10 +300,9 @@ func TestCreateTeamReadOnlyDefault(t *testing.T) {
 func TestCreateTeamReadOnlyTrue(t *testing.T) {
 	t.Run("admin can create read-only team", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		ctx := userCtx(fs.AddUser(types.User{SiteAdmin: true}))
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
@@ -334,11 +324,10 @@ func TestCreateTeamReadOnlyTrue(t *testing.T) {
 	})
 	t.Run("non-siteadmin cannot create read-only team", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
@@ -365,12 +354,11 @@ func TestCreateTeamReadOnlyTrue(t *testing.T) {
 func TestCreateTeamParentByID(t *testing.T) {
 	t.Run("parent is writable by actor", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+		_, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 			Name: "team-name-parent",
 		})
 		if err != nil {
@@ -380,7 +368,10 @@ func TestCreateTeamParentByID(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		fs.TeamStore.CreateTeamMember(ctx, &types.TeamMember{TeamID: parentTeam.ID, UserID: userID})
+		err = fs.TeamStore.CreateTeamMember(ctx, &types.TeamMember{TeamID: parentTeam.ID, UserID: userID})
+		if err != nil {
+			t.Fatalf("failed to add user to team: %s", err)
+		}
 		RunTest(t, &Test{
 			Schema:  mustParseGraphQLSchema(t, db),
 			Context: ctx,
@@ -406,12 +397,11 @@ func TestCreateTeamParentByID(t *testing.T) {
 	})
 	t.Run("parent is not writable by actor", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+		_, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 			Name:     "team-name-parent",
 			ReadOnly: true,
 		})
@@ -449,14 +439,13 @@ func TestCreateTeamParentByID(t *testing.T) {
 
 func TestCreateTeamParentByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
-	if err := fs.TeamStore.CreateTeam(context.Background(), &types.Team{Name: "team-name-parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(context.Background(), &types.Team{Name: "team-name-parent"}); err != nil {
 		t.Fatal(err)
 	}
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "team-name-parent")
 	if err != nil {
 		t.Fatal(err)
@@ -490,12 +479,11 @@ func TestCreateTeamParentByName(t *testing.T) {
 
 func TestUpdateTeamByID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
 		DisplayName: "Display Name",
 	}); err != nil {
@@ -540,12 +528,11 @@ func TestUpdateTeamByID(t *testing.T) {
 
 func TestUpdateTeamByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
 		DisplayName: "Display Name",
 	}); err != nil {
@@ -590,12 +577,11 @@ func TestUpdateTeamByName(t *testing.T) {
 
 func TestUpdateTeamErrorBothNameAndID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{
 		Name:        "team-name-testing",
 		DisplayName: "Display Name",
 	}); err != nil {
@@ -633,19 +619,18 @@ func TestUpdateTeamErrorBothNameAndID(t *testing.T) {
 
 func TestUpdateParentByID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "parent")
 	if err != nil {
 		t.Fatalf("failed to fetch fake parent team: %s", err)
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -681,19 +666,18 @@ func TestUpdateParentByID(t *testing.T) {
 
 func TestUpdateParentByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "parent")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -729,19 +713,18 @@ func TestUpdateParentByName(t *testing.T) {
 
 func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	parentTeam, err := fs.TeamStore.GetTeamByName(ctx, "parent")
 	if err != nil {
 		t.Fatalf("failed to fetch fake parent team: %s", err)
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -771,11 +754,10 @@ func TestUpdateParentErrorBothNameAndID(t *testing.T) {
 
 func TestUpdateParentCircular(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	parentTeamID := fs.AddTeam(&types.Team{Name: "parent"})
 	fs.AddTeam(&types.Team{Name: "child", ParentTeamID: parentTeamID})
 	RunTest(t, &Test{
@@ -804,11 +786,10 @@ func TestUpdateParentCircular(t *testing.T) {
 
 func TestTeamMakeRoot(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	parentTeamID := fs.AddTeam(&types.Team{Name: "parent"})
 	fs.AddTeam(&types.Team{Name: "child", ParentTeamID: parentTeamID})
 	RunTest(t, &Test{
@@ -834,12 +815,11 @@ func TestTeamMakeRoot(t *testing.T) {
 
 func TestDeleteTeamByID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -873,12 +853,11 @@ func TestDeleteTeamByID(t *testing.T) {
 
 func TestDeleteTeamByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -912,12 +891,11 @@ func TestDeleteTeamByName(t *testing.T) {
 
 func TestDeleteTeamErrorBothIDAndNameGiven(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -950,11 +928,10 @@ func TestDeleteTeamErrorBothIDAndNameGiven(t *testing.T) {
 
 func TestDeleteTeamNoIdentifierGiven(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -977,11 +954,10 @@ func TestDeleteTeamNoIdentifierGiven(t *testing.T) {
 
 func TestDeleteTeamNotFound(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -1007,13 +983,12 @@ func TestDeleteTeamNotFound(t *testing.T) {
 
 func TestDeleteTeamUnauthorized(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	t.Run("non-member", func(t *testing.T) {
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 		RunTest(t, &Test{
@@ -1039,7 +1014,7 @@ func TestDeleteTeamUnauthorized(t *testing.T) {
 		})
 	})
 	t.Run("readonly", func(t *testing.T) {
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team-readonly", ReadOnly: true}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team-readonly", ReadOnly: true}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 		team, err := fs.TeamStore.GetTeamByName(ctx, "team-readonly")
@@ -1075,12 +1050,11 @@ func TestDeleteTeamUnauthorized(t *testing.T) {
 
 func TestTeamByName(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create a team: %s", err)
 	}
 	RunTest(t, &Test{
@@ -1104,11 +1078,10 @@ func TestTeamByName(t *testing.T) {
 
 func TestTeamByNameNotFound(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	RunTest(t, &Test{
 		Schema:  mustParseGraphQLSchema(t, db),
 		Context: ctx,
@@ -1128,19 +1101,18 @@ func TestTeamByNameNotFound(t *testing.T) {
 
 func TestTeamsPaginated(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	for i := 1; i <= 25; i++ {
 		name := fmt.Sprintf("team-%d", i)
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
 	var (
-		hasNextPage bool = true
+		hasNextPage = true
 		cursor      string
 	)
 	query := `query Teams($cursor: String!) {
@@ -1195,13 +1167,12 @@ func TestTeamsPaginated(t *testing.T) {
 // Skip testing DisplayName search as this is the same except the fake behavior.
 func TestTeamsNameSearch(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	for _, name := range []string{"hit-1", "Hit-2", "HIT-3", "miss-4", "mIss-5", "MISS-6"} {
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
@@ -1229,11 +1200,10 @@ func TestTeamsNameSearch(t *testing.T) {
 
 func TestTeamsExceptAncestorID(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	parentTeamID := fs.AddTeam(&types.Team{Name: "parent-include"})
 	fs.AddTeam(&types.Team{Name: "child-include", ParentTeamID: parentTeamID})
 	topLevelNotExcluded := fs.AddTeam(&types.Team{Name: "top-level-not-excluded"})
@@ -1321,14 +1291,13 @@ func TestTeamsExceptAncestorID(t *testing.T) {
 
 func TestTeamsCount(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	for i := 1; i <= 25; i++ {
 		name := fmt.Sprintf("team-%d", i)
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("failed to create a team: %s", err)
 		}
 	}
@@ -1360,12 +1329,11 @@ func TestTeamsCount(t *testing.T) {
 
 func TestChildTeams(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "parent"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	parent, err := fs.TeamStore.GetTeamByName(ctx, "parent")
@@ -1374,13 +1342,13 @@ func TestChildTeams(t *testing.T) {
 	}
 	for i := 1; i <= 5; i++ {
 		name := fmt.Sprintf("child-%d", i)
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name, ParentTeamID: parent.ID}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name, ParentTeamID: parent.ID}); err != nil {
 			t.Fatalf("cannot create child team: %s", err)
 		}
 	}
 	for i := 6; i <= 10; i++ {
 		name := fmt.Sprintf("not-child-%d", i)
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: name}); err != nil {
 			t.Fatalf("cannot create a team: %s", err)
 		}
 	}
@@ -1414,19 +1382,18 @@ func TestChildTeams(t *testing.T) {
 
 func TestMembersPaginated(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team-with-members"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team-with-members"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
 	teamWithMembers, err := fs.TeamStore.GetTeamByName(ctx, "team-with-members")
 	if err != nil {
 		t.Fatalf("failed to featch fake team: %s", err)
 	}
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "different-team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "different-team"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
 	differentTeam, err := fs.TeamStore.GetTeamByName(ctx, "different-team")
@@ -1443,7 +1410,7 @@ func TestMembersPaginated(t *testing.T) {
 		}
 	}
 	var (
-		hasNextPage bool = true
+		hasNextPage = true
 		cursor      string
 	)
 	query := `query Members($cursor: String!) {
@@ -1511,12 +1478,11 @@ func TestMembersPaginated(t *testing.T) {
 
 func TestMembersSearch(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: false})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create parent team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -1572,12 +1538,11 @@ func TestMembersSearch(t *testing.T) {
 func TestMembersAdd(t *testing.T) {
 	t.Run("with write access", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: true})
 		ctx := userCtx(userID)
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 			t.Fatalf("failed to create team: %s", err)
 		}
 		team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -1627,12 +1592,11 @@ func TestMembersAdd(t *testing.T) {
 	})
 	t.Run("without write access", func(t *testing.T) {
 		fs := fakedb.New()
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		fs.Wire(db)
 		userID := fs.AddUser(types.User{SiteAdmin: false})
 		ctx := userCtx(userID)
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-		if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+		if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 			t.Fatalf("failed to create team: %s", err)
 		}
 		RunTest(t, &Test{
@@ -1662,12 +1626,11 @@ func TestMembersAdd(t *testing.T) {
 
 func TestMembersRemove(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -1722,12 +1685,11 @@ func TestMembersRemove(t *testing.T) {
 
 func TestMembersSet(t *testing.T) {
 	fs := fakedb.New()
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	fs.Wire(db)
 	userID := fs.AddUser(types.User{SiteAdmin: true})
 	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
-	if err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
+	if _, err := fs.TeamStore.CreateTeam(ctx, &types.Team{Name: "team"}); err != nil {
 		t.Fatalf("failed to create team: %s", err)
 	}
 	team, err := fs.TeamStore.GetTeamByName(ctx, "team")
@@ -1779,32 +1741,6 @@ func TestMembersSet(t *testing.T) {
 			"r2": string(relay.MarshalID("User", setIDs[1])),
 			"r3": string(relay.MarshalID("User", setIDs[2])),
 			"r4": string(relay.MarshalID("User", setIDs[3])),
-		},
-	})
-}
-
-func TestTeamsDisabled(t *testing.T) {
-	fs := fakedb.New()
-	db := database.NewMockDB()
-	fs.Wire(db)
-	userID := fs.AddUser(types.User{SiteAdmin: false})
-	ctx := userCtx(userID)
-	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": false}, nil, nil))
-	RunTest(t, &Test{
-		Schema:  mustParseGraphQLSchema(t, db),
-		Context: ctx,
-		Query: `query TeamByID($id: ID!){
-			node(id: $id) {
-				__typename
-				... on Team {
-				  name
-				}
-			}
-		}`,
-		ExpectedResult: `{"node": null}`,
-		ExpectedErrors: []*gqlerrors.QueryError{{Message: "teams are not available yet", Path: []any{"node"}}},
-		Variables: map[string]any{
-			"id": "VGVhbTox",
 		},
 	})
 }

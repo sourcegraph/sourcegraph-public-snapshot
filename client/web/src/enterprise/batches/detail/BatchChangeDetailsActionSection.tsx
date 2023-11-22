@@ -4,12 +4,12 @@ import { mdiInformation, mdiClose, mdiDelete, mdiPencil } from '@mdi/js'
 import { useNavigate } from 'react-router-dom'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
-import { Scalars } from '../../../graphql-operations'
+import type { Scalars } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { deleteBatchChange as _deleteBatchChange } from './backend'

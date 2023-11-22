@@ -1,4 +1,4 @@
-import { RouteObject } from 'react-router-dom'
+import type { RouteObject } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 

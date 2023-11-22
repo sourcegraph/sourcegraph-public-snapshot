@@ -1,13 +1,15 @@
 import assert from 'assert'
 
+import { afterEach, beforeEach, describe, it } from 'mocha'
+
 import type { ExtensionContext } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { setupExtensionMocking, simpleHoverProvider } from '@sourcegraph/shared/src/testing/integration/mockExtension'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { readEnvironmentBoolean, readEnvironmentString, retry } from '@sourcegraph/shared/src/testing/utils'
 
-import { BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
+import { type BrowserIntegrationTestContext, createBrowserIntegrationTestContext } from './context'
 import { closeInstallPageTab } from './shared'
 
 describe('GitHub', () => {

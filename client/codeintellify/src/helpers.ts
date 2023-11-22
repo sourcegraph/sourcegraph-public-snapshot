@@ -1,10 +1,10 @@
 import { isObject } from 'lodash'
-import { Subscribable, Observable, from } from 'rxjs'
+import { type Subscribable, type Observable, from } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { isDefined } from '@sourcegraph/common'
 
-import { MaybeLoadingResult } from './loading'
+import type { MaybeLoadingResult } from './loading'
 
 /**
  * Checks if the given value is thenable.

@@ -4,18 +4,18 @@ import classNames from 'classnames'
 import { startCase } from 'lodash'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, Series } from '@sourcegraph/wildcard'
+import { Card, H2, Text, LoadingSpinner, AnchorLink, H4, LineChart, type Series } from '@sourcegraph/wildcard'
 
-import { ExtensionsStatisticsResult, ExtensionsStatisticsVariables } from '../../../graphql-operations'
+import type { ExtensionsStatisticsResult, ExtensionsStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
-import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { ValueLegendList, type ValueLegendListProps } from '../components/ValueLegendList'
 import { useChartFilters } from '../useChartFilters'
-import { StandardDatum } from '../utils'
+import type { StandardDatum } from '../utils'
 
 import { EXTENSIONS_STATISTICS } from './queries'
 
@@ -212,21 +212,21 @@ export const AnalyticsExtensionsPage: React.FunctionComponent = () => {
                             <Text as="li">
                                 {installationStats.vscode}% of users have installed the{' '}
                                 <AnchorLink to="/help/integration/editor" target="_blank">
-                                    VS Code IDE extension
+                                    VS Code extension
                                 </AnchorLink>
                                 . Promote installation to increase the value.
                             </Text>
                             <Text as="li">
                                 {installationStats.jetbrains}% of users have installed the{' '}
                                 <AnchorLink to="/help/integration/editor" target="_blank">
-                                    JetBrains IDE plugin
+                                    JetBrains plugin
                                 </AnchorLink>
                                 . Promote installation to increase the value.
                             </Text>
                             <Text as="li">
                                 {installationStats.browser}% of users have installed the{' '}
                                 <AnchorLink to="/help/integration/browser_extension" target="_blank">
-                                    Browser extension
+                                    browser extension
                                 </AnchorLink>
                                 . Promote installation to increase the value.
                             </Text>

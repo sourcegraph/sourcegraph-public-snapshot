@@ -4,29 +4,31 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
@@ -35,9 +37,12 @@ func newTestClient(t *testing.T, cli httpcli.Doer) *V3Client {
 
 func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli httpcli.Doer) *V3Client {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}
-	return NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
+	c := NewV3Client(logtest.Scoped(t), "Test", apiURL, auth, cli)
+	c.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+	return c
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
@@ -52,35 +57,39 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			visibility: VisibilityAll,
 			wantRepos: []*Repository{
 				{
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
-					DatabaseID:       263034151,
-					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
-					IsPrivate:        true,
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
+					DatabaseID:         263034151,
+					NameWithOwner:      "sourcegraph-vcr-repos/private-org-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
+					IsPrivate:          true,
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 1,
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
-					DatabaseID:       263034073,
-					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
-					IsPrivate:        true,
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:         263034073,
+					NameWithOwner:      "sourcegraph-vcr/private-user-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:          true,
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 14,
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
-					DatabaseID:       263033949,
-					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:         263033949,
+					NameWithOwner:      "sourcegraph-vcr/public-user-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 5,
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
-					DatabaseID:       263033761,
-					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+					DatabaseID:         263033761,
+					NameWithOwner:      "sourcegraph-vcr-repos/public-org-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 1,
 				},
 			},
 		},
@@ -89,19 +98,21 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			visibility: VisibilityPublic,
 			wantRepos: []*Repository{
 				{
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
-					DatabaseID:       263033949,
-					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:         263033949,
+					NameWithOwner:      "sourcegraph-vcr/public-user-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 5,
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
-					DatabaseID:       263033761,
-					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+					DatabaseID:         263033761,
+					NameWithOwner:      "sourcegraph-vcr-repos/public-org-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 1,
 				},
 			},
 		},
@@ -110,21 +121,23 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			visibility: VisibilityPrivate,
 			wantRepos: []*Repository{
 				{
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
-					DatabaseID:       263034151,
-					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
-					IsPrivate:        true,
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
+					DatabaseID:         263034151,
+					NameWithOwner:      "sourcegraph-vcr-repos/private-org-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
+					IsPrivate:          true,
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 1,
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
-					DatabaseID:       263034073,
-					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
-					IsPrivate:        true,
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:         263034073,
+					NameWithOwner:      "sourcegraph-vcr/private-user-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:          true,
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 14,
 				},
 			},
 		},
@@ -133,20 +146,22 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			affiliations: []RepositoryAffiliation{AffiliationCollaborator, AffiliationOwner},
 			wantRepos: []*Repository{
 				{
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
-					DatabaseID:       263034073,
-					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
-					IsPrivate:        true,
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:         263034073,
+					NameWithOwner:      "sourcegraph-vcr/private-user-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:          true,
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 14,
 				}, {
-					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
-					DatabaseID:       263033949,
-					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
-					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
-					ViewerPermission: "ADMIN",
-					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+					ID:                 "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:         263033949,
+					NameWithOwner:      "sourcegraph-vcr/public-user-repo-1",
+					URL:                "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					ViewerPermission:   "ADMIN",
+					RepositoryTopics:   RepositoryTopics{Nodes: []RepositoryTopic{}},
+					DiskUsageKibibytes: 5,
 				},
 			},
 		},
@@ -291,7 +306,7 @@ func TestGetAuthenticatedUserOrgs(t *testing.T) {
 	defer save()
 
 	ctx := context.Background()
-	orgs, _, _, err := cli.GetAuthenticatedUserOrgsForPage(ctx, 1)
+	orgs, _, _, err := cli.GetAuthenticatedUserOrgs(ctx, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -470,6 +485,7 @@ func TestGetOrganization(t *testing.T) {
 
 func TestGetRepository(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	cli, save := newV3TestClient(t, "GetRepository")
 	defer save()
@@ -492,6 +508,8 @@ func TestGetRepository(t *testing.T) {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
 
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+
 			remaining, _, _, _ = cli.ExternalRateLimiter().Get()
 		})
 
@@ -509,6 +527,8 @@ func TestGetRepository(t *testing.T) {
 			if repo.NameWithOwner != want {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
 
 			remaining2, _, _, _ := cli.ExternalRateLimiter().Get()
 			if remaining2 < remaining {
@@ -528,6 +548,14 @@ func TestGetRepository(t *testing.T) {
 		if repo != nil {
 			t.Error("repo != nil")
 		}
+		testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+	})
+
+	t.Run("forked repo", func(t *testing.T) {
+		repo, err := cli.GetRepository(context.Background(), "sgtest", "sourcegraph")
+		require.NoError(t, err)
+
+		testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
 	})
 }
 
@@ -541,6 +569,7 @@ func TestListOrganizations(t *testing.T) {
 	// way we do in TestGetRepository.
 	t.Run("enterprise-integration-cached-response", func(t *testing.T) {
 		rcache.SetupForTest(t)
+		ratelimit.SetupForTest(t)
 
 		cli, save := newV3TestEnterpriseClient(t, "ListOrganizations")
 		defer save()
@@ -587,6 +616,7 @@ func TestListOrganizations(t *testing.T) {
 
 	t.Run("enterprise-pagination", func(t *testing.T) {
 		rcache.SetupForTest(t)
+		ratelimit.SetupForTest(t)
 
 		mockOrgs := make([]*Org, 200)
 
@@ -627,6 +657,7 @@ func TestListOrganizations(t *testing.T) {
 
 		uri, _ := url.Parse(testServer.URL)
 		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
+		testCli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 
 		runTest := func(since int, expectedNextSince int, expectedOrgs []*Org) {
 			orgs, nextSince, err := testCli.ListOrganizations(context.Background(), since)
@@ -743,9 +774,16 @@ func TestV3Client_Fork(t *testing.T) {
 		// user's namespace and sourcegraph-testing: it doesn't matter whether it
 		// already has been or not because of the way the GitHub API operates.
 		// We'll use github.com/sourcegraph/automation-testing as our guinea pig.
+		//
+		// Note: If you're running this test with `-update=success`, it will fail because the repo
+		// is already forked here at:
+		//
+		// https://github.com/sourcegraph-testing/sourcegraph-automation-testing
+		//
+		// Request an admin to delete the fork and then run the test again with `-update=success`
 		for name, org := range map[string]*string{
 			"user":                nil,
-			"sourcegraph-testing": strPtr("sourcegraph-testing"),
+			"sourcegraph-testing": pointers.Ptr("sourcegraph-testing"),
 		} {
 			t.Run(name, func(t *testing.T) {
 				testName := testName(t)
@@ -753,12 +791,12 @@ func TestV3Client_Fork(t *testing.T) {
 				defer save()
 
 				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org, "sourcegraph-automation-testing")
-				assert.Nil(t, err)
-				assert.NotNil(t, fork)
+				require.Nil(t, err)
+				require.NotNil(t, fork)
 				if org != nil {
 					owner, err := fork.Owner()
-					assert.Nil(t, err)
-					assert.Equal(t, *org, owner)
+					require.Nil(t, err)
+					require.Equal(t, *org, owner)
 				}
 
 				testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
@@ -774,10 +812,166 @@ func TestV3Client_Fork(t *testing.T) {
 		defer save()
 
 		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil, "sourcegraph-testing-unforkable")
-		assert.NotNil(t, err)
-		assert.Nil(t, fork)
+		require.NotNil(t, err)
+		require.Nil(t, fork)
 
 		testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
+	})
+}
+
+func TestV3Client_GetRef(t *testing.T) {
+	ctx := context.Background()
+	t.Run("success", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_GetRef_success")
+		defer save()
+
+		// For this test, we need the ref for a branch that exists. We'll use the
+		// "always-open-pr" branch of https://github.com/sourcegraph/automation-testing.
+		commit, err := cli.GetRef(ctx, "sourcegraph", "automation-testing", "refs/heads/always-open-pr")
+		assert.Nil(t, err)
+		assert.NotNil(t, commit)
+
+		// Check that a couple properties on the commit are what we expect.
+		assert.Equal(t, commit.SHA, "37406e7dfa4466b80d1da183d6477aac16b1e58c")
+		assert.Equal(t, commit.URL, "https://api.github.com/repos/sourcegraph/automation-testing/commits/37406e7dfa4466b80d1da183d6477aac16b1e58c")
+		assert.Equal(t, commit.Commit.Author.Name, "Thorsten Ball")
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_GetRef_success"), update("TestV3Client_GetRef_success"), commit)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_GetRef_failure")
+		defer save()
+
+		// For this test, we need the ref for a branch that definitely does not exist.
+		nonexistentBranch := "refs/heads/butterfly-sponge-sandwich-rotation-technique-12345678-lol"
+		commit, err := cli.GetRef(ctx, "sourcegraph", "automation-testing", nonexistentBranch)
+		assert.Nil(t, commit)
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, "No commit found for SHA: "+nonexistentBranch)
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_GetRef_failure"), update("TestV3Client_GetRef_failure"), err)
+	})
+}
+
+func TestV3Client_CreateCommit(t *testing.T) {
+	ctx := context.Background()
+	t.Run("success", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_CreateCommit_success")
+		defer save()
+
+		// For this test, we'll create a commit on
+		// https://github.com/sourcegraph/automation-testing based on this existing commit:
+		// https://github.com/sourcegraph/automation-testing/commit/37406e7dfa4466b80d1da183d6477aac16b1e58c.
+		treeSha := "851e666a00cd0cf74f1558ac5664fe431d3b1935"
+		parentSha := "9d04a0d8733dafbb5d75e594a9ec525c49dfc975"
+		author := &restAuthorCommiter{
+			Name:  "Sourcegraph VCR Test",
+			Email: "dev@sourcegraph.com",
+			Date:  "2023-06-01T12:00:00Z",
+		}
+		commit, err := cli.CreateCommit(ctx, "sourcegraph", "automation-testing", "I'm a new commit from a VCR test!", treeSha, []string{parentSha}, author, author)
+		assert.Nil(t, err)
+		assert.NotNil(t, commit)
+
+		// Check that a couple properties on the commit are what we expect.
+		// The SHA will be different every time, so we just check that it's not the
+		// same as the commit we based this one on.
+		assert.NotEqual(t, commit.SHA, "37406e7dfa4466b80d1da183d6477aac16b1e58c")
+		assert.Equal(t, commit.Message, "I'm a new commit from a VCR test!")
+		assert.Equal(t, commit.Tree.SHA, treeSha)
+		assert.Len(t, commit.Parents, 1)
+		assert.Equal(t, commit.Parents[0].SHA, parentSha)
+		assert.Equal(t, commit.Author, author)
+		assert.Equal(t, commit.Committer, author)
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_CreateCommit_success"), update("TestV3Client_CreateCommit_success"), commit)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_CreateCommit_failure")
+		defer save()
+
+		// For this test, we'll create a commit on
+		// https://github.com/sourcegraph/automation-testing with bogus values for several of its properties.
+		commit, err := cli.CreateCommit(ctx, "sourcegraph", "automation-testing", "I'm not going to work!", "loltotallynotatree", []string{"loltotallynotacommit"}, nil, nil)
+		assert.Nil(t, commit)
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, "The tree parameter must be exactly 40 characters and contain only [0-9a-f]")
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_CreateCommit_failure"), update("TestV3Client_CreateCommit_failure"), err)
+	})
+}
+
+func TestV3Client_UpdateRef(t *testing.T) {
+	ctx := context.Background()
+	t.Run("success", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_UpdateRef_success")
+		defer save()
+
+		// For this test, we'll use the "ready-to-update" branch of
+		// https://github.com/sourcegraph/automation-testing, duplicate the commit that's
+		// currently at its HEAD, and update the branch to point to the new commit. Then
+		// we'll put it back to the original commit so this test can easily be run again.
+
+		originalCommit := &RestCommit{
+			URL: "https://api.github.com/repos/sourcegraph/automation-testing/commits/c2f0a019668a800df480f07dba5d9dcaa0f64350",
+			SHA: "c2f0a019668a800df480f07dba5d9dcaa0f64350",
+			Tree: restCommitTree{
+				SHA: "9398082230ccd0ea7249b601d364e518dcd89271",
+			},
+			Parents: []restCommitParent{
+				{SHA: "58dd8da9d9099a823c814c528b29b72c9b2ac98b"},
+			},
+		}
+		author := &restAuthorCommiter{
+			Name:  "Sourcegraph VCR Test",
+			Email: "dev@sourcegraph.com",
+			Date:  "2023-06-01T12:00:00Z",
+		}
+
+		// Create the new commit we'll use to update the branch with.
+		newCommit, err := cli.CreateCommit(ctx, "sourcegraph", "automation-testing", "New commit from VCR test!", originalCommit.Tree.SHA, []string{originalCommit.Parents[0].SHA}, author, author)
+
+		assert.Nil(t, err)
+		assert.NotNil(t, newCommit)
+		assert.NotEqual(t, originalCommit.SHA, newCommit.SHA)
+		assert.Equal(t, newCommit.Message, "New commit from VCR test!")
+
+		updatedRef, err := cli.UpdateRef(ctx, "sourcegraph", "automation-testing", "refs/heads/ready-to-update", newCommit.SHA)
+		assert.Nil(t, err)
+		assert.NotNil(t, updatedRef)
+
+		// Check that a couple properties on the updated ref are what we expect.
+		assert.Equal(t, updatedRef.Ref, "refs/heads/ready-to-update")
+		assert.Equal(t, updatedRef.Object.Type, "commit")
+		assert.Equal(t, updatedRef.Object.SHA, newCommit.SHA)
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_UpdateRef_success"), update("TestV3Client_UpdateRef_success"), updatedRef)
+
+		// Now put the branch back to its original commit.
+		updatedRef, err = cli.UpdateRef(ctx, "sourcegraph", "automation-testing", "refs/heads/ready-to-update", originalCommit.SHA)
+		assert.Nil(t, err)
+		assert.NotNil(t, updatedRef)
+
+		// Check that a couple properties on the updated ref are what we expect.
+		assert.Equal(t, updatedRef.Ref, "refs/heads/ready-to-update")
+		assert.Equal(t, updatedRef.Object.Type, "commit")
+		assert.Equal(t, updatedRef.Object.SHA, originalCommit.SHA)
+	})
+
+	t.Run("failure", func(t *testing.T) {
+		cli, save := newV3TestClient(t, "TestV3Client_UpdateRef_failure")
+		defer save()
+
+		// For this test, we'll try to update the "ready-to-update" branch of
+		// https://github.com/sourcegraph/automation-testing to point to a bogus commit
+		updatedRef, err := cli.UpdateRef(ctx, "sourcegraph", "automation-testing", "refs/heads/ready-to-update", "fakeshalolfakeshalolfakeshalolfakeshalol")
+		assert.Nil(t, updatedRef)
+		assert.NotNil(t, err)
+		assert.ErrorContains(t, err, "The sha parameter must be exactly 40 characters and contain only [0-9a-f]")
+
+		testutil.AssertGolden(t, filepath.Join("testdata", "golden", "TestV3Client_UpdateRef_failure"), update("TestV3Client_UpdateRef_failure"), err)
 	})
 }
 
@@ -795,7 +989,10 @@ func newV3TestClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer), save
+	cli := NewV3Client(logtest.Scoped(t), "Test", uri, vcrToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+
+	return cli, save
 }
 
 func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
@@ -812,16 +1009,17 @@ func newV3TestEnterpriseClient(t testing.TB, name string) (*V3Client, func()) {
 		t.Fatal(err)
 	}
 
-	return NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer), save
+	cli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, doer)
+	cli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
+	return cli, save
 }
-
-func strPtr(s string) *string { return &s }
 
 func TestClient_ListRepositoriesForSearch(t *testing.T) {
 	cli, save := newV3TestClient(t, "ListRepositoriesForSearch")
 	defer save()
 
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 	reposPage, err := cli.ListRepositoriesForSearch(context.Background(), "org:sourcegraph-vcr-repos", 1)
 	if err != nil {
 		t.Fatal(err)
@@ -895,12 +1093,14 @@ func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
 	ctx := context.Background()
 
 	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
+	client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 	defer save()
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
 			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
+			client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 
 			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
 			if err != nil {
@@ -1014,6 +1214,7 @@ func TestResponseHasNextPage(t *testing.T) {
 
 func TestRateLimitRetry(t *testing.T) {
 	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
 
 	ctx := context.Background()
 
@@ -1033,12 +1234,7 @@ func TestRateLimitRetry(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			testCase.numRequests += 1
 			if usePrimaryLimit {
-				w.Header().Add("x-ratelimit-remaining", "0")
-				w.Header().Add("x-ratelimit-limit", "5000")
-				resetTime := time.Now().Add(time.Second)
-				w.Header().Add("x-ratelimit-reset", strconv.Itoa(int(resetTime.Unix())))
-				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte(`{"message": "Primary rate limit hit"}`))
+				simulateGitHubPrimaryRateLimitHit(w)
 
 				usePrimaryLimit = false
 				testCase.primaryLimitWasHit = true
@@ -1046,9 +1242,7 @@ func TestRateLimitRetry(t *testing.T) {
 			}
 
 			if useSecondaryLimit {
-				w.Header().Add("retry-after", "1")
-				w.WriteHeader(http.StatusForbidden)
-				w.Write([]byte(`{"message": "Secondary rate limit hit"}`))
+				simulateGitHubSecondaryRateLimitHit(w)
 
 				useSecondaryLimit = false
 				testCase.secondaryLimitWasHit = true
@@ -1064,7 +1258,8 @@ func TestRateLimitRetry(t *testing.T) {
 		srvURL, err := url.Parse(srv.URL)
 		require.NoError(t, err)
 
-		testCase.client = NewV3Client(logtest.NoOp(t), "test", srvURL, nil, nil)
+		testCase.client = newV3Client(logtest.NoOp(t), "test", srvURL, nil, "", nil)
+		testCase.client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 		testCase.client.waitForRateLimit = true
 
 		return testCase
@@ -1136,6 +1331,75 @@ func TestRateLimitRetry(t *testing.T) {
 	})
 }
 
+func TestV3Client_Request_RequestUnmutated(t *testing.T) {
+	rcache.SetupForTest(t)
+	ratelimit.SetupForTest(t)
+
+	payload := struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}{Name: "foobar", Age: 35}
+	result := struct{}{}
+
+	ctx := context.Background()
+
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DisableKeepAlives = true // Disable keep-alives otherwise the read of the request body is cached
+	cli := &http.Client{Transport: transport}
+
+	numRequests := 0
+	requestPaths := []string{}
+	requestBodies := []string{}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		numRequests++
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		requestPaths = append(requestPaths, r.URL.Path)
+		requestBodies = append(requestBodies, string(body))
+
+		if numRequests == 1 {
+			simulateGitHubPrimaryRateLimitHit(w)
+			return
+		}
+
+		w.Write([]byte(`{"message": "Very nice"}`))
+	}))
+
+	t.Cleanup(srv.Close)
+
+	srvURL, err := url.Parse(srv.URL)
+	require.NoError(t, err)
+
+	// Now, this is IMPORTANT: we use `APIRoot` to simulate a real setup in which
+	// we append the "API path" to the base URL configured by an admin.
+	apiURL, _ := APIRoot(srvURL)
+
+	// Now we create a client to talk to our test server with the API path
+	// appended.
+	client := NewV3Client(logtest.Scoped(t), "test", apiURL, nil, cli)
+
+	// We use client.post as a shortcut to send a request with a payload, so
+	// we can test that the payload and the path are untouched when retried.
+	// The request doesn't make sense, but that doesn't matter since we're only
+	// testing the client.
+	_, err = client.post(ctx, "user/repos", payload, &result)
+	require.NoError(t, err)
+
+	// Two requests should have been sent
+	assert.Equal(t, numRequests, 2)
+
+	// We want the same data to have been sent, twice
+	wantPath := "/api/v3/user/repos"
+	wantBody := `{"name":"foobar","age":35}`
+	assert.Equal(t, []string{wantPath, wantPath}, requestPaths)
+	assert.Equal(t, []string{wantBody, wantBody}, requestBodies)
+}
+
 func TestListPublicRepositories(t *testing.T) {
 	t.Run("should skip null REST repositories", func(t *testing.T) {
 		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1147,6 +1411,7 @@ func TestListPublicRepositories(t *testing.T) {
 
 		uri, _ := url.Parse(testServer.URL)
 		testCli := NewV3Client(logtest.Scoped(t), "Test", uri, gheToken, testServer.Client())
+		testCli.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 
 		repositories, hasNextPage, err := testCli.ListPublicRepositories(context.Background(), 0)
 		if err != nil {

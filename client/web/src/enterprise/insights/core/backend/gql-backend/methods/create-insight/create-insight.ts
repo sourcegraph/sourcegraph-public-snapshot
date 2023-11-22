@@ -1,7 +1,7 @@
-import { ApolloCache, ApolloClient, gql } from '@apollo/client'
-import { from, Observable } from 'rxjs'
+import { type ApolloCache, type ApolloClient, gql } from '@apollo/client'
+import { from, type Observable } from 'rxjs'
 
-import {
+import type {
     CreateLangStatsInsightResult,
     CreateSearchBasedInsightResult,
     GetDashboardInsightsResult,
@@ -10,7 +10,7 @@ import {
     PieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
 import { InsightType } from '../../../../types'
-import {
+import type {
     InsightCreateInput,
     MinimalCaptureGroupInsightData,
     MinimalComputeInsightData,

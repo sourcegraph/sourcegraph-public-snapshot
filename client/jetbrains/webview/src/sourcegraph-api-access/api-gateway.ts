@@ -1,6 +1,6 @@
 import { gql, requestGraphQLCommon } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { CurrentAuthStateResult, CurrentAuthStateVariables } from '@sourcegraph/shared/src/graphql-operations'
 
 export type SiteVersionAndCurrentAuthStateResult = CurrentAuthStateResult & {
     site: {
@@ -23,9 +23,9 @@ export const siteVersionAndUserQuery = gql`
             email
             displayName
             siteAdmin
-            tags
             url
             settingsURL
+            hasVerifiedEmail
             organizations {
                 nodes {
                     id
@@ -39,7 +39,6 @@ export const siteVersionAndUserQuery = gql`
                 canSignOut
             }
             viewerCanAdminister
-            tags
         }
     }
 `

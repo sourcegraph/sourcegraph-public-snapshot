@@ -1,13 +1,13 @@
-import React, { FunctionComponent } from 'react'
+import React, { type FunctionComponent } from 'react'
 
 import { mdiCheckboxBlankCircle } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { H4, Icon, Badge, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, H4, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../components/Collapsible'
-import { ExecutorFields } from '../../../graphql-operations'
+import type { ExecutorFields } from '../../../graphql-operations'
 
 import { ExecutorCompatibilityAlert } from './ExecutorCompatibilityAlert'
 
@@ -42,12 +42,24 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                                 </Tooltip>
                             )}
                             {node.hostname}{' '}
-                            <Badge
-                                variant="secondary"
-                                tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
-                            >
-                                {node.queueName}
-                            </Badge>
+                            {node.queueName !== null && (
+                                <Badge
+                                    variant="secondary"
+                                    tooltip={`The executor is configured to pull data from the queue "${node.queueName}"`}
+                                >
+                                    {node.queueName}
+                                </Badge>
+                            )}
+                            {(node.queueNames || [])?.map((queue, index, arr) => (
+                                <Badge
+                                    key={queue}
+                                    variant="secondary"
+                                    tooltip={`The executor is configured to pull data from the queue "${queue}"`}
+                                    className={arr.length - 1 !== index ? 'mr-1' : ''}
+                                >
+                                    {queue}
+                                </Badge>
+                            ))}
                         </H4>
                     </div>
                     <span>

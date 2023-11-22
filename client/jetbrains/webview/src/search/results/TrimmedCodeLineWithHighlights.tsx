@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { LineMatch } from '@sourcegraph/shared/src/search/stream'
+import type { LineMatch } from '@sourcegraph/shared/src/search/stream'
 
 import styles from './FileSearchResult.module.scss'
 

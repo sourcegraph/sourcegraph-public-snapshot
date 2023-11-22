@@ -2,7 +2,7 @@
 
 package schema
 
-// ChangesetSpecJSON is the content of the file "../../../schema/changeset_spec.schema.json".
+// ChangesetSpecJSON is the content of the file "schema/changeset_spec.schema.json".
 const ChangesetSpecJSON = `{
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ChangesetSpec",
@@ -59,6 +59,10 @@ const ChangesetSpecJSON = `{
           "type": "string",
           "description": "The GraphQL ID of the repository that contains the branch with this changeset's changes. Fork repositories and cross-repository changesets are not yet supported. Therefore, headRepository must be equal to baseRepository.",
           "examples": ["UmVwb3NpdG9yeTo5Cg=="]
+        },
+        "fork": {
+          "type": "boolean",
+          "description": "Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global ` + "`" + `batches.enforceFork` + "`" + ` setting is enabled. If set, this property will override any global setting."
         },
         "headRef": {
           "type": "string",

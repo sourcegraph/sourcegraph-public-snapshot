@@ -1,18 +1,18 @@
-import { FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiChevronRight, mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { H3, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import {
-    Connection,
+    type Connection,
     FilteredConnection,
-    FilteredConnectionQueryArguments,
+    type FilteredConnectionQueryArguments,
 } from '../../../../components/FilteredConnection'
-import { PreciseIndexFields } from '../../../../graphql-operations'
+import type { PreciseIndexFields } from '../../../../graphql-operations'
 import { queryDependencyGraph as defaultQueryDependencyGraph } from '../hooks/queryDependencyGraph'
 
 import { PreciseIndexLastUpdated } from './CodeIntelLastUpdated'

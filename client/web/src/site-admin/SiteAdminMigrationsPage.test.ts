@@ -1,6 +1,7 @@
 import { parse } from 'semver'
+import { describe, expect, it } from 'vitest'
 
-import { OutOfBandMigrationFields } from '../graphql-operations'
+import type { OutOfBandMigrationFields } from '../graphql-operations'
 
 import { isComplete, isInvalidForVersion } from './SiteAdminMigrationsPage'
 

@@ -436,6 +436,11 @@ type ExternalChangeset implements Node & Changeset {
     forkName: String
 
     """
+    Commit verification object for this changeset's commit, if it was signed.
+    """
+    commitVerification: CommitVerification
+
+    """
     The review state of this changeset. This is only set once the changeset is published on the code host.
 
     Note: The COMMENTED and DISMISSED review states are not yet implemented.
@@ -478,6 +483,35 @@ type ExternalChangeset implements Node & Changeset {
     Null if the changeset was only imported.
     """
     currentSpec: VisibleChangesetSpec
+}
+
+"""
+Commit signing verification for a code host, e.g. if it was signed via GitHub App or
+an SSH key.
+"""
+union CommitVerification = GitHubCommitVerification
+
+"""
+The verification object describing the result of verifying the commit's signature.
+https://docs.github.com/en/rest/git/commits?apiVersion=2022-11-28#create-a-commit
+"""
+type GitHubCommitVerification {
+    """
+    Indicates whether GitHub considers the signature in the commit verified
+    """
+    verified: Boolean!
+    """
+    The reason for the verified value
+    """
+    reason: String!
+    """
+    The signature extracted from the commit
+    """
+    signature: String!
+    """
+    The value that was signed
+    """
+    payload: String!
 }
 
 """
@@ -1916,6 +1950,11 @@ extend type Query {
     Returns the max number of changesets are allowed for License that does not have the batch change feature.
     """
     maxUnlicensedChangesets: Int!
+
+    """
+    Get all changesets in the given batch change by ID.
+    """
+    getChangesetsByIDs(batchChange: ID!, changesets: [ID!]!): ChangesetConnection!
 }
 
 """
@@ -2854,6 +2893,10 @@ enum BulkOperationType {
     Bulk publish changesets.
     """
     PUBLISH
+    """
+    Export changesets.
+    """
+    EXPORT
 }
 
 """
@@ -3447,6 +3490,12 @@ type BatchChangesCodeHost {
     credential: BatchChangesCredential
 
     """
+    Configuration for commit signing, if any has been set up. Always nil if the code
+    host type doesn't have commit signing support yet.
+    """
+    commitSigningConfiguration: CommitSigningConfiguration
+
+    """
     If true, some of the repositories on this code host require
     an SSH key to be configured.
     """
@@ -3458,10 +3507,21 @@ type BatchChangesCodeHost {
     requiresUsername: Boolean!
 
     """
+    If true, this code host can setup commit signing.
+    """
+    supportsCommitSigning: Boolean!
+
+    """
     If true, the code host has webhooks configured.
     """
     hasWebhooks: Boolean!
 }
+
+"""
+Commit signing configuration for a code host, e.g. GitHubApp or SSHKey. Today, the
+only supported form of commit signing is via a GitHub App.
+"""
+union CommitSigningConfiguration = GitHubApp
 
 """
 A user token configured for batch changes use on the specified code host.
@@ -3629,6 +3689,12 @@ type BatchSpecWorkspaceFile implements File2 & Node {
     The canonical URL to this file (using an immutable revision specifier).
     """
     canonicalURL: String!
+
+    """
+    Not implemented.
+    """
+    changelistURL: String
+
     """
     The URLs to this file on external services.
     """

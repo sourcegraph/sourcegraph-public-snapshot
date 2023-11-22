@@ -1,2 +1,73 @@
+load("//dev:defs.bzl", "ts_project")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
+# config/ does not contain a src/
 # gazelle:js_files **/*.{ts,tsx}
-# gazelle:ignore
+# gazelle:js_test_files there-are-no-tests
+# gazelle:js_ignore_imports ../../src/browser-extension/manifest.spec.json
+
+ts_project(
+    name = "config",
+    srcs = [
+        "esbuild.ts",
+        "utils.ts",
+    ],
+    data = [
+        "//:postcss_config_js",  #keep
+    ],
+    module = "commonjs",
+    tsconfig = "//client/browser:tsconfig",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:node_modules/@types/node",
+        "//:node_modules/esbuild",
+        # HACKS: bundle-time css import
+        "//:node_modules/open-color",  #keep
+        "//:node_modules/path-browserify",  #keep
+        "//client/browser:node_modules/@sourcegraph/build-config",
+        "//client/build-config:build-config_lib",  #keep
+    ],
+)
+
+js_library(
+    name = "esbuild-config",
+    srcs = ["esbuild.bazel.js"],
+    deps = [
+        "//client/browser:node_modules/@sourcegraph/build-config",
+        "//client/browser/config",
+        "//client/build-config:build-config_lib",
+    ],
+)
+
+esbuild(
+    name = "esbuild-config_bundle",
+    srcs = [
+        ":esbuild-config",
+    ],
+    entry_point = "esbuild.bazel.js",
+    external = [
+        "fsevents",
+        "pnpapi",
+        "../../../../postcss.config",
+
+        # suppress esbuild require-resolve-not-external warnings
+        "esbuild",
+        "path-browserify",
+        "monaco-yaml/lib/esm/monaco.contribution",
+        "monaco-yaml/lib/esm/yaml.worker",
+        "rxjs/_esm5/internal/OuterSubscriber",
+        "rxjs/_esm5/internal/util/subscribeToResult",
+        "rxjs/_esm5/internal/util/subscribeToArray",
+        "rxjs/_esm5/internal/Observable",
+    ],
+    format = "cjs",
+    platform = "node",
+    sourcemap = False,
+    splitting = False,
+    target = "es2022",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:postcss_config_js",
+    ],
+)

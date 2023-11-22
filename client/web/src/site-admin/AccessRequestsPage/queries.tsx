@@ -3,9 +3,18 @@ import { gql } from '@sourcegraph/http-client'
 /**
  * GraphQL query for the list of pending access requests.
  */
-export const PENDING_ACCESS_REQUESTS_LIST = gql`
-    query PendingAccessRequestsList($first: Int, $last: Int, $after: String, $before: String) {
-        accessRequests(status: PENDING, first: $first, last: $last, after: $after, before: $before) {
+export const GET_ACCESS_REQUESTS_LIST = gql`
+    fragment AccessRequestNode on AccessRequest {
+        id
+        email
+        name
+        createdAt
+        additionalInfo
+        status
+    }
+
+    query GetAccessRequests($status: AccessRequestStatus!, $first: Int, $last: Int, $after: String, $before: String) {
+        accessRequests(status: $status, first: $first, last: $last, after: $after, before: $before) {
             totalCount
             pageInfo {
                 hasNextPage
@@ -14,12 +23,26 @@ export const PENDING_ACCESS_REQUESTS_LIST = gql`
                 startCursor
             }
             nodes {
-                id
-                email
-                name
-                createdAt
-                additionalInfo
-                status
+                ...AccessRequestNode
+            }
+        }
+    }
+`
+
+/**
+ * Graphql query to list the total number of registered users and the number license seats.
+ */
+export const HAS_LICENSE_SEATS = gql`
+    query HasLicenseSeats {
+        site {
+            productSubscription {
+                license {
+                    tags
+                    userCount
+                }
+            }
+            users(deletedAt: { empty: true }) {
+                totalCount
             }
         }
     }

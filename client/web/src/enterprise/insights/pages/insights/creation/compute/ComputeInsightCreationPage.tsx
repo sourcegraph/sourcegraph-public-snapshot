@@ -1,25 +1,25 @@
-import { FunctionComponent, useCallback, useMemo } from 'react'
+import { type FunctionComponent, useCallback, useMemo } from 'react'
 
 import BarChartIcon from 'mdi-react/BarChartIcon'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     PageHeader,
     useLocalStorage,
     useObservable,
     FORM_ERROR,
-    FormChangeEvent,
-    SubmissionErrors,
+    type FormChangeEvent,
+    type SubmissionErrors,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightCreationMode, CodeInsightsCreationActions, CodeInsightsPage } from '../../../../components'
-import { ComputeInsight } from '../../../../core'
+import type { ComputeInsight } from '../../../../core'
 import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import { ComputeInsightCreationContent } from './components/ComputeInsightCreationContent'
-import { CreateComputeInsightFormFields } from './types'
+import type { CreateComputeInsightFormFields } from './types'
 import { getSanitizedComputeInsight } from './utils/insight-sanitaizer'
 
 export interface InsightCreateEvent {
@@ -31,12 +31,10 @@ interface ComputeInsightCreationPageProps extends TelemetryProps {
     onInsightCreateRequest: (event: InsightCreateEvent) => Promise<unknown>
     onSuccessfulCreation: () => void
     onCancel: () => void
-    isSourcegraphApp: boolean
 }
 
 export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreationPageProps> = props => {
-    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel, isSourcegraphApp } =
-        props
+    const { backUrl, telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
 
     const { licensed, insight } = useUiFeatures()
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
@@ -83,7 +81,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
     }, [setInitialFormValues, telemetryService, onCancel])
 
     return (
-        <CodeInsightsPage isSourcegraphApp={isSourcegraphApp}>
+        <CodeInsightsPage>
             <PageTitle title="Create group results insight - Code Insights" />
 
             <PageHeader

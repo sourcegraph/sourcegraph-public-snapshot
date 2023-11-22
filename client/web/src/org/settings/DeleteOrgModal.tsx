@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button, Input, LoadingSpinner, Modal, Icon, H3, Text } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
-import { OrgAreaRouteContext } from '../area/OrgArea'
+import type { OrgAreaRouteContext } from '../area/OrgArea'
 
 interface DeleteOrgModalProps extends OrgAreaRouteContext {
     isOpen: boolean

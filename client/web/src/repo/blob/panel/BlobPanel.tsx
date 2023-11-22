@@ -1,24 +1,24 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { useLocation } from 'react-router-dom'
-import { Observable, Subscription } from 'rxjs'
+import { type Observable, Subscription } from 'rxjs'
 
-import { Panel, useBuiltinTabbedPanelViews } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
+import { type Panel, useBuiltinTabbedPanelViews } from '@sourcegraph/branded/src/components/panel/TabbedPanelContent'
 import { PanelContent } from '@sourcegraph/branded/src/components/panel/views/PanelContent'
 import { isDefined, isErrorLike } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { Settings, SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { type AbsoluteRepoFile, type ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { Text } from '@sourcegraph/wildcard'
 
-import { CodeIntelligenceProps } from '../../../codeintel'
+import type { CodeIntelligenceProps } from '../../../codeintel'
 import { ReferencesPanel } from '../../../codeintel/ReferencesPanel'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
-import { OwnConfigProps } from '../../../own/OwnConfigProps'
+import type { OwnConfigProps } from '../../../own/OwnConfigProps'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
 import { FileOwnershipPanel } from '../own/FileOwnershipPanel'
 
@@ -71,7 +71,7 @@ function useBlobPanelViews({
             : undefined
     }, [location.hash, location.search])
 
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership')
+    const [enableOwnershipPanels] = useFeatureFlag('enable-ownership-panels', true)
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
@@ -125,11 +125,11 @@ function useBlobPanelViews({
                               </PanelContent>
                           ),
                       },
-                ownEnabled && ownFeatureFlagEnabled
+                ownEnabled && enableOwnershipPanels
                     ? {
                           id: 'ownership',
                           title: 'Ownership',
-                          productStatus: 'experimental' as const,
+                          productStatus: 'beta' as const,
                           element: (
                               <PanelContent>
                                   <FileOwnershipPanel
@@ -161,7 +161,7 @@ function useBlobPanelViews({
             preferAbsoluteTimestamps,
             defaultPageSize,
             ownEnabled,
-            ownFeatureFlagEnabled,
+            enableOwnershipPanels,
         ])
     )
 

@@ -21,6 +21,15 @@ import { Container, H3, Link, LoadingSpinner, PageHeader, Text, useObservable } 
 import { PageTitle } from '../components/PageTitle'
 import { eventLogger } from '../tracking/eventLogger'
 
+// This seems to be necessary to have properly rounded corners on
+// the right side.
+const theme = EditorView.theme({
+    '.cm-scroller': {
+        borderTopRightRadius: 'var(--border-radius)',
+        borderBottomRightRadius: 'var(--border-radius)',
+    },
+})
+
 interface Props {}
 
 /**
@@ -50,14 +59,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 json(),
                 foldGutter(),
                 editorHeight({ height: '300px' }),
-                // This seems to be necessary to have properly rounded corners on
-                // the right side.
-                EditorView.theme({
-                    '.cm-scroller': {
-                        borderTopRightRadius: 'var(--border-radius)',
-                        borderBottomRightRadius: 'var(--border-radius)',
-                    },
-                }),
+                theme,
                 defaultEditorTheme,
                 jsonHighlighting,
                 search({ top: true }),
@@ -389,13 +391,13 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </ul>
                     </li>
                     <li>
-                        Sourcegraph Own usage data
+                        Code ownership usage data
                         <ul>
-                            <li>Whether the search-ownership feature flag is turned on.</li>
                             <li>
                                 Number and ratio of repositories for which ownership data is available via CODEOWNERS
                                 file or the API.
                             </li>
+                            <li>Total count of assigned owners.</li>
                             <li>Aggregate monthly weekly and daily active users for the following activities:</li>
                             <ul>
                                 <li>Narrowing search results by owner using file:has.owner() predicate.</li>
@@ -405,6 +407,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </ul>
                     </li>
                     <li>Histogram of cloned repository sizes</li>
+                    <li>Aggregate daily, weekly, monthly repository metadata usage statistics</li>
                 </ul>
                 {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>

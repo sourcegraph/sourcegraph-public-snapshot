@@ -4,10 +4,11 @@ import (
 	"context"
 	"sync"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -59,7 +60,7 @@ func (s *subRepoPermsFilterJob) Name() string {
 	return "SubRepoPermsFilterJob"
 }
 
-func (s *subRepoPermsFilterJob) Fields(job.Verbosity) []otlog.Field { return nil }
+func (s *subRepoPermsFilterJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
 
 func (s *subRepoPermsFilterJob) Children() []job.Describer {
 	return []job.Describer{s.child}
@@ -84,7 +85,34 @@ func applySubRepoFiltering(ctx context.Context, checker authz.SubRepoPermissionC
 	// Filter matches in place
 	filtered := matches[:0]
 
+	subRepoPermsCache := map[api.RepoName]bool{}
+	errCache := map[api.RepoName]struct{}{} // cache repos that errored
+
 	for _, m := range matches {
+		// If the check errored before, skip the repo
+		if _, ok := errCache[m.RepoName().Name]; ok {
+			continue
+		}
+		// Skip check if sub-repo perms are disabled for the repository
+		enabled, ok := subRepoPermsCache[m.RepoName().Name]
+		if ok && !enabled {
+			filtered = append(filtered, m)
+			continue
+		}
+		if !ok {
+			enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, m.RepoName().Name)
+			if err != nil {
+				// If an error occurs while checking sub-repo perms, we omit it from the results
+				logger.Error("Could not determine if sub-repo permissions are enabled for repo, skipping", log.Error(err), log.String("repoName", string(m.RepoName().Name)))
+				errCache[m.RepoName().Name] = struct{}{}
+				continue
+			}
+			subRepoPermsCache[m.RepoName().Name] = enabled // cache the result for this repo name
+			if !enabled {
+				filtered = append(filtered, m)
+				continue
+			}
+		}
 		switch mm := m.(type) {
 		case *result.FileMatch:
 			repo := mm.Repo.Name

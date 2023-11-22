@@ -1,7 +1,7 @@
 import {
-    FunctionComponent,
-    MutableRefObject,
-    PropsWithChildren,
+    type FunctionComponent,
+    type MutableRefObject,
+    type PropsWithChildren,
     useCallback,
     useContext,
     useMemo,
@@ -11,7 +11,7 @@ import {
 import { noop } from 'lodash'
 
 import { PopoverContext } from './contexts/internal-context'
-import { PopoverOpenEvent } from './types'
+import type { PopoverOpenEvent } from './types'
 
 type PopoverControlledProps =
     | { isOpen?: undefined; onOpenChange?: never }

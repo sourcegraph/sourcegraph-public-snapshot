@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
-import { Select, SelectProps } from './Select'
+import { Select, type SelectProps } from './Select'
 
 describe('Select', () => {
     const renderSelect = (selectProps?: Partial<SelectProps>) =>

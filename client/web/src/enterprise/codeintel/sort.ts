@@ -1,6 +1,6 @@
 import { sortBy } from 'lodash'
 
-import { Location } from '../../codeintel/location'
+import type { Location } from '../../codeintel/location'
 
 /**
  * Sort the locations by their url field's (which is a relative path, e.g.

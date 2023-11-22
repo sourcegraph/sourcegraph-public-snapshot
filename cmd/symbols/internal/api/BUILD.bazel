@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "api",
@@ -17,10 +18,10 @@ go_library(
         "//cmd/symbols/observability",
         "//cmd/symbols/squirrel",
         "//cmd/symbols/types",
-        "//internal/conf/deploy",
         "//internal/database",
         "//internal/env",
         "//internal/grpc",
+        "//internal/grpc/chunk",
         "//internal/grpc/defaults",
         "//internal/observation",
         "//internal/search",
@@ -29,8 +30,6 @@ go_library(
         "//internal/types",
         "//lib/errors",
         "@com_github_dustin_go_humanize//:go-humanize",
-        "@com_github_opentracing_opentracing_go//log",
-        "@com_github_sourcegraph_go_ctags//:go-ctags",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//codes",
@@ -53,7 +52,8 @@ go_test(
         "//cmd/symbols/internal/database/writer",
         "//cmd/symbols/parser",
         "//internal/api",
-        "//internal/database",
+        "//internal/ctags_config",
+        "//internal/database/dbmocks",
         "//internal/diskcache",
         "//internal/endpoint",
         "//internal/gitserver/gitdomain",

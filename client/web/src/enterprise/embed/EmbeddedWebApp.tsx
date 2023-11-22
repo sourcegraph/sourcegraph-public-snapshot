@@ -1,17 +1,24 @@
-import { FC, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
+import { type FC, Suspense, useEffect, useLayoutEffect, useMemo } from 'react'
 
 import { ApolloProvider } from '@apollo/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
-import { GraphQLClient } from '@sourcegraph/http-client'
+import type { GraphQLClient } from '@sourcegraph/http-client'
 import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { Alert, LoadingSpinner, setLinkComponent, WildcardTheme, WildcardThemeContext } from '@sourcegraph/wildcard'
+import {
+    Alert,
+    LoadingSpinner,
+    setLinkComponent,
+    type WildcardTheme,
+    WildcardThemeContext,
+} from '@sourcegraph/wildcard'
 
 import '../../SourcegraphWebApp.scss'
 
 import { createPlatformContext } from '../../platform/context'
+import { TelemetryRecorderProvider } from '../../telemetry'
 
 import { OpenNewTabAnchorLink } from './OpenNewTabAnchorLink'
 
@@ -55,7 +62,16 @@ export const EmbeddedWebApp: FC<Props> = ({ graphqlClient }) => {
         )
     }, [setThemeSetting])
 
-    const platformContext = useMemo(() => createPlatformContext(), [])
+    const telemetryRecorderProvider = useMemo(
+        () => new TelemetryRecorderProvider(graphqlClient, { enableBuffering: true }),
+        [graphqlClient]
+    )
+    useEffect(() => telemetryRecorderProvider.unsubscribe, [telemetryRecorderProvider]) // unsubscribe on unmount
+
+    const platformContext = useMemo(
+        () => createPlatformContext({ telemetryRecorderProvider }),
+        [telemetryRecorderProvider]
+    )
 
     // 🚨 SECURITY: The `EmbeddedWebApp` is intended to be embedded into 3rd party sites where we do not have total control.
     // That is why it is essential to be mindful when adding new routes that may be vulnerable to clickjacking or similar exploits.

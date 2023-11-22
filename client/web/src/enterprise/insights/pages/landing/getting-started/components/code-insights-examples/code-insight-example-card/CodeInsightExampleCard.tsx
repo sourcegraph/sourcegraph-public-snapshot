@@ -1,7 +1,7 @@
-import { FunctionComponent, useContext } from 'react'
+import { type FunctionComponent, useContext } from 'react'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, LegendItem, LegendList, ParentSize, LegendItemPoint } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../../../../insights/utils/use-series-toggle'
@@ -20,7 +20,7 @@ import {
     useLogEventName,
 } from '../../../../CodeInsightsLandingPageContext'
 import { CodeInsightsQueryBlock } from '../../code-insights-query-block/CodeInsightsQueryBlock'
-import { CaptureGroupExampleContent, SearchInsightExampleContent } from '../types'
+import type { CaptureGroupExampleContent, SearchInsightExampleContent } from '../types'
 
 import styles from './CodeInsightExampleCard.module.scss'
 

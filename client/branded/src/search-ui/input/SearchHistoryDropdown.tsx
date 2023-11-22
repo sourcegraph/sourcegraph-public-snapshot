@@ -1,8 +1,8 @@
 import React, {
-    KeyboardEvent,
-    KeyboardEventHandler,
-    MouseEvent,
-    MouseEventHandler,
+    type KeyboardEvent,
+    type KeyboardEventHandler,
+    type MouseEvent,
+    type MouseEventHandler,
     useCallback,
     useRef,
     useState,
@@ -12,15 +12,15 @@ import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     createRectangle,
     Flipping,
     Icon,
     Popover,
     PopoverContent,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     PopoverTrigger,
     Tooltip,
     usePopoverContext,
@@ -99,20 +99,23 @@ const SearchHistoryEntries: React.FunctionComponent<SearchHistoryEntriesProps> =
     const keydownHandler: KeyboardEventHandler<HTMLElement> = useCallback(
         (event: KeyboardEvent) => {
             switch (event.key) {
-                case 'ArrowDown':
+                case 'ArrowDown': {
                     event.preventDefault()
                     setSelectedIndex(index => index + (index + 1 < recentSearches.length ? 1 : 0))
                     break
-                case 'ArrowUp':
+                }
+                case 'ArrowUp': {
                     event.preventDefault()
                     setSelectedIndex(index => index - (index - 1 > -1 ? 1 : 0))
                     break
-                case 'Enter':
+                }
+                case 'Enter': {
                     event.preventDefault()
                     if (recentSearches.length > 0) {
                         onSelect(recentSearches[selectedIndexRef.current])
                     }
                     break
+                }
             }
         },
         [setSelectedIndex, recentSearches, onSelect]

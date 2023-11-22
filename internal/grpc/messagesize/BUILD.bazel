@@ -1,0 +1,59 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "messagesize",
+    srcs = [
+        "messagesize.go",
+        "prometheus.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/messagesize",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "//internal/grpc/grpcutil",
+        "@com_github_dustin_go_humanize//:go-humanize",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_protobuf//proto",
+    ],
+)
+
+go_test(
+    name = "messagesize_test",
+    srcs = [
+        "messagesize_test.go",
+        "prometheus_test.go",
+    ],
+    embed = [":messagesize"],
+    deps = [
+        "//internal/grpc/testprotos/news/v1:news",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_protobuf//proto",
+        "@org_golang_google_protobuf//testing/protocmp",
+        "@org_golang_google_protobuf//types/known/timestamppb",
+    ],
+)
+
+go_library(
+    name = "env",
+    srcs = ["messagesize.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/messagesize/env",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "@com_github_dustin_go_humanize//:go-humanize",
+        "@org_golang_google_grpc//:go_default_library",
+    ],
+)
+
+go_test(
+    name = "env_test",
+    srcs = ["messagesize_test.go"],
+    embed = [":env"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

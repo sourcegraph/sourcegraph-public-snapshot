@@ -11,6 +11,8 @@ import (
 
 	"github.com/goware/urlx"
 	"github.com/sourcegraph/log"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -18,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/oauth2"
 )
 
 const (
@@ -83,7 +84,7 @@ func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpc
 	return &client{
 		httpClient:          httpClient,
 		URL:                 u,
-		internalRateLimiter: ratelimit.DefaultRegistry.Get(urn),
+		internalRateLimiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("AzureDevOpsClient"), urn)),
 		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
 		auth:                auth,
 		urn:                 urn,
@@ -132,7 +133,7 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
 	}
 
-	logger := log.Scoped("azuredevops.Client", "azuredevops Client logger")
+	logger := log.Scoped("azuredevops.Client")
 	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 	if err != nil {
 		return "", err
@@ -143,13 +144,13 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 	numRetries := 0
 	for c.waitForRateLimit && resp.StatusCode == http.StatusTooManyRequests &&
 		numRetries < c.maxRateLimitRetries {
-		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
-			req.Body = io.NopCloser(bytes.NewReader(reqBody))
-			resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
-			numRetries++
-		} else {
-			break
-		}
+		// We always retry since we got a StatusTooManyRequests. This is safe
+		// since we bound retries by maxRateLimitRetries.
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
+		resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
+		numRetries++
 	}
 
 	defer resp.Body.Close()

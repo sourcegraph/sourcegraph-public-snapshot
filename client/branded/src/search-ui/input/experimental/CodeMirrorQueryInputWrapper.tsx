@@ -1,175 +1,80 @@
 import {
-    FC,
+    type FC,
     forwardRef,
-    MutableRefObject,
-    PropsWithChildren,
+    type MutableRefObject,
+    type PropsWithChildren,
     useCallback,
     useEffect,
     useId,
-    useImperativeHandle,
     useMemo,
     useRef,
     useState,
+    useImperativeHandle,
 } from 'react'
 
-import { defaultKeymap, historyKeymap, history as codemirrorHistory } from '@codemirror/commands'
-import { Compartment, EditorSelection, EditorState, Extension, Prec } from '@codemirror/state'
-import { EditorView, keymap, drawSelection } from '@codemirror/view'
+import { EditorSelection, EditorState, type Extension, Prec } from '@codemirror/state'
+import { EditorView } from '@codemirror/view'
 import { mdiClockOutline } from '@mdi/js'
 import classNames from 'classnames'
-import inRange from 'lodash/inRange'
 import { useNavigate } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 
-import { HistoryOrNavigate } from '@sourcegraph/common'
-import { Editor, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
+import { type Editor, useCompartment, viewToEditor } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import type { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { QueryChangeSource, QueryState } from '@sourcegraph/shared/src/search'
-import { getTokenLength } from '@sourcegraph/shared/src/search/query/utils'
+import { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { singleLine, placeholder as placeholderExtension } from '../codemirror'
-import { filterPlaceholder } from '../codemirror/active-filter'
+import { BaseCodeMirrorQueryInput } from '../BaseCodeMirrorQueryInput'
 import { queryDiagnostic } from '../codemirror/diagnostics'
-import { parseInputAsQuery, tokens } from '../codemirror/parsedQuery'
-import { querySyntaxHighlighting } from '../codemirror/syntax-highlighting'
+import { placeholder as placeholderExtension } from '../codemirror/placeholder'
+import { useUpdateInputFromQueryState } from '../codemirror/react'
 import { tokenInfo } from '../codemirror/token-info'
-import { useUpdateEditorFromQueryState } from '../CodeMirrorQueryInput'
 
 import { overrideContextOnPaste } from './codemirror/searchcontext'
 import { filterDecoration } from './codemirror/syntax-highlighting'
 import { modeScope, useInputMode } from './modes'
-import { Source, suggestions, startCompletion } from './suggestionsExtension'
+import { showWhenEmptyWithoutContext } from './placeholder'
+import { Suggestions } from './Suggestions'
+import {
+    type Source,
+    suggestions,
+    startCompletion,
+    getSuggestionsState,
+    type Option,
+    type Action,
+    applyAction,
+} from './suggestionsExtension'
 
 import styles from './CodeMirrorQueryInputWrapper.module.scss'
 
 interface ExtensionConfig {
     popoverID: string
-    isLightTheme: boolean
     placeholder: string
-    onChange: (querySate: QueryState) => void
-    onSubmit?: () => void
-    suggestionsContainer: HTMLDivElement | null
     suggestionSource?: Source
-    historyOrNavigate: HistoryOrNavigate
+    navigate: (destination: string) => void
 }
-
-// We want to show a placeholder also if the query only contains a context
-// filter.
-function showWhenEmptyWithoutContext(state: EditorState): boolean {
-    // Show placeholder when empty
-    if (state.doc.length === 0) {
-        return true
-    }
-
-    const queryTokens = tokens(state)
-
-    if (queryTokens.length > 2) {
-        return false
-    }
-    // Only show the placeholder if the cursor is at the end of the content
-    if (state.selection.main.from !== state.doc.length) {
-        return false
-    }
-
-    // If there are two tokens, only show the placeholder if the second one is a
-    // whitespace of length 1
-    if (queryTokens.length === 2 && (queryTokens[1].type !== 'whitespace' || getTokenLength(queryTokens[1]) !== 1)) {
-        return false
-    }
-
-    return (
-        queryTokens.length > 0 &&
-        queryTokens[0].type === 'filter' &&
-        queryTokens[0].field.value === 'context' &&
-        !inRange(state.selection.main.from, queryTokens[0].range.start, queryTokens[0].range.end + 1)
-    )
-}
-
-// For simplicity, we will recompute all extensions when input changes using
-// this compartment
-const extensionsCompartment = new Compartment()
 
 // Helper function to update extensions dependent on props. Used when
 // creating the editor and to update it when the props change.
-function configureExtensions({
-    popoverID,
-    isLightTheme,
-    placeholder,
-    onChange,
-    onSubmit,
-    suggestionsContainer,
-    suggestionSource,
-    historyOrNavigate,
-}: ExtensionConfig): Extension {
-    const extensions = [
-        EditorView.darkTheme.of(!isLightTheme),
-        EditorView.updateListener.of(update => {
-            if (update.docChanged) {
-                onChange({
-                    query: update.state.sliceDoc(),
-                    changeSource: QueryChangeSource.userInput,
-                })
-            }
-        }),
-    ]
+function configureExtensions({ popoverID, placeholder, suggestionSource, navigate }: ExtensionConfig): Extension {
+    const extensions = []
 
     if (placeholder) {
         extensions.push(placeholderExtension(placeholder, showWhenEmptyWithoutContext))
     }
 
-    if (onSubmit) {
-        extensions.push(
-            Prec.high(
-                keymap.of([
-                    {
-                        key: 'Enter',
-                        run() {
-                            onSubmit()
-                            return true
-                        },
-                    },
-                    {
-                        key: 'Mod-Enter',
-                        run() {
-                            onSubmit()
-                            return true
-                        },
-                    },
-                ])
-            )
-        )
-    }
-
-    if (suggestionSource && suggestionsContainer) {
+    if (suggestionSource) {
         extensions.push(
             suggestions({
                 id: popoverID,
-                parent: suggestionsContainer,
                 source: suggestionSource,
-                historyOrNavigate,
+                navigate,
             })
         )
     }
 
     return extensions
-}
-
-// Holds extensions that somehow depend on the query or query parameters. They
-// are stored in a separate compartment to avoid re-creating other extensions.
-// (if we didn't do this the suggestions list would flicker because it gets
-// recreated)
-const querySettingsCompartment = new Compartment()
-
-function configureQueryExtensions({
-    patternType,
-    interpretComments,
-}: {
-    patternType: SearchPatternType
-    interpretComments: boolean
-}): Extension {
-    return parseInputAsQuery({ patternType, interpretComments })
 }
 
 // Creates extensions that don't depend on props
@@ -201,18 +106,13 @@ const staticExtensions: Extension = [
         }
         return transaction
     }),
-    singleLine,
-    drawSelection(),
-    keymap.of(historyKeymap),
-    keymap.of(defaultKeymap),
-    codemirrorHistory(),
-    filterPlaceholder,
     modeScope([queryDiagnostic(), overrideContextOnPaste], [null]),
-    Prec.low([querySyntaxHighlighting, modeScope([tokenInfo(), filterDecoration], [null])]),
+    Prec.low([modeScope([tokenInfo(), filterDecoration], [null])]),
     EditorView.theme({
         '&': {
             flex: 1,
-            backgroundColor: 'var(--input-bg)',
+            // To change code mirror input area color via CSS property
+            backgroundColor: 'var(--search-box-color)',
             borderRadius: 'var(--border-radius)',
             borderColor: 'var(--border-color)',
             // To ensure that the input doesn't overflow the parent
@@ -226,21 +126,10 @@ const staticExtensions: Extension = [
             overflowX: 'hidden',
         },
         '.cm-content': {
-            caretColor: 'var(--search-query-text-color)',
-            color: 'var(--search-query-text-color)',
-            fontFamily: 'var(--code-font-family)',
-            fontSize: 'var(--code-font-size)',
-            padding: 0,
             paddingLeft: '0.25rem',
         },
         '.cm-content.focus-visible': {
             boxShadow: 'none',
-        },
-        '.cm-line': {
-            padding: 0,
-        },
-        '.theme-dark .cm-selectionLayer .cm-selectionBackground': {
-            backgroundColor: 'var(--gray-08)',
         },
         '.sg-decorated-token-hover': {
             borderRadius: '3px',
@@ -252,20 +141,6 @@ const staticExtensions: Extension = [
     }),
 ]
 
-function updateExtensions(editor: EditorView | null, extensions: Extension): void {
-    if (editor) {
-        editor.dispatch({ effects: extensionsCompartment.reconfigure(extensions) })
-    }
-}
-
-function updateQueryExtensions(editor: EditorView | null, extensions: Extension): void {
-    if (editor) {
-        editor.dispatch({ effects: querySettingsCompartment.reconfigure(extensions) })
-    }
-}
-
-const empty: any[] = []
-
 export enum QueryInputVisualMode {
     Standard = 'standard',
     Compact = 'compact',
@@ -273,9 +148,6 @@ export enum QueryInputVisualMode {
 
 export interface CodeMirrorQueryInputWrapperProps {
     queryState: QueryState
-    onChange: (queryState: QueryState) => void
-    onSubmit: () => void
-    isLightTheme: boolean
     interpretComments: boolean
     patternType: SearchPatternType
     placeholder: string
@@ -283,23 +155,28 @@ export interface CodeMirrorQueryInputWrapperProps {
     extensions?: Extension
     visualMode?: QueryInputVisualMode | `${QueryInputVisualMode}`
     className?: string
+    onChange: (queryState: QueryState) => void
+    onSubmit: () => void
+    onFocus?: (editor: EditorView) => void
+    onBlur?: (editor: EditorView) => void
 }
 
 export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<CodeMirrorQueryInputWrapperProps>>(
     (
         {
             queryState,
-            onChange,
-            onSubmit,
-            isLightTheme,
             interpretComments,
             patternType,
             placeholder,
             suggestionSource,
-            extensions: externalExtensions = empty,
+            extensions: externalExtensions,
             visualMode = QueryInputVisualMode.Standard,
             className,
             children,
+            onChange,
+            onSubmit,
+            onFocus,
+            onBlur,
         },
         ref
     ) => {
@@ -309,117 +186,83 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
 
         // References
         const editorRef = useRef<EditorView | null>(null)
-        const editorContainerRef = useRef<HTMLDivElement | null>(null)
+        useImperativeHandle(ref, () => viewToEditor(editorRef))
 
         // Local state
         const [mode, setMode, modeNotifierExtension] = useInputMode()
-        const [suggestionsContainer, setSuggestionsContainer] = useState<HTMLDivElement | null>(null)
+        const [suggestionsState, setSuggestionsState] = useState<ReturnType<typeof getSuggestionsState>>()
 
         // Handlers
         const onSubmitRef = useMutableValue(onSubmit)
         const onChangeRef = useMutableValue(onChange)
 
-        const hasSubmitHandler = !!onSubmit
+        const onSubmitHandler = useCallback(
+            (view: EditorView): boolean => {
+                if (onSubmitRef.current) {
+                    onSubmitRef.current()
+                    view.contentDOM.blur()
+                    return true
+                }
+                return false
+            },
+            [onSubmitRef]
+        )
+
+        const onChangeHandler = useCallback(
+            (value: string) => onChangeRef.current?.({ query: value, changeSource: QueryChangeSource.userInput }),
+            [onChangeRef]
+        )
 
         // Update extensions whenever any of these props change
-        const dynamicExtensions = useMemo(
-            () => [
-                configureExtensions({
-                    popoverID,
-                    isLightTheme,
-                    placeholder,
-                    onChange: (...args) => onChangeRef.current(...args),
-                    onSubmit: hasSubmitHandler
-                        ? (): void => {
-                              if (onSubmitRef.current) {
-                                  onSubmitRef.current()
-                                  editorRef.current?.contentDOM.blur()
-                              }
-                          }
-                        : undefined,
-                    suggestionsContainer,
-                    suggestionSource,
-                    historyOrNavigate: navigate,
-                }),
-                externalExtensions,
-                modeNotifierExtension,
-            ],
-            [
-                popoverID,
-                isLightTheme,
-                placeholder,
-                hasSubmitHandler,
-                suggestionsContainer,
-                suggestionSource,
-                navigate,
-                externalExtensions,
-                modeNotifierExtension,
-                onChangeRef,
-                onSubmitRef,
-            ]
-        )
-
-        // Update query extensions whenever any of these props change
-        const queryExtensions = useMemo(
-            () => configureQueryExtensions({ patternType, interpretComments }),
-            [patternType, interpretComments]
-        )
-
-        // Update editor state whenever query state changes
-        useUpdateEditorFromQueryState(editorRef, queryState, startCompletion)
-
-        // Update editor configuration whenever extensions change
-        useEffect(() => updateExtensions(editorRef.current, dynamicExtensions), [dynamicExtensions])
-        useEffect(() => updateQueryExtensions(editorRef.current, queryExtensions), [queryExtensions])
-
-        // Create editor
-        useCodeMirror(
+        const dynamicExtensions = useCompartment(
             editorRef,
-            editorContainerRef,
-            queryState.query,
             useMemo(
-                () => [
-                    EditorView.contentAttributes.of({
-                        role: 'combobox',
-                        // CodeMirror sets aria-multiline: true by default but it seems
-                        // comboboxes are not allowed to be multiline
-                        'aria-multiline': 'false',
-                        'aria-controls': popoverID,
-                        'aria-haspopup': 'grid',
-                        'aria-label': 'Search query',
+                () =>
+                    configureExtensions({
+                        popoverID,
+                        placeholder,
+                        suggestionSource,
+                        navigate,
                     }),
-                    staticExtensions,
-                    extensionsCompartment.of(dynamicExtensions),
-                    querySettingsCompartment.of(queryExtensions),
-                ],
-                // Only set extensions during initialization. dynamicExtensions and queryExtensions
-                // are updated separately.
-                // eslint-disable-next-line react-hooks/exhaustive-deps
-                [popoverID]
+                [popoverID, placeholder, suggestionSource, navigate]
             )
         )
 
-        useImperativeHandle(
-            ref,
-            () => ({
-                focus() {
-                    editorRef.current?.focus()
-                },
-                blur() {
-                    editorRef.current?.contentDOM.blur()
-                },
-            }),
-            []
+        // Update editor state whenever query state changes
+        useUpdateInputFromQueryState(editorRef, queryState, startCompletion)
+
+        const allExtensions = useMemo(
+            () => [
+                externalExtensions ?? [],
+                dynamicExtensions,
+                modeNotifierExtension,
+                EditorView.contentAttributes.of({
+                    role: 'combobox',
+                    // CodeMirror sets aria-multiline: true by default but it seems
+                    // comboboxes are not allowed to be multiline
+                    'aria-multiline': 'false',
+                    'aria-controls': popoverID,
+                    'aria-haspopup': 'grid',
+                    'aria-label': 'Search query',
+                }),
+                EditorView.updateListener.of(update => {
+                    setSuggestionsState(getSuggestionsState(update.state))
+                }),
+                staticExtensions,
+            ],
+            [popoverID, dynamicExtensions, externalExtensions, modeNotifierExtension]
         )
 
-        // Position cursor at the end of the input when it is initialized
+        // Position cursor at the end of the input when the input changes from external sources.
+        // This is necessary because the initial value might be set asynchronously.
         useEffect(() => {
-            if (editorRef.current) {
-                editorRef.current.dispatch({
-                    selection: { anchor: editorRef.current.state.doc.length },
+            const editor = editorRef.current
+            if (editor && !editor.hasFocus && queryState.changeSource !== QueryChangeSource.userInput) {
+                editor.dispatch({
+                    selection: { anchor: editor.state.doc.length },
                 })
             }
-        }, [])
+        }, [queryState])
 
         const focus = useCallback(() => {
             editorRef.current?.focus()
@@ -432,37 +275,67 @@ export const CodeMirrorQueryInputWrapper = forwardRef<Editor, PropsWithChildren<
             }
         }, [setMode])
 
+        const onSelect = useCallback(
+            (option: Option, action: Action) => {
+                const view = editorRef.current
+                if (view) {
+                    applyAction(view, action ?? option.action, option, 'mouse')
+                    // This is needed because clicking on an option removes focus from the query input
+                    window.requestAnimationFrame(() => view.focus())
+                }
+            },
+            [editorRef]
+        )
+
         const { ref: inputContainerRef, height = 0 } = useResizeObserver({ box: 'border-box' })
 
         return (
             <div
                 ref={inputContainerRef}
-                className={classNames(styles.container, className, 'test-experimental-search-input', 'test-editor', {
+                className={classNames(styles.container, className, 'test-v2-query-input', 'test-editor', {
                     [styles.containerCompact]: visualMode === QueryInputVisualMode.Compact,
                 })}
                 role="search"
-                data-editor="experimental-search-input"
+                data-editor="v2"
             >
                 <div className={styles.focusContainer}>
                     <SearchModeSwitcher mode={mode} onModeChange={toggleHistoryMode} />
-                    <div
-                        ref={editorContainerRef}
-                        className={classNames(styles.input, 'test-query-input', 'test-editor')}
-                        data-editor="codemirror6"
+                    <BaseCodeMirrorQueryInput
+                        ref={editorRef}
+                        className={styles.input}
+                        value={queryState.query}
+                        patternType={patternType}
+                        interpretComments={interpretComments}
+                        extension={allExtensions}
+                        onEnter={onSubmitHandler}
+                        onChange={onChangeHandler}
+                        multiLine={false}
+                        onFocus={onFocus}
+                        onBlur={onBlur}
                     />
                     {!mode && children}
                 </div>
                 <div
-                    ref={setSuggestionsContainer}
                     className={styles.suggestions}
                     // eslint-disable-next-line react/forbid-dom-props
                     style={{ paddingTop: height }}
-                />
+                >
+                    {suggestionsState && (
+                        <Suggestions
+                            id={popoverID}
+                            open={suggestionsState.open}
+                            activeRowIndex={suggestionsState.selectedOption}
+                            results={suggestionsState.result.groups}
+                            onSelect={onSelect}
+                        />
+                    )}
+                </div>
                 <Shortcut ordered={['/']} onMatch={focus} />
             </div>
         )
     }
 )
+CodeMirrorQueryInputWrapper.displayName = 'CodeMirrorInputWrapper'
 
 interface SearchModeSwitcherProps {
     mode: string | null

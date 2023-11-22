@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import { spy, assert, useFakeTimers } from 'sinon'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
@@ -12,7 +13,7 @@ import {
 import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 import { assertAriaDisabled, assertAriaEnabled } from '@sourcegraph/testing'
 
-import { SearchContextDropdown, SearchContextDropdownProps } from './SearchContextDropdown'
+import { SearchContextDropdown, type SearchContextDropdownProps } from './SearchContextDropdown'
 
 describe('SearchContextDropdown', () => {
     const defaultProps: SearchContextDropdownProps = {

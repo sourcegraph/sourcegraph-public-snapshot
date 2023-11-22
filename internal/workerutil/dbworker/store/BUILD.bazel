@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "store",
@@ -22,7 +23,6 @@ go_library(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_otel//attribute",
     ],
@@ -30,6 +30,7 @@ go_library(
 
 go_test(
     name = "store_test",
+    timeout = "moderate",
     srcs = [
         "helpers_test.go",
         "store_test.go",
@@ -51,7 +52,6 @@ go_test(
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
 )

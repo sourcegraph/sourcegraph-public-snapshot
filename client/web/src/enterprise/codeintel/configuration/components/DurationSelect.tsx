@@ -1,4 +1,4 @@
-import { FunctionComponent, useState } from 'react'
+import { type FunctionComponent, useState } from 'react'
 
 import classNames from 'classnames'
 import { intervalToDuration } from 'date-fns'

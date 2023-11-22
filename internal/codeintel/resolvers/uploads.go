@@ -22,6 +22,10 @@ type UploadsServiceResolver interface {
 
 	// Status
 	CommitGraph(ctx context.Context, id graphql.ID) (CodeIntelligenceCommitGraphResolver, error)
+
+	// Coverage
+	CodeIntelSummary(ctx context.Context) (CodeIntelSummaryResolver, error)
+	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
 }
 
 type PreciseIndexesQueryArgs struct {
@@ -165,4 +169,29 @@ type IndexStepResolver interface {
 	Outfile() *string
 	RequestedEnvVars() *[]string
 	LogEntry() ExecutionLogEntryResolver
+}
+
+type CodeIntelSummaryResolver interface {
+	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int32, error)
+	RepositoriesWithErrors(ctx context.Context, args *RepositoriesWithErrorsArgs) (CodeIntelRepositoryWithErrorConnectionResolver, error)
+	RepositoriesWithConfiguration(ctx context.Context, args *RepositoriesWithConfigurationArgs) (CodeIntelRepositoryWithConfigurationConnectionResolver, error)
+}
+
+type CodeIntelRepositorySummaryResolver interface {
+	RecentActivity(ctx context.Context) ([]PreciseIndexResolver, error)
+	LastUploadRetentionScan() *gqlutil.DateTime
+	LastIndexScan() *gqlutil.DateTime
+	AvailableIndexers() []InferredAvailableIndexersResolver
+	LimitError() *string
+}
+
+type InferredAvailableIndexersResolver interface {
+	Indexer() CodeIntelIndexerResolver
+	Roots() []string
+	RootsWithKeys() []RootsWithKeyResolver
+}
+
+type RootsWithKeyResolver interface {
+	Root() string
+	ComparisonKey() string
 }

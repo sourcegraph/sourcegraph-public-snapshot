@@ -8,14 +8,14 @@ import {
     from,
     fromEvent,
     merge,
-    Observable,
+    type Observable,
     of,
     Subject,
-    Subscribable,
-    SubscribableOrPromise,
+    type Subscribable,
+    type SubscribableOrPromise,
     Subscription,
     race,
-    MonoTypeOperatorFunction,
+    type MonoTypeOperatorFunction,
 } from 'rxjs'
 import {
     catchError,
@@ -37,25 +37,31 @@ import {
 } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
 
-import { asError, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import { asError, type ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import type { Position, Range } from '@sourcegraph/extension-api-types'
 
 import { elementOverlaps, scrollRectangleIntoCenterIfNeeded, toMaybeLoadingProviderResult } from './helpers'
-import { emitLoading, MaybeLoadingResult, LOADING } from './loading'
+import { emitLoading, type MaybeLoadingResult, LOADING } from './loading'
 import { calculateOverlayPosition } from './overlayPosition'
-import { PositionEvent, SupportedMouseEvent } from './positions'
+import type { PositionEvent, SupportedMouseEvent } from './positions'
 import { createObservableStateContainer } from './state'
 import {
     convertNode,
-    DiffPart,
-    DOMFunctions,
+    type DiffPart,
+    type DOMFunctions,
     findElementWithOffset,
     getCodeElementsInRange,
     getTokenAtPositionOrRange,
-    HoveredToken,
+    type HoveredToken,
     shouldTokenize,
 } from './tokenPosition'
-import { HoverAttachment, HoverOverlayProps, isPosition, LineOrPositionOrRange, DocumentHighlight } from './types'
+import {
+    type HoverAttachment,
+    type HoverOverlayProps,
+    isPosition,
+    type LineOrPositionOrRange,
+    type DocumentHighlight,
+} from './types'
 
 const defaultSelectionHighlightClassName = 'selection-highlight'
 const defaultDocumentHighlightClassName = 'sourcegraph-document-highlight'
@@ -1077,7 +1083,7 @@ export function createHoverifier<C extends object, D, A>({
                     // We assume that the first element is always the top most
                     // element and the last element is the bottom most element.
                     const topRectangle = codeElements[0].element.getBoundingClientRect()
-                    const bottomRectangle = codeElements[codeElements.length - 1].element.getBoundingClientRect()
+                    const bottomRectangle = codeElements.at(-1)!.element.getBoundingClientRect()
                     const rectangle = {
                         top: topRectangle.top,
                         bottom: bottomRectangle.bottom,

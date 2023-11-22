@@ -1,22 +1,11 @@
 #!/usr/bin/env bash
 
-# This script is a wrapper around `universal-ctags`.
-#
-# It checks if universal-ctags has been installed through ./dev/ctags-install.sh or falls back to a dockerized version.
+# This script is a wrapper around `universal-ctags` to download and run universal-ctags using bazel
 #
 # To use your own `universal-ctags` binary instead of this wrapper in your local dev server, use
 # `CTAGS_COMMAND=path/to/ctags sg start`.
 
-root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
-TARGET=$("$root/dev/ctags-install.sh" which)
-
-if [ ! -f "${TARGET}" ]; then 
-  exec docker run --rm -i \
-    -a stdin -a stdout -a stderr \
-    --user guest \
-    --name=universal-ctags-$$ \
-    --entrypoint /usr/local/bin/universal-ctags \
-    ctags "$@"
-else 
-  ${TARGET} "$@"
-fi
+# We silence a few things, because the arguments that symbols pass to this script, which are then passed to
+# the bazel run are printed out again by Bazel by default. And they're very long, so much that it hads about
+# 40 lines, adding unecessary noise to the output of `sg start`
+bazel run //dev/tools:universal-ctags --logging=0 --noshow_progress --ui_event_filters=-info,-debug,-stdout -- "$@"

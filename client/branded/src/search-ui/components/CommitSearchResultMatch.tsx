@@ -1,18 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
+import DOMPurify from 'dompurify'
 import { range } from 'lodash'
 import { of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
-import sanitizeHtml from 'sanitize-html'
 
 import { highlightNode, logger } from '@sourcegraph/common'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { highlightCode } from '@sourcegraph/shared/src/search'
-import { CommitMatch } from '@sourcegraph/shared/src/search/stream'
+import type { CommitMatch } from '@sourcegraph/shared/src/search/stream'
 import { LoadingSpinner, Link, Code, Markdown } from '@sourcegraph/wildcard'
-
-import { LastSyncedIcon } from './LastSyncedIcon'
 
 import styles from './CommitSearchResultMatch.module.scss'
 import searchResultStyles from './SearchResult.module.scss'
@@ -47,7 +45,7 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
                 // Return the rendered markdown if highlighting fails.
                 catchError(error => {
                     logger.log(error)
-                    return of('<pre>' + sanitizeHtml(item.content) + '</pre>')
+                    return of('<pre>' + DOMPurify.sanitize(item.content) + '</pre>')
                 })
             )
             .subscribe(highlightedCommitContent => {
@@ -77,9 +75,6 @@ export const CommitSearchResultMatch: React.FunctionComponent<CommitSearchResult
 
     return (
         <div className={styles.commitSearchResultMatch}>
-            {item.repoLastFetched && (
-                <LastSyncedIcon className={styles.lastSyncedIcon} lastSyncedTime={item.repoLastFetched} />
-            )}
             <Link
                 key={item.url}
                 to={item.url}

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "env",
@@ -10,7 +11,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
-        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_dustin_go_humanize//:go-humanize",
     ],
 )
 

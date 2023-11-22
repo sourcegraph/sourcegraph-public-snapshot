@@ -1,6 +1,7 @@
-import React, { MouseEvent, KeyboardEvent } from 'react'
+import type { MouseEvent, KeyboardEvent } from 'react'
+import type React from 'react'
 
-import { NavigateFunction } from 'react-router-dom'
+import type { NavigateFunction } from 'react-router-dom'
 
 /**
  * A helper function to replicate browser behavior when clicking on links.
@@ -120,7 +121,7 @@ function isTextSelectionEvent(event: MouseEvent<HTMLElement>): boolean {
  * - Firefox will insert \t\n in between table rows, causing the copied
  * text to be different from what is in the file/search result.
  */
-export function onClickCodeExcerptHref(
+function onClickCodeExcerptHref(
     event: KeyboardEvent<HTMLElement> | MouseEvent<HTMLElement>,
     onClickHref: (href: string) => void
 ): void {

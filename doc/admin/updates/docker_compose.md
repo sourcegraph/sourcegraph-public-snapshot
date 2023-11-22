@@ -1,24 +1,110 @@
-# Updating a Docker Compose Sourcegraph instance
+# Docker Compose Upgrade Notes
 
-This page lists the changes that are relevant for [upgrading Sourcegraph on Docker Compose](../deploy/docker-compose/upgrade.md). You can also view the [product changelog](../../../CHANGELOG.md).
+This page lists the changes that are relevant for upgrading Sourcegraph on **Docker Compose**. 
 
-## Upgrade procedure
+For upgrade procedures or general info about sourcegraph versioning see the links below:
+- [Docker Compose Upgrade Procedures](../deploy/docker-compose/upgrade.md)
+- [General Upgrade Info](./index.md)
+- [Product changelog](../../../CHANGELOG.md)
 
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
-1. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-compose/upgrade.md#standard-upgrades) to upgrade your instance.
-
-## Multi-version upgrade procedure
-
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entries for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Docker Compse, externalized databases).
-1. After checking the relevant update notes, refer to the [multi-version upgrade procedure](../deploy/docker-compose/upgrade.md#multi-version-upgrades) to upgrade your instance.
+> ***Attention:** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Docker Compose, externalized databases).*
+>
+> ***If the notes indicate a patch release exists, target the highest one.***
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
 ## Unreleased
 
 <!-- Add changes changes to this section before release. -->
+
+## v5.2.2 ➔ v5.2.3
+
+#### Notes:
+
+## v5.2.1 ➔ v5.2.2
+
+#### Notes:
+
+## v5.2.0 ➔ v5.2.1
+
+#### Notes:
+
+## v5.1.9 ➔ v5.2.0
+
+#### Notes:
+
+## v5.1.8 ➔ v5.1.9
+
+#### Notes:
+
+## v5.1.7 ➔ v5.1.8
+
+#### Notes:
+
+## v5.1.6 ➔ v5.1.7
+
+#### Notes:
+
+## v5.1.5 ➔ v5.1.6
+
+#### Notes:
+
+## v5.1.4 ➔ v5.1.5
+
+#### Notes:
+- Upgrades from versions `v5.0.3`, `v5.0.4`, `v5.0.5`, and `v5.0.6` to `v5.1.5` are affected by an ordering error in the `frontend` databases migration tree. Learn more from the [PR which resolves this bug](https://github.com/sourcegraph/sourcegraph/pull/55650). **For admins who have already attempted an upgrade to this release from one of the effected versions, see this issue which provides a description of [how to manually fix the frontend db](https://github.com/sourcegraph/sourcegraph/issues/55658).**
+  
+## v5.1.3 ➔ v5.1.4
+
+#### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
+
+## v5.1.2 ➔ v5.1.3
+
+#### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
+
+## v5.1.1 ➔ v5.1.2
+
+#### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
+
+## v5.1.0 ➔ v5.1.1
+
+#### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
+
+## v5.0.6 ➔ v5.1.0
+
+#### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
+
+## v5.0.5 ➔ v5.0.6
+
+#### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
+
+## v5.0.4 ➔ v5.0.5
+
+#### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
+
+## v5.0.3 ➔ v5.0.4
+
+#### Notes:
+- See note under v5.1.5 release on issues with standard and multiversion upgrades to v5.1.5.
+
+## v5.0.2 ➔ v5.0.3
+
+#### Notes:
+
+## v5.0.1 ➔ v5.0.2
+
+#### Notes:
+
+## v5.0.0 ➔ v5.0.1
+
+#### Notes:
 
 ## v4.5.1 ➔ v5.0.0
 
@@ -32,7 +118,7 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 #### Notes:
 
-This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](/admin/how-to/lsif_scip_migration) for more details.
+This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
 
 ## v4.4.1 ➔ v4.4.2
 
@@ -150,7 +236,8 @@ Target the tag [`v3.37.0`](https://github.com/sourcegraph/deploy-sourcegraph-doc
 
 **Notes**:
 
-- This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings.
+- This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings. 
+- **If performing a multiversion upgrade from an instance prior to this version see our [upgrading early versions documentation](./migrator/upgrading-early-versions.md#before-v3370)**
 
 ## v3.35 ➔ v3.36
 
@@ -233,6 +320,7 @@ Target the tag [`v3.27.0`](https://github.com/sourcegraph/deploy-sourcegraph-doc
 **Notes**:
 
 - If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
+- **If performing a multiversion upgrade from an instance prior to this version see our [upgrading early versions documentation](./migrator/upgrading-early-versions.md#before-v3270)**
 
 ## v3.25 ➔ v3.26
 

@@ -4,24 +4,19 @@ import { differenceInHours, formatISO, parseISO } from 'date-fns'
 
 import { streamComputeQuery } from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { ProductStatusType } from '@sourcegraph/wildcard'
 
 import { basicSyntaxColumns } from './QueryExamples.constants'
 
 export interface QueryExamplesContent {
     repositoryName: string
     filePath: string
-    author: string
 }
 
 export interface QueryExamplesSection {
     title: string
-    productStatus?: ProductStatusType
     queryExamples: {
-        id: string
         query: string
         helperText?: string
-        slug?: string
     }[]
 }
 
@@ -31,9 +26,8 @@ interface ComputeResult {
 }
 
 const defaultQueryExamplesContent = {
-    repositoryName: 'organization/repo-name',
-    author: 'Logan Smith',
-    filePath: 'filename.go',
+    repositoryName: 'org/repo',
+    filePath: 'file.go',
 }
 
 function hasQueryExamplesContentCacheExpired(lastCachedTimestamp: string): boolean {
@@ -45,11 +39,10 @@ function quoteIfNeeded(value: string): string {
 }
 
 function getQueryExamplesContentFromComputeOutput(computeOutput: string): QueryExamplesContent {
-    const [repositoryName, author, filePath] = computeOutput.trim().split(',|')
+    const [repositoryName, filePath] = computeOutput.trim().split(',|')
     return {
         repositoryName,
         filePath,
-        author,
     }
 }
 
@@ -60,18 +53,17 @@ function getRepoFilterExamples(repositoryName: string): { singleRepoExample: str
         return { singleRepoExample: quoteIfNeeded(repositoryName) }
     }
 
-    const repoName = repositoryNameParts[repositoryNameParts.length - 1]
-    const repoOrg = repositoryNameParts[repositoryNameParts.length - 2]
+    const repoName = repositoryNameParts.at(-1)
+    const repoOrg = repositoryNameParts.at(-2)
     return {
         singleRepoExample: quoteIfNeeded(`${repoOrg}/${repoName}`),
-        orgReposExample: quoteIfNeeded(`${repoOrg}/.*`),
+        orgReposExample: quoteIfNeeded(`${repoOrg}/`),
     }
 }
 
 export function useQueryExamples(
     selectedSearchContextSpec: string,
-    isSourcegraphDotCom: boolean = false,
-    enableOwnershipSearch: boolean = false
+    isSourcegraphDotCom: boolean = false
 ): QueryExamplesSection[][] {
     const [queryExamplesContent, setQueryExamplesContent] = useState<QueryExamplesContent>()
     const [cachedQueryExamplesContent, setCachedQueryExamplesContent, cachedQueryExamplesContentLoadStatus] =
@@ -81,7 +73,7 @@ export function useQueryExamples(
         (selectedSearchContextSpec: string) =>
             // We are using `,|` as the separator so we can "safely" split the compute output.
             streamComputeQuery(
-                `context:${selectedSearchContextSpec} type:diff count:1 content:output((.|\n)* -> $repo,|$author,|$path)`
+                `context:${selectedSearchContextSpec} type:diff count:1 content:output((.|\n)* -> $repo,|$path)`
             ).subscribe(
                 results => {
                     const firstComputeOutput = results
@@ -142,81 +134,19 @@ export function useQueryExamples(
     }, [selectedSearchContextSpec])
 
     return useMemo(() => {
-        // Static examples for DotCom
+        // Static examples for Sourcegraph.com.
         if (isSourcegraphDotCom) {
-            return basicSyntaxColumns
+            return basicSyntaxColumns('test', 'facebook/react', 'kubernetes/')
         }
         if (!queryExamplesContent) {
             return []
         }
-        const { repositoryName, filePath, author } = queryExamplesContent
+        const { repositoryName, filePath } = queryExamplesContent
 
         const { singleRepoExample, orgReposExample } = getRepoFilterExamples(repositoryName)
         const filePathParts = filePath.split('/')
-        const fileName = quoteIfNeeded(filePathParts[filePathParts.length - 1])
-        const quotedAuthor = quoteIfNeeded(author)
+        const fileName = quoteIfNeeded(filePathParts.at(-1)!)
 
-        return [
-            [
-                {
-                    title: 'Scope search to specific repos',
-                    queryExamples: [
-                        { id: 'single-repo', query: `repo:${singleRepoExample}` },
-                        { id: 'org-repos', query: orgReposExample ? `repo:${orgReposExample}` : '' },
-                    ],
-                },
-                {
-                    title: 'Jump into code navigation',
-                    queryExamples: [
-                        { id: 'file-filter', query: `file:${fileName}` },
-                        { id: 'type-symbol', query: 'type:symbol SymbolName' },
-                    ],
-                },
-                {
-                    title: 'Explore code history',
-                    queryExamples: [
-                        { id: 'type-diff-author', query: `type:diff author:${quotedAuthor}` },
-                        { id: 'type-commit-message', query: 'type:commit some message' },
-                        { id: 'type-diff-after', query: 'type:diff after:"1 year ago"' },
-                    ],
-                },
-            ],
-            [
-                {
-                    title: 'Find content or patterns',
-                    queryExamples: [
-                        { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
-                        { id: 'regex-pattern', query: '/regex.*pattern/' },
-                    ],
-                },
-                {
-                    title: 'Get logical',
-                    queryExamples: [
-                        { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
-                        { id: 'and-operator', query: 'hello AND world' },
-                        { id: 'not-operator', query: 'lang:go NOT file:main.go' },
-                    ],
-                },
-                ...(enableOwnershipSearch
-                    ? [
-                          {
-                              title: 'Explore code ownership',
-                              productStatus: 'experimental' as const,
-                              queryExamples: [
-                                  { id: 'type-has-owner', query: 'file:^some_path file:has.owner(johndoe)' },
-                                  { id: 'type-select-file-owners', query: 'file:^some_path select:file.owners' },
-                              ],
-                          },
-                      ]
-                    : [
-                          {
-                              title: 'Get advanced',
-                              queryExamples: [
-                                  { id: 'repo-has-description', query: 'repo:has.description(hello world)' },
-                              ],
-                          },
-                      ]),
-            ],
-        ]
-    }, [queryExamplesContent, isSourcegraphDotCom, enableOwnershipSearch])
+        return basicSyntaxColumns(fileName, singleRepoExample, orgReposExample)
+    }, [queryExamplesContent, isSourcegraphDotCom])
 }

@@ -3,7 +3,7 @@
 package:
   name: p4-fusion
   version: 1.12
-  epoch: 0
+  epoch: 7
   description: "A fast Perforce to Git conversion tool"
   target-architecture:
     - x86_64
@@ -55,12 +55,13 @@ pipeline:
   # Download Helix Core C++ API
   - uses: fetch
     with:
-      uri: https://www.perforce.com/downloads/perforce/r22.1/bin.linux26x86_64/p4api.tgz
-      expected-sha256: 82db09791758516ba2561d75c744f190a9562c8be26dc2cb96aea537e2a451d3
+      uri: https://www.perforce.com/downloads/perforce/r22.1/bin.linux26x86_64/p4api-glibc2.3-openssl1.0.2.tgz
+      # Hash occasionally changes, available at https://filehost.perforce.com/perforce/r22.1/bin.linux26x86_64/SHA256SUMS (check version)
+      expected-sha256: 7a7ca5b1b6c2401282a30c93065cd88f1bb47412246231c640ad3a6b7002c93b
       extract: false
   - runs: |
       mkdir -p p4-fusion-src/vendor/helix-core-api/linux
-      tar -C p4-fusion-src/vendor/helix-core-api/linux -xzf p4api.tgz --strip 1
+      tar -C p4-fusion-src/vendor/helix-core-api/linux -xzf p4api-glibc2.3-openssl1.0.2.tgz --strip 1
 
   # Build OpenSSL
   - runs: |
@@ -82,4 +83,4 @@ pipeline:
   # Copy p4-fusion binary
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/local/bin/
-      cp p4-fusion-src/build/p4-fusion/p4-fusion ${{targets.destdir}}/usr/local/bin/
+      cp p4-fusion-src/build/p4-fusion/p4-fusion ${{targets.destdir}}/usr/local/bin/p4-fusion-binary

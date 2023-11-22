@@ -33,7 +33,7 @@ type AWSCodeCommitSource struct {
 	awsRegion    string
 	client       *awscodecommit.Client
 
-	exclude excludeFunc
+	excluder repoExcluder
 }
 
 // NewAWSCodeCommitSource returns a new AWSCodeCommitSource from the given external service.
@@ -85,21 +85,21 @@ func newAWSCodeCommitSource(svc *types.ExternalService, c *schema.AWSCodeCommitC
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(r.Id)
+		ex.AddRule().
+			Exact(r.Name).
+			Exact(r.Id)
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
 	s := &AWSCodeCommitSource{
-		svc:     svc,
-		config:  c,
-		exclude: exclude,
-		client:  awscodecommit.NewClient(awsConfig),
+		svc:      svc,
+		config:   c,
+		excluder: ex,
+		client:   awscodecommit.NewClient(awsConfig),
 	}
 
 	endpoint, err := codecommit.NewDefaultEndpointResolver().ResolveEndpoint(c.Region, codecommit.EndpointResolverOptions{})
@@ -147,6 +147,7 @@ func (s *AWSCodeCommitSource) makeRepo(r *awscodecommit.Repository) *types.Repo 
 			},
 		},
 		Metadata: r,
+		Private:  !s.svc.Unrestricted,
 	}
 }
 
@@ -175,7 +176,7 @@ func (s *AWSCodeCommitSource) listAllRepositories(ctx context.Context, results c
 }
 
 func (s *AWSCodeCommitSource) excludes(r *awscodecommit.Repository) bool {
-	return s.exclude(r.Name) || s.exclude(r.ID)
+	return s.excluder.ShouldExclude(r.Name) || s.excluder.ShouldExclude(r.ID)
 }
 
 // The code below is copied from

@@ -1,12 +1,13 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { fireEvent } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
 import { dataOrThrowErrors, getDocumentNode, gql } from '@sourcegraph/http-client'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 import { Text } from '@sourcegraph/wildcard'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import {
+import type {
     TestShowMorePaginationQueryFields,
     TestShowMorePaginationQueryResult,
     TestShowMorePaginationQueryVariables,
@@ -35,7 +36,7 @@ const TEST_SHOW_MORE_PAGINATION_QUERY = gql`
     }
 `
 
-const TestComponent = () => {
+const TestComponent = ({ skip = false }) => {
     const { connection, fetchMore, hasNextPage } = useShowMorePagination<
         TestShowMorePaginationQueryResult,
         TestShowMorePaginationQueryVariables,
@@ -51,6 +52,7 @@ const TestComponent = () => {
         },
         options: {
             useURL: true,
+            skip,
         },
     })
 
@@ -137,10 +139,14 @@ describe('useShowMorePagination', () => {
         },
     ]
 
-    const renderWithMocks = async (mocks: MockedResponse<TestShowMorePaginationQueryResult>[], route = '/') => {
+    const renderWithMocks = async (
+        mocks: MockedResponse<TestShowMorePaginationQueryResult>[],
+        route = '/',
+        skip = false
+    ) => {
         const renderResult = renderWithBrandedContext(
             <MockedTestProvider mocks={mocks}>
-                <TestComponent />
+                <TestComponent skip={skip} />
             </MockedTestProvider>,
             { route }
         )
@@ -170,6 +176,14 @@ describe('useShowMorePagination', () => {
             })
 
         const cursorMocks = generateMockCursorResponses(mockResultNodes)
+
+        it('does not fetch anything if skip is true', async () => {
+            const queries = await renderWithMocks(cursorMocks, '/', true)
+            expect(queries.queryByText('repo-A')).not.toBeInTheDocument()
+            expect(queries.queryByText('repo-C')).not.toBeInTheDocument()
+            expect(queries.queryByText('repo-D')).not.toBeInTheDocument()
+            expect(queries.queryByText('Total count')).not.toBeInTheDocument()
+        })
 
         it('renders correct result', async () => {
             const queries = await renderWithMocks(cursorMocks)

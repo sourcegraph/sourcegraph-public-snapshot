@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "search-blitz_lib",
@@ -13,8 +14,12 @@ go_library(
         "stream_client.go",
     ],
     embedsrcs = [
+        "attribution.graphql",
+        "attribution/many_lines.txt",
+        "attribution/one_line.txt",
         "queries.txt",
         "queries_dogfood.txt",
+        "search.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/search-blitz",
     visibility = ["//visibility:private"],
@@ -34,6 +39,10 @@ go_binary(
     name = "search-blitz",
     embed = [":search-blitz_lib"],
     visibility = ["//:__subpackages__"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )
 
 go_test(

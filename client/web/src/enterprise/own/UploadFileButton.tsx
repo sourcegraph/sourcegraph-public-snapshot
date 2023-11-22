@@ -2,12 +2,12 @@ import { useCallback, useRef, useState } from 'react'
 
 import { mdiUpload } from '@mdi/js'
 
-import { ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { ErrorAlert, Icon, Input } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../components/LoaderButton'
-import {
+import type {
     AddIngestedCodeownersResult,
     AddIngestedCodeownersVariables,
     IngestedCodeowners,

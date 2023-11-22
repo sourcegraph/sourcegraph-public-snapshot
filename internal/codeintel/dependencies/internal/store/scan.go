@@ -58,18 +58,6 @@ func scanDependencyRepoWithVersions(s dbutil.Scanner) (shared.PackageRepoReferen
 	return ref, err
 }
 
-func scanDependencyRepo(s dbutil.Scanner) (shared.PackageRepoReference, error) {
-	var ref shared.PackageRepoReference
-	err := s.Scan(
-		&ref.ID,
-		&ref.Scheme,
-		&ref.Name,
-		&ref.Blocked,
-		&ref.LastCheckedAt,
-	)
-	return ref, err
-}
-
 func scanPackageFilter(s dbutil.Scanner) (shared.PackageRepoFilter, error) {
 	var filter shared.PackageRepoFilter
 	var data []byte

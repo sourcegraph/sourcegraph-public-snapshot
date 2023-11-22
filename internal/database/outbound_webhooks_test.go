@@ -17,6 +17,7 @@ import (
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestOutboundWebhooks(t *testing.T) {
@@ -52,7 +53,7 @@ func TestOutboundWebhooks(t *testing.T) {
 					t, user,
 					ScopedEventType{EventType: "foo"},
 					ScopedEventType{EventType: "bar"},
-					ScopedEventType{EventType: "quux", Scope: stringPtr("123")},
+					ScopedEventType{EventType: "quux", Scope: pointers.Ptr("123")},
 				)
 				err := store.Create(ctx, createdWebhook)
 				assert.NoError(t, err)
@@ -95,11 +96,11 @@ func TestOutboundWebhooks(t *testing.T) {
 			barOnlyWebhook := newSavedTestWebhook(t, user, ScopedEventType{EventType: "bar"})
 			quuxWithSameScopeWebhook := newSavedTestWebhook(
 				t, user,
-				ScopedEventType{EventType: "quux", Scope: stringPtr("123")},
+				ScopedEventType{EventType: "quux", Scope: pointers.Ptr("123")},
 			)
 			quuxWithDifferentScopeWebhook := newSavedTestWebhook(
 				t, user,
-				ScopedEventType{EventType: "quux", Scope: stringPtr("456")},
+				ScopedEventType{EventType: "quux", Scope: pointers.Ptr("456")},
 			)
 
 			allWebhooks := []*types.OutboundWebhook{
@@ -127,7 +128,7 @@ func TestOutboundWebhooks(t *testing.T) {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
-									{EventType: "not found", Scope: stringPtr(FilterEventTypeNoScope)},
+									{EventType: "not found", Scope: pointers.Ptr(FilterEventTypeNoScope)},
 								},
 							},
 						},
@@ -137,7 +138,7 @@ func TestOutboundWebhooks(t *testing.T) {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
-									{EventType: "foo", Scope: stringPtr("bar")},
+									{EventType: "foo", Scope: pointers.Ptr("bar")},
 								},
 							},
 						},
@@ -147,7 +148,7 @@ func TestOutboundWebhooks(t *testing.T) {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
-									{EventType: "quux", Scope: stringPtr("789")},
+									{EventType: "quux", Scope: pointers.Ptr("789")},
 								},
 							},
 						},
@@ -173,8 +174,8 @@ func TestOutboundWebhooks(t *testing.T) {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
-									{EventType: "foo", Scope: stringPtr(FilterEventTypeNoScope)},
-									{EventType: "quux", Scope: stringPtr(FilterEventTypeNoScope)},
+									{EventType: "foo", Scope: pointers.Ptr(FilterEventTypeNoScope)},
+									{EventType: "quux", Scope: pointers.Ptr(FilterEventTypeNoScope)},
 								},
 							},
 						},
@@ -188,10 +189,10 @@ func TestOutboundWebhooks(t *testing.T) {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
-									{EventType: "foo", Scope: stringPtr("no match")},
-									{EventType: "quux", Scope: stringPtr("123")},
-									{EventType: "quux", Scope: stringPtr("456")},
-									{EventType: "quux", Scope: stringPtr("789")},
+									{EventType: "foo", Scope: pointers.Ptr("no match")},
+									{EventType: "quux", Scope: pointers.Ptr("123")},
+									{EventType: "quux", Scope: pointers.Ptr("456")},
+									{EventType: "quux", Scope: pointers.Ptr("789")},
 								},
 							},
 						},
@@ -205,7 +206,7 @@ func TestOutboundWebhooks(t *testing.T) {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
-									{EventType: "quux", Scope: stringPtr("123")},
+									{EventType: "quux", Scope: pointers.Ptr("123")},
 								},
 							},
 						},
@@ -218,7 +219,7 @@ func TestOutboundWebhooks(t *testing.T) {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{{EventType: "bar"},
-									{EventType: "quux", Scope: stringPtr("123")},
+									{EventType: "quux", Scope: pointers.Ptr("123")},
 								},
 							},
 						},
@@ -287,7 +288,7 @@ func TestOutboundWebhooks(t *testing.T) {
 			t.Run("append to the current event types", func(t *testing.T) {
 				createdWebhook.EventTypes = append(
 					createdWebhook.EventTypes,
-					types.OutboundWebhookEventType{EventType: "newer", Scope: stringPtr("abc")},
+					types.OutboundWebhookEventType{EventType: "newer", Scope: pointers.Ptr("abc")},
 				)
 				err := store.Update(ctx, createdWebhook)
 				assert.NoError(t, err)
@@ -439,11 +440,11 @@ func runBothEncryptionStates(t *testing.T, f func(t *testing.T, logger log.Logge
 	var key encryption.Key
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Run("unencrypted", func(t *testing.T) { f(t, logger, db, key) })
 
 	logger = logtest.Scoped(t)
-	db = NewDB(logger, dbtest.NewDB(logger, t))
+	db = NewDB(logger, dbtest.NewDB(t))
 	key = et.ByteaTestKey{}
 	t.Run("encrypted", func(t *testing.T) { f(t, logger, db, key) })
 }

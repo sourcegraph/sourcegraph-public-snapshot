@@ -1,11 +1,11 @@
-import { ApolloClient } from '@apollo/client'
-import { Observable } from 'rxjs'
+import type { ApolloClient } from '@apollo/client'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
-import { InsightSubjectsResult } from '../../../../../../graphql-operations'
-import { InsightsDashboardOwner, InsightsDashboardOwnerType } from '../../../types'
+import type { InsightSubjectsResult } from '../../../../../../graphql-operations'
+import { type InsightsDashboardOwner, InsightsDashboardOwnerType } from '../../../types'
 import { GET_INSIGHTS_DASHBOARD_OWNERS_GQL } from '../gql/GetInsightSubjects'
 
 export const getDashboardOwners = (apolloClient: ApolloClient<unknown>): Observable<InsightsDashboardOwner[]> =>

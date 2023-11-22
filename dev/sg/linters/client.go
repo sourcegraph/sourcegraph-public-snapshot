@@ -21,6 +21,11 @@ func checkUnversionedDocsLinks() *linter {
 		}
 
 		return diff.IterateHunks(func(file string, hunk repo.DiffHunk) error {
+			// Ignore Cody app directory since docs links don't work
+			// with /help route there
+			if strings.HasPrefix(file, "client/web/src/enterprise/app") {
+				return nil
+			}
 			for _, l := range hunk.AddedLines {
 				if strings.Contains(l, `to="https://docs.sourcegraph.com`) {
 					return errors.Newf(`found link to 'https://docs.sourcegraph.com', use a '/help' relative path for the link instead: %s`,

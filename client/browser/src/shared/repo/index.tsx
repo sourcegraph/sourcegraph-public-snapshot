@@ -1,4 +1,4 @@
-import { RepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import type { RepoSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 export interface DiffResolvedRevisionSpec {
     baseCommitID: string

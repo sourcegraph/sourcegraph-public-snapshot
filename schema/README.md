@@ -11,7 +11,7 @@ Sourcegraph uses the following JSON Schemas:
 # Modifying a schema
 
 1.  Edit the `*.schema.json` file in this directory.
-1.  Run `go generate` to update the `*_stringdata.json` file.
+1.  Run `bazel run //schema:write_generated_schema`.
 1.  Commit the changes to both files.
 1.  Run `sg start` to automatically update TypeScript schema files.
 

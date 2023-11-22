@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -66,6 +69,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}, {
 			URI:  "/repos/bar/baz",
 			Name: "/repos/bar/baz",
@@ -81,6 +85,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bar/baz/.git"},
+			Private:  true,
 		}},
 	}, {
 		name: "abs-file-path",
@@ -103,6 +108,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				RelativePath: "/repos/foo/.git",
 				AbsFilePath:  "/src/foo",
 			},
+			Private: true,
 		}},
 	}, {
 		name: "override",
@@ -123,6 +129,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}},
 	}, {
 		name: "immutable",
@@ -142,6 +149,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}},
 	}}
 
@@ -171,6 +179,36 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestOther_DotComConfig(t *testing.T) {
+	makeSource := func(t *testing.T) *OtherSource {
+		source, err := NewOtherSource(context.Background(), &types.ExternalService{
+			ID:     1,
+			Kind:   extsvc.KindOther,
+			Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": "somegit.com/repo", "repos": ["%s"], "makeReposPublicOnDotCom": true}`, "src-expose")),
+		}, nil, nil)
+		require.NoError(t, err)
+		return source
+	}
+	source := makeSource(t)
+
+	cloneURL, _ := url.Parse("https://somegit.com/repo")
+
+	// Not on Dotcom, so repo should still be private regardless of config
+	repo, err := source.otherRepoFromCloneURL("other:source", cloneURL)
+	require.NoError(t, err)
+	require.True(t, repo.Private)
+
+	// Enable Dotcom mode. Then repo should be public.
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	defer envvar.MockSourcegraphDotComMode(orig)
+	source = makeSource(t)
+
+	repo, err = source.otherRepoFromCloneURL("other:source", cloneURL)
+	require.NoError(t, err)
+	require.False(t, repo.Private)
 }
 
 func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
@@ -219,6 +257,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}, {
 			URI:  "/repos/bar/baz",
 			Name: "/repos/bar/baz",
@@ -234,6 +273,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bar/baz/.git"},
+			Private:  true,
 		}},
 	}, {
 		name: "override",
@@ -254,6 +294,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}},
 	}, {
 		name: "immutable",
@@ -273,6 +314,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}},
 	}}
 
@@ -536,13 +578,11 @@ func TestOther_SrcExposeRequest(t *testing.T) {
 				Kind:   extsvc.KindOther,
 				Config: extsvc.NewUnencryptedConfig(string(config)),
 			}, httpcli.NewFactory(httpcli.NewMiddleware()), logtest.Scoped(t))
-
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			req, validSrcExposeConfig, err := source.srcExposeRequest()
-
 			if err != nil {
 				t.Fatal(err)
 			}

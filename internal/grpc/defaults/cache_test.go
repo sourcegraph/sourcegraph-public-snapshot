@@ -3,9 +3,11 @@ package defaults
 import (
 	"context"
 	"net"
+	"net/url"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/connectivity"
@@ -88,5 +90,114 @@ func TestCloseGRPCConnectionCallback(t *testing.T) {
 	err = ce.conn.Close()
 	if status.Code(err) != codes.Canceled {
 		t.Fatalf("expected %q code after closing connection twice, got err: %v", codes.Canceled.String(), err)
+	}
+}
+
+func TestParseAddress(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    string
+		expected *url.URL
+	}{
+		{
+			name: "valid URL",
+
+			input: "https://example.com",
+			expected: &url.URL{
+				Scheme: "https",
+				Host:   "example.com",
+			},
+		},
+		{
+			name: "host:port pair",
+
+			input: "example.com:8080",
+			expected: &url.URL{
+				Host: "example.com:8080",
+			},
+		},
+		{
+			name:  "gitserver URL with port and scheme",
+			input: "http://gitserver-0:3181",
+			expected: &url.URL{
+				Scheme: "http",
+				Host:   "gitserver-0:3181",
+			},
+		},
+		{
+			name:  "IPv4 host:port",
+			input: "127.0.0.1:3181",
+			expected: &url.URL{
+				Host: "127.0.0.1:3181",
+			},
+		},
+		{
+			name:  "IPv4 URL with port",
+			input: "http://127.0.0.1:3181",
+			expected: &url.URL{
+				Scheme: "http",
+				Host:   "127.0.0.1:3181",
+			},
+		},
+		{
+			name:  "IPv6 host:port",
+			input: "[dead:beef::3]:80",
+			expected: &url.URL{
+				Host: "[dead:beef::3]:80",
+			},
+		},
+		{
+			name:  "IPv6 URL with port",
+			input: "http://[dead:beef::3]:80",
+			expected: &url.URL{
+				Scheme: "http",
+				Host:   "[dead:beef::3]:80",
+			},
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: &url.URL{},
+		},
+		{
+			name:  "hostname without port",
+			input: "example.com",
+			expected: &url.URL{
+				Host: "example.com",
+			},
+		},
+		{
+			name:  "non-standard scheme",
+			input: "ftp://example.com",
+			expected: &url.URL{
+				Scheme: "ftp",
+				Host:   "example.com",
+			},
+		},
+		{
+			name:  "URL with path, query, and fragment",
+			input: "http://example.com/path?query#fragment",
+			expected: &url.URL{
+				Scheme:   "http",
+				Host:     "example.com",
+				Path:     "/path",
+				RawQuery: "query",
+				Fragment: "fragment",
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			u, err := parseAddress(tc.input)
+			if err != nil {
+				t.Fatalf("unexpected error: %+v", err)
+			}
+
+			if diff := cmp.Diff(tc.expected.String(), u.String()); diff != "" {
+				t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+			}
+
+		})
 	}
 }

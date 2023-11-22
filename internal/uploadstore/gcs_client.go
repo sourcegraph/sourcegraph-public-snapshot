@@ -3,19 +3,18 @@ package uploadstore
 import (
 	"context"
 	"io"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sgiterator "github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type gcsStore struct {
@@ -78,23 +77,59 @@ func (s *gcsStore) Init(ctx context.Context) error {
 	return nil
 }
 
-func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
-	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("key", key),
+// Equals the default of S3's ListObjectsV2Input.MaxKeys
+const maxKeys = 1_000
+
+func (s *gcsStore) List(ctx context.Context, prefix string) (_ *sgiterator.Iterator[string], err error) {
+	ctx, _, endObservation := s.operations.List.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("prefix", prefix),
 	}})
 	defer endObservation(1, observation.Args{})
+
+	query := storage.Query{Prefix: prefix}
+
+	// Performance optimization
+	query.SetAttrSelection([]string{"Name"})
+
+	iter := s.client.Bucket(s.bucket).Objects(ctx, &query)
+
+	next := func() ([]string, error) {
+		var keys []string
+		for len(keys) < maxKeys {
+			attr, err := iter.Next()
+			if err != nil && err != iterator.Done {
+				s.operations.List.Logger.Error("Failed to list objects in GCS bucket", sglog.Error(err))
+				return nil, err
+			}
+			if err == iterator.Done {
+				break
+			}
+			keys = append(keys, attr.Name)
+		}
+
+		return keys, nil
+	}
+
+	return sgiterator.New[string](next), nil
+}
+
+func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
+	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("key", key),
+	}})
+	done := func() { endObservation(1, observation.Args{}) }
 
 	rc, err := s.client.Bucket(s.bucket).Object(key).NewRangeReader(ctx, 0, -1)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get object")
 	}
 
-	return rc, nil
+	return NewExtraCloser(rc, done), nil
 }
 
 func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
-	ctx, _, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("key", key),
+	ctx, _, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -119,9 +154,9 @@ func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64
 }
 
 func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
-	ctx, _, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("destination", destination),
-		log.String("sources", strings.Join(sources, ", ")),
+	ctx, _, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("destination", destination),
+		attribute.StringSlice("sources", sources),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -150,8 +185,8 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 }
 
 func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
-	ctx, _, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("key", key),
+	ctx, _, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -159,9 +194,9 @@ func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
 }
 
 func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
-	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("prefix", prefix),
-		log.String("maxAge", maxAge.String()),
+	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("prefix", prefix),
+		attribute.Stringer("maxAge", maxAge),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -195,7 +230,7 @@ func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
 }
 
 func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
-	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
+	return ForEachString(sources, func(index int, source string) error {
 		if err := bucket.Object(source).Delete(ctx); err != nil {
 			return errors.Wrap(err, "failed to delete source object")
 		}

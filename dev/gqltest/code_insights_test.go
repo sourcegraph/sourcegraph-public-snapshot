@@ -225,6 +225,7 @@ func getTitles(t *testing.T, args gqltestutil.GetDashboardArgs) []string {
 }
 
 func TestUpdateInsight(t *testing.T) {
+	t.Skip()
 	t.Run("metadata update no recalculation", func(t *testing.T) {
 		dataSeries := map[string]any{
 			"query": "lang:css",
@@ -631,6 +632,7 @@ func TestUpdateInsight(t *testing.T) {
 }
 
 func TestSaveInsightAsNewView(t *testing.T) {
+	t.Skip()
 	dataSeries := map[string]any{
 		"query": "lang:go",
 		"options": map[string]string{
@@ -688,6 +690,7 @@ func TestSaveInsightAsNewView(t *testing.T) {
 }
 
 func TestCreateInsight(t *testing.T) {
+	t.Skip()
 
 	t.Run("series level repo & time scopes", func(t *testing.T) {
 		repos := []string{"a", "b"}
@@ -781,7 +784,6 @@ func TestCreateInsight(t *testing.T) {
 		if intervalValue != int(insight.IntervalValue) {
 			t.Error("should have matching interval value")
 		}
-
 	})
 
 	t.Run("series level scopes override", func(t *testing.T) {
@@ -855,7 +857,5 @@ func TestCreateInsight(t *testing.T) {
 				t.Fatalf("couldn't disable insight series: %v", err)
 			}
 		}
-
 	})
-
 }

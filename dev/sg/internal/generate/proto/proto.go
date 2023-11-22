@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 )
 
-func Generate(ctx context.Context, verboseOutput bool) *generate.Report {
+func Generate(ctx context.Context, bufGenFilePaths []string, verboseOutput bool) *generate.Report {
 	var (
 		start = time.Now()
 		sb    strings.Builder
@@ -27,14 +27,8 @@ func Generate(ctx context.Context, verboseOutput bool) *generate.Report {
 		return &generate.Report{Output: sb.String(), Err: err}
 	}
 
-	// Run buf generate in every directory with buf.gen.yaml
-	bufGenFilePaths, err := buf.PluginConfigurationFiles()
-	if err != nil {
-		err = errors.Wrapf(err, "finding plugin configuration files")
-		return &generate.Report{Err: err}
-	}
-
 	for _, p := range bufGenFilePaths {
+		sb.WriteString(fmt.Sprintf("> Generate %s\n", p))
 		bufArgs := []string{"generate"}
 		c, err := buf.Cmd(ctx, bufArgs...)
 		if err != nil {

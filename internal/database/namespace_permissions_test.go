@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -16,14 +17,14 @@ func TestCreateNamespacePermission(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.NamespacePermissions()
 
 	user := createUserForNamespacePermission(ctx, t, db, "TestUser")
 
 	t.Run("missing resource id", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			UserID:    user.ID,
 		})
 		require.Nil(t, np)
@@ -33,7 +34,7 @@ func TestCreateNamespacePermission(t *testing.T) {
 
 	t.Run("missing user id", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			Namespace:  types.BatchChangesNamespace,
+			Namespace:  rtypes.BatchChangesNamespace,
 			ResourceID: 1,
 		})
 		require.Nil(t, np)
@@ -54,7 +55,7 @@ func TestCreateNamespacePermission(t *testing.T) {
 
 	t.Run("invalid namespace", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			Namespace:  types.PermissionNamespace("TEST_NAMESPACE"),
+			Namespace:  rtypes.PermissionNamespace("TEST_NAMESPACE"),
 			ResourceID: 1,
 			UserID:     user.ID,
 		})
@@ -66,7 +67,7 @@ func TestCreateNamespacePermission(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			Namespace:  types.BatchChangesNamespace,
+			Namespace:  rtypes.BatchChangesNamespace,
 			ResourceID: 1,
 			UserID:     user.ID,
 		})
@@ -88,7 +89,7 @@ func TestDeleteNamespacePermission(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.NamespacePermissions()
 
 	user := createUserForNamespacePermission(ctx, t, db, "user1")
@@ -101,7 +102,7 @@ func TestDeleteNamespacePermission(t *testing.T) {
 
 	t.Run("existing namespace permissions", func(t *testing.T) {
 		np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-			Namespace:  types.BatchChangesNamespace,
+			Namespace:  rtypes.BatchChangesNamespace,
 			ResourceID: 1,
 			UserID:     user.ID,
 		})
@@ -133,13 +134,13 @@ func TestGetNamespacePermission(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.NamespacePermissions()
 
 	user := createUserForNamespacePermission(ctx, t, db, "user1")
 
 	np, err := store.Create(ctx, CreateNamespacePermissionOpts{
-		Namespace:  types.BatchChangesNamespace,
+		Namespace:  rtypes.BatchChangesNamespace,
 		ResourceID: 1,
 		UserID:     user.ID,
 	})
@@ -168,7 +169,7 @@ func TestGetNamespacePermission(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{
 			UserID:     user.ID,
 			ResourceID: 1,
-			Namespace:  types.PermissionNamespace("TEST-NAMESPACE"),
+			Namespace:  rtypes.PermissionNamespace("TEST-NAMESPACE"),
 		})
 
 		require.Nil(t, n)
@@ -178,7 +179,7 @@ func TestGetNamespacePermission(t *testing.T) {
 
 	t.Run("missing resource id", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			UserID:    user.ID,
 		})
 
@@ -189,7 +190,7 @@ func TestGetNamespacePermission(t *testing.T) {
 
 	t.Run("missing user id", func(t *testing.T) {
 		n, err := store.Get(ctx, GetNamespacePermissionOpts{
-			Namespace:  types.BatchChangesNamespace,
+			Namespace:  rtypes.BatchChangesNamespace,
 			ResourceID: 1,
 		})
 

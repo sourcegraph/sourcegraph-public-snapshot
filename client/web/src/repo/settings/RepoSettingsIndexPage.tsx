@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import prettyBytes from 'pretty-bytes'
-import { Observable, Subject, Subscription } from 'rxjs'
+import { type Observable, Subject, Subscription } from 'rxjs'
 import { map, switchMap, tap } from 'rxjs/operators'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -25,7 +25,7 @@ import {
 
 import { queryGraphQL } from '../../backend/graphql'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     reindexResult,
     reindexVariables,
     RepositoryTextSearchIndexRepository,
@@ -190,31 +190,32 @@ const TextSearchIndexedReference: React.FunctionComponent<
             />
             <LinkOrSpan to={indexedRef.ref.url}>
                 <Code weight="bold">{indexedRef.ref.displayName}</Code>
-            </LinkOrSpan>{' '}
+            </LinkOrSpan>
+            &nbsp;&mdash;&nbsp;
             {indexedRef.indexed ? (
                 <span>
-                    &nbsp;&mdash; indexed at{' '}
+                    {indexedRef.current ? 'up to date.' : 'index update in progress.'}
+                    {' Last indexing job ran at '}
                     <Code>
                         <LinkOrSpan
                             to={indexedRef.indexedCommit?.commit ? indexedRef.indexedCommit.commit.url : repo.url}
                         >
                             {indexedRef.indexedCommit!.abbreviatedOID}
                         </LinkOrSpan>
-                    </Code>{' '}
-                    {indexedRef.current ? '(up to date)' : '(index update in progress)'}
+                    </Code>
                     {indexedRef.skippedIndexed && Number(indexedRef.skippedIndexed.count) > 0 ? (
                         <span>
-                            .&nbsp;
+                            {', with '}
                             <Link to={'/search?q=' + encodeURIComponent(indexedRef.skippedIndexed.query)}>
-                                {indexedRef.skippedIndexed.count}{' '}
-                                {pluralize('file', Number(indexedRef.skippedIndexed.count))} skipped during indexing
+                                {indexedRef.skippedIndexed.count} skipped{' '}
+                                {pluralize('file', Number(indexedRef.skippedIndexed.count))}
                             </Link>
                             .
                         </span>
                     ) : null}
                 </span>
             ) : (
-                <span>&nbsp;&mdash; initial indexing in progress</span>
+                <span>initial indexing in progress.</span>
             )}
         </li>
     )
@@ -265,7 +266,7 @@ export class RepoSettingsIndexPage extends React.PureComponent<Props, State> {
             <>
                 <PageTitle title="Index settings" />
                 <PageHeader
-                    path={[{ text: 'Indexing' }]}
+                    path={[{ text: 'Search Indexing' }]}
                     headingElement="h2"
                     className="mb-3"
                     description={

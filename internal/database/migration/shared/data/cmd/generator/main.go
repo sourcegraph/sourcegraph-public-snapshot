@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
@@ -14,6 +15,9 @@ import (
 )
 
 func main() {
+	liblog := log.Init(log.Resource{Name: "migration-generator"})
+	defer liblog.Sync()
+
 	if err := mainErr(); err != nil {
 		panic(fmt.Sprintf("error: %s", err))
 	}
@@ -41,7 +45,7 @@ func mainErr() error {
 	for _, version := range versions {
 		versionTags = append(versionTags, version.GitTag())
 	}
-	fmt.Println(fmt.Sprintf("Generating stitched migration files for range [%s, %s]", MinVersion, MaxVersion))
+	fmt.Printf("Generating stitched migration files for range [%s, %s]\n", MinVersion, MaxVersion)
 	if err := stitchAndWrite(repoRoot, filepath.Join(wd, "data", "stitched-migration-graph.json"), versionTags); err != nil {
 		return err
 	}

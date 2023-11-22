@@ -5,15 +5,17 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func Validate(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
 	schemaNamesFlag := &cli.StringSliceFlag{
-		Name:  "db",
-		Usage: "The target `schema(s)` to validate. Comma-separated values are accepted. Supply \"all\" to validate all schemas.",
-		Value: cli.NewStringSlice("all"),
+		Name:    "schema",
+		Usage:   "The target `schema(s)` to validate. Comma-separated values are accepted. Possible values are 'frontend', 'codeintel', 'codeinsights' and 'all'.",
+		Value:   cli.NewStringSlice("all"),
+		Aliases: []string{"db"},
 	}
 	skipOutOfBandMigrationsFlag := &cli.BoolFlag{
 		Name:  "skip-out-of-band-migrations",
@@ -22,7 +24,7 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		schemaNames := sanitizeSchemaNames(schemaNamesFlag.Get(cmd))
+		schemaNames := sanitizeSchemaNames(schemaNamesFlag.Get(cmd), out)
 		if len(schemaNames) == 0 {
 			return flagHelp(out, "supply a schema via -db")
 		}
@@ -38,7 +40,7 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 		out.WriteLine(output.Emoji(output.EmojiSuccess, "schema okay!"))
 
 		if !skipOutOfBandMigrationsFlag.Get(cmd) {
-			db, err := extractDatabase(ctx, r)
+			db, err := store.ExtractDatabase(ctx, r)
 			if err != nil {
 				return err
 			}

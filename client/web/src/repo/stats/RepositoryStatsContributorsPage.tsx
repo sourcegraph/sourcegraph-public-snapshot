@@ -34,7 +34,7 @@ import {
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
-import {
+import type {
     RepositoryContributorNodeFields,
     RepositoryContributorsResult,
     RepositoryContributorsVariables,
@@ -43,7 +43,7 @@ import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { eventLogger } from '../../tracking/eventLogger'
 
-import { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
+import type { RepositoryStatsAreaPageProps } from './RepositoryStatsArea'
 
 import styles from './RepositoryStatsContributorsPage.module.scss'
 
@@ -271,15 +271,18 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
     const onChange: React.ChangeEventHandler<HTMLInputElement> = event => {
         const { value } = event.target
         switch (event.currentTarget.id) {
-            case contributorsPageInputIds.REVISION_RANGE:
+            case contributorsPageInputIds.REVISION_RANGE: {
                 setRevisionRange(value)
                 break
-            case contributorsPageInputIds.AFTER:
+            }
+            case contributorsPageInputIds.AFTER: {
                 setAfter(value)
                 break
-            case contributorsPageInputIds.PATH:
+            }
+            case contributorsPageInputIds.PATH: {
                 setPath(value)
                 break
+            }
         }
     }
 
@@ -330,7 +333,7 @@ export const RepositoryStatsContributorsPage: React.FunctionComponent<Props> = (
             <SummaryContainer className="justify-content-center pt-3">
                 <PageSwitcher
                     totalCount={connection?.totalCount ?? null}
-                    totalLabel={connection?.totalCount === 1 ? 'contributor' : 'contributors'}
+                    totalLabel={pluralize('contributor', connection?.totalCount ?? 0)}
                     {...paginationArgs}
                 />
             </SummaryContainer>

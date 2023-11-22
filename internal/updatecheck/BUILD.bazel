@@ -1,0 +1,62 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "updatecheck",
+    srcs = [
+        "build.go",
+        "client.go",
+        "doc.go",
+        "handler.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/updatecheck",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//cmd/frontend/globals",
+        "//cmd/frontend/hubspot",
+        "//cmd/frontend/hubspot/hubspotutil",
+        "//internal/conf",
+        "//internal/conf/deploy",
+        "//internal/database",
+        "//internal/env",
+        "//internal/extsvc/versions",
+        "//internal/httpcli",
+        "//internal/jsonc",
+        "//internal/lazyregexp",
+        "//internal/metrics",
+        "//internal/pubsub",
+        "//internal/redispool",
+        "//internal/siteid",
+        "//internal/types",
+        "//internal/usagestats",
+        "//internal/version",
+        "//lib/errors",
+        "//schema",
+        "@com_github_coreos_go_semver//semver",
+        "@com_github_gomodule_redigo//redis",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel_metric//:metric",
+    ],
+)
+
+go_test(
+    name = "updatecheck_test",
+    timeout = "short",
+    srcs = [
+        "build_test.go",
+        "client_test.go",
+        "handler_test.go",
+    ],
+    embed = [":updatecheck"],
+    deps = [
+        "//internal/extsvc",
+        "//internal/types",
+        "//lib/pointers",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { OrgSettingFields, UserSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Select } from '@sourcegraph/wildcard'
 
 type PartialNamespace =
@@ -9,10 +9,12 @@ type PartialNamespace =
 
 const getNamespaceDisplayName = (namespace: PartialNamespace): string => {
     switch (namespace.__typename) {
-        case 'User':
+        case 'User': {
             return namespace.displayName ? namespace.displayName : namespace.username
-        case 'Org':
+        }
+        case 'Org': {
             return namespace.displayName ? namespace.displayName : namespace.name
+        }
     }
 }
 

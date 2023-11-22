@@ -1,7 +1,7 @@
 import React, { createRef, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 
 import { isAnyDropdownOpen } from '../GlobalKeyboardListeners'
 
@@ -178,7 +178,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
         <div className={styles.list} ref={scrollViewReference}>
             {matches.map((match: SearchMatch) => {
                 switch (match.type) {
-                    case 'commit':
+                    case 'commit': {
                         return (
                             <CommitSearchResult
                                 key={`${match.repository}-${match.url}`}
@@ -188,7 +188,8 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 openResult={openResult}
                             />
                         )
-                    case 'content':
+                    }
+                    case 'content': {
                         return (
                             <FileSearchResult
                                 key={`${match.repository}-${match.path}`}
@@ -199,7 +200,8 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 settingsCascade={settingsCascade}
                             />
                         )
-                    case 'symbol':
+                    }
+                    case 'symbol': {
                         return (
                             <FileSearchResult
                                 key={`${match.repository}-${match.path}`}
@@ -210,7 +212,8 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 settingsCascade={settingsCascade}
                             />
                         )
-                    case 'repo':
+                    }
+                    case 'repo': {
                         return (
                             <RepoSearchResult
                                 key={`${match.repository}`}
@@ -220,7 +223,8 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 openResult={openResult}
                             />
                         )
-                    case 'path':
+                    }
+                    case 'path': {
                         return (
                             <PathSearchResult
                                 key={`${match.repository}-${match.path}`}
@@ -230,11 +234,13 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 openResult={openResult}
                             />
                         )
-                    default:
+                    }
+                    default: {
                         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                         // @ts-ignore This is here in preparation for future match types
                         console.log('Unknown search result type:', match.type)
                         return null
+                    }
                 }
             })}
         </div>

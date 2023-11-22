@@ -4,16 +4,15 @@ import * as React from 'react'
 
 import { ApolloProvider } from '@apollo/client'
 import { RouterProvider, createBrowserRouter, createRoutesFromElements, Route } from 'react-router-dom'
-import { combineLatest, from, Subscription, fromEvent, Observable } from 'rxjs'
+import { combineLatest, from, Subscription, fromEvent, type Observable } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'
-import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
+import { type GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import { SharedSpanName, TraceSpanProvider } from '@sourcegraph/observability-client'
-import { FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { setCodeIntelSearchContext } from '@sourcegraph/shared/src/codeintel/searchContext'
-import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
+import { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import type { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { createNoopController } from '@sourcegraph/shared/src/extensions/createNoopLoadedController'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { ShortcutProvider } from '@sourcegraph/shared/src/react-shortcuts'
 import {
     getUserSearchContextNamespaces,
@@ -32,28 +31,30 @@ import { filterExists } from '@sourcegraph/shared/src/search/query/validate'
 import { aggregateStreamingSearch } from '@sourcegraph/shared/src/search/stream'
 import {
     EMPTY_SETTINGS_CASCADE,
-    SettingsCascadeProps,
+    type SettingsCascadeProps,
     SettingsProvider,
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { NoOpTelemetryRecorderProvider } from '@sourcegraph/shared/src/telemetry'
+import { WildcardThemeContext, type WildcardTheme } from '@sourcegraph/wildcard'
 
-import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
+import { authenticatedUser as authenticatedUserSubject, type AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
 import { isBatchChangesExecutionEnabled } from './batches'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
-import { LegacyLayout, LegacyLayoutProps } from './LegacyLayout'
+import { LegacyLayout, type LegacyLayoutProps } from './LegacyLayout'
 import { LegacyRouteContextProvider } from './LegacyRouteContext'
 import { PageError } from './PageError'
 import { createPlatformContext } from './platform/context'
 import { parseSearchURL } from './search'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { GLOBAL_SEARCH_CONTEXT_SPEC } from './SearchQueryStateObserver'
-import { StaticAppConfig } from './staticAppConfig'
-import { setQueryStateFromSettings, useNavbarQueryState } from './stores'
+import type { StaticAppConfig } from './staticAppConfig'
+import { setQueryStateFromSettings, useDeveloperSettings, useNavbarQueryState } from './stores'
+import { TelemetryRecorderProvider } from './telemetry'
 import { eventLogger } from './tracking/eventLogger'
 import { UserSessionStores } from './UserSessionStores'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
@@ -76,25 +77,31 @@ interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
     viewerSubject: LegacyLayoutProps['viewerSubject']
 
     selectedSearchContextSpec?: string
+
+    platformContext: PlatformContext
 }
 
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
 
-setLinkComponent(RouterLink)
-
 /**
  * The root component.
  */
 export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, LegacySourcegraphWebAppState> {
     private readonly subscriptions = new Subscription()
-    private readonly platformContext: PlatformContext = createPlatformContext()
-    private readonly extensionsController: ExtensionsController | null = createNoopController(this.platformContext)
+    private readonly extensionsController: ExtensionsController | null
 
     constructor(props: StaticAppConfig) {
         super(props)
 
+        const basePlatformContext = createPlatformContext({
+            telemetryRecorderProvider: new NoOpTelemetryRecorderProvider({
+                errorOnRecord: true, // this will be replaced on render()
+            }),
+        })
+
+        this.extensionsController = createNoopController(basePlatformContext)
         if (this.extensionsController !== null) {
             this.subscriptions.add(this.extensionsController)
         }
@@ -103,6 +110,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             authenticatedUser: authenticatedUserValue,
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
+            platformContext: basePlatformContext,
         }
     }
 
@@ -114,12 +122,24 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
 
         getWebGraphQLClient()
             .then(graphqlClient => {
+                // Create real telemetry recorder provider
+                const telemetryRecorderProvider = new TelemetryRecorderProvider(graphqlClient, {
+                    enableBuffering: true,
+                })
+                this.subscriptions.add(telemetryRecorderProvider)
+
+                // Override the no-op telemetryRecorder from initialization
+                const { platformContext } = this.state
+                platformContext.telemetryRecorder = telemetryRecorderProvider.getRecorder()
+
                 this.setState({
                     graphqlClient,
                     temporarySettingsStorage: new TemporarySettingsStorage(
                         graphqlClient,
-                        window.context.isAuthenticatedUser
+                        window.context.isAuthenticatedUser,
+                        process.env.NODE_ENV === 'development' || useDeveloperSettings.getState().enabled
                     ),
+                    platformContext,
                 })
             })
             .catch(error => {
@@ -128,7 +148,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
 
         this.subscriptions.add(
             combineLatest([
-                from(this.platformContext.settings),
+                from(this.state.platformContext.settings),
                 // Start with `undefined` while we don't know if the viewer is authenticated or not.
                 authenticatedUserSubject,
             ]).subscribe(([settingsCascade, authenticatedUser]) => {
@@ -198,7 +218,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
             notebooksEnabled: this.props.notebooksEnabled,
             codeMonitoringEnabled: this.props.codeMonitoringEnabled,
             searchAggregationEnabled: this.props.searchAggregationEnabled,
-            platformContext: this.platformContext,
+            platformContext: this.state.platformContext,
             authenticatedUser,
             viewerSubject: this.state.viewerSubject,
             settingsCascade: this.state.settingsCascade,
@@ -218,7 +238,8 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             fetchHighlightedFileLineRanges={this.fetchHighlightedFileLineRanges}
                             telemetryService={eventLogger}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
-                            isSourcegraphApp={window.context.sourcegraphAppMode}
+                            isCodyApp={window.context.codyAppMode}
+                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                             searchContextsEnabled={this.props.searchContextsEnabled}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                             fetchSearchContexts={fetchSearchContexts}
@@ -227,7 +248,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             createSearchContext={createSearchContext}
                             updateSearchContext={updateSearchContext}
                             deleteSearchContext={deleteSearchContext}
-                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                             streamSearch={aggregateStreamingSearch}
                         />
                     }
@@ -281,7 +301,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
         this.subscriptions.add(
             isSearchContextSpecAvailable({
                 spec,
-                platformContext: this.platformContext,
+                platformContext: this.state.platformContext,
             }).subscribe(isAvailable => {
                 if (isAvailable) {
                     this.setSelectedSearchContextSpecWithNoChecks(spec)
@@ -302,7 +322,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
         }
 
         this.subscriptions.add(
-            getDefaultSearchContextSpec({ platformContext: this.platformContext }).subscribe(spec => {
+            getDefaultSearchContextSpec({ platformContext: this.state.platformContext }).subscribe(spec => {
                 // Fall back to global if no default is returned.
                 this.setSelectedSearchContextSpecWithNoChecks(spec || GLOBAL_SEARCH_CONTEXT_SPEC)
             })
@@ -310,14 +330,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
     }
 
     private async setWorkspaceSearchContext(spec: string | undefined): Promise<void> {
-        // NOTE(2022-09-08) Inform the inlined code from
-        // sourcegraph/code-intel-extensions about the change of search context.
-        // The old extension code previously accessed this information from the
-        // 'sourcegraph' npm package, and updating the context like this was the
-        // simplest solution to mirror the old behavior while deprecating
-        // extensions on a tight deadline. It would be nice to properly pass
-        // around this via React state in the future.
-        setCodeIntelSearchContext(spec)
         if (this.extensionsController === null) {
             return
         }
@@ -329,5 +341,5 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
         parameters: FetchFileParameters,
         force?: boolean | undefined
     ): Observable<string[][]> =>
-        fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
+        fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.state.platformContext }, force)
 }

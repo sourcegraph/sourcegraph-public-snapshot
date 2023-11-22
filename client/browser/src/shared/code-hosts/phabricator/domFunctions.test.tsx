@@ -1,6 +1,7 @@
 import { startCase } from 'lodash'
+import { describe } from 'vitest'
 
-import { DOMFunctionsTest, testDOMFunctions } from '../shared/codeHostTestUtils'
+import { type DOMFunctionsTest, testDOMFunctions } from '../shared/codeHostTestUtils'
 
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'
 

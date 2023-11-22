@@ -9,6 +9,7 @@
   "HeadRefName": "monorepo",
   "BaseRefName": "master",
   "Number": 596,
+  "ReviewDecision": "",
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/1387653?u=d279ea6a6267aa73f4202d50f584e110735bfb30\u0026v=4",
    "Login": "chrismwendt",
@@ -415,7 +416,7 @@
       "MessageHeadline": "build: bump sourcegraph dep",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/5315e29960e02bb2305d338b828161fd206eee1f",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/1646931?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/1646931?u=df4a0fe79667e85ece8054c617fc9f073450d205\u0026v=4",
        "Email": "beyang@sourcegraph.com",
        "Name": "Beyang Liu",
        "User": {
@@ -3441,7 +3442,7 @@
       "MessageHeadline": "feat(deps): update dependency @sourcegraph/extensions-client-common t…",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/5ab0915e5f812399cbf875ae79a4657618e6fb8a",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
@@ -3679,7 +3680,7 @@
       "MessageHeadline": "fix: do not display code intelligence hovers on Sourcegraph Extension…",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/893768ee1c6e3bc87bad7cdae0ea4aed4e3a607b",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
@@ -3771,7 +3772,7 @@
       "MessageHeadline": "fix: make line decoration link opening match Sourcegraph behavior",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/3e13ce277c58bc34f6d29a63dfe52f9e7933e678",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
@@ -3794,7 +3795,7 @@
       "MessageHeadline": "fix: do not leak referrer when clicking Sourcegraph extension links",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/2836554b2d8cc0740e86c5f692b88e58c5786606",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
@@ -3817,7 +3818,7 @@
       "MessageHeadline": "fix: hoverMessage now properly renders as a tooltip",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/c7409d3a76aaec2a748b8446b021d8e3bf69c192",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/3173176?u=38ff1955ff35f0882e77048d78221ea82fb9c5db\u0026v=4",
        "Email": "stephen.gutekanst@gmail.com",
        "Name": "Stephen Gutekanst",
        "User": {
@@ -4226,7 +4227,7 @@
       "MessageHeadline": "chore: add `.github` directory",
       "URL": "https://github.com/sourcegraph/sourcegraph/commit/6126d5fa5f25949cd1e222e07af0c5ed1242fcdf",
       "Committer": {
-       "AvatarURL": "https://avatars.githubusercontent.com/u/133014?v=4",
+       "AvatarURL": "https://avatars.githubusercontent.com/u/133014?u=6d63dc94c7e6b7d49745c1a91d70302d4a1ad71c\u0026v=4",
        "Email": "ryan.blunden@gmail.com",
        "Name": "Ryan Blunden",
        "User": {
@@ -4429,7 +4430,7 @@
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Aborting my review here cause it looks WIP. Please ping me when this ready for review.",
      "State": "CHANGES_REQUESTED",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-169814822",
@@ -5337,7 +5338,7 @@
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Since you asked to review commit-by-commit, it would have been nice if you squased your fixup commits. I think some of my comments are fixed in later commits.",
      "State": "COMMENTED",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-171051975",
@@ -5536,7 +5537,7 @@
       "URL": "https://github.com/felixfbecker"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "If there are errors with regenerator runtime that highlights a problem with the Babel configuration. I saw you changed the Babel config from being in babel.config.js to being inline in webpack.config.ts which may have something to do with it",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435584211",
      "CreatedAt": "2018-11-03T12:30:19Z",
@@ -5554,7 +5555,7 @@
       "URL": "https://github.com/felixfbecker"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "Is the PR description still accurate?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435595697",
      "CreatedAt": "2018-11-03T15:18:43Z",
@@ -5763,7 +5764,7 @@
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "",
      "State": "COMMENTED",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#pullrequestreview-171378178",
@@ -5800,7 +5801,7 @@
       "URL": "https://github.com/felixfbecker"
      },
      "Editor": null,
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "The structure in the PR description mentions symlinks. What are those needed for?",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/596#issuecomment-435704296",
      "CreatedAt": "2018-11-04T20:45:32Z",

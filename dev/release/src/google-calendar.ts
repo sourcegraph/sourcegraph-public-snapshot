@@ -1,9 +1,9 @@
-import { createServer, IncomingMessage, Server, ServerResponse } from 'http'
-import { AddressInfo } from 'net'
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'http'
+import type { AddressInfo } from 'net'
 
 import { addMinutes } from 'date-fns'
-import { Credentials } from 'google-auth-library'
-import { google, calendar_v3 } from 'googleapis'
+import type { Credentials } from 'google-auth-library'
+import { google, type calendar_v3 } from 'googleapis'
 import { OAuth2Client } from 'googleapis-common'
 import { DateTime } from 'luxon'
 import { readFile, writeFile } from 'mz/fs'
@@ -139,7 +139,7 @@ export async function ensureEvent(
         calendarId: 'primary',
         requestBody: {
             anyoneCanAddSelf,
-            attendees: attendees.map(email => ({ email })),
+            attendees: attendees.map(email => ({ email, optional: true })),
             start: { date: startDate, dateTime: startDateTime },
             end: { date: endDate, dateTime: endDateTime },
             description,

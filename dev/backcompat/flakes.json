@@ -1,0 +1,31 @@
+{
+    "5.0.0": [
+        {
+            "path": "cmd/frontend/internal/batches/resolvers",
+            "prefix": "TestRepositoryPermissions",
+            "reason": "Test was having incomplete data, fails now that constraints are in place"
+        },
+        {
+            "path": "dev/sg/linters",
+            "prefix": "TestLibLogLinter",
+            "reason": "Test was having incomplete data, fails now that constraints are in place"
+        },
+        {
+            "path": "internal/database",
+            "prefix": "TestRepos_List_LastChanged",
+            "reason": "Shifting constraints on table; ranking is experimental"
+        },
+        {
+            "path": "internal/codeintel/ranking/internal/store",
+            "prefix": "Test",
+            "reason": "Shifting constraints on table; ranking is experimental"
+        }
+    ],
+    "5.1.0": [
+        {
+            "path": "internal/database",
+            "prefix": "TestUserCredentials_CreateUpdate",
+            "reason": "Update to crypto internals affects ability to compare authenticators"
+        }
+    ]
+}

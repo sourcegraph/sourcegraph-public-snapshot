@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/byteutils"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -46,12 +47,14 @@ func NewCrateSyncer(
 	gitClient gitserver.Client,
 	extSvcStore ExternalServiceStore,
 ) goroutine.BackgroundRoutine {
+	ctx := actor.WithInternalActor(context.Background())
+
 	// By default, sync crates every 12h, but the user can customize this interval
 	// through site-admin configuration of the RUSTPACKAGES code host.
 	interval := time.Hour * 12
-	_, externalService, _ := singleRustExternalService(context.Background(), extSvcStore)
+	_, externalService, _ := singleRustExternalService(ctx, extSvcStore)
 	if externalService != nil {
-		config, err := rustPackagesConfig(context.Background(), externalService)
+		config, err := rustPackagesConfig(ctx, externalService)
 		if err == nil { // silently ignore config errors.
 			customInterval, err := time.ParseDuration(config.IndexRepositorySyncInterval)
 			if err == nil { // silently ignore duration decoding error.
@@ -73,12 +76,13 @@ func NewCrateSyncer(
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
-		"codeintel.crates-syncer", "syncs the crates list from the index to dependency repos table",
-		interval,
+		ctx,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return job.handleCrateSyncer(ctx, interval)
 		}),
+		goroutine.WithName("codeintel.crates-syncer"),
+		goroutine.WithDescription("syncs the crates list from the index to dependency repos table"),
+		goroutine.WithInterval(interval),
 	)
 }
 
@@ -115,7 +119,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		return errors.Newf("failed to update repo %s, error %s", repoName, update.Error)
 	}
 
-	allFilesStr, err := j.gitClient.LsFiles(ctx, nil, repoName, "HEAD")
+	allFilesStr, err := j.gitClient.LsFiles(ctx, repoName, "HEAD")
 	if err != nil {
 		return err
 	}
@@ -225,7 +229,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 					Scheme:  pkg.Scheme,
 					Name:    pkg.Name,
 					Version: version.Version,
-				}, true); err != nil {
+				}); err != nil {
 					queueErrs = errors.Append(queueErrs, err)
 				}
 			}
@@ -240,7 +244,6 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 func (j *crateSyncerJob) readIndexArchiveBatch(ctx context.Context, repoName api.RepoName, batch []gitdomain.Pathspec) (io.Reader, error) {
 	reader, err := j.gitClient.ArchiveReader(
 		ctx,
-		nil,
 		repoName,
 		gitserver.ArchiveOptions{
 			Treeish:   "HEAD",
@@ -316,7 +319,11 @@ func parseCrateInformation(contents []byte) ([]shared.MinimalPackageRepoRef, err
 
 	instant := time.Now()
 
-	for _, line := range bytes.Split(contents, []byte("\n")) {
+	lr := byteutils.NewLineReader(contents)
+
+	for lr.Scan() {
+		line := lr.Line()
+
 		if len(line) == 0 {
 			continue
 		}

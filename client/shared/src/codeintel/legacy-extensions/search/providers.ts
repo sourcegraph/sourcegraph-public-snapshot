@@ -1,11 +1,11 @@
 /* eslint-disable jsdoc/check-param-names */
 import { flatten, sortBy } from 'lodash'
-import { from, isObservable, Observable } from 'rxjs'
+import { from, isObservable, type Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
 
 import * as sourcegraph from '../api'
-import { FilterDefinitions, LanguageSpec } from '../language-specs/language-spec'
-import { Providers } from '../providers'
+import type { FilterDefinitions, LanguageSpec } from '../language-specs/language-spec'
+import type { Providers } from '../providers'
 import { cache } from '../util'
 import { API } from '../util/api'
 import { asArray, isDefined } from '../util/helpers'
@@ -14,7 +14,7 @@ import { raceWithDelayOffset } from '../util/promise'
 import { parseGitURI } from '../util/uri'
 
 import { getConfig } from './config'
-import { Result, resultToLocation, searchResultToResults } from './conversion'
+import { type Result, resultToLocation, searchResultToResults } from './conversion'
 import { findDocstring } from './docstrings'
 import { wrapIndentationInCodeBlocks } from './markdown'
 import { definitionQuery, referencesQuery } from './queries'
@@ -60,7 +60,7 @@ export function createProviders(
             cachedFileContents.delete(Array.from(cachedFileContents.keys())[index])
         }
 
-        const { repo, commit, path } = parseGitURI(new URL(uri))
+        const { repo, commit, path } = parseGitURI(uri)
         const fileContent = api.getFileContent(repo, commit, path)
         cachedFileContents.set(uri, fileContent)
         return fileContent
@@ -119,7 +119,7 @@ export function createProviders(
             return null
         }
         const { text, searchToken } = contentAndToken
-        const { repo, commit, path } = parseGitURI(new URL(textDocument.uri))
+        const { repo, commit, path } = parseGitURI(textDocument.uri)
         const { isFork, isArchived } = await api.resolveRepo(repo)
 
         // Construct base definition query without scoping terms
@@ -173,7 +173,7 @@ export function createProviders(
             return []
         }
         const { searchToken } = contentAndToken
-        const { repo, commit } = parseGitURI(new URL(textDocument.uri))
+        const { repo, commit } = parseGitURI(textDocument.uri)
         const { isFork, isArchived } = await api.resolveRepo(repo)
 
         // Construct base references query without scoping terms
@@ -582,5 +582,5 @@ function repositoryKindTerms(includeFork: boolean, includeArchived: boolean): st
 
 /** Returns a regular expression matching the given repository. */
 function makeRepositoryPattern(repo: string): string {
-    return `^${repo.replace(/ /g, '\\ ')}$`
+    return `^${repo.replaceAll(' ', '\\ ')}$`
 }

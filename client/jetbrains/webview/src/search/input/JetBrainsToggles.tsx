@@ -1,5 +1,4 @@
 // This file is a fork from Toggles.tsx and contains JetBrains specific UI changes
-/* eslint-disable no-restricted-imports */
 
 import React, { useCallback, useMemo } from 'react'
 
@@ -8,7 +7,7 @@ import classNames from 'classnames'
 
 import { QueryInputToggle } from '@sourcegraph/branded/src/search-ui/input/toggles/QueryInputToggle'
 import { isErrorLike } from '@sourcegraph/common'
-import {
+import type {
     CaseSensitivityProps,
     SearchContextProps,
     SearchPatternTypeMutationProps,
@@ -16,8 +15,7 @@ import {
     SubmitSearchProps,
 } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
@@ -33,7 +31,6 @@ export interface JetBrainsTogglesProps
         Partial<Pick<SubmitSearchProps, 'submitSearch'>> {
     navbarSearchQuery: string
     className?: string
-    showCopyQueryButton?: boolean
     /**
      * If set to false makes all buttons non-actionable. The main use case for
      * this prop is showing the toggles in examples. This is different from
@@ -43,18 +40,6 @@ export interface JetBrainsTogglesProps
     /** Comes from JSContext only set in the web app. */
     structuralSearchDisabled?: boolean
     clearSearch: () => void
-}
-
-export const getFullQuery = (
-    query: string,
-    searchContextSpec: string,
-    caseSensitive: boolean,
-    patternType: SearchPatternType
-): string => {
-    const finalQuery = [query, `patternType:${patternType}`, caseSensitive ? 'case:yes' : '']
-        .filter(queryPart => !!queryPart)
-        .join(' ')
-    return appendContextFilter(finalQuery, searchContextSpec)
 }
 
 /**

@@ -17,10 +17,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -114,13 +117,13 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.CheckAndDecrementInviteQuotaFunc.SetDefaultReturn(test.hasQuote, nil)
 
-			userEmails := database.NewMockUserEmailsStore()
+			userEmails := dbmocks.NewMockUserEmailsStore()
 			userEmails.ListByUserFunc.SetDefaultReturn(test.mockEmails, nil)
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -175,13 +178,13 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 	}
 	defer func() { txemail.MockSend = nil }()
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UsersFunc.SetDefaultReturn(users)
 	logger := logtest.Scoped(t)
@@ -215,9 +218,103 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 	mockrequire.Called(t, users.GetByIDFunc)
 }
 
-func TestUserEmailsAddRemove(t *testing.T) {
+func TestSendUserEmailOnTokenChange(t *testing.T) {
+	var sent *txemail.Message
+	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		sent = &message
+		return nil
+	}
+	defer func() { txemail.MockSend = nil }()
+
+	userEmails := dbmocks.NewMockUserEmailsStore()
+	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
+
+	users := dbmocks.NewMockUserStore()
+	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
+
+	db := dbmocks.NewMockDB()
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UsersFunc.SetDefaultReturn(users)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	svc := NewUserEmailsService(db, logger)
+	tt := []struct {
+		name      string
+		tokenName string
+		delete    bool
+		template  txtypes.Templates
+	}{
+		{
+			"Access Token deleted",
+			"my-long-last-token",
+			true,
+			accessTokenDeletedEmailTemplate,
+		},
+		{
+			"Access Token created",
+			"heyo-new-token",
+			false,
+			accessTokenCreatedEmailTemplate,
+		},
+	}
+	for _, item := range tt {
+		t.Run(item.name, func(t *testing.T) {
+			if err := svc.SendUserEmailOnAccessTokenChange(context.Background(), 123, item.tokenName, item.delete); err != nil {
+				t.Fatal(err)
+			}
+			if sent == nil {
+				t.Fatal("want sent != nil")
+			}
+
+			if want := (txemail.Message{
+				To:       []string{"a@example.com"},
+				Template: item.template,
+				Data: struct {
+					Email     string
+					TokenName string
+					Username  string
+					Host      string
+				}{
+					Email:     "a@example.com",
+					TokenName: item.tokenName,
+					Username:  "Foo",
+					Host:      "example.com",
+				},
+			}); !reflect.DeepEqual(*sent, want) {
+				t.Errorf("got %+v, want %+v", *sent, want)
+			}
+		})
+	}
+}
+
+type noopAuthzStore struct{}
+
+func (*noopAuthzStore) GrantPendingPermissions(_ context.Context, _ *database.GrantPendingPermissionsArgs) error {
+	return nil
+}
+
+func (*noopAuthzStore) AuthorizedRepos(_ context.Context, _ *database.AuthorizedReposArgs) ([]*types.Repo, error) {
+	return []*types.Repo{}, nil
+}
+
+func (*noopAuthzStore) RevokeUserPermissions(_ context.Context, _ *database.RevokeUserPermissionsArgs) error {
+	return nil
+}
+
+func (*noopAuthzStore) RevokeUserPermissionsList(_ context.Context, _ []*database.RevokeUserPermissionsArgs) error {
+	return nil
+}
+
+func TestUserEmailsAddRemove(t *testing.T) {
+	database.AuthzWith = func(basestore.ShareableStore) database.AuthzStore {
+		return &noopAuthzStore{}
+	}
+	defer func() {
+		database.AuthzWith = nil
+	}()
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -275,11 +372,25 @@ func TestUserEmailsAddRemove(t *testing.T) {
 
 	// Can't remove primary e-mail
 	assert.Error(t, svc.Remove(ctx, createdUser.ID, email))
+
+	// Set email as verified, add a second user, and try to add the verified email
+	svc.SetVerified(ctx, createdUser.ID, email, true)
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
+	require.NoError(t, err)
+
+	require.Error(t, svc.Add(ctx, user2.ID, email))
 }
 
 func TestUserEmailsSetPrimary(t *testing.T) {
+	database.AuthzWith = func(basestore.ShareableStore) database.AuthzStore {
+		return &noopAuthzStore{}
+	}
+	defer func() {
+		database.AuthzWith = nil
+	}()
+
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -319,8 +430,15 @@ func TestUserEmailsSetPrimary(t *testing.T) {
 }
 
 func TestUserEmailsSetVerified(t *testing.T) {
+	database.AuthzWith = func(basestore.ShareableStore) database.AuthzStore {
+		return &noopAuthzStore{}
+	}
+	defer func() {
+		database.AuthzWith = nil
+	}()
+
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -349,6 +467,18 @@ func TestUserEmailsSetVerified(t *testing.T) {
 	// Need to set e-mail as verified
 	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true))
 
+	// Confirm that unverified emails get deleted when an email is marked as verified
+	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, false)) // first mark as unverified again
+
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
+	require.NoError(t, err)
+
+	assert.NoError(t, svc.Add(ctx, user2.ID, email)) // Adding an unverified email is fine if all emails are unverified
+
+	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true)) // mark as verified again
+	_, _, err = db.UserEmails().Get(ctx, user2.ID, email)                // This should produce an error as the email should no longer exist
+	assert.Error(t, err)
+
 	emails, err := db.UserEmails().GetVerifiedEmails(ctx, email, email2)
 	assert.NoError(t, err)
 	assert.Len(t, emails, 1)
@@ -357,7 +487,7 @@ func TestUserEmailsSetVerified(t *testing.T) {
 
 func TestUserEmailsResendVerificationEmail(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -430,7 +560,7 @@ func TestUserEmailsResendVerificationEmail(t *testing.T) {
 
 func TestRemoveStalePerforceAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	txemail.DisableSilently()
 
@@ -477,7 +607,13 @@ func TestRemoveStalePerforceAccount(t *testing.T) {
 		data := extsvc.AccountData{
 			Data: extsvc.NewUnencryptedData(serializedData),
 		}
-		require.NoError(t, db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data))
+		_, err = db.UserExternalAccounts().Insert(ctx,
+			&extsvc.Account{
+				UserID:      createdUser.ID,
+				AccountSpec: spec,
+				AccountData: data,
+			})
+		require.NoError(t, err)
 
 		// Confirm that the external account was added
 		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{

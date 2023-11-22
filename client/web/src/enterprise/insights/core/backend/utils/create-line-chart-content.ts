@@ -1,9 +1,9 @@
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
+import { type InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
 import { PageRoutes } from '../../../../../routes.constants'
-import { BackendInsight, SearchBasedInsightSeries } from '../../types'
-import { BackendInsightDatum, BackendInsightSeries } from '../code-insights-backend-types'
+import type { BackendInsight, SearchBasedInsightSeries } from '../../types'
+import type { BackendInsightDatum, BackendInsightSeries } from '../code-insights-backend-types'
 
 import { getParsedSeriesMetadata } from './parse-series-metadata'
 

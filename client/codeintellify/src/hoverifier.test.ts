@@ -2,9 +2,10 @@ import { isEqual } from 'lodash'
 import { EMPTY, NEVER, of, Subject, Subscription } from 'rxjs'
 import { delay, distinctUntilChanged, filter, first, map, takeWhile } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
+import { afterAll, afterEach, beforeAll, describe, it, expect } from 'vitest'
 
 import { isDefined } from '@sourcegraph/common'
-import { Range } from '@sourcegraph/extension-api-types'
+import type { Range } from '@sourcegraph/extension-api-types'
 
 import { propertyIsDefined } from './helpers'
 import {
@@ -12,12 +13,12 @@ import {
     createHoverifier,
     LOADER_DELAY,
     MOUSEOVER_DELAY,
-    PositionAdjuster,
-    PositionJump,
+    type PositionAdjuster,
+    type PositionJump,
     TOOLTIP_DISPLAY_DELAY,
 } from './hoverifier'
-import { findPositionsFromEvents, SupportedMouseEvent } from './positions'
-import { CodeViewProps, DOM } from './testutils/dom'
+import { findPositionsFromEvents, type SupportedMouseEvent } from './positions'
+import { type CodeViewProps, DOM } from './testutils/dom'
 import {
     createStubActionsProvider,
     createStubHoverProvider,

@@ -1,18 +1,18 @@
-import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
+import { type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
-import { Observable, of } from 'rxjs'
+import type { Extension } from '@codemirror/state'
+import type { EditorView } from '@codemirror/view'
+import { type Observable, of } from 'rxjs'
 import { delay, startWith } from 'rxjs/operators'
 
-import { CodeMirrorQueryInput, SyntaxHighlightedSearchQuery, singleLine, changeListener } from '@sourcegraph/branded'
+import { CodeMirrorQueryInput, SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { pluralize } from '@sourcegraph/common'
 import { createQueryExampleFromString, updateQueryWithFilterAndExample } from '@sourcegraph/shared/src/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
-import { PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
+import type { PathMatch, SymbolMatch } from '@sourcegraph/shared/src/search/stream'
 import { Button, Label, useObservable } from '@sourcegraph/wildcard'
 
-import { BlockProps } from '../..'
+import type { BlockProps } from '../..'
 import { SearchPatternType } from '../../../graphql-operations'
 import { blockKeymap, focusEditor } from '../../codemirror-utils'
 
@@ -114,14 +114,13 @@ export const SearchTypeSuggestionsInput = <S extends SymbolMatch | PathMatch>({
                     <SyntaxHighlightedSearchQuery className={styles.searchTypeQueryPart} query={queryPrefix} />
                 </div>
                 <CodeMirrorQueryInput
+                    ref={onEditorCreatedLocal}
                     value={queryInput}
-                    onEditorCreated={onEditorCreatedLocal}
                     patternType={SearchPatternType.standard}
                     interpretComments={true}
-                    extensions={useMemo(
-                        () => [blockKeymap({ runBlock }), changeListener(setQueryInput), singleLine, extension ?? []],
-                        [setQueryInput, runBlock, extension]
-                    )}
+                    multiLine={false}
+                    onChange={setQueryInput}
+                    extension={useMemo(() => [blockKeymap({ runBlock }), extension ?? []], [runBlock, extension])}
                 />
             </div>
             <div className="mt-1">

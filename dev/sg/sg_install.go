@@ -12,6 +12,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -26,7 +27,7 @@ Can also be used to install a custom build of 'sg' globally, for example:
 
 	go build -o ./sg ./dev/sg && ./sg install -f -p=false
 `,
-	Category: CategoryUtil,
+	Category: category.Util,
 	Hidden:   true, // usually an internal command used during installation script
 	Flags: []cli.Flag{
 		&cli.BoolFlag{

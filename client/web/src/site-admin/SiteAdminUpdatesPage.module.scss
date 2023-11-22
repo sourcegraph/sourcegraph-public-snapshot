@@ -6,3 +6,58 @@
 .last-checked {
     border-left: 1px solid var(--border-color-2);
 }
+
+.container {
+    padding: 2rem;
+    border-bottom: 1px solid var(--gray-03);
+
+    &:first-child {
+        padding-top: 1rem;
+    }
+
+    :global(.theme-light) & {
+        &:nth-child(even) {
+            background: #f5f6f6;
+        }
+        border-bottom: 1px solid #808080;
+    }
+
+    :global(.theme-dark) & {
+        &:nth-child(even) {
+            background: #14171f;
+        }
+        border: 1px solid #262b38;
+    }
+}
+
+.table {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+}
+
+.table-container {
+    padding-bottom: 1rem;
+}
+
+.output-container {
+    padding-bottom: 1rem;
+}
+
+.info-container {
+    padding-bottom: 1rem;
+
+    .label {
+        padding-bottom: 0.25rem;
+    }
+}
+
+.header:focus {
+    outline: none;
+    box-shadow: none !important;
+    background-color: transparent !important;
+}
+
+.label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}

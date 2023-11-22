@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "httpapi",
+    srcs = [
+        "diagnostics.go",
+        "handler.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/auth",
+        "//cmd/cody-gateway/internal/events",
+        "//cmd/cody-gateway/internal/httpapi/completions",
+        "//cmd/cody-gateway/internal/httpapi/embeddings",
+        "//cmd/cody-gateway/internal/httpapi/featurelimiter",
+        "//cmd/cody-gateway/internal/httpapi/requestlogger",
+        "//cmd/cody-gateway/internal/limiter",
+        "//cmd/cody-gateway/internal/notify",
+        "//cmd/cody-gateway/internal/response",
+        "//internal/authbearer",
+        "//internal/httpcli",
+        "//internal/instrumentation",
+        "//internal/redispool",
+        "//internal/trace",
+        "//internal/version",
+        "//lib/errors",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//hook",
+        "@com_github_sourcegraph_log//output",
+        "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_metric//:metric",
+    ],
+)

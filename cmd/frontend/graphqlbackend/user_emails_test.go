@@ -17,10 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,9 +32,9 @@ func init() {
 func TestUserEmail_ViewerCanManuallyVerify(t *testing.T) {
 	t.Parallel()
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	t.Run("only allowed by site admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		tests := []struct {
@@ -98,19 +97,20 @@ func TestSetUserEmailVerified(t *testing.T) {
 	t.Run("only allowed by site admins", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 
 		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 			return f(db)
 		})
 
-		ffs := database.NewMockFeatureFlagStore()
+		ffs := dbmocks.NewMockFeatureFlagStore()
 		db.FeatureFlagsFunc.SetDefaultReturn(ffs)
 
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := dbmocks.NewMockUserEmailsStore()
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		db.SubRepoPermsFunc.SetDefaultReturn(dbmocks.NewMockSubRepoPermsStore())
 
 		tests := []struct {
 			name    string
@@ -166,7 +166,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).SetUserEmailVerified(
+				_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),
@@ -232,22 +232,22 @@ func TestSetUserEmailVerified(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-			userEmails := database.NewMockUserEmailsStore()
+			userEmails := dbmocks.NewMockUserEmailsStore()
 			userEmails.SetVerifiedFunc.SetDefaultReturn(nil)
 
-			authz := database.NewMockAuthzStore()
+			authz := dbmocks.NewMockAuthzStore()
 			authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-			userExternalAccounts := database.NewMockUserExternalAccountsStore()
+			userExternalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 			userExternalAccounts.DeleteFunc.SetDefaultReturn(nil)
 
-			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {}
 			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 				return f(db)
 			})
@@ -256,6 +256,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.AuthzFunc.SetDefaultReturn(authz)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
+			db.SubRepoPermsFunc.SetDefaultReturn(dbmocks.NewMockSubRepoPermsStore())
 
 			RunTests(t, test.gqlTests(db))
 
@@ -356,8 +357,8 @@ func TestPrimaryEmail(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			fs := fakedb.New()
-			db := database.NewMockDB()
-			emails := database.NewMockUserEmailsStore()
+			db := dbmocks.NewMockDB()
+			emails := dbmocks.NewMockUserEmailsStore()
 			emails.ListByUserFunc.SetDefaultHook(func(_ context.Context, ops database.UserEmailsListOptions) ([]*database.UserEmail, error) {
 				var emails []*database.UserEmail
 				for _, m := range testCase.emails {

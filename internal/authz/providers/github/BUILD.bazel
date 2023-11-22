@@ -1,0 +1,64 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "github",
+    srcs = [
+        "authz.go",
+        "cache.go",
+        "client.go",
+        "github.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/github",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/authz",
+        "//internal/authz/types",
+        "//internal/collections",
+        "//internal/database",
+        "//internal/encryption/keyring",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/github",
+        "//internal/extsvc/github/auth",
+        "//internal/licensing",
+        "//internal/oauthtoken",
+        "//internal/rcache",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_gregjones_httpcache//:httpcache",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "github_test",
+    timeout = "short",
+    srcs = [
+        "authz_test.go",
+        "github_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":github"],
+    deps = [
+        "//internal/api",
+        "//internal/authz",
+        "//internal/database/dbmocks",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/github",
+        "//internal/github_apps/store",
+        "//internal/github_apps/types",
+        "//internal/license",
+        "//internal/licensing",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_gregjones_httpcache//:httpcache",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_x_exp//slices",
+    ],
+)

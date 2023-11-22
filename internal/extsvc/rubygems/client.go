@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -30,7 +32,7 @@ func NewClient(urn string, registryURL string, httpfactory *httpcli.Factory) (*C
 	return &Client{
 		registryURL:    registryURL,
 		uncachedClient: uncached,
-		limiter:        ratelimit.DefaultRegistry.Get(urn),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("RubyGemsClient"), urn)),
 	}, nil
 }
 

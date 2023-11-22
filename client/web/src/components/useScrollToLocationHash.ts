@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-import * as H from 'history'
+import type * as H from 'history'
 
 import { tryCatch } from '@sourcegraph/common'
 

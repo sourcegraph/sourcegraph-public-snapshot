@@ -1,37 +1,38 @@
 import { nextTick } from 'process'
 import { promisify } from 'util'
 
-import { RenderResult } from '@testing-library/react'
-import { Remote } from 'comlink'
+import type { RenderResult } from '@testing-library/react'
+import type { Remote } from 'comlink'
 import { uniqueId, noop, pick } from 'lodash'
 import { BehaviorSubject, NEVER, of, Subscription } from 'rxjs'
 import { take, first } from 'rxjs/operators'
 import { TestScheduler } from 'rxjs/testing'
 import * as sinon from 'sinon'
-import * as sourcegraph from 'sourcegraph'
+import type * as sourcegraph from 'sourcegraph'
+import { afterEach, beforeAll, beforeEach, vi, describe, expect, it, test } from 'vitest'
 
 import { resetAllMemoizationCaches, subtypeOf } from '@sourcegraph/common'
-import { SuccessGraphQLResult } from '@sourcegraph/http-client'
+import type { SuccessGraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
-import { Controller } from '@sourcegraph/shared/src/extensions/controller'
+import type { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
+import type { ExtensionCodeEditor } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
+import type { Controller } from '@sourcegraph/shared/src/extensions/controller'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 import { integrationTestContext } from '@sourcegraph/shared/src/testing/testHelpers'
 import { toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 
-import { ResolveRepoResult } from '../../../graphql-operations'
+import type { ResolveRepoResult } from '../../../graphql-operations'
 import { DEFAULT_SOURCEGRAPH_URL } from '../../util/context'
-import { MutationRecordLike } from '../../util/dom'
+import type { MutationRecordLike } from '../../util/dom'
 
 import {
-    CodeIntelligenceProps,
+    type CodeIntelligenceProps,
     getExistingOrCreateOverlayMount,
     handleCodeHost,
     observeHoverOverlayMountLocation,
-    HandleCodeHostOptions,
-    DiffOrBlobInfo,
+    type HandleCodeHostOptions,
+    type DiffOrBlobInfo,
 } from './codeHost'
 import { toCodeViewResolver } from './codeViews'
 import { DEFAULT_GRAPHQL_RESPONSES, mockRequestGraphQL } from './testHelpers'
@@ -52,7 +53,7 @@ const createTestElement = (): HTMLElement => {
     return element
 }
 
-jest.mock('uuid', () => ({
+vi.mock('uuid', () => ({
     v4: () => 'uuid',
 }))
 
@@ -296,7 +297,7 @@ describe('codeHost', () => {
             ])
 
             // // Simulate codeView1 removal
-            mutations.next([{ addedNodes: [], removedNodes: [codeView1] }])
+            setTimeout(() => mutations.next([{ addedNodes: [], removedNodes: [codeView1] }]))
             // One editor should have been removed, model should still exist
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
 
@@ -310,7 +311,7 @@ describe('codeHost', () => {
                 },
             ])
             // // Simulate codeView2 removal
-            mutations.next([{ addedNodes: [], removedNodes: [codeView2] }])
+            setTimeout(() => mutations.next([{ addedNodes: [], removedNodes: [codeView2] }]))
             // // Second editor and model should have been removed
             await wrapRemoteObservable(extensionHostAPI.viewerUpdates()).pipe(first()).toPromise()
             expect(getEditors(extensionAPI)).toEqual([])

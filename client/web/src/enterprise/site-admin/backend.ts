@@ -1,10 +1,10 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { queryGraphQL } from '../../backend/graphql'
-import { SiteAdminPreciseIndexResult } from '../../graphql-operations'
+import type { SiteAdminPreciseIndexResult } from '../../graphql-operations'
 
 /**
  * Fetch a single precise index by id.

@@ -4,18 +4,23 @@ import (
 	"context"
 	"sync"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 )
 
 var (
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
+
+	searcherGRPCConnectionCacheOnce sync.Once
+	searcherGRPCConnectionCache     *defaults.ConnectionCache
 
 	indexedSearchOnce sync.Once
 	indexedSearch     zoekt.Streamer
@@ -25,8 +30,6 @@ var (
 
 	indexedDialerOnce sync.Once
 	indexedDialer     backend.ZoektDialer
-
-	IndexedMock zoekt.Streamer
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -38,10 +41,16 @@ func SearcherURLs() *endpoint.Map {
 	return searcherURLs
 }
 
+func SearcherGRPCConnectionCache() *defaults.ConnectionCache {
+	searcherGRPCConnectionCacheOnce.Do(func() {
+		logger := log.Scoped("searcherGRPCConnectionCache")
+		searcherGRPCConnectionCache = defaults.NewConnectionCache(logger)
+	})
+
+	return searcherGRPCConnectionCache
+}
+
 func Indexed() zoekt.Streamer {
-	if IndexedMock != nil {
-		return IndexedMock
-	}
 	indexedSearchOnce.Do(func() {
 		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
@@ -56,11 +65,28 @@ func Indexed() zoekt.Streamer {
 	return indexedSearch
 }
 
-// ListAllIndexed lists all indexed repositories with `Minimal: true`.
-func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
+// ZoektAllIndexed is the subset of zoekt.RepoList that we set in
+// ListAllIndexed.
+type ZoektAllIndexed struct {
+	ReposMap zoekt.ReposMap
+	Crashes  int
+	Stats    zoekt.RepoStats
+}
+
+// ListAllIndexed lists all indexed repositories.
+func ListAllIndexed(ctx context.Context, zs zoekt.Searcher) (*ZoektAllIndexed, error) {
 	q := &query.Const{Value: true}
-	opts := &zoekt.ListOptions{Minimal: true}
-	return Indexed().List(ctx, q, opts)
+	opts := &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap}
+
+	repos, err := zs.List(ctx, q, opts)
+	if err != nil {
+		return nil, err
+	}
+	return &ZoektAllIndexed{
+		ReposMap: repos.ReposMap,
+		Crashes:  repos.Crashes,
+		Stats:    repos.Stats,
+	}, nil
 }
 
 func Indexers() *backend.Indexers {
@@ -75,16 +101,16 @@ func Indexers() *backend.Indexers {
 	return indexers
 }
 
-func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) map[uint32]*zoekt.MinimalRepoListEntry {
-	return func(ctx context.Context, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry {
+func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) zoekt.ReposMap {
+	return func(ctx context.Context, endpoint string) zoekt.ReposMap {
 		cl := dial(endpoint)
 
-		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 		if err != nil {
-			return map[uint32]*zoekt.MinimalRepoListEntry{}
+			return zoekt.ReposMap{}
 		}
 
-		return resp.Minimal //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		return resp.ReposMap
 	}
 }
 

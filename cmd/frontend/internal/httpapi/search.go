@@ -117,21 +117,6 @@ func (s *searchIndexerGRPCServer) List(ctx context.Context, r *proto.ListRequest
 	return &response, nil
 }
 
-func (s *searchIndexerGRPCServer) RepositoryRank(ctx context.Context, request *proto.RepositoryRankRequest) (*proto.RepositoryRankResponse, error) {
-	ranks, err := s.server.Ranking.GetRepoRank(ctx, api.RepoName(request.Repository))
-	if err != nil {
-		if errcode.IsNotFound(err) {
-			return nil, status.Error(codes.NotFound, err.Error())
-		}
-
-		return nil, err
-	}
-
-	return &proto.RepositoryRankResponse{
-		Rank: ranks,
-	}, nil
-}
-
 func (s *searchIndexerGRPCServer) DocumentRanks(ctx context.Context, request *proto.DocumentRanksRequest) (*proto.DocumentRanksResponse, error) {
 	ranks, err := s.server.Ranking.GetDocumentRanks(ctx, api.RepoName(request.Repository))
 	if err != nil {
@@ -185,7 +170,7 @@ type searchIndexerServer struct {
 	Indexers interface {
 		// ReposSubset returns the subset of repoNames that hostname should
 		// index.
-		ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
+		ReposSubset(ctx context.Context, hostname string, indexed zoekt.ReposMap, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
 		// Enabled is true if horizontal indexed search is enabled.
 		Enabled() bool
 	}
@@ -435,8 +420,8 @@ func (h *searchIndexerServer) doList(ctx context.Context, parameters *listParame
 	}
 
 	if h.Indexers.Enabled() {
-		indexed := make(map[uint32]*zoekt.MinimalRepoListEntry, len(parameters.IndexedIDs))
-		add := func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = nil }
+		indexed := make(zoekt.ReposMap, len(parameters.IndexedIDs))
+		add := func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = zoekt.MinimalRepoListEntry{} }
 		if len(parameters.IndexedIDs) > 0 {
 			opts := database.ReposListOptions{IDs: parameters.IndexedIDs}
 			err = h.RepoStore.StreamMinimalRepos(ctx, opts, add)
@@ -474,10 +459,6 @@ var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
 	Name: "src_search_get_version_total",
 	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
 })
-
-func (h *searchIndexerServer) serveRepoRank(w http.ResponseWriter, r *http.Request) error {
-	return serveRank(h.Ranking.GetRepoRank, w, r)
-}
 
 func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.Request) error {
 	return serveRank(h.Ranking.GetDocumentRanks, w, r)
@@ -523,12 +504,12 @@ func (h *searchIndexerServer) handleIndexStatusUpdate(_ http.ResponseWriter, r *
 func (h *searchIndexerServer) doIndexStatusUpdate(ctx context.Context, args *indexStatusUpdateArgs) error {
 	var (
 		ids     = make([]int32, len(args.Repositories))
-		minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(args.Repositories))
+		minimal = make(zoekt.ReposMap, len(args.Repositories))
 	)
 
 	for i, repo := range args.Repositories {
 		ids[i] = int32(repo.RepoID)
-		minimal[repo.RepoID] = &zoekt.MinimalRepoListEntry{Branches: repo.Branches}
+		minimal[repo.RepoID] = zoekt.MinimalRepoListEntry{Branches: repo.Branches, IndexTimeUnix: repo.IndexTimeUnix}
 	}
 
 	h.logger.Info("updating index status", log.Int32s("repositories", ids))
@@ -540,8 +521,9 @@ type indexStatusUpdateArgs struct {
 }
 
 type indexStatusUpdateRepository struct {
-	RepoID   uint32
-	Branches []zoekt.RepositoryBranch
+	RepoID        uint32
+	Branches      []zoekt.RepositoryBranch
+	IndexTimeUnix int64
 }
 
 func (a *indexStatusUpdateArgs) FromProto(req *proto.UpdateIndexStatusRequest) {
@@ -556,12 +538,10 @@ func (a *indexStatusUpdateArgs) FromProto(req *proto.UpdateIndexStatusRequest) {
 			})
 		}
 
-		a.Repositories = append(a.Repositories, struct {
-			RepoID   uint32
-			Branches []zoekt.RepositoryBranch
-		}{
-			RepoID:   repo.RepoId,
-			Branches: branches,
+		a.Repositories = append(a.Repositories, indexStatusUpdateRepository{
+			RepoID:        repo.RepoId,
+			Branches:      branches,
+			IndexTimeUnix: repo.GetIndexTimeUnix(),
 		})
 	}
 }
@@ -579,8 +559,9 @@ func (a *indexStatusUpdateArgs) ToProto() *proto.UpdateIndexStatusRequest {
 		}
 
 		repos = append(repos, &proto.UpdateIndexStatusRequest_Repository{
-			RepoId:   repo.RepoID,
-			Branches: branches,
+			RepoId:        repo.RepoID,
+			Branches:      branches,
+			IndexTimeUnix: repo.IndexTimeUnix,
 		})
 	}
 

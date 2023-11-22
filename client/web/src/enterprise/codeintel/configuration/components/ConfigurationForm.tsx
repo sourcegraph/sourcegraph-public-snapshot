@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, ErrorAlert, screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import { useInferredConfig } from '../hooks/useInferredConfig'
@@ -10,7 +10,7 @@ import { useUpdateConfigurationForRepository } from '../hooks/useUpdateConfigura
 
 import { autoIndexJobsToFormData } from './inference-form/auto-index-to-form-job'
 import { InferenceForm } from './inference-form/InferenceForm'
-import { InferenceFormData, SchemaCompatibleInferenceFormData } from './inference-form/types'
+import type { InferenceFormData, SchemaCompatibleInferenceFormData } from './inference-form/types'
 
 interface ConfigurationFormProps extends TelemetryProps {
     repoId: string

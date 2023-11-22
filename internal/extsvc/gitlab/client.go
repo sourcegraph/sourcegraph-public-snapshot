@@ -11,13 +11,13 @@ import (
 	"path"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -25,40 +25,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
 	// The metric generated here will be named as "src_gitlab_requests_total".
 	requestCounter = metrics.NewRequestMeter("gitlab", "Total number of requests sent to the GitLab API.")
-
-	// Whether debug logging is turned on
-	traceEnabled int32 = 0
 )
-
-func init() {
-	go func() {
-		conf.Watch(func() {
-			exp := conf.Get().ExperimentalFeatures
-			if exp == nil {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			if debugLog := exp.DebugLog; debugLog == nil || !debugLog.ExtsvcGitlab {
-				atomic.StoreInt32(&traceEnabled, 0)
-				return
-			}
-			atomic.StoreInt32(&traceEnabled, 1)
-		})
-	}()
-}
-
-func trace(msg string, ctx ...any) {
-	if atomic.LoadInt32(&traceEnabled) == 1 {
-		log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
-	}
-}
 
 // TokenType is the type of an access token.
 type TokenType string
@@ -172,6 +146,7 @@ func (p *ClientProvider) getClient(a auth.Authenticator) *Client {
 type Client struct {
 	// The URN of the external service that the client is derived from.
 	urn string
+	log log.Logger
 
 	baseURL             *url.URL
 	httpClient          httpcli.Doer
@@ -205,11 +180,12 @@ func (p *ClientProvider) NewClient(a auth.Authenticator) *Client {
 	}
 	projCache := rcache.NewWithTTL(key, int(cacheTTL/time.Second))
 
-	rl := ratelimit.DefaultRegistry.Get(p.urn)
+	rl := ratelimit.NewInstrumentedLimiter(p.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient"), p.urn))
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(p.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 
 	return &Client{
 		urn:                 p.urn,
+		log:                 log.Scoped("gitlabAPIClient"),
 		baseURL:             p.baseURL,
 		httpClient:          p.httpClient,
 		projCache:           projCache,
@@ -259,14 +235,13 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 	// GitLab responds with a 429 Too Many Requests if rate limits are exceeded
 	numRetries := 0
 	for c.waitForRateLimit && numRetries < c.maxRateLimitRetries && respCode == http.StatusTooManyRequests {
-		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
-			req.Body = io.NopCloser(bytes.NewReader(reqBody))
-			respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
-			numRetries += 1
-		} else {
-			// We did not wait because of rate limiting, so we break the loop
-			break
-		}
+		// We always retry since we got a StatusTooManyRequests. This is safe
+		// since we bound retries by maxRateLimitRetries.
+		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+
+		req.Body = io.NopCloser(bytes.NewReader(reqBody))
+		respHeader, respCode, err = c.doWithBaseURL(ctx, req, result)
+		numRetries += 1
 	}
 
 	return respHeader, respCode, err
@@ -278,29 +253,27 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitLab") //nolint:staticcheck // OT is deprecated
-	span.SetTag("URL", req.URL.String())
+	tr, ctx := trace.New(ctx, "GitLab",
+		attribute.Stringer("url", req.URL))
 	defer func() {
-		if err != nil {
-			span.SetTag("error", err.Error())
-		}
 		if resp != nil {
-			span.SetTag("status", resp.Status)
+			tr.SetAttributes(attribute.String("status", resp.Status))
 		}
-		span.Finish()
+		tr.EndWithErr(&err)
 	}()
+	req = req.WithContext(ctx)
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	// Prevent the CachedTransportOpt from caching client side, but still use ETags
 	// to cache server-side
 	req.Header.Set("Cache-Control", "max-age=0")
 
-	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client", "do request"), c.httpClient, req, c.Auth)
+	resp, err = oauthutil.DoRequest(ctx, log.Scoped("gitlab client"), c.httpClient, req, c.Auth)
 	if resp != nil {
 		c.externalRateLimiter.Update(resp.Header)
 	}
 	if err != nil {
-		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
+		c.log.Debug("GitLab API error", log.String("method", req.Method), log.String("url", req.URL.String()), log.Error(err))
 		return nil, 0, errors.Wrap(err, "request failed")
 	}
 
@@ -327,7 +300,7 @@ func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
 	tokenHash := a.Hash()
 
 	cc := *c
-	cc.internalRateLimiter = ratelimit.DefaultRegistry.Get(c.urn)
+	cc.internalRateLimiter = ratelimit.NewInstrumentedLimiter(c.urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitLabClient"), c.urn))
 	cc.externalRateLimiter = ratelimit.DefaultMonitorRegistry.GetOrSet(cc.baseURL.String(), tokenHash, "rest", &ratelimit.Monitor{})
 	cc.Auth = a
 

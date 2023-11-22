@@ -15,7 +15,7 @@ export const filterDecoration = [
             padding: '1px 0',
             backgroundColor: '#eff2f5a0', // --gray-02 with transparency to make selection visible
         },
-        '&dark .sg-query-token-filter-context': {
+        '.theme-dark & .sg-query-token-filter-context': {
             backgroundColor: '#343a4da0', // --gray-08 with transparency to make selection visible
         },
     }),

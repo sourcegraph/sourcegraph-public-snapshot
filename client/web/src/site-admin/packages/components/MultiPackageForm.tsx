@@ -18,11 +18,11 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
-import { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
-import { PackageRepoReferenceKind } from '../../../graphql-operations'
+import type { FilteredConnectionFilterValue } from '../../../components/FilteredConnection'
+import type { PackageRepoReferenceKind } from '../../../graphql-operations'
 import { prettyBytesBigint } from '../../../util/prettyBytesBigint'
 import { useMatchingPackages } from '../hooks/useMatchingPackages'
-import { BlockType } from '../modal-content/AddPackageFilterModalContent'
+import type { BlockType } from '../modal-content/AddPackageFilterModalContent'
 
 import { FilterPackagesActions } from './FilterPackagesActions'
 
@@ -180,7 +180,7 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ blockState, qu
                 </span>
                 {nodes.length < totalCount && (
                     <Button variant="link" className="p-0 mr-3" onClick={() => setPackageFetchLimit(nextFetchLimit)}>
-                        <>Show {nextFetchLimit === totalCount ? 'all ' : { nextFetchLimit }}</>
+                        <>Show {nextFetchLimit === totalCount ? 'all ' : nextFetchLimit.toString()}</>
                     </Button>
                 )}
             </div>

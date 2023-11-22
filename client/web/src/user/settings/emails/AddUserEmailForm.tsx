@@ -1,20 +1,21 @@
-import React, { FunctionComponent, useMemo, useState } from 'react'
+import React, { type FunctionComponent, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { asError, isErrorLike, ErrorLike } from '@sourcegraph/common'
+import { asError, isErrorLike, type ErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { deriveInputClassName, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
 import { screenReaderAnnounce, Input, Label, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
-import { AddUserEmailResult, AddUserEmailVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
+import type { AddUserEmailResult, AddUserEmailVariables, UserSettingsAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 interface Props {
     user: Pick<UserSettingsAreaUserFields, 'id' | 'scimControlled'>
     onDidAdd: () => void
+    emails: Set<string>
 
     className?: string
 }
@@ -28,16 +29,21 @@ enum InputState {
     INVALID = 'error',
 }
 
-export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>> = ({ user, className, onDidAdd }) => {
+export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>> = ({
+    user,
+    className,
+    onDidAdd,
+    emails,
+}) => {
     const [statusOrError, setStatusOrError] = useState<Status>()
 
     const [emailState, nextEmailFieldChange, emailInputReference, overrideEmailState] = useInputValidation(
         useMemo(
             () => ({
-                synchronousValidators: [],
+                synchronousValidators: [email => validateEmail(email, emails)],
                 asynchronousValidators: [],
             }),
-            []
+            [emails]
         )
     )
 
@@ -124,3 +130,6 @@ export const AddUserEmailForm: FunctionComponent<React.PropsWithChildren<Props>>
         </div>
     )
 }
+
+const validateEmail = (email: string, existingEmails: Set<string>): string | undefined =>
+    existingEmails.has(email) ? 'Email already exists' : undefined

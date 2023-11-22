@@ -1,7 +1,7 @@
-import { ApolloCache, ApolloClient, gql } from '@apollo/client'
-import { from, Observable, of } from 'rxjs'
+import { type ApolloCache, type ApolloClient, gql } from '@apollo/client'
+import { from, type Observable, of } from 'rxjs'
 import { catchError, map, mapTo, switchMap } from 'rxjs/operators'
-import {
+import type {
     AddInsightViewToDashboardResult,
     DeleteDashboardResult,
     GetDashboardInsightsResult,
@@ -14,9 +14,9 @@ import {
 import { isDefined } from '@sourcegraph/common'
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
-import { Insight, InsightsDashboardOwner, isComputeInsight } from '../../types'
-import { CodeInsightsBackend } from '../code-insights-backend'
-import {
+import { type Insight, type InsightsDashboardOwner, isComputeInsight } from '../../types'
+import type { CodeInsightsBackend } from '../code-insights-backend'
+import type {
     AssignInsightsToDashboardInput,
     DashboardCreateInput,
     DashboardDeleteInput,

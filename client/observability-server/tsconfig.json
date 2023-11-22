@@ -5,9 +5,8 @@
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",
-    "baseUrl": "./src",
   },
-  "include": ["./src/**/*", "./*.ts"],
+  "include": ["src"],
   "references": [
     {
       "path": "../build-config",

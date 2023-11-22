@@ -1,14 +1,15 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 
 import { renderMarkdown } from '@sourcegraph/common'
-import { Notice } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { Notice } from '@sourcegraph/shared/src/schema/settings.schema'
 import { useSettings } from '@sourcegraph/shared/src/settings/settings'
-import { Alert, AlertProps, Markdown } from '@sourcegraph/wildcard'
+import { Alert, type AlertProps, Markdown } from '@sourcegraph/wildcard'
 
+import type { AuthenticatedUser } from '../auth'
+import { isEmailVerificationNeededForCody } from '../cody/isCodyEnabled'
 import { DismissibleAlert } from '../components/DismissibleAlert'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import styles from './Notices.module.scss'
 
@@ -83,10 +84,8 @@ export const Notices: React.FunctionComponent<React.PropsWithChildren<Props>> = 
 
 interface VerifyEmailNoticesProps {
     className?: string
-    /** Apply this class name to each notice (alongside .alert). */
     alertClassName?: string
-    emails: string[]
-    settingsURL: string
+    authenticatedUser: AuthenticatedUser | null
 }
 
 /**
@@ -95,35 +94,22 @@ interface VerifyEmailNoticesProps {
 export const VerifyEmailNotices: React.FunctionComponent<VerifyEmailNoticesProps> = ({
     className,
     alertClassName,
-    emails,
-    settingsURL,
+    authenticatedUser,
 }) => {
-    const [isEmailVerificationAlertEnabled, status] = useFeatureFlag('ab-email-verification-alert')
-
-    const notices: Notice[] = useMemo(() => {
-        if (status !== 'loaded' || !isEmailVerificationAlertEnabled) {
-            return []
-        }
-        return emails.map(
-            (email): Notice => ({
-                message: `Please, <a href="${settingsURL}/emails">verify your email</a> <strong>${email
-                    .split('@')
-                    .join('\\@')}</strong>`,
-                location: 'top',
-                dismissible: false,
-            })
+    if (isEmailVerificationNeededForCody() && authenticatedUser) {
+        return (
+            <div className={classNames(styles.notices, className)}>
+                <NoticeAlert
+                    className={alertClassName}
+                    notice={{
+                        location: 'top',
+                        message: `**NEW**: Cody, our new AI Assistant is available to use for free, simply verify your email address. Didn't get an email? [Resend verification email](${authenticatedUser?.settingsURL}/emails)`,
+                        dismissible: true,
+                    }}
+                />
+            </div>
         )
-    }, [emails, isEmailVerificationAlertEnabled, settingsURL, status])
-
-    if (notices.length === 0) {
-        return null
     }
 
-    return (
-        <div className={classNames(styles.notices, className)}>
-            {notices.map(notice => (
-                <NoticeAlert key={notice.message} testId="notice-alert" className={alertClassName} notice={notice} />
-            ))}
-        </div>
-    )
+    return null
 }

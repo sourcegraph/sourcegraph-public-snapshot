@@ -5,7 +5,7 @@ import { upperFirst } from 'lodash'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { SymbolKind } from '../graphql-operations'
+import type { SymbolKind } from '../graphql-operations'
 
 import { getSymbolIconSVGPath } from './symbolIcons'
 

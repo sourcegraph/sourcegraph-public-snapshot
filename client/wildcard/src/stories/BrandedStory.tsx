@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { MemoryRouter, MemoryRouterProps } from 'react-router-dom'
+import { MemoryRouter, type MemoryRouterProps } from 'react-router-dom'
 
 import { WildcardThemeContext } from '../hooks'
 

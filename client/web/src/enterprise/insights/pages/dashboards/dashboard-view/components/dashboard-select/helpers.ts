@@ -1,6 +1,6 @@
 import {
-    CustomInsightDashboard,
-    InsightDashboard,
+    type CustomInsightDashboard,
+    type InsightDashboard,
     isGlobalDashboard,
     isOrganizationDashboard,
     isPersonalDashboard,

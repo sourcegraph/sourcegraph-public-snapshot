@@ -14,11 +14,8 @@ import (
 )
 
 func aptGetInstall(pkg string, preinstall ...string) check.FixAction[CheckArgs] {
-	commands := []string{
-		`sudo apt-get update`,
-	}
-	commands = append(commands, preinstall...)
-	commands = append(commands, fmt.Sprintf("sudo apt-get install -y %s", pkg))
+	commands := preinstall
+	commands = append(commands, "sudo apt-get update", fmt.Sprintf("sudo apt-get install -y %s", pkg))
 	return cmdFixes(commands...)
 }
 
@@ -99,7 +96,7 @@ var Ubuntu = []category{
 				Name: "asdf",
 				// TODO add the if Keegan check
 				Check: checkAction(check.CommandOutputContains("asdf", "version")),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+				Fix: func(ctx context.Context, cio check.IO, _ CheckArgs) error {
 					if err := usershell.Run(ctx, "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.9.0").StreamLines(cio.Verbose); err != nil {
 						return err
 					}
@@ -107,6 +104,16 @@ var Ubuntu = []category{
 						`echo ". $HOME/.asdf/asdf.sh" >>`, usershell.ShellConfigPath(ctx),
 					).Wait()
 				},
+			},
+			{
+				Name:  "p4 CLI (Perforce)",
+				Check: checkAction(check.InPath("p4")),
+				// https://www.perforce.com/perforce-packages
+				// https://superuser.com/a/1512272/186941
+				Fix: aptGetInstall("helix-cli",
+					"wget -qO - https://package.perforce.com/perforce.pubkey | sudo apt-key add -",
+					"printf \"deb http://package.perforce.com/apt/ubuntu $(lsb_release -sc) release\" | sudo tee /etc/apt/sources.list.d/perforce.list",
+				),
 			},
 		},
 	},
@@ -261,7 +268,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	{
 		Name:      "Cloud services",
 		DependsOn: []string{depsBaseUtilities},
-		Enabled:   enableForTeammatesOnly(),
+		Enabled:   disableInCI(),
 		Checks: []*dependency{
 			dependencyGcloud(),
 		},

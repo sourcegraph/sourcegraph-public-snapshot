@@ -1,7 +1,7 @@
-import { trace, context, Context } from '@opentelemetry/api'
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base'
+import { trace, context, type Context } from '@opentelemetry/api'
+import type { ReadableSpan } from '@opentelemetry/sdk-trace-base'
 
-import { ReadWriteSpan } from './span'
+import type { ReadWriteSpan } from './span'
 
 export enum SharedSpanName {
     PageView = 'PageView',

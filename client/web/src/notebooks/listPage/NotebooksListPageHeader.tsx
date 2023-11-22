@@ -1,12 +1,11 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useRef } from 'react'
 
 import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import * as uuid from 'uuid'
 
-import { ErrorLike } from '@sourcegraph/common'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { ErrorLike } from '@sourcegraph/common'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Link,
     Button,
@@ -17,18 +16,14 @@ import {
     MenuList,
     MenuItem,
     Input,
-    Modal,
     Icon,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { CreateNotebookVariables } from '../../graphql-operations'
-import { EnterprisePageRoutes } from '../../routes.constants'
-import { NotepadIcon } from '../../search/Notepad'
+import type { AuthenticatedUser } from '../../auth'
+import type { CreateNotebookVariables } from '../../graphql-operations'
+import { PageRoutes } from '../../routes.constants'
 import { blockToGQLInput } from '../serialize'
 import { convertMarkdownToBlocks } from '../serialize/convertMarkdownToBlocks'
-
-import { NOTEPAD_CTA_ID, NotepadCTA } from './NotepadCta'
 
 import styles from './NotebooksListPageHeader.module.scss'
 
@@ -96,7 +91,6 @@ export const NotebooksListPageHeader: React.FunctionComponent<
 
     return (
         <>
-            <ToggleNotepadButton telemetryService={telemetryService} className="mr-2 d-none d-md-inline" />
             {/* The file upload input has to always be present in the DOM, otherwise the upload process
             does not complete when the menu below closes.  */}
             <Input
@@ -109,7 +103,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
             />
             <Menu>
                 <ButtonGroup>
-                    <Button to={EnterprisePageRoutes.NotebookCreate} variant="primary" as={Link}>
+                    <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link}>
                         Create notebook
                     </Button>
                     <MenuButton variant="primary" className={styles.dropdownButton}>
@@ -123,55 +117,6 @@ export const NotebooksListPageHeader: React.FunctionComponent<
                     </MenuItem>
                 </MenuList>
             </Menu>
-        </>
-    )
-}
-
-export const NOTEPAD_ENABLED_EVENT = 'SearchNotepadEnabled'
-const NOTEPAD_DISABLED_EVENT = 'SearchNotepadDisabled'
-
-const ToggleNotepadButton: React.FunctionComponent<
-    React.PropsWithChildren<TelemetryProps & { className?: string }>
-> = ({ telemetryService, className }) => {
-    const [notepadEnabled, setNotepadEnabled] = useTemporarySetting('search.notepad.enabled')
-    const [ctaSeen, setCTASeen] = useTemporarySetting('search.notepad.ctaSeen')
-    const [showCTA, setShowCTA] = useState(false)
-
-    function onClick(): void {
-        if (!notepadEnabled && !ctaSeen) {
-            setShowCTA(true)
-        } else {
-            setNotepadEnabled(enabled => {
-                // `enabled` is the old state so we have to log the "opposite"
-                // event
-                telemetryService.log(enabled ? NOTEPAD_DISABLED_EVENT : NOTEPAD_ENABLED_EVENT)
-                return !enabled
-            })
-        }
-    }
-
-    function onEnableFromCTA(): void {
-        telemetryService.log(NOTEPAD_ENABLED_EVENT)
-        setNotepadEnabled(true)
-        setShowCTA(false)
-        setCTASeen(true)
-    }
-
-    function onCancelFromCTA(): void {
-        // We only mark the CTA as "seen" when the user enables the notepad from it
-        setShowCTA(false)
-    }
-
-    return (
-        <>
-            <Button variant="secondary" type="button" onClick={onClick} className={className}>
-                <NotepadIcon /> {notepadEnabled ? 'Disable' : 'Enable'} notepad
-            </Button>
-            {showCTA && (
-                <Modal aria-labelledby={NOTEPAD_CTA_ID}>
-                    <NotepadCTA onEnable={onEnableFromCTA} onCancel={onCancelFromCTA} />
-                </Modal>
-            )}
         </>
     )
 }

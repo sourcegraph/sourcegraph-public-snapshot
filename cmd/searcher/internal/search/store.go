@@ -13,10 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/mountinfo"
@@ -29,7 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -55,6 +55,9 @@ const maxFileSize = 2 << 20 // 2MB; match https://sourcegraph.com/search?q=repo:
 // (tar). We want to be able to support random concurrent access for reading,
 // so we store as a zip.
 type Store struct {
+	// GitserverClient is the client to interact with gitserver.
+	GitserverClient gitserver.Client
+
 	// FetchTar returns an io.ReadCloser to a tar archive of repo at commit.
 	// If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
@@ -142,16 +145,12 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 }
 
 func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip") //nolint:staticcheck // OT is deprecated
-	ext.Component.Set(span, "store")
+	tr, ctx := trace.New(ctx, "ArchiveStore.PrepareZipPaths")
+	defer tr.EndWithErr(&err)
+
 	var cacheHit bool
 	start := time.Now()
 	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
 		duration := time.Since(start).Seconds()
 		if cacheHit {
 			metricZipAccess.WithLabelValues("true").Observe(duration)
@@ -181,7 +180,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		_, _ = io.WriteString(h, p)
 	}
 	key := hex.EncodeToString(h.Sum(nil))
-	span.LogKV("key", key)
+	tr.AddEvent("calculated key", attribute.String("key", key))
 
 	// Our fetch can take a long time, and the frontend aggressively cancels
 	// requests. So we open in the background to give it extra time.
@@ -196,7 +195,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		// TODO: consider adding a cache method that doesn't actually bother opening the file,
 		// since we're just going to close it again immediately.
 		cacheHit := true
-		bgctx := opentracing.ContextWithSpan(context.Background(), opentracing.SpanFromContext(ctx))
+		bgctx := xcontext.Detach(ctx)
 		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
 			cacheHit = false
 			return s.fetch(ctx, repo, commit, filter, paths)
@@ -231,6 +230,10 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
 func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, filter *searchableFilter, paths []string) (rc io.ReadCloser, err error) {
+	tr, ctx := trace.New(ctx, "ArchiveStore.fetch",
+		repo.Attr(),
+		commit.Attr())
+
 	metricFetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
 	if err != nil {
@@ -241,10 +244,6 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	ctx, cancel := context.WithCancel(ctx)
 
 	metricFetching.Inc()
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch") //nolint:staticcheck // OT is deprecated
-	ext.Component.Set(span, "store")
-	span.SetTag("repo", repo)
-	span.SetTag("commit", commit)
 
 	// Done is called when the returned reader is closed, or if this function
 	// returns an error. It should always be called once.
@@ -258,12 +257,10 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		releaseFetchLimiter() // Release concurrent fetches semaphore
 		cancel()              // Release context resources
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
 			metricFetchFailed.Inc()
 		}
 		metricFetching.Dec()
-		span.Finish()
+		defer tr.EndWithErr(&err)
 	}
 	defer func() {
 		if rc == nil {
@@ -286,7 +283,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 
 	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(), repo, commit)
+		filter.CommitIgnore, err = s.FilterTar(ctx, s.GitserverClient, repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}
@@ -444,7 +441,7 @@ func (s *Store) watchAndEvict() {
 func (s *Store) watchConfig() {
 	for {
 		// Allow roughly 10 fetches per gitserver
-		limit := 10 * len(gitserver.NewClient().Addrs())
+		limit := 10 * len(s.GitserverClient.Addrs())
 		if limit == 0 {
 			limit = 15
 		}

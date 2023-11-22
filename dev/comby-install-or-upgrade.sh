@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -ex
+
 # This function installs the comby dependency for cmd/searcher.
 # The CI pipeline calls this script to install or upgrade comby
 # for tests or development environments.
@@ -39,8 +41,8 @@ TMP=${TMPDIR:-/tmp}
 
 ARCH=$(uname -m || echo)
 case "$ARCH" in
-  x86_64 | amd64) ARCH="x86_64" ;;
-  *) ARCH="OTHER" ;;
+x86_64 | amd64) ARCH="x86_64" ;;
+*) ARCH="OTHER" ;;
 esac
 
 OS=$(uname -s || echo)

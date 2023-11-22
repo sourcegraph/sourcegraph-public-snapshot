@@ -1,34 +1,30 @@
 # Deploying Sourcegraph executors on linux machines
 
-<aside class="beta">
-<p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
-</p>
+## Installation
 
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
-</aside>
+> Note: See [offline installation guide](deploy_executors_binary_offline.md) for instructions on how to install executors in an air-gapped environment.
 
-## Dependencies
+The following steps will guide you through the process of installing executors on a linux machine.
+
+### Dependencies
 
 In order to run executors on your machine, a few things need to be set up correctly before proceeding.
 
 - Executors only support linux-based machine with amd64 processors
-- Docker has to be installed on the machine (`curl -fsSL https://get.docker.com | sh`)
+- Docker has to be installed on the machine (`curl -fsSL https://get.docker.com | sh`)
 - Git has to be installed at a version `>= v2.26`
+- The ability to run commands as `root` on the host machine and configure networking routes
 
 If [Firecracker isolation will be used](index.md#how-it-works): _(recommended)_
 
-- The host has to support KVM (for AWS that means a metal instance, on GCP that means [enabling nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling))
+- The host has to support KVM (for AWS that means a [metal instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html), on GCP that means [enabling nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling))
 - The following additional dependencies need to be installed:
   - `dmsetup`
   - `losetup`
   - `mkfs.ext4`
   - `iptables`
   - `strings` (part of binutils)
-
-## Installation
-
-Once dependencies are met, you can download the executor binary and start configuring your machine:
+  - `systemd` (optional)
 
 ### **Step 0:** Confirm that virtualization is enabled (if using Firecracker)
 
@@ -78,36 +74,37 @@ mv executor /usr/local/bin
 
 ### **Step 2:** Setup environment variables
 
-The executor is configured through environment variables. Those need to be passed to it when you run it (including for `install`, `validate` and `test-vm`), so add these to your shell profile, or an environment file. Only `EXECUTOR_FRONTEND_URL`, `EXECUTOR_FRONTEND_PASSWORD` and `EXECUTOR_QUEUE_NAME` are _required_.
+The executor is configured through environment variables. Those need to be passed to it when you run it (including for `install`, `validate` and `test-vm`), so add these to your shell profile, or an environment file. Only `EXECUTOR_FRONTEND_URL`, `EXECUTOR_FRONTEND_PASSWORD` and `EXECUTOR_QUEUE_NAME` **or** `EXECUTOR_QUEUE_NAMES` are _required_.
 
-| Env var                                  | Description                                                                                                                                                                                                                            | Example value                              |
-|------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
-| `EXECUTOR_FRONTEND_URL`                  | The external URL of the Sourcegraph instance. **required**                                                                                                                                                                             | `http://sourcegraph.example.com`           |
-| `EXECUTOR_FRONTEND_PASSWORD`             | The shared secret configured in the Sourcegraph instance site config under `executors.accessToken`. **required**                                                                                                                       | `our-shared-secret`                        |
-| `EXECUTOR_QUEUE_NAME`                    | The name of the queue to pull jobs from to. Possible values: `batches` and `codeintel` **required**                                                                                                                                    | `batches`                                  |
-| `EXECUTOR_USE_FIRECRACKER`               | Whether to isolate jobs in virtual machines. Requires ignite and firecracker. Linux hosts only. (default value: "true")                                                                                                            | `true`                                     |
-| `EXECUTOR_MAXIMUM_NUM_JOBS`              | Number of virtual machines or containers that can be running at once. (default value: "1")                                                                                                                                             | `1`                                        |
-| `EXECUTOR_MAXIMUM_RUNTIME_PER_JOB`       | The maximum wall time that can be spent on a single job. (default value: "30m")                                                                                                                                                        | `30m`                                      |
-| `EXECUTOR_JOB_MEMORY`                    | How much memory to allocate to each virtual machine or container. A value of zero sets no resource bound (in Docker, but not VMs). (default value: "12G")                                                                              | `12G`                                      |
-| `EXECUTOR_JOB_NUM_CPUS`                  | How many CPUs to allocate to each virtual machine or container. A value of zero sets no resource bound (in Docker, but not VMs). (default value: "4")                                                                                  | `4`                                        |
-| `EXECUTOR_DOCKER_REGISTRY_MIRROR_URL`    | The address of a docker registry mirror to use in firecracker VMs.                                                                                                                                                                     | `http://10.0.0.2:5000`                     |
-| `EXECUTOR_FIRECRACKER_DISK_SPACE`        | How much disk space to allocate to each virtual machine. (default value: "20G")                                                                                                                                                        | `20G`                                      |
-| `EXECUTOR_FIRECRACKER_BANDWIDTH_EGRESS`  | How much bandwidth to allow for egress packets to the VM in bytes/s. (default value: "524288000")                                                                                                                                      | `524288000`                                |
-| `EXECUTOR_FIRECRACKER_BANDWIDTH_INGRESS` | How much bandwidth to allow for ingress packets to the VM in bytes/s. (default value: "524288000")                                                                                                                                     | `524288000`                                |
-| `EXECUTOR_KEEP_WORKSPACES`               | Whether to skip deletion of workspaces after a job completes (or fails). Note that when Firecracker is enabled that the workspace is initially copied into the VM, so modifications will not be observed. (default value: "false")     | `true`                                     |
-| `EXECUTOR_MAX_ACTIVE_TIME`               | The maximum time that can be spent by the worker dequeueing records to be handled. (default value: "0")                                                                                                                                | `100m`                                     |
-| `EXECUTOR_NUM_TOTAL_JOBS`                | The maximum number of jobs that will be dequeued by the worker. (default value: "0")                                                                                                                                                   | `100`                                      |
-| `EXECUTOR_DOCKER_HOST_MOUNT_PATH`        | The target workspace as it resides on the Docker host (used to enable Docker-in-Docker).                                                                                                                                               | `/workspaces`                              |
-| `EXECUTOR_QUEUE_POLL_INTERVAL`           | Interval between dequeue requests. (default value: "1s")                                                                                                                                                                               | `1s`                                       |
-| `EXECUTOR_CLEANUP_TASK_INTERVAL`         | The frequency with which to run periodic cleanup tasks. (default value: "1m")                                                                                                                                                          | `1m`                                       |
-| `EXECUTOR_VM_PREFIX`                     | A name prefix for virtual machines controlled by this instance. (default value: "executor")                                                                                                                                            | `executor`                                 |
-| `EXECUTOR_VM_STARTUP_SCRIPT_PATH`        | A path to a file on the host that is loaded into a fresh virtual machine and executed on startup.                                                                                                                                      | `/vm-startup.sh`                           |
-| `NODE_EXPORTER_URL`                      | The URL of the node_exporter instance, without the /metrics path.                                                                                                                                                                      | `http://127.0.0.1:9000`                    |
-| `EXECUTOR_FIRECRACKER_IMAGE`             | The base image to use for virtual machines.                                                                                                                                                                                            | `sourcegraph/executor-vm:insiders`         |
-| `EXECUTOR_FIRECRACKER_KERNEL_IMAGE`      | The base image containing the kernel binary to use for virtual machines.                                                                                                                                                               | `sourcegraph/ignite-kernel:5.10.135-amd64` |
-| `EXECUTOR_FIRECRACKER_SANDBOX_IMAGE`     | The OCI image for the ignite VM sandbox.                                                                                                                                                                                               | `sourcegraph/ignite:v0.10.5`               |
-| `DOCKER_REGISTRY_NODE_EXPORTER_URL`      | The URL of the Docker Registry instance's node_exporter, without the /metrics path.                                                                                                                                                    | `http://localhost:9000`                    |
-| `SRC_LOG_LEVEL`                          | upper log level to restrict log output to (dbug, info, warn, error, crit) (default value: "warn")                                                                                                                                      | `warn`                                     |
+| Env var                                  | Description                                                                                                                                                                                                                        | Example value                              |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| `EXECUTOR_FRONTEND_URL`                  | The external URL of the Sourcegraph instance. **required**                                                                                                                                                                         | `http://sourcegraph.example.com`           |
+| `EXECUTOR_FRONTEND_PASSWORD`             | The shared secret configured in the Sourcegraph instance site config under `executors.accessToken`. **required**                                                                                                                   | `our-shared-secret`                        |
+| `EXECUTOR_QUEUE_NAME`                    | The name of a single queue to pull jobs from. Possible values: `batches` and `codeintel`. **required: either this or `EXECUTOR_QUEUE_NAMES`**                                                                                      | `batches`                                  |
+| `EXECUTOR_QUEUE_NAMES`                   | The names of multiple queues to pull jobs from, comma-separated. Possible values: `batches` and `codeintel`. **required: either this or `EXECUTOR_QUEUE_NAME`**                                                                    | `batches,codeintel`                        |
+| `EXECUTOR_USE_FIRECRACKER`               | Whether to isolate jobs in virtual machines. Requires ignite and firecracker. Linux hosts only. Kubernetes is not supported. (default value: "true" when OS is Linux and not on Kubernetes)                                        | `true`                                     |
+| `EXECUTOR_MAXIMUM_NUM_JOBS`              | Number of virtual machines or containers that can be running at once. (default value: "1")                                                                                                                                         | `1`                                        |
+| `EXECUTOR_MAXIMUM_RUNTIME_PER_JOB`       | The maximum wall time that can be spent on a single job. (default value: "30m")                                                                                                                                                    | `30m`                                      |
+| `EXECUTOR_JOB_MEMORY`                    | How much memory to allocate to each virtual machine or container. A value of zero sets no resource bound (in Docker, but not VMs). (default value: "12G")                                                                          | `12G`                                      |
+| `EXECUTOR_JOB_NUM_CPUS`                  | How many CPUs to allocate to each virtual machine or container. A value of zero sets no resource bound (in Docker, but not VMs). (default value: "4")                                                                              | `4`                                        |
+| `EXECUTOR_DOCKER_REGISTRY_MIRROR_URL`    | The address of a docker registry mirror to use in firecracker VMs.                                                                                                                                                                 | `http://10.0.0.2:5000`                     |
+| `EXECUTOR_FIRECRACKER_DISK_SPACE`        | How much disk space to allocate to each virtual machine. (default value: "20G")                                                                                                                                                    | `20G`                                      |
+| `EXECUTOR_FIRECRACKER_BANDWIDTH_EGRESS`  | How much bandwidth to allow for egress packets to the VM in bytes/s. (default value: "524288000")                                                                                                                                  | `524288000`                                |
+| `EXECUTOR_FIRECRACKER_BANDWIDTH_INGRESS` | How much bandwidth to allow for ingress packets to the VM in bytes/s. (default value: "524288000")                                                                                                                                 | `524288000`                                |
+| `EXECUTOR_KEEP_WORKSPACES`               | Whether to skip deletion of workspaces after a job completes (or fails). Note that when Firecracker is enabled that the workspace is initially copied into the VM, so modifications will not be observed. (default value: "false") | `true`                                     |
+| `EXECUTOR_MAX_ACTIVE_TIME`               | The maximum time that can be spent by the worker dequeueing records to be handled. (default value: "0")                                                                                                                            | `100m`                                     |
+| `EXECUTOR_NUM_TOTAL_JOBS`                | The maximum number of jobs that will be dequeued by the worker. (default value: "0")                                                                                                                                               | `100`                                      |
+| `EXECUTOR_DOCKER_HOST_MOUNT_PATH`        | The target workspace as it resides on the Docker host (used to enable Docker-in-Docker).                                                                                                                                           | `/workspaces`                              |
+| `EXECUTOR_QUEUE_POLL_INTERVAL`           | Interval between dequeue requests. (default value: "1s")                                                                                                                                                                           | `1s`                                       |
+| `EXECUTOR_CLEANUP_TASK_INTERVAL`         | The frequency with which to run periodic cleanup tasks. (default value: "1m")                                                                                                                                                      | `1m`                                       |
+| `EXECUTOR_VM_PREFIX`                     | A name prefix for virtual machines controlled by this instance. (default value: "executor")                                                                                                                                        | `executor`                                 |
+| `EXECUTOR_VM_STARTUP_SCRIPT_PATH`        | A path to a file on the host that is loaded into a fresh virtual machine and executed on startup.                                                                                                                                  | `/vm-startup.sh`                           |
+| `NODE_EXPORTER_URL`                      | The URL of the node_exporter instance, without the /metrics path.                                                                                                                                                                  | `http://127.0.0.1:9000`                    |
+| `EXECUTOR_FIRECRACKER_IMAGE`             | The base image to use for virtual machines.                                                                                                                                                                                        | `sourcegraph/executor-vm:insiders`         |
+| `EXECUTOR_FIRECRACKER_KERNEL_IMAGE`      | The base image containing the kernel binary to use for virtual machines.                                                                                                                                                           | `sourcegraph/ignite-kernel:5.10.135-amd64` |
+| `EXECUTOR_FIRECRACKER_SANDBOX_IMAGE`     | The OCI image for the ignite VM sandbox.                                                                                                                                                                                           | `sourcegraph/ignite:v0.10.5`               |
+| `DOCKER_REGISTRY_NODE_EXPORTER_URL`      | The URL of the Docker Registry instance's node_exporter, without the /metrics path.                                                                                                                                                | `http://localhost:9000`                    |
+| `SRC_LOG_LEVEL`                          | upper log level to restrict log output to (dbug, info, warn, error, crit) (default value: "warn")                                                                                                                                  | `warn`                                     |
 
 
 ```bash
@@ -121,7 +118,7 @@ export EXECUTOR_FRONTEND_PASSWORD=SUPER_SECRET_SHARED_TOKEN
 
 To be able to run workloads in isolation, a few dependencies need to be installed and configured. The executor CLI can do all of that automatically.
 
-To run all of the required setup steps, just run
+To run all of the required setup steps, just run the following commands as `root`:
 
 ```bash
 executor install all
@@ -183,3 +180,42 @@ systemctl enable executor
 ### **Step 6:** Start receiving workloads
 
 If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now! All done!
+
+## Upgrading executors
+
+Upgrading executors is relatively uninvolved. Simply follow the instructions below.
+Also, check the [changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/CHANGELOG.md) for any Executors related breaking changes or new features that you might want to configure.
+
+### **Step 1:** First, grab the executor binary for the new target Sourcegraph version.
+
+> NOTE: Keep in mind that only one minor version bumps are guaranteed to be disruption-free.
+
+```bash
+curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/${SOURCEGRAPH_VERSION}/linux-amd64/executor
+chmod +x executor
+# Assuming /usr/local/bin is in $PATH.
+mv executor /usr/local/bin
+```
+
+### **Step 2:** Make sure all ambient dependencies and configurations are up-to-date:
+
+Ensure [env vars](#step-2-setup-environment-variables) has been configured. 
+
+```bash
+executor install all
+# OR run the following, to see how to install/configure components separately.
+executor install --help
+```
+
+### **Step 3:** Validate your machine is ready to receive workloads
+
+All set up! Before letting the executor start receiving workloads from your Sourcegraph instance, you might want to verify your setup. Run the following command:
+
+```bash
+executor validate
+```
+
+### **Step 4:** Restart your running executor / spin up a new machine
+
+Depending on how you set up executors, you might want to restart the systemd service, or restart/replace the machine running them, so the new binary is running.
+If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now and be visible under the `Executors > Instances` section of the Site Configuration.

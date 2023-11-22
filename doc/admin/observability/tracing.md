@@ -47,7 +47,7 @@ Note that getting a trace URL requires `urlTemplate` to be configured.
 ### Trace a GraphQL request
 
 To receive a traceID on a GraphQL request, include the header `X-Sourcegraph-Should-Trace: true` with the request.
-The response headers of the response will now include an `x-trace` entry, which will have a URL the [exported trace](#tracing-backends).
+The response headers of the response will now include an `x-trace-url` entry, which will have a URL the [exported trace](#tracing-backends).
 
 Note that getting a trace URL requires `urlTemplate` to be configured.
 
@@ -102,13 +102,3 @@ Once set up, you can use the following URL template for traces exported to Jaege
 ```
 
 You can test the exporter by [tracing a search query](#trace-a-search-query).
-
-### net/trace
-
-Sourcegraph uses the [`net/trace`](https://pkg.go.dev/golang.org/x/net/trace) package in its backend
-services, in addition to the other tracing mechanisms listed above.
-This provides simple tracing information within a single process.
-It can be used as an alternative when Jaeger is not available or as a supplement to Jaeger.
-
-Site admins can access `net/trace` information at `https://sourcegraph.example.com/-/debug/`. From
-there, click **Requests** to view the traces for that service.

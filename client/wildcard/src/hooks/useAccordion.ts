@@ -1,6 +1,6 @@
-import { MutableRefObject, useRef, useState } from 'react'
+import { type MutableRefObject, useRef, useState } from 'react'
 
-import { SpringValue, useSpring } from 'react-spring'
+import { type SpringValue, useSpring } from 'react-spring'
 
 type UseAccordionResult<Element extends HTMLElement = HTMLDivElement> = [
     reference: MutableRefObject<Element | null>,

@@ -91,14 +91,16 @@ func Test_Result_Symbol_ProtoRoundTrip(t *testing.T) {
 func Test_Internal_Types_SymbolInfo_ProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	f := func(original types.SymbolInfo) bool {
-		defRange := original.Definition.Range
-		if defRange != nil && !rangeWithinInt32(*defRange) {
-			return true // skip
+	f := func(original *types.SymbolInfo) bool {
+		if original != nil {
+			defRange := original.Definition.Range
+			if defRange != nil && !rangeWithinInt32(*defRange) {
+				return true // skip
+			}
 		}
 
 		var originalProto SymbolInfoResponse
-		originalProto.FromInternal(&original)
+		originalProto.FromInternal(original)
 
 		converted := originalProto.ToInternal()
 
@@ -110,6 +112,18 @@ func Test_Internal_Types_SymbolInfo_ProtoRoundTrip(t *testing.T) {
 	}
 
 	if err := quick.Check(f, nil); err != nil {
+		t.Errorf("SymbolInfo diff (-want +got):\n%s", diff)
+	}
+}
+
+func Test_Internal_Types_SymbolInfo_ProtoRoundTripNil(t *testing.T) {
+	// Make sure a nil SymbolInfo is returned as nil.
+	var originalProto SymbolInfoResponse
+	originalProto.FromInternal(nil)
+	converted := originalProto.ToInternal()
+
+	var expect *types.SymbolInfo
+	if diff := cmp.Diff(expect, converted, cmpopts.EquateEmpty()); diff != "" {
 		t.Errorf("SymbolInfo diff (-want +got):\n%s", diff)
 	}
 }

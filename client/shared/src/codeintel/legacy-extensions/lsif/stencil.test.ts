@@ -1,6 +1,8 @@
 import * as assert from 'assert'
 
-import * as sourcegraph from '../api'
+import { describe, it } from 'vitest'
+
+import type * as sourcegraph from '../api'
 
 import { searchStencil } from './providers'
 import { document, position, range1, range2, range3, range4, range5, range6 } from './util.test'

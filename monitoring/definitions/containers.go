@@ -10,8 +10,9 @@ import (
 func Containers() *monitoring.Dashboard {
 	var (
 		// HACK:
+		// TODO: This is no longer true, we can clean this up.
 		// Image names are defined in enterprise package
-		// github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images
+		// github.com/sourcegraph/sourcegraph/dev/ci/images
 		// Hence we can't use the exported names in OSS here.
 		// Also, the exported names do not cover edge cases such as `pgsql`, `codeintel-db`, and `codeinsights-db`.
 		// We cannot use "wildcard" to cover all running containers:
@@ -23,7 +24,7 @@ func Containers() *monitoring.Dashboard {
 		// - review what's changed in the commits
 		// - check if the commit contains changes to the container name query in each dashboard definition
 		// - update this container name query accordingly
-		containerNameQuery = shared.CadvisorContainerNameMatcher("(frontend|sourcegraph-frontend|gitserver|github-proxy|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger)")
+		containerNameQuery = shared.CadvisorContainerNameMatcher("(frontend|sourcegraph-frontend|gitserver|pgsql|codeintel-db|codeinsights|precise-code-intel-worker|prometheus|redis-cache|redis-store|redis-exporter|repo-updater|searcher|symbols|syntect-server|worker|zoekt-indexserver|zoekt-webserver|indexed-search|grafana|blobstore|jaeger)")
 	)
 
 	return &monitoring.Dashboard{

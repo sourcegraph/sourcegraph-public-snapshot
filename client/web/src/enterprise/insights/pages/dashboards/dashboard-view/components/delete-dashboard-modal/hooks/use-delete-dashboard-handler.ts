@@ -1,9 +1,9 @@
 import { useContext, useState } from 'react'
 
-import { ErrorLike, asError } from '@sourcegraph/common'
+import { type ErrorLike, asError } from '@sourcegraph/common'
 
 import { CodeInsightsBackendContext } from '../../../../../../core/backend/code-insights-backend-context'
-import { CustomInsightDashboard } from '../../../../../../core/types'
+import type { CustomInsightDashboard } from '../../../../../../core/types'
 
 export interface UseDeleteDashboardHandlerProps {
     dashboard: CustomInsightDashboard

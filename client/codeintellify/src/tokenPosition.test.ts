@@ -1,15 +1,17 @@
 import * as assert from 'assert'
 
-import { Position, Range } from '@sourcegraph/extension-api-types'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { CodeViewProps, DOM } from './testutils/dom'
+import type { Position, Range } from '@sourcegraph/extension-api-types'
+
+import { type CodeViewProps, DOM } from './testutils/dom'
 import {
     convertNode,
     findElementWithOffset,
     getCodeElementsInRange,
     getTextNodes,
     getTokenAtPositionOrRange,
-    HoveredToken,
+    type HoveredToken,
     locateTarget,
 } from './tokenPosition'
 

@@ -1,6 +1,8 @@
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { describe, expect, it } from 'vitest'
 
-import { EditorSettings } from './editor-settings'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
+
+import type { EditorSettings } from './editor-settings'
 import { migrateLegacySettings } from './migrate-legacy-settings'
 
 describe('migrate legacy editor settings tests', () => {

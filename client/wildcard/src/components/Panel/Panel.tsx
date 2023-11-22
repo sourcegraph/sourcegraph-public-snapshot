@@ -3,7 +3,7 @@ import React, { useRef } from 'react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { useResizablePanel, UseResizablePanelParameters } from './useResizablePanel'
+import { useResizablePanel, type UseResizablePanelParameters } from './useResizablePanel'
 import { getDisplayStyle, getPositionStyle } from './utils'
 
 import styles from './Panel.module.scss'
@@ -35,6 +35,7 @@ export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>>
     minSize,
     maxSize,
     ariaLabel,
+    onResize,
 }) => {
     const handleReference = useRef<HTMLDivElement | null>(null)
     const panelReference = useRef<HTMLDivElement | null>(null)
@@ -47,6 +48,7 @@ export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>>
         defaultSize,
         minSize,
         maxSize,
+        onResize,
     })
 
     return (

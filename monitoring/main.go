@@ -1,5 +1,9 @@
-//go:generate go build -o /tmp/monitoring-generator
-//go:generate /tmp/monitoring-generator
+// The monitoring generator is now called by Bazel targets instead of go generate
+//
+// To run monitoring generator run:
+// - bazel build //monitoring:generate_config # see bazel-bin/monitoring/outputs
+// - bazel build //monitoring:generate_config_zip # see bazel-bin/monitoring/monitoring.zip
+// - bazel build //monitoring:generate_grafana_config_tar # see bazel-bin/monitoring/monitoring.tar
 package main
 
 import (
@@ -22,7 +26,7 @@ func main() {
 
 	liblog := log.Init(log.Resource{Name: "monitoring-generator"})
 	defer liblog.Sync()
-	logger := log.Scoped("monitoring", "main Sourcegraph monitoring entrypoint")
+	logger := log.Scoped("monitoring")
 
 	// Create an app that only runs the generate command
 	app := &cli.App{
@@ -32,7 +36,7 @@ func main() {
 		},
 		DefaultCommand: "generate",
 	}
-	if err := app.Run([]string{""}); err != nil {
+	if err := app.Run(os.Args); err != nil {
 		// Render in plain text for human readability
 		println(err.Error())
 		logger.Fatal("error encountered")

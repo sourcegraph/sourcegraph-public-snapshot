@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "cloneurls",
@@ -11,10 +12,11 @@ go_library(
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/extsvc",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//internal/types",
         "//lib/errors",
         "//schema",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -25,7 +27,7 @@ go_test(
     embed = [":cloneurls"],
     deps = [
         "//internal/api",
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/extsvc",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",

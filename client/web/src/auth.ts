@@ -1,9 +1,9 @@
-import { Observable, ReplaySubject } from 'rxjs'
+import { type Observable, ReplaySubject } from 'rxjs'
 import { catchError, map, mergeMap, tap } from 'rxjs/operators'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
-import { AuthenticatedUser as SharedAuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
-import { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
+import { type AuthenticatedUser as SharedAuthenticatedUser, currentAuthStateQuery } from '@sourcegraph/shared/src/auth'
+import type { CurrentAuthStateResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from './backend/graphql'
 

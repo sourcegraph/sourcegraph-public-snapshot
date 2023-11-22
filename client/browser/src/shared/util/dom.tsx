@@ -1,4 +1,4 @@
-import { Observable, Subject, Subscription } from 'rxjs'
+import { Observable, type Subject, Subscription } from 'rxjs'
 
 /**
  * commitIDFromPermalink finds the permalink element on the page and extracts

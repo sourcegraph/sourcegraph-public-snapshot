@@ -1,23 +1,23 @@
 import { action } from '@storybook/addon-actions'
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { subDays } from 'date-fns'
-import { EMPTY, NEVER, Observable, of } from 'rxjs'
+import { EMPTY, NEVER, type Observable, of } from 'rxjs'
 
 import { subtypeOf } from '@sourcegraph/common'
-import { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
-import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { ActionItemComponentProps } from '@sourcegraph/shared/src/actions/ActionItem'
+import type { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { NOOP_SETTINGS_CASCADE } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 import { SearchPatternType } from '../graphql-operations'
 
 import { cncf } from './cncf'
-import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import { CommunitySearchContextPage, type CommunitySearchContextPageProps } from './CommunitySearchContextPage'
 import { temporal } from './Temporal'
 
 const config: Meta = {
@@ -59,11 +59,11 @@ const authUser: AuthenticatedUser = {
             { id: '1', settingsURL: '#', displayName: 'Beta Inc' },
         ] as AuthenticatedUser['organizations']['nodes'],
     },
-    tags: [],
     viewerCanAdminister: true,
+    hasVerifiedEmail: true,
+    completedPostSignup: true,
     databaseID: 0,
     tosAccepted: true,
-    searchable: true,
     emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
     permissions: { nodes: [] },
@@ -131,11 +131,11 @@ const commonProps = () =>
         fetchSearchContextBySpec: fetchCommunitySearchContext,
     })
 
-export const Temporal: Story = () => (
+export const Temporal: StoryFn = () => (
     <WebStory>{webProps => <CommunitySearchContextPage {...webProps} {...commonProps()} />}</WebStory>
 )
 
-export const CNCFStory: Story = () => (
+export const CNCFStory: StoryFn = () => (
     <WebStory>
         {webProps => (
             <CommunitySearchContextPage {...webProps} {...commonProps()} communitySearchContextMetadata={cncf} />

@@ -1,6 +1,8 @@
+import { describe, expect, test } from 'vitest'
+
 import { stringHuman } from './printer'
-import { ScanResult, scanSearchQuery, ScanSuccess } from './scanner'
-import { Token } from './token'
+import { type ScanResult, scanSearchQuery, type ScanSuccess } from './scanner'
+import type { Token } from './token'
 
 expect.addSnapshotSerializer({
     serialize: value => value as string,

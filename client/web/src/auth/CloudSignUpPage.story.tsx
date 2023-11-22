@@ -1,15 +1,18 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../components/WebStory'
-import { SourcegraphContext } from '../jscontext'
+import type { SourcegraphContext } from '../jscontext'
 
 import { CloudSignUpPage } from './CloudSignUpPage'
 
 const config: Meta = {
     title: 'web/auth/CloudSignUpPage',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 }
 
 export default config
@@ -17,6 +20,7 @@ export default config
 const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures' | 'authMinPasswordLength'> = {
     authProviders: [
         {
+            clientID: '000',
             serviceType: 'github',
             displayName: 'GitHub.com',
             isBuiltin: false,
@@ -24,10 +28,19 @@ const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'
             serviceID: 'https://github.com',
         },
         {
+            clientID: '001',
             serviceType: 'gitlab',
             displayName: 'GitLab.com',
             isBuiltin: false,
             authenticationURL: '/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F',
+            serviceID: 'https://gitlab.com',
+        },
+        {
+            clientID: '002',
+            serviceType: 'openidconnect',
+            displayName: 'Google',
+            isBuiltin: false,
+            authenticationURL: '/.auth/openidconnect/login?pc=google',
             serviceID: 'https://gitlab.com',
         },
     ],
@@ -35,7 +48,7 @@ const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'
     authMinPasswordLength: 0,
 }
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -51,7 +64,7 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-export const EmailForm: Story = () => (
+export const EmailForm: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -67,7 +80,7 @@ export const EmailForm: Story = () => (
     </WebStory>
 )
 
-export const InvalidSource: Story = () => (
+export const InvalidSource: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -83,7 +96,7 @@ export const InvalidSource: Story = () => (
     </WebStory>
 )
 
-export const OptimizationSignup: Story = () => (
+export const OptimizationSignup: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage

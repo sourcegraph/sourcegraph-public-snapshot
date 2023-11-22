@@ -1,6 +1,6 @@
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Keyword, Pattern } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter, Keyword, Pattern } from '@sourcegraph/shared/src/search/query/token'
 
 export interface Checks {
     isValidOperator: true | false | undefined

@@ -20,7 +20,15 @@ To use SCIM, you must have an existing IdP configured as an auth provider on you
 
 To configure:
 
-1. Generate a random alphanumeric bearer token of maximum 255 characters
+1. Generate a random alphanumeric bearer token of maximum 255 characters.
+   To do this in a terminal, run:
+   
+   ```
+   openssl rand -base64 342 | tr -dc 'a-zA-Z0-9' | cut -c -255
+   ```
+
+   (This command generates a random base64 string with more characters than required (342 characters) and then filters out non-alphanumeric characters. Finally, it trims the output to 255 characters. The reason we generate a longer string is to account for the fact that the base64 encoding has non-alphanumeric characters, which are removed by the tr command.)
+
 2. Add the following line to your [site configuration](config/site_config.md):
 
    ```
@@ -37,17 +45,11 @@ To configure:
    https://sourcegraph.company.com/.api/scim/v2
    ```
 
-   so the "Users" endpoint is at
-
-   ```
-   https://sourcegraph.company.com/.api/scim/v2/Users
-   ```
-
 ## Configuring SCIM for Okta
 
 To set up user provisioning in [Okta](https://help.okta.com/en-us/Content/Topics/Apps/Apps_App_Integration_Wizard_SCIM.htm), you must first set up a new app integration of the "SAML 2.0" type, then configure it to use SCIM. Here are the steps to do this:
 
-1. Follow our [SAML guide](auth/saml/okta) to set up a new app integration with SAML, then open the integration you just created.
+1. Follow our [SAML guide](auth/saml/okta.md) to set up a new app integration with SAML, then open the integration you just created.
     - If you already have the integration, just open your existing app integration.
 1. Go to the "General" tab and click "Edit" in the "App Settings" section.
 1. Set "Provisioning" to "SCIM". This creates a new tab called "Provisioning".
@@ -57,9 +59,10 @@ To set up user provisioning in [Okta](https://help.okta.com/en-us/Content/Topics
 1. Check the first three items in `Supported provisioning actions`: "Import New Users and Profile Updates", "Push New Users", and "Push Profile Updates".
 1. Set "Authentication mode" to "HTTP Header"
 1. Under "HTTP Header", paste the same alphanumeric bearer token you used in your site config.
-1. Click "Save".
+1. Click "Test Connection Configuration" (first four items should be green—the user-related ones), then "Save".
+1. Switch to "Provisioning" → "To App" and click "Edit". Enable "Create Users", "Update User Attributes" and "Deactivate Users".
 
-> NOTE: You can also use our [SAML](auth/saml/okta) and [OpenID Connect](auth#openid-connect) integrations with Okta.
+> NOTE: You can also use our [SAML](auth/saml/okta.md) and [OpenID Connect](auth.md#openid-connect) integrations with Okta.
 
 ## Features and limitations
 
@@ -98,5 +101,4 @@ We support the following SCIM 2.0 features:
 - ❌ Sorting – when listing users
 - ❌ Entity tags (ETags)
 - ❌ Multi-tenancy – you can only have 1 SCIM client configured at a time.
-- ❌ Soft delete – Currently, we do not support soft deletion through SCIM. When a user is deleted (typically, when removed from a group of users who can access Sourcegraph), we **permanently delete** their user in Sourcegraph. This means that if the user is re-added to such a group, their settings will be reset.
 - ❌ Tests with many IdPs – we’ve only validated the endpoint with Okta and Azure AD.

@@ -1,5 +1,5 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, StoryFn } from '@storybook/react'
 import delay from 'delay'
 import { noop } from 'lodash'
 
@@ -8,7 +8,7 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { LangStatsInsightContentResult } from '../../../../../../graphql-operations'
+import type { LangStatsInsightContentResult } from '../../../../../../graphql-operations'
 import { GET_LANG_STATS_GQL } from '../../../../core/hooks/live-preview-insight'
 import { useCodeInsightsLicenseState } from '../../../../stores'
 
@@ -53,7 +53,7 @@ const LANG_STATS_MOCK: MockedResponse<LangStatsInsightContentResult> = {
     },
 }
 
-export const LangStatsInsightCreationPage: Story = () => {
+export const LangStatsInsightCreationPage: StoryFn = () => {
     useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
 
     return (
@@ -67,7 +67,6 @@ export const LangStatsInsightCreationPage: Story = () => {
                 onCancel={noop}
                 onSuccessfulCreation={noop}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
-                isSourcegraphApp={false}
             />
         </MockedTestProvider>
     )

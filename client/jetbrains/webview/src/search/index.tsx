@@ -1,6 +1,7 @@
 import { render } from 'react-dom'
+import { RouterProvider, createMemoryRouter } from 'react-router-dom'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import polyfillEventSource from '@sourcegraph/shared/src/polyfills/vendor/eventSource'
 import { AnchorLink, setLinkComponent } from '@sourcegraph/wildcard'
 
@@ -64,26 +65,35 @@ window.callJS = handleRequest
 
 export function renderReactApp(): void {
     const node = document.querySelector('#main') as HTMLDivElement
-    render(
-        <App
-            // Make sure we recreate the React app when the instance URL or access token changes to
-            // avoid showing stale data.
-            key={`${instanceURL}-${accessToken}-${errorRetryIndex}`}
-            isDarkTheme={isDarkTheme}
-            instanceURL={instanceURL}
-            accessToken={accessToken}
-            customRequestHeaders={customRequestHeaders}
-            initialSearch={initialSearch}
-            onOpen={onOpen}
-            onPreviewChange={onPreviewChange}
-            onPreviewClear={onPreviewClear}
-            onSearchError={onSearchError}
-            backendVersion={backendVersion}
-            authenticatedUser={authenticatedUser}
-            telemetryService={telemetryService}
-        />,
-        node
-    )
+    const routes = [
+        {
+            path: '/*',
+            element: (
+                <App
+                    // Make sure we recreate the React app when the instance URL or access token changes to
+                    // avoid showing stale data.
+                    key={`${instanceURL}-${accessToken}-${errorRetryIndex}`}
+                    isDarkTheme={isDarkTheme}
+                    instanceURL={instanceURL}
+                    accessToken={accessToken}
+                    customRequestHeaders={customRequestHeaders}
+                    initialSearch={initialSearch}
+                    onOpen={onOpen}
+                    onPreviewChange={onPreviewChange}
+                    onPreviewClear={onPreviewClear}
+                    onSearchError={onSearchError}
+                    backendVersion={backendVersion}
+                    authenticatedUser={authenticatedUser}
+                    telemetryService={telemetryService}
+                />
+            ),
+        },
+    ]
+    const router = createMemoryRouter(routes, {
+        initialEntries: ['/'],
+    })
+
+    render(<RouterProvider router={router} />, node)
 }
 
 export function applyConfig(config: PluginConfig): void {

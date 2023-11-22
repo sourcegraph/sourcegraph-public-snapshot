@@ -3,14 +3,15 @@
     // accepts any HTMLButton attributes. Note that those will only be used when
     // the default implementation is used.
     import type { HTMLButtonAttributes } from 'svelte/elements'
+
+    import { type BUTTON_DISPLAY, type BUTTON_SIZES, type BUTTON_VARIANTS, getButtonClassName } from './Button'
+
     interface $$Props extends HTMLButtonAttributes {
         variant?: (typeof BUTTON_VARIANTS)[number]
         size?: (typeof BUTTON_SIZES)[number]
         display?: (typeof BUTTON_DISPLAY)[number]
         outline?: boolean
     }
-
-    import { type BUTTON_DISPLAY, type BUTTON_SIZES, type BUTTON_VARIANTS, getButtonClassName } from './Button'
 
     export let variant: $$Props['variant'] = 'primary'
     export let size: $$Props['size'] = undefined

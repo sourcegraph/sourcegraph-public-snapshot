@@ -1,12 +1,8 @@
-import { from } from 'rxjs'
-import { switchMap, take } from 'rxjs/operators'
-
 import { browser } from '$app/environment'
-import { createPlatformContext } from '$lib/context'
-import type { CurrentAuthStateResult } from '$lib/graphql/shared'
-import { getDocumentNode } from '$lib/http-client'
-import { currentAuthStateQuery } from '$lib/loader/auth'
-import { getWebGraphQLClient } from '$lib/web'
+import { fetchEvaluatedFeatureFlags } from '$lib/featureflags'
+import { getGraphQLClient } from '$lib/graphql'
+import { fetchUserSettings } from '$lib/user/api/settings'
+import { fetchAuthenticatedUser } from '$lib/user/api/user'
 
 import type { LayoutLoad } from './$types'
 
@@ -17,6 +13,7 @@ export const prerender = false
 if (browser) {
     // Necessary to make authenticated GrqphQL requests work
     // No idea why TS picks up Mocha.SuiteFunction for this
+    // @ts-ignore
     window.context = {
         xhrHeaders: {
             'X-Requested-With': 'Sourcegraph',
@@ -24,22 +21,10 @@ if (browser) {
     }
 }
 
-export const load: LayoutLoad = () => {
-    const graphqlClient = getWebGraphQLClient()
-    const platformContext = graphqlClient.then(createPlatformContext)
-
-    return {
-        platformContext,
-        graphqlClient,
-        user: graphqlClient
-            .then(client => client.query<CurrentAuthStateResult>({ query: getDocumentNode(currentAuthStateQuery) }))
-            .then(result => result.data.currentUser),
-        // Initial user settings
-        settings: from(platformContext)
-            .pipe(
-                switchMap(platformContext => platformContext.settings),
-                take(1)
-            )
-            .toPromise(),
-    }
-}
+export const load: LayoutLoad = () => ({
+    graphqlClient: getGraphQLClient(),
+    user: fetchAuthenticatedUser(),
+    // Initial user settings
+    settings: fetchUserSettings(),
+    featureFlags: fetchEvaluatedFeatureFlags(),
+})

@@ -13,7 +13,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import {
+import type {
     ExternalServiceKind,
     FirstCommitDateResult,
     FirstCommitDateVariables,
@@ -339,13 +339,11 @@ export const useBlameHunks = (
         repoName,
         revision,
         filePath,
-        enableCodeMirror,
     }: {
         isPackage: boolean
         repoName: string
         revision: string
         filePath: string
-        enableCodeMirror: boolean
     },
     sourcegraphURL: string
 ): BlameHunkData => {
@@ -358,11 +356,11 @@ export const useBlameHunks = (
         useMemo(
             () =>
                 shouldFetchBlame
-                    ? enableCodeMirror && enableStreamingGitBlame
+                    ? enableStreamingGitBlame
                         ? fetchBlameViaStreaming({ revision, repoName, filePath, sourcegraphURL })
                         : fetchBlameViaGraphQL({ revision, repoName, filePath, sourcegraphURL })
                     : of({ current: undefined, externalURLs: undefined, firstCommitDate: undefined }),
-            [shouldFetchBlame, enableCodeMirror, enableStreamingGitBlame, revision, repoName, filePath, sourcegraphURL]
+            [shouldFetchBlame, enableStreamingGitBlame, revision, repoName, filePath, sourcegraphURL]
         )
     )
 

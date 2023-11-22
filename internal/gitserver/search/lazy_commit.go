@@ -68,21 +68,28 @@ func (l *LazyCommit) Diff() ([]*godiff.FileDiff, error) {
 	return diff, nil
 }
 
-func (l *LazyCommit) ParentIDs() []api.CommitID {
+func (l *LazyCommit) ParentIDs() ([]api.CommitID, error) {
+	if len(l.ParentHashes) == 0 {
+		return nil, nil
+	}
 	strs := strings.Split(string(l.ParentHashes), " ")
 	commitIDs := make([]api.CommitID, 0, len(strs))
 	for _, str := range strs {
-		commitIDs = append(commitIDs, api.CommitID(str))
+		commitID, err := api.NewCommitID(str)
+		if err != nil {
+			return nil, err
+		}
+		commitIDs = append(commitIDs, commitID)
 	}
-	return commitIDs
+	return commitIDs, nil
 }
 
 func (l *LazyCommit) RefNames() []string {
-	return strings.Split(string(l.RawCommit.RefNames), ", ")
+	return strings.Split(utf8String(l.RawCommit.RefNames), ", ")
 }
 
 func (l *LazyCommit) SourceRefs() []string {
-	return strings.Split(string(l.RawCommit.SourceRefs), ", ")
+	return strings.Split(utf8String(l.RawCommit.SourceRefs), ", ")
 }
 
 func (l *LazyCommit) ModifiedFiles() []string {
@@ -100,8 +107,8 @@ func (l *LazyCommit) ModifiedFiles() []string {
 				return files
 			}
 			// A rename entry will be followed by two file names
-			files = append(files, string(l.RawCommit.ModifiedFiles[i+1]))
-			files = append(files, string(l.RawCommit.ModifiedFiles[i+2]))
+			files = append(files, utf8String(l.RawCommit.ModifiedFiles[i+1]))
+			files = append(files, utf8String(l.RawCommit.ModifiedFiles[i+2]))
 			i += 3
 		default:
 			// SAFETY: don't assume that we have the right number of things
@@ -109,7 +116,7 @@ func (l *LazyCommit) ModifiedFiles() []string {
 				return files
 			}
 			// Any entry that is not a rename entry will only be followed by one file name
-			files = append(files, string(l.RawCommit.ModifiedFiles[i+1]))
+			files = append(files, utf8String(l.RawCommit.ModifiedFiles[i+1]))
 			i += 2
 		}
 	}

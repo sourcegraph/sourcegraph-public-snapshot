@@ -1,20 +1,19 @@
-import { QueryResult } from '@apollo/client'
+import type { QueryResult } from '@apollo/client'
 import { parse as parseJSONC } from 'jsonc-parser'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map, mapTo, tap } from 'rxjs/operators'
 
 import { resetAllMemoizationCaches } from '@sourcegraph/common'
 import { createInvalidGraphQLMutationResponseError, dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { mutateGraphQL, queryGraphQL, requestGraphQL } from '../backend/graphql'
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     AllConfigResult,
-    CheckMirrorRepositoryConnectionResult,
     CreateUserResult,
     DeleteOrganizationResult,
     DeleteOrganizationVariables,
@@ -55,6 +54,9 @@ import {
     WebhookPageHeaderVariables,
     WebhooksListResult,
     WebhooksListVariables,
+    GitserversVariables,
+    GitserversResult,
+    GitserverFields,
 } from '../graphql-operations'
 import { accessTokenFragment } from '../settings/tokens/AccessTokenNode'
 
@@ -110,6 +112,7 @@ const mirrorRepositoryInfoFieldsFragment = gql`
     fragment MirrorRepositoryInfoFields on MirrorRepositoryInfo {
         cloned
         cloneInProgress
+        cloneProgress @include(if: $displayCloneProgress)
         updatedAt
         nextSyncAt
         isCorrupted
@@ -147,6 +150,7 @@ const siteAdminRepositoryFieldsFragment = gql`
         externalRepository {
             ...ExternalRepositoryFields
         }
+        embeddingExists
     }
 `
 export const REPOSITORIES_QUERY = gql`
@@ -158,12 +162,15 @@ export const REPOSITORIES_QUERY = gql`
         $query: String
         $indexed: Boolean
         $notIndexed: Boolean
+        $embedded: Boolean
+        $notEmbedded: Boolean
         $failedFetch: Boolean
         $corrupted: Boolean
         $cloneStatus: CloneStatus
         $orderBy: RepositoryOrderBy
         $descending: Boolean
         $externalService: ID
+        $displayCloneProgress: Boolean = false
     ) {
         repositories(
             first: $first
@@ -173,6 +180,8 @@ export const REPOSITORIES_QUERY = gql`
             query: $query
             indexed: $indexed
             notIndexed: $notIndexed
+            embedded: $embedded
+            notEmbedded: $notEmbedded
             failedFetch: $failedFetch
             corrupted: $corrupted
             cloneStatus: $cloneStatus
@@ -301,28 +310,12 @@ export const UPDATE_MIRROR_REPOSITORY = gql`
 `
 
 export const CHECK_MIRROR_REPOSITORY_CONNECTION = gql`
-    mutation CheckMirrorRepositoryConnection($repository: ID, $name: String) {
-        checkMirrorRepositoryConnection(repository: $repository, name: $name) {
+    mutation CheckMirrorRepositoryConnection($repository: ID!) {
+        checkMirrorRepositoryConnection(repository: $repository) {
             error
         }
     }
 `
-
-export function checkMirrorRepositoryConnection(
-    args:
-        | {
-              repository: Scalars['ID']
-          }
-        | {
-              name: string
-          }
-): Observable<CheckMirrorRepositoryConnectionResult['checkMirrorRepositoryConnection']> {
-    return mutateGraphQL<CheckMirrorRepositoryConnectionResult>(CHECK_MIRROR_REPOSITORY_CONNECTION, args).pipe(
-        map(dataOrThrowErrors),
-        tap(() => resetAllMemoizationCaches()),
-        map(data => data.checkMirrorRepositoryConnection)
-    )
-}
 
 export function scheduleRepositoryPermissionsSync(args: { repository: Scalars['ID'] }): Observable<void> {
     return requestGraphQL<ScheduleRepositoryPermissionsSyncResult, ScheduleRepositoryPermissionsSyncVariables>(
@@ -626,12 +619,35 @@ export const SITE_UPGRADE_READINESS = gql`
     query SiteUpgradeReadiness {
         site {
             upgradeReadiness {
-                schemaDrift
+                schemaDrift {
+                    name
+                    problem
+                    solution
+                    diff
+                    statements
+                    urlHint
+                }
                 requiredOutOfBandMigrations {
                     id
                     description
                 }
             }
+            autoUpgradeEnabled
+        }
+    }
+`
+export const GET_AUTO_UPGRADE = gql`
+    query AutoUpgradeEnabled {
+        site {
+            autoUpgradeEnabled
+        }
+    }
+`
+
+export const SET_AUTO_UPGRADE = gql`
+    mutation SetAutoUpgrade($enable: Boolean!) {
+        setAutoUpgrade(enable: $enable) {
+            alwaysNil
         }
     }
 `
@@ -692,6 +708,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
                 ... on FeatureFlagRollout {
                     name
@@ -699,6 +717,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
             }
 
@@ -725,9 +745,16 @@ export const STATUS_AND_REPO_STATS = gql`
             failedFetch
             corrupted
             indexed
+            embedded
         }
         statusMessages {
             ... on GitUpdatesDisabled {
+                __typename
+
+                message
+            }
+
+            ... on NoRepositoriesDetected {
                 __typename
 
                 message
@@ -974,7 +1001,13 @@ const siteAdminPackageFieldsFragment = gql`
 `
 
 export const PACKAGES_QUERY = gql`
-    query Packages($kind: PackageRepoReferenceKind, $name: String, $first: Int!, $after: String) {
+    query Packages(
+        $kind: PackageRepoReferenceKind
+        $name: String
+        $first: Int!
+        $after: String
+        $displayCloneProgress: Boolean = false
+    ) {
         packageRepoReferences(kind: $kind, name: $name, first: $first, after: $after) {
             nodes {
                 ...SiteAdminPackageFields
@@ -1019,9 +1052,40 @@ export const SITE_CONFIGURATION_CHANGE_CONNECTION_QUERY = gql`
             id
             username
             displayName
+            avatarURL
         }
-        reproducedDiff
         diff
         createdAt
     }
 `
+
+const gitserverFieldsFragment = gql`
+    fragment GitserverFields on GitserverInstance {
+        id
+        address
+        freeDiskSpaceBytes
+        totalDiskSpaceBytes
+    }
+`
+
+export const GITSERVERS = gql`
+    query Gitservers {
+        gitservers {
+            nodes {
+                ...GitserverFields
+            }
+        }
+    }
+
+    ${gitserverFieldsFragment}
+`
+
+export const useGitserversConnection = (): UseShowMorePaginationResult<GitserversResult, GitserverFields> =>
+    useShowMorePagination<GitserversResult, GitserversVariables, GitserverFields>({
+        query: GITSERVERS,
+        variables: {},
+        getConnection: result => {
+            const { gitservers } = dataOrThrowErrors(result)
+            return gitservers
+        },
+    })

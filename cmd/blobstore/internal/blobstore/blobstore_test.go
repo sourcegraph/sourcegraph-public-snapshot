@@ -11,6 +11,7 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/blobstore/internal/blobstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -112,6 +113,78 @@ func TestGetExists(t *testing.T) {
 	})
 }
 
+// Initialize uploadstore, upload objects, list the keys
+func TestList(t *testing.T) {
+	ctx := context.Background()
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
+	defer server.Close()
+
+	// Upload three objects
+	uploaded, err := store.Upload(ctx, "foobar1", strings.NewReader("Hello 1! "))
+	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	uploaded, err = store.Upload(ctx, "foobar2", strings.NewReader("Hello 3!"))
+	autogold.Expect([]interface{}{8, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	uploaded, err = store.Upload(ctx, "banana", strings.NewReader("Hello 2! "))
+	autogold.Expect([]interface{}{9, "<nil>"}).Equal(t, []any{uploaded, fmt.Sprint(err)})
+
+	tc := []struct {
+		prefix string
+		keys   []string
+	}{
+		{
+			prefix: "foobar",
+			keys:   []string{"foobar1", "foobar2"},
+		},
+		{
+			prefix: "banana",
+			keys:   []string{"banana"},
+		},
+		{
+			prefix: "",
+			keys:   []string{"banana", "foobar1", "foobar2"},
+		},
+	}
+
+	for _, c := range tc {
+		t.Run(c.prefix, func(t *testing.T) {
+			iter, err := store.List(ctx, c.prefix)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var keys []string
+			for iter.Next() {
+				keys = append(keys, iter.Current())
+			}
+
+			require.Equal(t, c.keys, keys)
+		},
+		)
+	}
+}
+
+func TestListEmpty(t *testing.T) {
+	ctx := context.Background()
+	store, server, _ := initTestStore(ctx, t, t.TempDir())
+	defer server.Close()
+
+	iter, err := store.List(ctx, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var keys []string
+	for iter.Next() {
+		keys = append(keys, iter.Current())
+	}
+
+	if len(keys) != 0 {
+		t.Fatalf("expected 0 keys but got %v", keys)
+	}
+}
+
 // Initialize uploadstore, upload two objects, compose them together
 //
 // Compose will concatenate the given source objects together and write to the given
@@ -134,7 +207,7 @@ func TestCompose(t *testing.T) {
 
 	// Compose the objects together.
 	resultLength, err := store.Compose(ctx, "foobar-result", "foobar1", "foobar2", "foobar3")
-	autogold.Expect([]interface{}{0, "<nil>"}).Equal(t, []any{resultLength, fmt.Sprint(err)})
+	autogold.Expect([]interface{}{26, "<nil>"}).Equal(t, []any{resultLength, fmt.Sprint(err)})
 
 	// Check the resulting object
 	reader, err := store.Get(ctx, "foobar-result")
@@ -145,7 +218,7 @@ func TestCompose(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	autogold.Expect("").Equal(t, string(data))
+	autogold.Expect("Hello 1! Hello 2! Hello 3!").Equal(t, string(data))
 
 	// Ensure the three objects we uploaded have been deleted.
 	assertObjectDoesNotExist(ctx, store, t, "foobar1")
@@ -175,9 +248,6 @@ func TestDelete(t *testing.T) {
 
 // Initialize uploadstore, upload objects, expire them
 func TestExpireObjects(t *testing.T) {
-	// TODO(blobstore): Disabled because listing objects is not yet implemented.
-	t.SkipNow()
-
 	ctx := context.Background()
 	store, server, svc := initTestStore(ctx, t, t.TempDir())
 	defer server.Close()

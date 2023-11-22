@@ -54,6 +54,7 @@ export const fileDiffFields = gql`
         mostRelevantFile {
             __typename
             url
+            changelistURL
         }
         hunks {
             ...FileDiffHunkFields

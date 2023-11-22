@@ -1,19 +1,19 @@
 import * as comlink from 'comlink'
 import { isMatch } from 'lodash'
-import { ReplaySubject, Subscription, Unsubscribable } from 'rxjs'
-import * as sourcegraph from 'sourcegraph'
+import { ReplaySubject, Subscription, type Unsubscribable } from 'rxjs'
+import type * as sourcegraph from 'sourcegraph'
 
-import { EndpointPair } from '../../platform/context'
-import { SettingsCascade } from '../../settings/settings'
-import { ClientAPI } from '../client/api/api'
+import type { EndpointPair } from '../../platform/context'
+import type { SettingsCascade } from '../../settings/settings'
+import type { ClientAPI } from '../client/api/api'
 import { registerComlinkTransferHandlers } from '../util'
 
 import { activateExtensions, replaceAPIRequire } from './activation'
-import { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
+import type { ExtensionHostAPI, ExtensionHostAPIFactory } from './api/api'
 import { setActiveLoggers } from './api/logging'
 import { createExtensionAPIFactory } from './extensionApi'
 import { createExtensionHostAPI } from './extensionHostApi'
-import { createExtensionHostState, ExtensionHostState } from './extensionHostState'
+import { createExtensionHostState, type ExtensionHostState } from './extensionHostState'
 
 /**
  * Required information when initializing an extension host.

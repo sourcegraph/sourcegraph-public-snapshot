@@ -1,9 +1,9 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { addSeconds, isBefore } from 'date-fns'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
-import { ChangesetCountsOverTimeFields, ChangesetCountsOverTimeResult } from '../../../graphql-operations'
+import type { ChangesetCountsOverTimeFields, ChangesetCountsOverTimeResult } from '../../../graphql-operations'
 
 import { CHANGESET_COUNTS_OVER_TIME } from './backend'
 

@@ -50,19 +50,19 @@ Create a batch change by specifying a search query to get a list of repositories
 <div class="getting-started">
   <a href="quickstart" class="btn" alt="Run through the Quickstart guide">
    <span>New to Batch Changes?</span>
-   </br>
+   <br>
    Run through the <b>quickstart guide</b> and create a batch change in less than 10 minutes.
   </a>
 
   <a href="https://www.youtube.com/watch?v=GKyHYqH6ggY" class="btn" alt="Watch the Batch Changes demo video">
    <span>Demo video</span>
-   </br>
+   <br>
    Watch the Batch Changes demo video to see what it's capable of.
   </a>
 
   <a href="explanations/introduction_to_batch_changes" class="btn" alt="Read the Introduction to Batch Changes">
    <span>Introduction to Batch Changes</span>
-   </br>
+   <br>
    Find out what Batch Changes is, learn key concepts and see what others use them for.
   </a>
 </div>
@@ -74,7 +74,7 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Batch Changes design](explanations/batch_changes_design.md)
 - [How `src` executes a batch spec](explanations/how_src_executes_a_batch_spec.md)
 - [Re-executing batch specs multiple times](explanations/reexecuting_batch_specs_multiple_times.md)
-- <span class="badge badge-beta">Beta</span> [Running batch changes server-side](explanations/server_side.md)
+- [Running batch changes server-side](explanations/server_side.md)
 
 ## How-tos
 

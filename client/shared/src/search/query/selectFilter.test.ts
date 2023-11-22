@@ -1,5 +1,7 @@
+import { describe, expect, test } from 'vitest'
+
 import { selectorCompletion } from './selectFilter'
-import { Literal, createLiteral } from './token'
+import { type Literal, createLiteral } from './token'
 
 expect.addSnapshotSerializer({
     serialize: (value: string[]): string => value.join(',\n'),

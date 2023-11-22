@@ -1,15 +1,216 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("macro.bzl", "container_dependencies", "dependencies_tars")
+load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
     name = "server_lib",
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/server",
     visibility = ["//visibility:private"],
-    deps = ["//cmd/server/shared"],
+    deps = [
+        "//client/web/dist",
+        "//cmd/server/shared",
+        "//internal/sanitycheck",
+    ],
 )
 
 go_binary(
     name = "server",
     embed = [":server_lib"],
+    gotags = [
+        "netgo",
+        "dist",
+    ],
+    pure = "on",
     visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+)
+
+pkg_tar(
+    name = "tar_server",
+    srcs = [":server"],
+)
+
+exports_files(["postgres_exporter.yaml"])
+
+genrule(
+    name = "nginx_tmp_folder",
+    outs = [".keep_tmp"],
+    cmd = "echo keep > $@",
+)
+
+genrule(
+    name = "nginx_run_folder",
+    outs = [".keep_run"],
+    cmd = "echo keep > $@",
+)
+
+pkg_tar(
+    name = "static_config_tar",
+    srcs = [
+        ":nginx_run_folder",
+        ":nginx_tmp_folder",
+    ],
+    remap_paths = {
+        "/.keep_tmp": "/var/lib/nginx/tmp/.keep",
+        "/.keep_run": "/var/run/.keep",
+    },
+)
+
+pkg_tar(
+    name = "tar_postgres_exporter_config",
+    srcs = ["postgres_exporter.yaml"],
+)
+
+pkg_tar(
+    name = "tar_monitoring_config",
+    srcs = [
+        "//dev/prometheus:prometheus_targets_linux",
+        "//docker-images/grafana/config",
+        "//docker-images/prometheus:startup_scripts",
+        "//docker-images/prometheus/config:base_config",
+        "//monitoring:generate_config",
+    ],
+    remap_paths = {
+        "monitoring/outputs/docs": "/sg_config_docs",
+        "monitoring/outputs/prometheus": "/sg_config_prometheus",
+        "monitoring/outputs/grafana": "/sg_config_grafana/provisioning/dashboards/sourcegraph",
+        "docker-images/grafana/config": "/sg_config_grafana",
+        "docker-images/prometheus/config": "/sg_config_prometheus",
+        "docker-images/prometheus": "",
+        "dev/prometheus/linux": "/sg_prometheus_add_ons",
+    },
+    strip_prefix = ".",
+)
+
+DEPS = [
+    "//cmd/precise-code-intel-worker",
+    "//cmd/searcher",
+    "//cmd/embeddings",
+    "//cmd/frontend",
+    "//cmd/gitserver",
+    "//cmd/migrator",
+    "//cmd/repo-updater",
+    "//cmd/symbols",
+    "//cmd/worker",
+]
+
+ZOEKT_DEPS = [
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-git-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-webserver",
+]
+
+# Declares rules for pkg_tar for each dep in DEPS
+container_dependencies(DEPS)
+
+container_dependencies(ZOEKT_DEPS)
+
+# This one is a special case because inside server images, the procfile expects to find it
+# under syntax-highlighter instead of syntect_server.
+pkg_tar(
+    name = "tar_syntax-highlighter",
+    srcs = ["//docker-images/syntax-highlighter:syntect_server"],
+    remap_paths = {"/syntect_server": "/usr/local/bin/syntax_highlighter"},
+)
+
+pkg_tar(
+    name = "tar_scip-ctags",
+    srcs = ["//docker-images/syntax-highlighter:scip-ctags"],
+    package_dir = "/usr/local/bin",
+)
+
+pkg_tar(
+    name = "tar_postgres_optimize",
+    srcs = [
+        "//cmd/server/rootfs:postgres-optimize.sh",
+    ],
+)
+
+pkg_tar(
+    name = "tar_postgres_reindex",
+    srcs = [
+        "//docker-images/postgres-12-alpine/rootfs:reindex.sh",
+    ],
+    package_dir = "/",
+)
+
+# TODO(@jhchabran) prom-wrapper has to be in /bin while we're still
+# building the old and new images, because this path is fed to the procfile
+# by the server, and cannot be placed at two different places.
+pkg_tar(
+    name = "tar_prom-wrapper",
+    srcs = ["//docker-images/prometheus/cmd/prom-wrapper"],
+    package_dir = "/bin",
+)
+
+pkg_tar(
+    name = "tar_image_test_scripts",
+    srcs = ["//cmd/server/image_tests:scripts"],
+    package_dir = "/opt/image_tests",
+)
+
+# Tip: to view exactly what gets built here, you can run:
+#   bazel cquery '//cmd/server:image' --output build
+oci_image(
+    name = "image",
+    base = "@wolfi_server_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/server",
+    ],
+    env = {
+        "GO111MODULES": "on",
+        "LANG": "en_US.utf8",
+        "LC_ALL": "en_US.utf8",
+        # "PGHOST": "/var/run/postgresql",
+    },
+    tars = [
+        ":tar_server",
+        ":static_config_tar",
+        ":tar_postgres_exporter_config",
+        ":tar_monitoring_config",
+        ":tar_syntax-highlighter",
+        ":tar_scip-ctags",
+        ":tar_postgres_optimize",
+        ":tar_postgres_reindex",
+        ":tar_prom-wrapper",
+        "//cmd/gitserver:tar_p4_fusion_wrappers",
+        "//monitoring:generate_grafana_config_tar",
+        "tar_image_test_scripts",
+    ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
+    workdir = "/",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["server:candidate"],
+    visibility = ["//testing:__pkg__"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("server"),
 )

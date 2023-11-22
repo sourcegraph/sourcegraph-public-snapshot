@@ -1,3 +1,5 @@
+import { afterAll, describe, expect, it } from 'vitest'
+
 import { DOM } from './dom'
 
 describe('can create dom elements from generated code tables', () => {

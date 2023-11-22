@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { H3 } from '@sourcegraph/wildcard'
 
-import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
+import type { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
 import { ChangesetLastSynced } from './ChangesetLastSynced'
 

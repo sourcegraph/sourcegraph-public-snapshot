@@ -1,0 +1,40 @@
+- steps: []
+  local_steps: []
+  root: a
+  indexer: sourcegraph/scip-ruby@sha256:ef53e5f1450330ddb4a3edce963b7e10d900d44ff1e7de4960680289ac25f319
+  indexer_args:
+    - scip-ruby-autoindex
+  outfile: index.scip
+  requestedEnvVars: []
+- steps: []
+  local_steps: []
+  root: b
+  indexer: sourcegraph/scip-ruby@sha256:ef53e5f1450330ddb4a3edce963b7e10d900d44ff1e7de4960680289ac25f319
+  indexer_args:
+    - scip-ruby-autoindex
+  outfile: index.scip
+  requestedEnvVars: []
+- steps: []
+  local_steps: []
+  root: c
+  indexer: sourcegraph/scip-ruby@sha256:ef53e5f1450330ddb4a3edce963b7e10d900d44ff1e7de4960680289ac25f319
+  indexer_args:
+    - scip-ruby-autoindex
+  outfile: index.scip
+  requestedEnvVars: []
+- steps: []
+  local_steps: []
+  root: d
+  indexer: sourcegraph/scip-ruby@sha256:ef53e5f1450330ddb4a3edce963b7e10d900d44ff1e7de4960680289ac25f319
+  indexer_args:
+    - scip-ruby-autoindex
+  outfile: index.scip
+  requestedEnvVars: []
+- steps: []
+  local_steps: []
+  root: e
+  indexer: sourcegraph/scip-ruby@sha256:ef53e5f1450330ddb4a3edce963b7e10d900d44ff1e7de4960680289ac25f319
+  indexer_args:
+    - scip-ruby-autoindex
+  outfile: index.scip
+  requestedEnvVars: []

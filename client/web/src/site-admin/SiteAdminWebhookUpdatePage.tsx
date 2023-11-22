@@ -1,9 +1,9 @@
-import { FC, useEffect } from 'react'
+import { type FC, useEffect } from 'react'
 
 import { mdiWebhook } from '@mdi/js'
 import { useParams } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { CreatedByAndUpdatedByInfoByline } from '../components/Byline/CreatedByAndUpdatedByInfoByline'

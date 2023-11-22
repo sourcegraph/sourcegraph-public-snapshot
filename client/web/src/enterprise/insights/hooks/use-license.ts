@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 
 import { gql, useApolloClient } from '@apollo/client'
 
-import { IsCodeInsightsLicensedResult } from '../../../graphql-operations'
+import type { IsCodeInsightsLicensedResult } from '../../../graphql-operations'
 import { useCodeInsightsLicenseState } from '../stores'
 
 /**

@@ -1,14 +1,16 @@
-import { MouseEvent, useCallback } from 'react'
+import { type MouseEvent, useCallback } from 'react'
 
-import { mdiArrowRight, mdiChevronDown, mdiChevronUp } from '@mdi/js'
+import { mdiChevronDown, mdiChevronUp, mdiArrowRight } from '@mdi/js'
 
-import { SyntaxHighlightedSearchQuery, smartSearchIconSvgPath } from '@sourcegraph/branded'
-import { formatSearchParameters, pluralize } from '@sourcegraph/common'
-import { AggregateStreamingSearchResults, AlertKind, SmartSearchAlertKind } from '@sourcegraph/shared/src/search/stream'
+import { smartSearchIconSvgPath, SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
+import { pluralize, formatSearchParameters } from '@sourcegraph/common'
+import type {
+    AggregateStreamingSearchResults,
+    AlertKind,
+    SmartSearchAlertKind,
+} from '@sourcegraph/shared/src/search/stream'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import {
-    Link,
-    createLinkUrl,
     Icon,
     Collapse,
     CollapseHeader,
@@ -16,6 +18,8 @@ import {
     H2,
     Text,
     Button,
+    Link,
+    createLinkUrl,
 } from '@sourcegraph/wildcard'
 
 import { SearchPatternType } from '../../graphql-operations'
@@ -25,13 +29,6 @@ import styles from './QuerySuggestion.module.scss'
 interface SmartSearchProps {
     alert: Required<AggregateStreamingSearchResults>['alert'] | undefined
     onDisableSmartSearch: () => void
-}
-
-const processDescription = (description: string): string => {
-    const split = description.split(' ⚬ ')
-
-    split[0] = split[0][0].toUpperCase() + split[0].slice(1)
-    return split.join(', ')
 }
 
 const alertContent: {
@@ -137,26 +134,26 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
                                     })}
                                     className={styles.link}
                                 >
-                                    <span>
-                                        <span className={styles.listItemDescription}>{`${processDescription(
-                                            entry.description || ''
-                                        )}`}</span>
+                                    <Text className="mb-0">
+                                        <span className={styles.listItemDescription}>
+                                            {processDescription(entry.description || '')}
+                                        </span>
+                                        <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
+                                        <span className={styles.suggestion}>
+                                            <SyntaxHighlightedSearchQuery
+                                                query={entry.query}
+                                                searchPatternType={SearchPatternType.standard}
+                                            />
+                                        </span>
                                         {entry.annotations
                                             ?.filter(({ name }) => name === 'ResultCount')
                                             ?.map(({ name, value }) => (
-                                                <span key={name} className="text-muted">
+                                                <span key={name} className="text-muted ml-2">
                                                     {' '}
                                                     ({value})
                                                 </span>
                                             ))}
-                                    </span>
-                                    <Icon svgPath={mdiArrowRight} aria-hidden={true} className="mx-2 text-body" />
-                                    <span className={styles.suggestion}>
-                                        <SyntaxHighlightedSearchQuery
-                                            query={entry.query}
-                                            searchPatternType={SearchPatternType.standard}
-                                        />
-                                    </span>
+                                    </Text>
                                 </Link>
                             </li>
                         ))}
@@ -165,6 +162,13 @@ export const SmartSearch: React.FunctionComponent<React.PropsWithChildren<SmartS
             </Collapse>
         </div>
     )
+}
+
+const processDescription = (description: string): string => {
+    const split = description.split(' ⚬ ')
+
+    split[0] = split[0][0].toUpperCase() + split[0].slice(1)
+    return split.join(', ')
 }
 
 export const smartSearchEvent = (alertKind: AlertKind, alertTitle: string, descriptions: string[]): string[] => {

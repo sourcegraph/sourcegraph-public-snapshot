@@ -4,8 +4,8 @@ import { pluralize } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Alert, Link, Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { ViewerBatchChangesCodeHostsFields } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import type { ViewerBatchChangesCodeHostsFields } from '../../graphql-operations'
 
 import { CodeHost } from './CodeHost'
 

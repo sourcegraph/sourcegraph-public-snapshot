@@ -1,15 +1,21 @@
-import { FC, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 
 import { noop } from 'rxjs'
 
-import { useForm, useField, FormChangeEvent, SubmissionErrors, createRequiredValidator } from '@sourcegraph/wildcard'
+import {
+    useForm,
+    useField,
+    type FormChangeEvent,
+    type SubmissionErrors,
+    createRequiredValidator,
+} from '@sourcegraph/wildcard'
 
 import { CreationUiLayout, CreationUIForm, CreationUIPreview, insightTitleValidator } from '../../../../../components'
-import { LangStatsCreationFormFields } from '../types'
+import type { LangStatsCreationFormFields } from '../types'
 
 import {
     LangStatsInsightCreationForm,
-    RenderPropertyInputs,
+    type RenderPropertyInputs,
 } from './lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from './live-preview-chart/LangStatsInsightLivePreview'
 import { repositoryValidator, useRepositoryExistsValidator } from './validators'

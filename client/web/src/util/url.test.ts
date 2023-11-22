@@ -1,4 +1,6 @@
-import { RepoFile } from '@sourcegraph/shared/src/util/url'
+import { describe, expect, test } from 'vitest'
+
+import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 
 import { parseBrowserRepoURL, toTreeURL } from './url'
 

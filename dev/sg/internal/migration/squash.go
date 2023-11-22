@@ -264,7 +264,7 @@ func setupDatabaseForSquash(database db.Database, runInContainer, runInTimescale
 
 // runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
 func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
-	logger := log.Scoped("runTargetedUpMigrations", "")
+	logger := log.Scoped("runTargetedUpMigrations")
 
 	pending := std.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
@@ -296,7 +296,7 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
 
-	r, err := connections.RunnerFromDSNs(logger.IncreaseLevel("runner", "", log.LevelNone), dsns, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(std.Out.Output, logger.IncreaseLevel("runner", "", log.LevelNone), dsns, "sg", storeFactory)
 	if err != nil {
 		return err
 	}

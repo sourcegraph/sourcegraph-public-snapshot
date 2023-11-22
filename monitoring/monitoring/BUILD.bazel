@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "monitoring",
@@ -21,6 +22,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//lib/errors",
+        "//lib/pointers",
         "//monitoring/grafanaclient",
         "//monitoring/monitoring/internal/grafana",
         "//monitoring/monitoring/internal/promql",

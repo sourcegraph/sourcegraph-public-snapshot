@@ -1,17 +1,17 @@
 import React, { useState } from 'react'
 
-import * as H from 'history'
+import type * as H from 'history'
 import SearchIcon from 'mdi-react/SearchIcon'
 import { useLocation } from 'react-router-dom'
 
 import { createAggregateError, escapeRevspecForURL } from '@sourcegraph/common'
-import { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { GitRefType, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { useShowMorePagination } from '../../components/FilteredConnection/hooks/useShowMorePagination'
 import { ConnectionSummary } from '../../components/FilteredConnection/ui'
-import { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
-import { GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference'
+import type { GitRefFields, RepositoryGitRefsResult, RepositoryGitRefsVariables } from '../../graphql-operations'
+import { type GitReferenceNodeProps, REPOSITORY_GIT_REFS } from '../GitReference'
 
 import { ConnectionPopoverGitReferenceNode } from './components'
 import { RevisionsPopoverTab } from './RevisionsPopoverTab'

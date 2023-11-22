@@ -77,7 +77,7 @@ set -euxo pipefail
 ###############################################################################
 # Please read the notes below the script if you are cloning a private repository
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v5.0.0'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v5.2.3'
 ##################### NO CHANGES REQUIRED BELOW THIS LINE #####################
 DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 DOCKER_COMPOSE_VERSION='1.29.2'

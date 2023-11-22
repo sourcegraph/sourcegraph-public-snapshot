@@ -1,8 +1,8 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
-import { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
+import type { SubmitSurveyResult, SubmitSurveyVariables } from '../../graphql-operations'
 
 import { SUBMIT_SURVEY } from './SurveyForm'
 

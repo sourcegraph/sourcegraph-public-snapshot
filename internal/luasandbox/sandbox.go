@@ -3,7 +3,10 @@ package luasandbox
 import (
 	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -33,6 +36,7 @@ func (s *Sandbox) Close() {
 // RunScript runs the given Lua script text in the sandbox.
 func (s *Sandbox) RunScript(ctx context.Context, opts RunOptions, script string) (retValue lua.LValue, err error) {
 	ctx, _, endObservation := s.operations.runScript.With(ctx, &err, observation.Args{})
+
 	defer endObservation(1, observation.Args{})
 
 	return s.RunScriptNamed(ctx, opts, singleScriptFS{script}, "main.lua")
@@ -83,7 +87,7 @@ func (s *Sandbox) RunScriptNamed(ctx context.Context, opts RunOptions, fs FS, na
 }
 
 // makeScopedLoadfile creates a Lua function that will read the file relative to the given
-// filesystem indiciated by the invocation parameter and return the resulting function.
+// filesystem indicated by the invocation parameter and return the resulting function.
 func makeScopedLoadfile(state *lua.LState, fs FS) *lua.LFunction {
 	return state.NewFunction(util.WrapLuaFunction(func(state *lua.LState) error {
 		filename := state.CheckString(1)
@@ -165,7 +169,8 @@ func (s *Sandbox) CallGenerator(ctx context.Context, opts RunOptions, luaFunctio
 }
 
 type RunOptions struct {
-	Timeout time.Duration
+	Timeout   time.Duration
+	PrintSink io.Writer
 }
 
 const DefaultTimeout = time.Millisecond * 200
@@ -188,5 +193,24 @@ func (s *Sandbox) RunGoCallback(ctx context.Context, opts RunOptions, f func(ctx
 	s.state.SetContext(ctx)
 	defer s.state.RemoveContext()
 
+	// Setup print based on run options
+	s.state.SetGlobal("print", makeScopedPrint(s.state, opts.PrintSink))
+	defer s.state.SetGlobal("print", lua.LNil)
+
 	return f(ctx, s.state)
+}
+
+// makeScopedPrint creates a Lua function that will write the given string parameter to
+// the given writer.
+func makeScopedPrint(state *lua.LState, w io.Writer) *lua.LFunction {
+	return state.NewFunction(util.WrapLuaFunction(func(state *lua.LState) error {
+		message := state.CheckString(1)
+		if w == nil {
+			return nil
+		}
+
+		formattedMessage := fmt.Sprintf("[%s] %s\n", time.Now().UTC().Format(time.RFC3339), message)
+		_, err := io.Copy(w, strings.NewReader(formattedMessage))
+		return err
+	}))
 }

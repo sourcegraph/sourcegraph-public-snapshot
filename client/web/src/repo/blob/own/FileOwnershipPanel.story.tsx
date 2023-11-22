@@ -1,21 +1,28 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../../components/WebStory'
-import { FetchOwnershipResult } from '../../../graphql-operations'
+import type { FetchOwnershipResult } from '../../../graphql-operations'
 
 import { FileOwnershipPanel } from './FileOwnershipPanel'
 import { FETCH_OWNERS } from './grapqlQueries'
 
 const response: FetchOwnershipResult = {
+    currentUser: {
+        permissions: { nodes: [] },
+    },
     node: {
         __typename: 'Repository',
         commit: {
+            __typename: 'GitCommit',
             blob: {
+                __typename: 'GitBlob',
                 ownership: {
+                    __typename: 'OwnershipConnection',
+                    totalOwners: 4,
                     nodes: [
                         {
                             __typename: 'Ownership',
@@ -47,6 +54,7 @@ const response: FetchOwnershipResult = {
                                 avatarURL: 'https://avatars.githubusercontent.com/u/5090588?v=4',
                                 displayName: 'Bob the Builder',
                                 user: {
+                                    id: 'user1',
                                     __typename: 'User',
                                     displayName: 'Bob the Builder',
                                     url: '/users/bob',
@@ -68,27 +76,11 @@ const response: FetchOwnershipResult = {
                                     },
                                     ruleLineMatch: 10,
                                 },
-                            ],
-                        },
-                        {
-                            __typename: 'Ownership',
-                            owner: {
-                                __typename: 'Person',
-                                email: '',
-                                avatarURL: null,
-                                displayName: 'charlie',
-                                user: null,
-                            },
-                            reasons: [
                                 {
-                                    __typename: 'CodeownersFileEntry',
-                                    title: 'CodeOwner',
-                                    description: 'This person is listed in the CODEOWNERS file',
-                                    codeownersFile: {
-                                        __typename: 'VirtualFile',
-                                        url: '/own',
-                                    },
-                                    ruleLineMatch: 10,
+                                    __typename: 'RecentContributorOwnershipSignal',
+                                    title: 'Recent Contributor',
+                                    description:
+                                        'Associated because they have contributed to this file in the last 90 days',
                                 },
                             ],
                         },
@@ -96,9 +88,11 @@ const response: FetchOwnershipResult = {
                             __typename: 'Ownership',
                             owner: {
                                 __typename: 'Team',
+                                id: 'asdf',
                                 avatarURL: null,
                                 teamDisplayName: 'Delta Team',
                                 name: 'delta',
+                                external: false,
                                 url: '/teams/delta',
                             },
                             reasons: [
@@ -114,10 +108,51 @@ const response: FetchOwnershipResult = {
                                 },
                             ],
                         },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Person',
+                                email: '',
+                                avatarURL: null,
+                                displayName: 'charlie',
+                                user: null,
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'RecentContributorOwnershipSignal',
+                                    title: 'Recent Contributor',
+                                    description:
+                                        'Associated because they have contributed to this file in the last 90 days',
+                                },
+                                {
+                                    __typename: 'RecentViewOwnershipSignal',
+                                    title: 'Recent View',
+                                    description: 'Associated because they have viewed this file in the last 90 days.',
+                                },
+                            ],
+                        },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Person',
+                                email: '',
+                                avatarURL: null,
+                                displayName: 'alice',
+                                user: null,
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'RecentViewOwnershipSignal',
+                                    title: 'Recent View',
+                                    description: 'Associated because they have viewed this file in the last 90 days.',
+                                },
+                            ],
+                        },
                     ],
                 },
             },
         },
+        changelist: null,
     },
 }
 
@@ -144,7 +179,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory mocks={[mockResponse]}>
         {() => (
             <FileOwnershipPanel

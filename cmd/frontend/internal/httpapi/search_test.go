@@ -24,7 +24,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -92,6 +94,9 @@ func TestServeConfiguration(t *testing.T) {
 				continue
 			}
 
+			sort.Slice(repo.LanguageMap, func(i, j int) bool {
+				return repo.LanguageMap[i].Language > repo.LanguageMap[j].Language
+			})
 			receivedRepositories = append(receivedRepositories, repo)
 		}
 
@@ -103,14 +108,24 @@ func TestServeConfiguration(t *testing.T) {
 			t.Errorf("expected to find repo not found error in repo 1: %v", responseRepo1)
 		}
 
+		languageMap := make([]*proto.LanguageMapping, 0)
+		for lang, engine := range ctags_config.DefaultEngines {
+			languageMap = append(languageMap, &proto.LanguageMapping{Language: lang, Ctags: proto.CTagsParserType(engine)})
+		}
+
+		sort.Slice(languageMap, func(i, j int) bool {
+			return languageMap[i].Language > languageMap[j].Language
+		})
+
 		// Verify: Check to see that the response the expected repos 5 and 6
 		expectedRepo5 := &proto.ZoektIndexOptions{
-			RepoId:   5,
-			Name:     "5",
-			Priority: 5,
-			Public:   true,
-			Symbols:  true,
-			Branches: []*proto.ZoektRepositoryBranch{{Name: "HEAD", Version: "!HEAD"}},
+			RepoId:      5,
+			Name:        "5",
+			Priority:    5,
+			Public:      true,
+			Symbols:     true,
+			Branches:    []*proto.ZoektRepositoryBranch{{Name: "HEAD", Version: "!HEAD"}},
+			LanguageMap: languageMap,
 		}
 
 		expectedRepo6 := &proto.ZoektIndexOptions{
@@ -124,6 +139,7 @@ func TestServeConfiguration(t *testing.T) {
 				{Name: "a", Version: "!a"},
 				{Name: "b", Version: "!b"},
 			},
+			LanguageMap: languageMap,
 		}
 
 		expectedRepos := []*proto.ZoektIndexOptions{
@@ -160,8 +176,16 @@ func TestServeConfiguration(t *testing.T) {
 			t.Fatalf("SearchConfiguration: %s", err)
 		}
 
+		fingerprintedResponses := fingerprintedResponse.GetUpdatedOptions()
+
+		for _, res := range fingerprintedResponses {
+			sort.Slice(res.LanguageMap, func(i, j int) bool {
+				return res.LanguageMap[i].Language > res.LanguageMap[j].Language
+			})
+		}
+
 		// Verify that the response contains the expected repo 5
-		if diff := cmp.Diff(fingerprintedResponse.GetUpdatedOptions(), []*proto.ZoektIndexOptions{expectedRepo5}, protocmp.Transform()); diff != "" {
+		if diff := cmp.Diff(fingerprintedResponses, []*proto.ZoektIndexOptions{expectedRepo5}, protocmp.Transform()); diff != "" {
 			t.Errorf("mismatch in fingerprinted repositories (-want, +got):\n%s", diff)
 		}
 
@@ -194,9 +218,9 @@ func TestServeConfiguration(t *testing.T) {
 		// This is a very fragile test since it will depend on changes to
 		// searchbackend.GetIndexOptions. If this becomes a problem we can make it
 		// more robust by shifting around responsibilities.
-		want := `{"Name":"","RepoID":1,"Public":false,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":false,"Error":"repo not found: id=1"}
-{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}
-{"Name":"6","RepoID":6,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"},{"Name":"a","Version":"!a"},{"Name":"b","Version":"!b"}],"Priority":6}`
+		want := `{"Name":"","RepoID":1,"Public":false,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":false,"Error":"repo not found: id=1","LanguageMap":null}
+{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5,"LanguageMap":{"c_sharp":3,"go":3,"javascript":3,"kotlin":3,"python":3,"ruby":3,"rust":3,"scala":3,"typescript":3,"zig":3}}
+{"Name":"6","RepoID":6,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"},{"Name":"a","Version":"!a"},{"Name":"b","Version":"!b"}],"Priority":6,"LanguageMap":{"c_sharp":3,"go":3,"javascript":3,"kotlin":3,"python":3,"ruby":3,"rust":3,"scala":3,"typescript":3,"zig":3}}`
 
 		if d := cmp.Diff(want, string(body)); d != "" {
 			t.Fatalf("mismatch (-want, +got):\n%s", d)
@@ -221,7 +245,7 @@ func TestServeConfiguration(t *testing.T) {
 		// This is a very fragile test since it will depend on changes to
 		// searchbackend.GetIndexOptions. If this becomes a problem we can make it
 		// more robust by shifting around responsibilities.
-		want = `{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}`
+		want = `{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5,"LanguageMap":{"c_sharp":3,"go":3,"javascript":3,"kotlin":3,"python":3,"ruby":3,"rust":3,"scala":3,"typescript":3,"zig":3}}`
 
 		if d := cmp.Diff(want, string(body)); d != "" {
 			t.Fatalf("mismatch (-want, +got):\n%s", d)
@@ -438,7 +462,7 @@ func (*fakeRankingService) GetDocumentRanks(ctx context.Context, repoName api.Re
 // the suffix of hostname.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed map[uint32]*zoekt.MinimalRepoListEntry, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed zoekt.ReposMap, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
 	if !b.Enabled() {
 		return nil, errors.New("indexers disabled")
 	}
@@ -495,8 +519,8 @@ func TestIndexStatusUpdate(t *testing.T) {
 		wantBranches := []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}}
 		called := false
 
-		zoektReposStore := database.NewMockZoektReposStore()
-		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error {
+		zoektReposStore := dbmocks.NewMockZoektReposStore()
+		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed zoekt.ReposMap) error {
 			entry, ok := indexed[1234]
 			if !ok {
 				t.Fatalf("wrong repo ID")
@@ -508,7 +532,7 @@ func TestIndexStatusUpdate(t *testing.T) {
 			return nil
 		})
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.ZoektReposFunc.SetDefaultReturn(zoektReposStore)
 
 		srv := &searchIndexerServer{db: db, logger: logger}
@@ -538,8 +562,8 @@ func TestIndexStatusUpdate(t *testing.T) {
 
 		called := false
 
-		zoektReposStore := database.NewMockZoektReposStore()
-		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error {
+		zoektReposStore := dbmocks.NewMockZoektReposStore()
+		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed zoekt.ReposMap) error {
 			entry, ok := indexed[wantRepoID]
 			if !ok {
 				t.Fatalf("wrong repo ID")
@@ -551,7 +575,7 @@ func TestIndexStatusUpdate(t *testing.T) {
 			return nil
 		})
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.ZoektReposFunc.SetDefaultReturn(zoektReposStore)
 
 		parameters := indexStatusUpdateArgs{

@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "executil",
+    srcs = ["executil.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil",
+    visibility = ["//cmd/gitserver:__subpackages__"],
+    deps = [
+        "//cmd/gitserver/internal/cacert",
+        "//internal/conf",
+        "//internal/trace",
+        "//internal/wrexec",
+        "//lib/errors",
+        "//lib/process",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "executil_test",
+    srcs = ["executil_test.go"],
+    embed = [":executil"],
+    deps = [
+        "//internal/conf",
+        "//schema",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

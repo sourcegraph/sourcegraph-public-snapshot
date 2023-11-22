@@ -3,18 +3,18 @@ import { trimStart } from 'lodash'
 import { createRoot } from 'react-dom/client'
 import { defer, fromEvent, of } from 'rxjs'
 import { distinctUntilChanged, filter, map, startWith } from 'rxjs/operators'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
-import { LineOrPositionOrRange } from '@sourcegraph/common'
+import { AdjustmentDirection, type PositionAdjuster } from '@sourcegraph/codeintellify'
+import type { LineOrPositionOrRange } from '@sourcegraph/common'
 import { observeSystemIsLightTheme } from '@sourcegraph/shared/src/deprecated-theme-utils'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import {
-    FileSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
-    RevisionSpec,
+    type FileSpec,
+    type RepoSpec,
+    type ResolvedRevisionSpec,
+    type RevisionSpec,
     toAbsoluteBlobURL,
 } from '@sourcegraph/shared/src/util/url'
 
@@ -24,14 +24,21 @@ import { SourcegraphIconButton } from '../../components/SourcegraphIconButton'
 import { fetchBlobContentLines } from '../../repo/backend'
 import { getPlatformName } from '../../util/context'
 import { querySelectorAllOrSelf, querySelectorOrSelf } from '../../util/dom'
-import { CodeHost, MountGetter } from '../shared/codeHost'
-import { CodeView, toCodeViewResolver } from '../shared/codeViews'
+import type { CodeHost, MountGetter } from '../shared/codeHost'
+import { type CodeView, toCodeViewResolver } from '../shared/codeViews'
 import { getSelectionsFromHash, observeSelectionsFromHash } from '../shared/util/selections'
-import { ViewResolver } from '../shared/views'
+import type { ViewResolver } from '../shared/views'
 
 import { diffDomFunctions, searchCodeSnippetDOMFunctions, singleFileDOMFunctions } from './domFunctions'
 import { resolveDiffFileInfo, resolveFileInfo, resolveSnippetFileInfo } from './fileInfo'
-import { getFileContainers, parseURL, getSelectorFor } from './util'
+import {
+    getFileContainers,
+    parseURL,
+    getSelectorFor,
+    isNewGitHubUI,
+    getEmbeddedData,
+    windowLocation__testingOnly,
+} from './util'
 
 import styles from './codeHost.module.scss'
 
@@ -159,16 +166,14 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
     mountElement.style.alignItems = 'center'
     mountElement.className = className
 
-    // new GitHub UI
-    const container =
-        codeViewElement.querySelector('#repos-sticky-header')?.childNodes[0]?.childNodes[0]?.childNodes[1]
-            ?.childNodes[1] // we have to use this level of nesting when selecting a target container because #repos-sticky-header children don't have specific classes or ids
+    // new GitHub code view: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view
+    const container = codeViewElement.querySelector('#repos-sticky-header .react-blob-header-edit-and-raw-actions')
     if (container instanceof HTMLElement) {
         container.prepend(mountElement)
         return mountElement
     }
 
-    // old GitHub UI (e.g., GHE)
+    // old GitHub code view (aka new code view feature disabled: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view)
     const rawURLLink = codeViewElement.querySelector('#raw-url')
     const buttonGroup = rawURLLink?.closest('.BtnGroup')
     if (buttonGroup?.parentNode) {
@@ -181,7 +186,6 @@ export const createFileLineContainerToolbarMount: NonNullable<CodeView['getToolb
 
 /**
  * Matches the modern single-file code view, or snippets embedded in comments.
- *
  */
 const fileLineContainerResolver: ViewResolver<CodeView> = {
     selector: getSelectorFor('blobContainer'),
@@ -289,7 +293,8 @@ export function checkIsGitHubEnterprise(): boolean {
 /**
  * Returns true if the current page is github.com.
  */
-export const checkIsGitHubDotCom = (url = window.location.href): boolean => /^https?:\/\/(www\.)?github\.com/.test(url)
+export const checkIsGitHubDotCom = (url = (windowLocation__testingOnly.value ?? window.location).href): boolean =>
+    /^https?:\/\/(www\.)?github\.com/.test(url)
 
 /**
  * Returns true if the current page is either github.com or GitHub Enterprise.
@@ -299,7 +304,11 @@ export const checkIsGitHub = (): boolean => checkIsGitHubDotCom() || checkIsGitH
 const OPEN_ON_SOURCEGRAPH_ID = 'open-on-sourcegraph'
 
 export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLElement): HTMLElement | null => {
-    const pageheadActions = querySelectorOrSelf(container, '.pagehead-actions')
+    const isGlobalNavigationUpdateFeaturePreviewEnabled = !!querySelectorOrSelf(container, 'header.AppHeader')
+    const pageheadActions = querySelectorOrSelf(
+        container,
+        isGlobalNavigationUpdateFeaturePreviewEnabled ? '.AppHeader-globalBar-end' : '.pagehead-actions'
+    )
     // If ran on page that isn't under a repository namespace.
     if (!pageheadActions || pageheadActions.children.length === 0) {
         return null
@@ -310,7 +319,7 @@ export const createOpenOnSourcegraphIfNotExists: MountGetter = (container: HTMLE
         return mount
     }
     // Create new
-    mount = document.createElement('li')
+    mount = document.createElement(isGlobalNavigationUpdateFeaturePreviewEnabled ? 'div' : 'li')
     mount.id = OPEN_ON_SOURCEGRAPH_ID
     pageheadActions.prepend(mount)
     return mount
@@ -380,9 +389,9 @@ const searchEnhancement: GithubCodeHost['searchEnhancement'] = {
 export const isPrivateRepository = async (
     repoName: string,
     fetchCache = background.fetchCache,
-    fallbackSelector = '#repository-container-header h2 span.Label'
+    fallbackSelector = '#repository-container-header span.Label'
 ): Promise<boolean> => {
-    if (window.location.hostname !== 'github.com') {
+    if ((windowLocation__testingOnly.value ?? window.location).hostname !== 'github.com') {
         return Promise.resolve(true)
     }
     try {
@@ -417,12 +426,15 @@ export interface GithubCodeHost extends CodeHost {
 
 export const isGithubCodeHost = (codeHost: CodeHost): codeHost is GithubCodeHost => codeHost.type === 'github'
 
-const isSimpleSearchPage = (): boolean => window.location.pathname === '/search'
-const isAdvancedSearchPage = (): boolean => window.location.pathname === '/search/advanced'
-const isRepoSearchPage = (): boolean => !isSimpleSearchPage() && window.location.pathname.endsWith('/search')
+const isSimpleSearchPage = (): boolean => (windowLocation__testingOnly.value ?? window.location).pathname === '/search'
+const isAdvancedSearchPage = (): boolean =>
+    (windowLocation__testingOnly.value ?? window.location).pathname === '/search/advanced'
+const isRepoSearchPage = (): boolean =>
+    !isSimpleSearchPage() && (windowLocation__testingOnly.value ?? window.location).pathname.endsWith('/search')
 const isSearchResultsPage = (): boolean =>
     // TODO(#44327): Do not rely on window.location.search - it may be present not only on search pages (e.g., issues, pulls, etc.).
-    Boolean(new URLSearchParams(window.location.search).get('q')) && !isAdvancedSearchPage()
+    Boolean(new URLSearchParams((windowLocation__testingOnly.value ?? window.location).search).get('q')) &&
+    !isAdvancedSearchPage()
 const isSearchPage = (): boolean =>
     isSimpleSearchPage() || isAdvancedSearchPage() || isRepoSearchPage() || isSearchResultsPage()
 
@@ -439,7 +451,9 @@ type GithubResultType =
     | 'users'
 
 const getGithubResultType = (): GithubResultType | '' => {
-    const githubResultType = new URLSearchParams(window.location.search).get('type')
+    const githubResultType = new URLSearchParams((windowLocation__testingOnly.value ?? window.location).search).get(
+        'type'
+    )
 
     return githubResultType ? (githubResultType.toLowerCase() as GithubResultType) : ''
 }
@@ -450,18 +464,23 @@ const getSourcegraphResultType = (): SourcegraphResultType | '' => {
     const githubResultType = getGithubResultType()
 
     switch (githubResultType) {
-        case 'repositories':
+        case 'repositories': {
             return 'repo'
-        case 'commits':
+        }
+        case 'commits': {
             return 'commit'
-        case 'code':
+        }
+        case 'code': {
             return ''
-        default:
+        }
+        default: {
             return isSimpleSearchPage() || isAdvancedSearchPage() ? 'repo' : ''
+        }
     }
 }
 
-const getSourcegraphResultLanguage = (): string | null => new URLSearchParams(window.location.search).get('l')
+const getSourcegraphResultLanguage = (): string | null =>
+    new URLSearchParams((windowLocation__testingOnly.value ?? window.location).search).get('l')
 
 const buildSourcegraphQuery = (searchTerms: string[]): string => {
     const queryParameters = searchTerms.filter(Boolean).map(parameter => parameter.trim())
@@ -477,7 +496,7 @@ const buildSourcegraphQuery = (searchTerms: string[]): string => {
     }
 
     if (isRepoSearchPage()) {
-        const [user, repo] = window.location.pathname.split('/').filter(Boolean)
+        const [user, repo] = (windowLocation__testingOnly.value ?? window.location).pathname.split('/').filter(Boolean)
         queryParameters.push(`repo:${user}/${repo}$`)
     }
 
@@ -668,7 +687,7 @@ export const githubCodeHost: GithubCodeHost = {
     routeChange: mutations =>
         mutations.pipe(
             map(() => {
-                const { pathname } = window.location
+                const { pathname } = windowLocation__testingOnly.value ?? window.location
 
                 // repository file tree navigation
                 const pageType = pathname.slice(1).split('/')[2]
@@ -694,7 +713,7 @@ export const githubCodeHost: GithubCodeHost = {
         return {
             rawRepoName,
             revision: pageType === 'blob' || pageType === 'tree' ? resolveFileInfo().blob.revision : undefined,
-            privateRepository: await isPrivateRepository(repoName),
+            privateRepository: isNewGitHubUI() ? getEmbeddedData().repo.private : await isPrivateRepository(repoName),
         }
     },
     isLightTheme: defer(() => {
@@ -733,7 +752,9 @@ export const githubCodeHost: GithubCodeHost = {
         }
 
         // Make sure the location is also on this github instance, return an absolute URL otherwise.
-        const sameCodeHost = target.rawRepoName.startsWith(window.location.hostname)
+        const sameCodeHost = target.rawRepoName.startsWith(
+            (windowLocation__testingOnly.value ?? window.location).hostname
+        )
         if (!sameCodeHost) {
             return toAbsoluteBlobURL(sourcegraphURL, target)
         }
@@ -758,7 +779,7 @@ export const githubCodeHost: GithubCodeHost = {
                 const anchorPath = header.dataset.path
                 if (anchorPath === target.filePath) {
                     const anchorUrl = header.dataset.anchor
-                    const url = new URL(window.location.href)
+                    const url = new URL((windowLocation__testingOnly.value ?? window.location).href)
                     url.hash = anchorUrl
                     if (target.position) {
                         // GitHub uses L for the left side, R for both right side and the unchanged/white parts
@@ -781,8 +802,8 @@ export const githubCodeHost: GithubCodeHost = {
         return `https://${target.rawRepoName}/blob/${revision}/${target.filePath}${fragment}`
     },
     observeLineSelection: fromEvent(window, 'hashchange').pipe(
-        startWith(undefined), // capture intital value
-        map(() => parseHash(window.location.hash))
+        startWith(undefined), // capture initial value
+        map(() => parseHash((windowLocation__testingOnly.value ?? window.location).hash))
     ),
     codeViewsRequireTokenization: true,
 }

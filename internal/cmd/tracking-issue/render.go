@@ -495,7 +495,7 @@ func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string
 	if issue.Closed() {
 		return fmt.Sprintf(
 			"- [x] (🏁 %s) %s %s%s%s%s\n",
-			formatTimeSince(issue.ClosedAt),
+			formatTime(issue.ClosedAt),
 			// GitHub automatically expands the URL to a status icon + title
 			url,
 			pullRequestFragment,
@@ -523,7 +523,7 @@ func renderPullRequest(pullRequest *PullRequest) string {
 	if pullRequest.Done() {
 		return fmt.Sprintf(
 			"- [x] (🏁 %s) %s %s\n",
-			formatTimeSince(pullRequest.ClosedAt),
+			formatTime(pullRequest.ClosedAt),
 			// GitHub automatically expands the URL to a status icon + title
 			pullRequest.URL,
 			emojis,

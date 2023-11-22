@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -101,7 +101,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.MinimalPackageRepoRef) *dependencies.Service {
 	t.Helper()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	depsSvc := dependencies.TestService(db)
 
 	_, _, err := depsSvc.InsertPackageRepoRefs(ctx, dependencyRepos)
@@ -162,25 +162,22 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 		},
 	})
 
-	svc := types.ExternalService{
-		Kind: extsvc.KindNpmPackages,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.NpmPackagesConnection{
-			Registry:     "https://registry.npmjs.org",
-			Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
-		})),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantNpmPackages, &schema.NpmPackagesConnection{
+		Registry:     "https://registry.npmjs.org",
+		Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
+	})
 
-	cf, save := newClientFactory(t, t.Name())
+	cf, save := NewClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewNpmPackagesSource(ctx, &svc, cf)
+	src, err := NewNpmPackagesSource(ctx, svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	src.SetDependenciesService(depsSvc)
 
-	repos, err := listAll(ctx, src)
+	repos, err := ListAll(ctx, src)
 	sort.Slice(repos, func(i, j int) bool {
 		return repos[i].Name < repos[j].Name
 	})
@@ -188,5 +185,5 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
 }

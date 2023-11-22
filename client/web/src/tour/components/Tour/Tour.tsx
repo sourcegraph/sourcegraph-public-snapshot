@@ -1,40 +1,31 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import { TourLanguage, TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TourTaskStepType, TourTaskType } from '@sourcegraph/shared/src/settings/temporary'
+import type { UserOnboardingConfig } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { TourContext } from './context'
 import { TourAgent } from './TourAgent'
 import { TourContent } from './TourContent'
 import { useTour } from './useTour'
-import { isLanguageRequired } from './utils'
+import { canRunStep, isNotNullOrUndefined, isQuerySuccessful } from './utils'
 
 export type TourProps = TelemetryProps & {
     id: string
     tasks: TourTaskType[]
     extraTask?: TourTaskType
+    userInfo?: UserOnboardingConfig['userinfo']
+    defaultSnippets: Record<string, string[]>
 } & Pick<React.ComponentProps<typeof TourContent>, 'variant' | 'className' | 'height' | 'title' | 'keepCompletedTasks'>
 
 export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> = React.memo(
-    ({ id: tourId, tasks, extraTask, telemetryService, ...props }) => {
-        const {
-            completedStepIds = [],
-            language,
-            status,
-            setLanguage,
-            setStepCompleted,
-            setStatus,
-            restart,
-        } = useTour(tourId)
+    ({ id: tourId, tasks, extraTask, defaultSnippets, telemetryService, userInfo, ...props }) => {
+        const { completedStepIds = [], status, setStepCompleted, setStatus, restart } = useTour(tourId)
         const onLogEvent = useCallback(
             (eventName: string, eventProperties?: any, publicArgument?: any) => {
-                telemetryService.log(
-                    tourId + eventName,
-                    { language, ...eventProperties },
-                    { language, ...publicArgument }
-                )
+                telemetryService.log('Tour' + eventName, { tourId, ...eventProperties }, { ...publicArgument })
             },
-            [language, telemetryService, tourId]
+            [telemetryService, tourId]
         )
 
         useEffect(() => {
@@ -54,9 +45,9 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
         )
 
         const onStepClick = useCallback(
-            (step: TourTaskStepType, language?: TourLanguage) => {
-                onLogEvent(step.id + 'Clicked', { language }, { language })
-                if (step.completeAfterEvents || (isLanguageRequired(step) && !language)) {
+            (step: TourTaskStepType) => {
+                onLogEvent('StepClicked', { stepId: step.id })
+                if (step.completeAfterEvents) {
                     return
                 }
                 onStepComplete(step)
@@ -64,17 +55,9 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
             [onLogEvent, onStepComplete]
         )
 
-        const onLanguageSelect = useCallback(
-            (language: TourLanguage) => {
-                setLanguage(language)
-                onLogEvent('LanguageClicked', { language }, { language })
-            },
-            [onLogEvent, setLanguage]
-        )
-
         const onRestart = useCallback(
             (step: TourTaskStepType) => {
-                onLogEvent(step.id + 'Clicked')
+                onLogEvent('RestartClicked')
                 restart()
             },
             [onLogEvent, restart]
@@ -82,27 +65,53 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
 
         const extendedTasks: TourTaskType[] = useMemo(
             () =>
-                tasks.map(task => {
-                    const extendedSteps = task.steps.map(step => ({
-                        ...step,
-                        isCompleted: completedStepIds.includes(step.id),
-                    }))
+                tasks
+                    .map(task => {
+                        const extendedSteps = task.steps
+                            .filter(step => canRunStep(step, userInfo))
+                            .map(step => {
+                                const extendedStep = {
+                                    ...step,
+                                    isCompleted: completedStepIds.includes(step.id),
+                                }
 
-                    return {
-                        ...task,
-                        steps: extendedSteps,
-                        completed: Math.round(
-                            (100 * extendedSteps.filter(step => step.isCompleted).length) / extendedSteps.length
-                        ),
-                    }
-                }),
-            [tasks, completedStepIds]
+                                switch (extendedStep.action.type) {
+                                    case 'search-query': {
+                                        if (!extendedStep.action.snippets) {
+                                            extendedStep.action = {
+                                                ...extendedStep.action,
+                                                snippets: defaultSnippets,
+                                            }
+                                        }
+                                        break
+                                    }
+                                }
+
+                                return extendedStep
+                            })
+
+                        if (extendedSteps.length === 0) {
+                            return null
+                        }
+
+                        return {
+                            ...task,
+                            steps: extendedSteps,
+                            completed: Math.round(
+                                (100 * extendedSteps.filter(step => step.isCompleted).length) /
+                                    (task.requiredSteps ?? extendedSteps.length)
+                            ),
+                        }
+                    })
+                    .filter(isNotNullOrUndefined),
+            [tasks, completedStepIds, defaultSnippets, userInfo]
         )
 
         useEffect(() => {
             if (
-                !['completed', 'closed'].includes(status as string) &&
-                extendedTasks.filter(step => step.completed === 100).length === extendedTasks.length
+                status !== 'closed' &&
+                status !== 'completed' &&
+                extendedTasks.filter(task => task.completed === 100).length === extendedTasks.length
             ) {
                 onLogEvent('Completed')
                 setStatus('completed')
@@ -113,19 +122,15 @@ export const Tour: React.FunctionComponent<React.PropsWithChildren<TourProps>> =
             return null
         }
 
+        const finalTasks = [...extendedTasks]
+        if (status === 'completed' && extraTask) {
+            finalTasks.unshift(extraTask)
+        }
+
         return (
-            <TourContext.Provider value={{ onStepClick, language, onLanguageSelect, onRestart }}>
-                <TourContent
-                    {...props}
-                    onClose={onClose}
-                    tasks={
-                        [status === 'completed' && extraTask, ...extendedTasks].filter(Boolean) as (
-                            | TourTaskType
-                            | TourTaskType
-                        )[]
-                    }
-                />
-                <TourAgent tasks={extendedTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
+            <TourContext.Provider value={{ onStepClick, onRestart, userInfo, isQuerySuccessful }}>
+                <TourContent {...props} onClose={onClose} tasks={finalTasks} />
+                <TourAgent tasks={finalTasks} telemetryService={telemetryService} onStepComplete={onStepComplete} />
             </TourContext.Provider>
         )
     }

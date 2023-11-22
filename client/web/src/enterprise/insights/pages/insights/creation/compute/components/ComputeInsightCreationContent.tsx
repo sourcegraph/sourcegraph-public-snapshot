@@ -1,4 +1,4 @@
-import { FC, HTMLAttributes, ReactNode } from 'react'
+import type { FC, HTMLAttributes, ReactNode } from 'react'
 
 import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
 import {
@@ -8,9 +8,9 @@ import {
     useForm,
     useField,
     FormGroup,
-    FormChangeEvent,
+    type FormChangeEvent,
     getDefaultInputProps,
-    SubmissionErrors,
+    type SubmissionErrors,
 } from '@sourcegraph/wildcard'
 
 import {
@@ -25,7 +25,7 @@ import {
     RepositoriesField,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
-import { CreateComputeInsightFormFields } from '../types'
+import type { CreateComputeInsightFormFields } from '../types'
 
 import { ComputeInsightMapPicker } from './ComputeInsightMapPicker'
 import { ComputeLivePreview } from './ComputeLivePreview'

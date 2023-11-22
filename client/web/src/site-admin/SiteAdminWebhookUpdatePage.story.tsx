@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { Route, Routes } from 'react-router-dom'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
@@ -14,7 +14,7 @@ import { WEBHOOK_BY_ID } from './backend'
 import { createExternalService, createWebhookMock } from './fixtures'
 import { SiteAdminWebhookUpdatePage } from './SiteAdminWebhookUpdatePage'
 
-const decorator: DecoratorFn = Story => <Story />
+const decorator: Decorator = Story => <Story />
 
 const config: Meta = {
     title: 'web/site-admin/webhooks/incoming/SiteAdminWebhookUpdatePage',
@@ -23,7 +23,7 @@ const config: Meta = {
 
 export default config
 
-export const WebhookUpdatePage: Story = () => (
+export const WebhookUpdatePage: StoryFn = () => (
     <WebStory initialEntries={['/site-admin/webhooks/incoming/1']}>
         {() => (
             <MockedTestProvider
@@ -32,7 +32,7 @@ export const WebhookUpdatePage: Story = () => (
                         {
                             request: {
                                 query: getDocumentNode(EXTERNAL_SERVICES),
-                                variables: { first: null, after: null },
+                                variables: { first: null, after: null, repo: null },
                             },
                             result: {
                                 data: {

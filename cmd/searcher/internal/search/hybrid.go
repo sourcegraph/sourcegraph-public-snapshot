@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
-	"sort"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,9 +12,11 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -52,6 +53,9 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 	// request. As such we centralize our observability to always take into
 	// account the state of the ctx.
 	defer func() {
+		// We can downgrade error logs to rootLogger.Warn
+		errorLogger := rootLogger.Error
+
 		if err != nil {
 			switch ctx.Err() {
 			case context.Canceled:
@@ -65,9 +69,15 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 				// path in this case.
 				recordHybridFinalState("search-timeout")
 				unsearched, ok = nil, true
+				errorLogger = rootLogger.Warn
 			}
 		}
 
+		if err != nil {
+			errorLogger("hybrid search failed", log.String("state", finalState), log.Error(err))
+		} else {
+			rootLogger.Debug("hybrid search done", log.String("state", finalState), log.Bool("ok", ok), log.Int("unsearched.len", len(unsearched)))
+		}
 		metricHybridFinalState.WithLabelValues(finalState).Inc()
 	}()
 
@@ -83,7 +93,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		indexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
 		if err != nil {
 			recordHybridFinalState("zoekt-list-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to list indexed commits for %s", p.Repo)
 		}
 		if !ok {
 			logger.Debug("failed to find indexed commit")
@@ -96,18 +106,22 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		// indexed and p.Commit and avoid the need of running diff for each
 		// search.
 		out, err := s.GitDiffSymbols(ctx, p.Repo, indexed, p.Commit)
-		if err != nil {
+		if errcode.IsNotFound(err) {
+			recordHybridFinalState("git-diff-not-found")
+			logger.Debug("not doing hybrid search due to likely missing indexed commit on gitserver", log.Error(err))
+			return nil, false, nil
+		} else if err != nil {
 			recordHybridFinalState("git-diff-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to find changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
 		}
 
-		indexedIgnore, unindexedSearch, err := parseGitDiffNameStatus(out)
+		indexedIgnore, unindexedSearch, err := diff.ParseGitDiffNameStatus(out)
 		if err != nil {
 			logger.Debug("parseGitDiffNameStatus failed",
 				log.Binary("out", out),
 				log.Error(err))
 			recordHybridFinalState("git-diff-parse-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to parse git diff output of changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
 		}
 
 		totalLenIndexedIgnore := totalStringsLen(indexedIgnore)
@@ -131,7 +145,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		retryReason, err := zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
 			recordHybridFinalState("zoekt-search-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to search indexed commit %s@%s", p.Repo, indexed)
 		} else if retryReason != "" {
 			metricHybridRetry.WithLabelValues(retryReason).Inc()
 			logger.Debug("retrying search since index changed while searching", log.String("retryReason", retryReason))
@@ -163,10 +177,9 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 		&zoektquery.Not{Child: zoektquery.NewFileNameSet(ignoredPaths...)},
 	))
 
-	opts := (&zoektutil.Options{
-		NumRepos:       1,
+	opts := (&search.ZoektParameters{
 		FileMatchLimit: int32(p.Limit),
-	}).ToSearch(ctx)
+	}).ToSearchOptions(ctx)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
 	}
@@ -314,12 +327,12 @@ func zoektIndexedCommit(ctx context.Context, client zoekt.Streamer, repo api.Rep
 	// NewSingleBranchesRepos and it went through a slow path.
 	q := zoektquery.NewRepoSet(string(repo))
 
-	resp, err := client.List(ctx, q, &zoekt.ListOptions{Minimal: true})
+	resp, err := client.List(ctx, q, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 	if err != nil {
 		return "", false, err
 	}
 
-	for _, v := range resp.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	for _, v := range resp.ReposMap {
 		return api.CommitID(v.Branches[0].Version), true, nil
 	}
 
@@ -350,7 +363,7 @@ func zoektChunkMatches(chunkMatches []zoekt.ChunkMatch) []protocol.ChunkMatch {
 		}
 
 		cms = append(cms, protocol.ChunkMatch{
-			Content: string(cm.Content),
+			Content: string(bytes.ToValidUTF8(cm.Content, []byte("�"))),
 			ContentStart: protocol.Location{
 				Offset: int32(cm.ContentStart.ByteOffset),
 				Line:   int32(cm.ContentStart.LineNumber) - 1,
@@ -360,37 +373,6 @@ func zoektChunkMatches(chunkMatches []zoekt.ChunkMatch) []protocol.ChunkMatch {
 		})
 	}
 	return cms
-}
-
-// parseGitDiffNameStatus returns the paths changedA and changedB for commits
-// A and B respectively. It expects to be parsing the output of the command
-// git diff -z --name-status --no-renames A B.
-func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error) {
-	if len(out) == 0 {
-		return nil, nil, nil
-	}
-
-	slices := bytes.Split(bytes.TrimRight(out, "\x00"), []byte{0})
-	if len(slices)%2 != 0 {
-		return nil, nil, errors.New("uneven pairs")
-	}
-
-	for i := 0; i < len(slices); i += 2 {
-		path := string(slices[i+1])
-		switch slices[i][0] {
-		case 'D': // no longer appears in B
-			changedA = append(changedA, path)
-		case 'M':
-			changedA = append(changedA, path)
-			changedB = append(changedB, path)
-		case 'A': // doesn't exist in A
-			changedB = append(changedB, path)
-		}
-	}
-	sort.Strings(changedA)
-	sort.Strings(changedB)
-
-	return changedA, changedB, nil
 }
 
 type senderFunc func(result *zoekt.SearchResult)

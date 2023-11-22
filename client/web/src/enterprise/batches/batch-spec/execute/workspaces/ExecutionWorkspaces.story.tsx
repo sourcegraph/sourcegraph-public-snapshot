@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -19,12 +19,12 @@ import { BatchSpecContextProvider } from '../../BatchSpecContext'
 import {
     BATCH_SPEC_WORKSPACE_BY_ID,
     FETCH_BATCH_SPEC_EXECUTION,
-    queryWorkspacesList as _queryWorkspacesList,
+    type queryWorkspacesList as _queryWorkspacesList,
 } from '../backend'
 
 import { ExecutionWorkspaces } from './ExecutionWorkspaces'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 d-flex" style={{ height: '95vh', width: '100%' }}>
         {story()}
     </div>
@@ -78,7 +78,7 @@ const queryWorkspacesList: typeof _queryWorkspacesList = () =>
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-export const List: Story = () => (
+export const List: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={MOCKS}>
@@ -90,7 +90,7 @@ export const List: Story = () => (
     </WebStory>
 )
 
-export const WorkspaceSelected: Story = () => (
+export const WorkspaceSelected: StoryFn = () => (
     <WebStory path="/:workspaceID" initialEntries={['/workspace2']}>
         {props => (
             <MockedTestProvider link={MOCKS}>
@@ -108,7 +108,7 @@ export const WorkspaceSelected: Story = () => (
 
 WorkspaceSelected.storyName = 'with workspace selected'
 
-export const LocallyExecutedSpec: Story = () => (
+export const LocallyExecutedSpec: StoryFn = () => (
     <WebStory path="/:workspaceID" initialEntries={['/"spec1234"']}>
         {props => (
             <MockedTestProvider link={MOCKS}>

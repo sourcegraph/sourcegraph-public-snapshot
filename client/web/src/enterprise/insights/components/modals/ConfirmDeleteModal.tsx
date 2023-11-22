@@ -4,7 +4,7 @@ import { noop } from 'lodash'
 
 import { H3, Text } from '@sourcegraph/wildcard'
 
-import { Insight } from '../../core'
+import type { Insight } from '../../core'
 import { useDeleteInsight } from '../../hooks/use-delete-insight'
 
 import { ConfirmationModal } from './ConfirmationModal'

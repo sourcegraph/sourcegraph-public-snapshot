@@ -1,9 +1,10 @@
-# Melange-based replacement for https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/symbols/ctags-install-alpine.sh
+# universal-ctags package
+# Version from the universal-ctags project tags page: https://github.com/universal-ctags/ctags/tags
 
 package:
   name: ctags
-  version: f95bb3497f53748c2b6afc7f298cff218103ab90
-  epoch: 0
+  version: 6.0.0
+  epoch: 3
   description: "A maintained ctags implementation"
   target-architecture:
     - x86_64
@@ -33,8 +34,8 @@ environment:
 pipeline:
   - uses: fetch
     with:
-      uri: https://codeload.github.com/universal-ctags/ctags/tar.gz/${{package.version}}
-      expected-sha256: 1cb9b090f5cefa7704032df4c6ea2aca09d0adf8b2739be0aa3d4aaa720d0079
+      uri: https://github.com/universal-ctags/ctags/archive/refs/tags/v${{package.version}}.tar.gz
+      expected-sha256: 71229a73f25529c9e3dabb2cb7310c55405d31caee8e8a9ab5c71b2406d4005a
   - name: Autogen
     runs: |
       ./autogen.sh

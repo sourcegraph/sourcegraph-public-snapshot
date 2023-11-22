@@ -1,4 +1,4 @@
-import pRetry, { Options } from 'p-retry'
+import pRetry, { type Options } from 'p-retry'
 
 /**
  * Retry function with more sensible defaults for e2e and integration test assertions

@@ -1,43 +1,43 @@
 import * as React from 'react'
-import { useEffect } from 'react'
 
-import { mdiClose } from '@mdi/js'
-import { Accordion } from '@reach/accordion'
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
-import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { MarketingBlock } from '../../../components/MarketingBlock'
-import { FetchOwnershipResult, FetchOwnershipVariables, SearchPatternType } from '../../../graphql-operations'
+import type { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
+import { OwnershipAssignPermission } from '../../../rbac/constants'
 
-import { FileOwnershipEntry } from './FileOwnershipEntry'
 import { FETCH_OWNERS } from './grapqlQueries'
+import { MakeOwnerButton } from './MakeOwnerButton'
+import { OwnerList } from './OwnerList'
+import type { OwnershipPanelProps } from './TreeOwnershipPanel'
 
 import styles from './FileOwnershipPanel.module.scss'
 
-export const FileOwnershipPanel: React.FunctionComponent<
-    {
-        repoID: string
-        revision?: string
-        filePath: string
-    } & TelemetryProps
-> = ({ repoID, revision, filePath, telemetryService }) => {
-    useEffect(() => {
+export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & TelemetryProps> = ({
+    repoID,
+    revision,
+    filePath,
+    telemetryService,
+}) => {
+    React.useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
+    const { data, loading, error, refetch } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: repoID,
             revision: revision ?? '',
             currentPath: filePath,
         },
     })
+    const [makeOwnerError, setMakeOwnerError] = React.useState<Error | undefined>(undefined)
+    const navigate = useNavigate()
+    const refreshPage = (): Promise<any> => Promise.resolve(navigate(0))
 
     if (loading) {
         return (
@@ -46,6 +46,20 @@ export const FileOwnershipPanel: React.FunctionComponent<
             </div>
         )
     }
+    const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
+        permission => permission.displayName === OwnershipAssignPermission
+    )
+    const makeOwnerButton = canAssignOwners
+        ? (userId: string | undefined) => (
+              <MakeOwnerButton
+                  onSuccess={refreshPage}
+                  onError={setMakeOwnerError}
+                  repoId={repoID}
+                  path={filePath}
+                  userId={userId}
+              />
+          )
+        : undefined
 
     if (error) {
         logger.log(error)
@@ -56,102 +70,29 @@ export const FileOwnershipPanel: React.FunctionComponent<
         )
     }
 
-    if (
-        data?.node &&
-        data.node.__typename === 'Repository' &&
-        data.node.commit?.blob &&
-        data.node.commit.blob.ownership.nodes.length > 0
-    ) {
+    if (data?.node?.__typename === 'Repository') {
+        const commit = data.node.commit || data.node.changelist?.commit
         return (
-            <div className={styles.contents}>
-                <OwnExplanation />
-                <Accordion
-                    as="table"
-                    collapsible={true}
-                    multiple={true}
-                    className={styles.table}
-                    onChange={() => telemetryService.log('filePage:ownershipPanel:viewOwnerDetail:clicked')}
-                >
-                    <thead className="sr-only">
-                        <tr>
-                            <th>Show details</th>
-                            <th>Contact</th>
-                            <th>Owner</th>
-                            <th>Reason</th>
-                        </tr>
-                    </thead>
-                    {data.node.commit.blob?.ownership.nodes.map((ownership, index) => (
-                        <FileOwnershipEntry
-                            // This list is not expected to change, so it's safe to use the index as a key.
-                            // eslint-disable-next-line react/no-array-index-key
-                            key={index}
-                            owner={ownership.owner}
-                            reasons={ownership.reasons}
-                        />
-                    ))}
-                </Accordion>
-            </div>
+            <OwnerList
+                data={commit?.blob?.ownership}
+                isDirectory={false}
+                makeOwnerButton={makeOwnerButton}
+                makeOwnerError={makeOwnerError}
+                repoID={repoID}
+                filePath={filePath}
+                refetch={refetch}
+                showAddOwnerButton={true}
+                canAssignOwners={canAssignOwners}
+            />
         )
     }
-
     return (
-        <div className={styles.contents}>
-            <OwnExplanation />
-            <Alert variant="info">No ownership data for this file.</Alert>
-        </div>
-    )
-}
-
-const OwnExplanation: React.FunctionComponent<{}> = () => {
-    const [dismissed, setDismissed] = useTemporarySetting('own.panelExplanationHidden')
-
-    const onDismiss = React.useCallback(() => {
-        setDismissed(true)
-    }, [setDismissed])
-
-    if (dismissed) {
-        return null
-    }
-
-    return (
-        <MarketingBlock contentClassName={styles.ownExplanationContainer} wrapperClassName="mb-3">
-            <div className="d-flex align-items-start">
-                <div className="flex-1">
-                    <H3 as={H4} className={styles.ownExplanationTitle}>
-                        Sourcegraph Own Preview
-                    </H3>
-                    <Text className={classNames(styles.ownExplanationContent, 'mb-2')}>
-                        Find code owners from a CODEOWNERS file in this repository, or from your external ownership
-                        tracking system here. The <Link to="/help/own">Own documentation</Link> contains more
-                        information.
-                    </Text>
-                    <Text className={classNames(styles.ownExplanationContent, 'mb-1')}>
-                        Sourcegraph Own also works in search:
-                    </Text>
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        outline={true}
-                        as={Link}
-                        to="/search?q=file:has.owner(johndoe)"
-                        className="mr-2"
-                    >
-                        <SyntaxHighlightedSearchQuery
-                            query="file:has.owner(johndoe)"
-                            searchPatternType={SearchPatternType.standard}
-                        />
-                    </Button>
-                    <Button variant="secondary" size="sm" as={Link} to="/search?q=select:file.owners" outline={true}>
-                        <SyntaxHighlightedSearchQuery
-                            query="select:file.owners"
-                            searchPatternType={SearchPatternType.standard}
-                        />
-                    </Button>
-                </div>
-                <Button aria-label="Dismiss alert" variant="icon" onClick={onDismiss}>
-                    <Icon aria-hidden={true} svgPath={mdiClose} />
-                </Button>
-            </div>
-        </MarketingBlock>
+        <OwnerList
+            filePath={filePath}
+            repoID={repoID}
+            refetch={refetch}
+            showAddOwnerButton={true}
+            canAssignOwners={canAssignOwners}
+        />
     )
 }

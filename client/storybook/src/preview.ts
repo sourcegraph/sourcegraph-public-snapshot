@@ -1,11 +1,10 @@
 import 'focus-visible'
 
-import { ReactElement } from 'react'
+import type { ReactElement } from 'react'
 
 import { configureActions } from '@storybook/addon-actions'
 import { withConsole } from '@storybook/addon-console'
-import { DecoratorFn, Parameters } from '@storybook/react'
-import { withDesign } from 'storybook-addon-designs'
+import type { DecoratorFn, Parameters } from '@storybook/react'
 
 import { setLinkComponent, AnchorLink } from '@sourcegraph/wildcard'
 import { isChromatic } from '@sourcegraph/wildcard/src/stories'
@@ -15,7 +14,7 @@ import { themeDark, themeLight, THEME_DARK_CLASS, THEME_LIGHT_CLASS } from './th
 
 const withConsoleDecorator: DecoratorFn = (storyFunc, context): ReactElement => withConsole()(storyFunc)(context)
 
-export const decorators = [withDesign, withConsoleDecorator, isChromatic() && withChromaticThemes].filter(Boolean)
+export const decorators = [withConsoleDecorator, isChromatic() && withChromaticThemes].filter(Boolean)
 
 export const parameters: Parameters = {
     layout: 'fullscreen',
@@ -32,16 +31,8 @@ export const parameters: Parameters = {
         light: themeLight,
         dark: themeDark,
     },
-    previewTabs: {
-        'storybook/docs/panel': {
-            hidden: true,
-        },
-    },
     // disables snapshotting for all stories by default
     chromatic: { disableSnapshot: true },
-    // This fixes an issue where some stories with knobs wound up in a state of infinite recursion
-    // See https://github.com/storybookjs/storybook/issues/15051
-    docs: { source: { type: 'code' } },
 }
 
 configureActions({ depth: 100, limit: 20 })

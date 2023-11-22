@@ -17,7 +17,8 @@ import (
 	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -38,7 +39,7 @@ func TestHandler(t *testing.T) {
 
 	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
 
-	parserFactory := func() (ctags.Parser, error) {
+	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
 		pathToEntries := map[string][]*ctags.Entry{
 			"a.js": {
 				{
@@ -55,7 +56,7 @@ func TestHandler(t *testing.T) {
 		}
 		return newMockParser(pathToEntries), nil
 	}
-	parserPool, err := parser.NewParserPool(parserFactory, 15)
+	parserPool, err := parser.NewParserPool(parserFactory, 15, parser.DefaultParserTypes)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +70,7 @@ func TestHandler(t *testing.T) {
 	symbolParser := parser.NewParser(&observation.TestContext, parserPool, fetcher.NewRepositoryFetcher(&observation.TestContext, gitserverClient, 1000, 1_000_000), 0, 10)
 	databaseWriter := writer.NewDatabaseWriter(observation.TestContextTB(t), tmpDir, gitserverClient, symbolParser, semaphore.NewWeighted(1))
 	cachedDatabaseWriter := writer.NewCachedDatabaseWriter(databaseWriter, cache)
-	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, database.NewMockDB()), gitserverClient.ReadFile, nil, "")
+	handler := NewHandler(MakeSqliteSearchFunc(observation.TestContextTB(t), cachedDatabaseWriter, dbmocks.NewMockDB()), gitserverClient.ReadFile, nil, "")
 
 	server := httptest.NewServer(handler)
 	defer server.Close()

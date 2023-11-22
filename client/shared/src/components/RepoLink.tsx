@@ -7,7 +7,7 @@ import { LinkOrSpan } from '@sourcegraph/wildcard'
  */
 export function displayRepoName(repoName: string): string {
     let parts = repoName.split('/')
-    if (parts.length >= 3 && parts[0].includes('.')) {
+    if (parts.length > 1 && parts[0].includes('.')) {
         parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
     }
     return parts.join('/')
@@ -30,7 +30,7 @@ export function codeHostSubstrLength(repoName: string): number {
  */
 export function splitPath(path: string): [string, string] {
     const components = path.split('/')
-    return [components.slice(0, -1).join('/'), components[components.length - 1]]
+    return [components.slice(0, -1).join('/'), components.at(-1)!]
 }
 
 interface Props {

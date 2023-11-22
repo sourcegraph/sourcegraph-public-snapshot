@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { startOfDay, subDays } from 'date-fns'
 
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -7,7 +7,7 @@ import { DateRangeSelect } from './DateRangeSelect'
 
 import webStyles from '../../../SourcegraphWebApp.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
@@ -23,7 +23,7 @@ export default config
 const today = startOfDay(new Date('2022-08-30'))
 const defaultValue: [Date, Date] = [subDays(today, 7), today]
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <div className="d-flex justify-content-around w-50">
         <DateRangeSelect value={defaultValue} defaultIsOpen={true} />
     </div>
@@ -36,7 +36,7 @@ Default.parameters = {
     },
 }
 
-export const WithNegation: Story = () => (
+export const WithNegation: StoryFn = () => (
     <div className="d-flex justify-content-around w-50">
         <DateRangeSelect
             negation={{

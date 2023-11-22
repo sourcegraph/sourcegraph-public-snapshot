@@ -1,4 +1,4 @@
-import { FC, ReactElement, ReactNode, useState } from 'react'
+import { type FC, type ReactElement, type ReactNode, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
@@ -14,16 +14,16 @@ import {
     Text,
     FormGroup,
     getDefaultInputProps,
-    SubmissionErrors,
+    type SubmissionErrors,
     useField,
-    useFieldAPI,
+    type useFieldAPI,
     useForm,
     ErrorAlert,
     FORM_ERROR,
-    FormChangeEvent,
+    type FormChangeEvent,
 } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
+import type { AddExternalServiceOptions } from '../../../../../../components/externalServices/externalServices'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../../../../../settings/DynamicallyImportedMonacoSettingsEditor'
 
 import styles from './CodeHostConnection.module.scss'
@@ -100,7 +100,7 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
             <FormGroup
                 name="Configuration"
                 title="Configuration"
-                subtitle={<CodeHostInstructions instructions={externalServiceOptions.instructions} />}
+                subtitle={<CodeHostInstructions instructions={externalServiceOptions.Instructions} />}
                 labelClassName={styles.configurationGroupLabel}
             >
                 <DynamicallyImportedMonacoSettingsEditor
@@ -132,12 +132,16 @@ export function CodeHostJSONFormContent(props: CodeHostJSONFormContentProps): Re
 }
 
 interface CodeHostInstructionsProps {
-    instructions: ReactNode
+    instructions?: React.FunctionComponent
 }
 
 const CodeHostInstructions: FC<CodeHostInstructionsProps> = props => {
-    const { instructions } = props
+    const { instructions: Instructions } = props
     const [isInstructionOpen, setInstructionOpen] = useState(false)
+
+    if (!Instructions) {
+        return null
+    }
 
     return (
         <Collapse isOpen={isInstructionOpen} onOpenChange={setInstructionOpen}>
@@ -151,7 +155,9 @@ const CodeHostInstructions: FC<CodeHostInstructionsProps> = props => {
                 See instructions how to fill out JSONC configuration{' '}
                 <Icon aria-hidden={true} svgPath={isInstructionOpen ? mdiChevronDown : mdiChevronUp} className="mr-1" />
             </CollapseHeader>
-            <CollapsePanel className={styles.configurationGroupInstructions}>{instructions}</CollapsePanel>
+            <CollapsePanel className={styles.configurationGroupInstructions}>
+                <Instructions />
+            </CollapsePanel>
         </Collapse>
     )
 }

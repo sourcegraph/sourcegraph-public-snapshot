@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Alert, AlertProps, H4 } from '@sourcegraph/wildcard'
+import { Alert, type AlertProps, H4 } from '@sourcegraph/wildcard'
 
 interface ReadOnlyBatchSpecAlertProps {
     className?: string

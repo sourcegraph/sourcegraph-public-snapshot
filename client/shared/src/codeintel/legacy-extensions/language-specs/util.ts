@@ -1,6 +1,6 @@
 import { isDefined } from '../util/helpers'
 
-import { Result } from './language-spec'
+import type { Result } from './language-spec'
 
 /**
  * Extract content from each line of the source file. The first match on
@@ -63,9 +63,9 @@ export function removeExtension(filePath: string): string {
 }
 
 export function slashToDot(value: string): string {
-    return value.replace(/\//g, '.')
+    return value.replaceAll('/', '.')
 }
 
 export function dotToSlash(value: string): string {
-    return value.replace(/\./g, '/')
+    return value.replaceAll('.', '/')
 }

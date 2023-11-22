@@ -10,13 +10,14 @@ import {
     mdiTimerSand,
     mdiArchive,
     mdiLock,
+    mdiDotsVertical,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Tooltip, Icon } from '@sourcegraph/wildcard'
 
-import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
+import { type ChangesetFields, ChangesetState, type Scalars } from '../../../../graphql-operations'
 
 import { ChangesetStatusScheduled } from './ChangesetStatusScheduled'
 
@@ -34,35 +35,48 @@ export const ChangesetStatusCell: React.FunctionComponent<React.PropsWithChildre
     role,
 }) => {
     switch (state) {
-        case ChangesetState.FAILED:
+        case ChangesetState.FAILED: {
             return <ChangesetStatusError className={className} role={role} />
-        case ChangesetState.RETRYING:
+        }
+        case ChangesetState.RETRYING: {
             return <ChangesetStatusRetrying className={className} role={role} />
-        case ChangesetState.SCHEDULED:
+        }
+        case ChangesetState.SCHEDULED: {
             return <ChangesetStatusScheduled className={className} role={role} id={id} />
-        case ChangesetState.PROCESSING:
+        }
+        case ChangesetState.PROCESSING: {
             return <ChangesetStatusProcessing className={className} role={role} />
-        case ChangesetState.UNPUBLISHED:
+        }
+        case ChangesetState.UNPUBLISHED: {
             return <ChangesetStatusUnpublished className={className} role={role} />
-        case ChangesetState.OPEN:
+        }
+        case ChangesetState.OPEN: {
             return <ChangesetStatusOpen className={className} role={role} />
-        case ChangesetState.DRAFT:
+        }
+        case ChangesetState.DRAFT: {
             return <ChangesetStatusDraft className={className} role={role} />
-        case ChangesetState.CLOSED:
+        }
+        case ChangesetState.CLOSED: {
             return <ChangesetStatusClosed className={className} role={role} />
-        case ChangesetState.MERGED:
+        }
+        case ChangesetState.MERGED: {
             return <ChangesetStatusMerged className={className} role={role} />
-        case ChangesetState.READONLY:
+        }
+        case ChangesetState.READONLY: {
             return <ChangesetStatusReadOnly className={className} role={role} />
-        case ChangesetState.DELETED:
+        }
+        case ChangesetState.DELETED: {
             return <ChangesetStatusDeleted className={className} role={role} />
+        }
     }
 }
 
 const iconClassNames = 'm-0 text-nowrap flex-column align-items-center justify-content-center'
 
 const StatusLabel: React.FunctionComponent<{ status: string; className?: string }> = ({ status, className }) => (
-    <span className={className}>
+    // Relative positioning needed to avoid VisuallyHidden creating a double layer scrollbar in Chrome.
+    // Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
+    <span className={classNames(className, 'position-relative')}>
         <VisuallyHidden>Status:</VisuallyHidden> {status}
     </span>
 )
@@ -186,4 +200,15 @@ export const ChangesetStatusReadOnly: React.FunctionComponent<React.PropsWithChi
             {label}
         </div>
     </Tooltip>
+)
+
+export const ChangesetStatusOthers: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
+    label = <StatusLabel status="Others" />,
+    className,
+    ...props
+}) => (
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} />
+        {label}
+    </div>
 )

@@ -1,22 +1,21 @@
-import React, { useCallback, KeyboardEvent, MouseEvent } from 'react'
+import React, { useCallback, type KeyboardEvent, type MouseEvent } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { appendLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
-import { HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
-import { ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import { type HighlightLineRange, HighlightResponseFormat } from '@sourcegraph/shared/src/graphql-operations'
+import { type ContentMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 
 import { CodeExcerpt } from './CodeExcerpt'
 import { navigateToCodeExcerpt, navigateToFileOnMiddleMouseButtonClick } from './codeLinkNavigation'
-import { LastSyncedIcon } from './LastSyncedIcon'
 
 import styles from './FileMatchChildren.module.scss'
 
@@ -123,8 +122,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             data-testid="file-match-children"
             data-selectable-search-results-group="true"
         >
-            {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
-
             {/* Line matches */}
             {grouped.length > 0 && (
                 <div>

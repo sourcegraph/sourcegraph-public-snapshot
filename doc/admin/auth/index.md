@@ -15,8 +15,11 @@ Sourcegraph supports the following ways for users to sign in:
 - [Username normalization](#username-normalization)
 - [Troubleshooting](#troubleshooting)
 
-The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
+The authentication providers are configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 
+## Login form configuration
+
+To configure the presentation of the login form, see the [login form configuration page](./login_form.md).
 ## Recommendations
 
 If you are unsure which auth provider is right for you, we recommend applying the following rules in
@@ -75,9 +78,9 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
 
   If set to `true`, users will see a sign-up link under the login form and will have access to the sign-up page, where they can create their accounts without restriction.
 
-  When not set, it will default to `false` -- in this case, users will see request access link. Unauthenticated users can submit request access forms and admins will get notification on the instance which they can approve or reject. Account request feature can be disabled by setting `experimentalFeatures.accessRequest.enabled: false`, and in this case new user accounts should be created by the site admin manually.
+  When not set, it will default to `false` -- in this case, users will see request account link. Unauthenticated users can submit request account forms and admins will get notification on the instance which they can approve or reject. Account request feature can be disabled by setting `auth.accessRequest: {enabled: false}`, and in this case new user accounts should be created by the site admin manually.
 
-  If you choose to block sign-ups by using the `allowSignup` filter avaliable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
+  If you choose to block sign-ups by using the `allowSignup` filter available in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GitLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
 
   During the initial setup, the builtin sign-up will be available for the first user so they can create an account and become admin.
 
@@ -201,7 +204,7 @@ The new user email, during their account creation, should match one of their Git
 
 Restricts sign-ins to members of the listed organizations. If empty or unset, no restriction will be applied.
 
-If combined with `"allowSignup": true`, only membrers of the allowed orgs can create their accounts in Sourcegraph via GitHub authentitcation.
+If combined with `"allowSignup": true`, only members of the allowed orgs can create their accounts in Sourcegraph via GitHub authentitcation.
 
 When combined with `"allowSignup": false` or unset, an admin should first create the user account so that the user can sign in with GitHub if they belong to the allowed orgs.
 
@@ -248,7 +251,7 @@ When combined with `"allowSignup": false` or unset, an admin should first create
 Sourcegraph instance:
 
 - Authorization callback URL: `https://sourcegraph.example.com/.auth/gitlab/callback`
-- Scopes: `api`, `read_user`
+- Scopes: `read_user`, `read_api` (be sure to set `"apiScope": "read_api"` in the `auth.providers` config, as indicated below)
 
 Then add the following lines to your site configuration:
 
@@ -262,6 +265,7 @@ Then add the following lines to your site configuration:
         "clientID": "replace-with-the-oauth-application-id",
         "clientSecret": "replace-with-the-oauth-secret",
         "url": "https://gitlab.example.com",
+        "apiScope": "read_api", // If not set, it defaults to "api" and the OAuth application will have to be adjusted accordingly.
         "allowSignup": false, // If not set, it defaults to true allowing any GitLab user with access to your instance to sign up.
         "allowGroups": ["group", "group/subgroup", "group/subgroup/subgroup"], // Restrict logins and sign-ups to members of groups or subgroups based on the full-path provided.
       }
@@ -323,18 +327,45 @@ You can use the following filters to control how users can create accounts and s
     }
   ```
 
+### How to set up GitLab auth provider for use with GitLab group SAML/SSO
+
+GitLab groups can require SAML/SSO sign-in to have access to the group. The regular OAuth sign-in won't work in this case, as users will be redirected to the normal GitLab sign-in page, requesting a username/password. In this scenario, add a `ssoURL` to your GitLab auth provider configuration:
+
+  ```json
+    {
+      "type": "gitlab",
+      // ...
+      "ssoURL": "https://gitlab.com/groups/your-group/-/saml/sso?token=xxxxxxxx"
+      ]
+    }
+  ```
+
+The `token` parameter can be found on the **Settings > SAML SSO** page on GitLab.
+
+### Don't sync user permissions for internal repositories
+
+If your organization has a lot of internal repositories that should be accessible to everyone on GitLab, you may want to [mark internal repositories as public](../external_service/gitlab.md#internal-repositories), and then configure your auth provider to not sync user permissions for internal repositories:
+
+  ```json
+    {
+      "type": "gitlab",
+      // ...
+      "syncInternalRepoPermissions": false
+    }
+  ```
+
 ## Bitbucket Cloud
 
 [Create a Bitbucket Cloud OAuth consumer](https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your
 Sourcegraph instance:
 
 - Callback URL: `https://sourcegraph.example.com/.auth/bitbucketcloud/callback`
-- Permissions: 
+- Permissions:
   - `Account`: `Read`
   - `Repositories`: `Read` (more information in [repository permissions section](../permissions/index.md))
 
 After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
-Then add the following lines to your [site configuration](config/site_config.md):
+Then add the following lines to your [site configuration](../config/site_config.md):
 
 ```json
 {
@@ -355,7 +386,7 @@ Replace the `clientKey` and `clientSecret` values with the values from your Bitb
 <span class="badge badge-beta">Beta</span>
 
 To enable users to add Gerrit credentials and verify their access to repositories on Sourcegraph,
-add the following lines to your [site configuration](config/site_config.md):
+add the following lines to your [site configuration](../config/site_config.md):
 
 ```json
 {
@@ -402,7 +433,7 @@ Example [`openidconnect` auth provider](../config/site_config.md#openid-connect-
       "type": "openidconnect",
       "issuer": "https://oidc.example.com",
       "clientID": "my-client-id",
-      "configID":"my-config-id", //An arbitrary value that will be used to reference to this auth provider within the site config 
+      "configID":"my-config-id", //An arbitrary value that will be used to reference to this auth provider within the site config
       "clientSecret": "my-client-secret",
       "requireEmailDomain": "example.com"
     }
@@ -419,7 +450,7 @@ See the [`openid` auth provider documentation](../config/site_config.md#openid-c
 **allowSignup**
 
   If true or not set, it allows new users to creating their Sourcegraph accounts via OpenID.
-  When `false`, sing-up won't be available and a site admin should create new users accounts.
+  When `false`, sign-up won't be available and a site admin should create new users accounts.
 
   ```json
     {

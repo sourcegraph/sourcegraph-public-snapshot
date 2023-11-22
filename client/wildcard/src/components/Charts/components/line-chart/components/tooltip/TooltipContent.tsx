@@ -1,12 +1,12 @@
-import { ReactElement, useMemo } from 'react'
+import { type ReactElement, useMemo } from 'react'
 
 import { isDefined } from '@sourcegraph/common'
 
 import { H3 } from '../../../../../Typography'
 import { TooltipList, TooltipListBlankItem, TooltipListItem } from '../../../../core'
 import { formatYTick } from '../../../../core/components/axis/tick-formatters'
-import { Point } from '../../types'
-import { isValidNumber, SeriesWithData, SeriesDatum, getDatumValue, getLineColor } from '../../utils'
+import type { Point } from '../../types'
+import { isValidNumber, type SeriesWithData, type SeriesDatum, getDatumValue, getLineColor } from '../../utils'
 
 import { getListWindow } from './utils/get-list-window'
 

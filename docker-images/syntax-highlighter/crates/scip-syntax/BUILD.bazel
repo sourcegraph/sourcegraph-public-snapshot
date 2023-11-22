@@ -21,8 +21,8 @@ rust_library(
     deps = all_crate_deps(
         normal = True,
     ) + [
-        "//docker-images/syntax-highlighter/crates/scip-treesitter:scip-treesitter",
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter",
+        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
     ],
 )
 

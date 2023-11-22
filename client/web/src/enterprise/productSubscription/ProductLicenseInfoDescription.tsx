@@ -1,6 +1,8 @@
 import React from 'react'
 
-import { ProductLicenseInfoFields } from '../../graphql-operations'
+import { H3 } from '@sourcegraph/wildcard'
+
+import type { ProductLicenseInfoFields } from '../../graphql-operations'
 import { formatUserCount } from '../../productSubscription/helpers'
 
 export const ProductLicenseInfoDescription: React.FunctionComponent<
@@ -9,10 +11,7 @@ export const ProductLicenseInfoDescription: React.FunctionComponent<
         className?: string
     }>
 > = ({ licenseInfo, className = '' }) => (
-    <span
-        className={className}
-        title={licenseInfo.tags.length > 0 ? `Tags: ${licenseInfo.tags.join(', ')}` : 'No tags'}
-    >
+    <H3 className={className}>
         {licenseInfo.productNameWithBrand} ({formatUserCount(licenseInfo.userCount)})
-    </span>
+    </H3>
 )

@@ -1,4 +1,4 @@
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 import { isDefined } from '../util/helpers'
 
 export function filterLocationsForDocumentHighlights(

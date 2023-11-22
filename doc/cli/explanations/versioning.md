@@ -78,7 +78,7 @@ npx @sourcegraph/src@3.43.2 version
 
 ### Installation: Windows
 
-See [Sourcegraph CLI for Windows](WINDOWS.md).
+See [Sourcegraph CLI for Windows](windows.md).
 
 ### Installation: Docker
 

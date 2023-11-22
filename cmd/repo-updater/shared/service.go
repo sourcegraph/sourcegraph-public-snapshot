@@ -10,8 +10,6 @@ import (
 )
 
 type svc struct {
-	enterpriseInit EnterpriseInit
-
 	ready                chan struct{}
 	debugserverEndpoints LazyDebugserverEndpoint
 }
@@ -34,11 +32,7 @@ func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, si
 		signalReadyToParent()
 	})
 
-	return Main(ctx, observationCtx, ready, &s.debugserverEndpoints, s.enterpriseInit)
+	return Main(ctx, observationCtx, ready, &s.debugserverEndpoints)
 }
 
-var Service service.Service = NewServiceWithEnterpriseInit(nil)
-
-func NewServiceWithEnterpriseInit(enterpriseInit EnterpriseInit) *svc {
-	return &svc{enterpriseInit: enterpriseInit}
-}
+var Service service.Service = &svc{}

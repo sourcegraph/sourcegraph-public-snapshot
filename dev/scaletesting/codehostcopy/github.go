@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v55/github"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/run"
@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GithubCodeHost struct {
+type GitHubCodeHost struct {
 	def     *CodeHostDefinition
 	c       *github.Client
 	page    int
@@ -26,10 +26,12 @@ type GithubCodeHost struct {
 	err     error
 }
 
-var _ CodeHostSource = (*GithubCodeHost)(nil)
-var _ CodeHostDestination = (*GithubCodeHost)(nil)
+var (
+	_ CodeHostSource      = (*GitHubCodeHost)(nil)
+	_ CodeHostDestination = (*GitHubCodeHost)(nil)
+)
 
-func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCodeHost, error) {
+func NewGitHubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GitHubCodeHost, error) {
 	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: def.Token},
 	))
@@ -40,18 +42,18 @@ func NewGithubCodeHost(ctx context.Context, def *CodeHostDefinition) (*GithubCod
 	}
 	baseURL.Path = "/api/v3"
 
-	gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+	gh, err := github.NewClient(tc).WithEnterpriseURLs(baseURL.String(), baseURL.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create GitHub client")
 	}
-	return &GithubCodeHost{
+	return &GitHubCodeHost{
 		def: def,
 		c:   gh,
 	}, nil
 }
 
 // GitOpts returns the options that should be used when a git command is invoked for Github
-func (g *GithubCodeHost) GitOpts() []GitOpt {
+func (g *GitHubCodeHost) GitOpts() []GitOpt {
 	if len(g.def.SSHKey) == 0 {
 		return []GitOpt{}
 	}
@@ -68,7 +70,7 @@ func (g *GithubCodeHost) GitOpts() []GitOpt {
 //
 // If there is no ssh key defined on the code host configuration this
 // is is a noop and returns a 0 for the key ID
-func (g *GithubCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
+func (g *GitHubCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
 	if len(g.def.SSHKey) == 0 {
 		return 0, nil
 	}
@@ -97,7 +99,7 @@ func (g *GithubCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
 
 // DropSSHKey removes the ssh key by by ID for the current authenticated user. If there is no
 // ssh key set on the codehost configuration this method is a noop
-func (g *GithubCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
+func (g *GitHubCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 	// if there is no ssh key in the code host definition
 	// then we have nothing to drop
 	if len(g.def.SSHKey) == 0 {
@@ -114,7 +116,7 @@ func (g *GithubCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 	return nil
 }
 
-func (g *GithubCodeHost) listRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error) {
+func (g *GitHubCodeHost) listRepos(ctx context.Context, start int, size int) ([]*store.Repo, int, error) {
 	var repos []*github.Repository
 	var resp *github.Response
 	var err error
@@ -177,15 +179,15 @@ func (g *GithubCodeHost) listRepos(ctx context.Context, start int, size int) ([]
 	return res, next, nil
 }
 
-func (g *GithubCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
+func (g *GitHubCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (g *GithubCodeHost) Iterator() Iterator[[]*store.Repo] {
+func (g *GitHubCodeHost) Iterator() Iterator[[]*store.Repo] {
 	return g
 }
 
-func (g *GithubCodeHost) Next(ctx context.Context) []*store.Repo {
+func (g *GitHubCodeHost) Next(ctx context.Context) []*store.Repo {
 	if g.done {
 		return nil
 	}
@@ -207,15 +209,15 @@ func (g *GithubCodeHost) Next(ctx context.Context) []*store.Repo {
 	return results
 }
 
-func (g *GithubCodeHost) Done() bool {
+func (g *GitHubCodeHost) Done() bool {
 	return g.done
 }
 
-func (g *GithubCodeHost) Err() error {
+func (g *GitHubCodeHost) Err() error {
 	return g.err
 }
 
-func (g *GithubCodeHost) getTotalPrivateRepos(ctx context.Context) (int, error) {
+func (g *GitHubCodeHost) getTotalPrivateRepos(ctx context.Context) (int, error) {
 	// not supplied in the config, so get whatever GitHub tells us is present (but might be incorrect)
 	if g.def.RepositoryLimit == 0 {
 		if strings.HasPrefix(g.def.Path, "@") {
@@ -227,7 +229,7 @@ func (g *GithubCodeHost) getTotalPrivateRepos(ctx context.Context) (int, error) 
 				return 0, errors.Newf("failed to get user %s. Got status %d code", strings.Replace(g.def.Path, "@", "", 1), resp.StatusCode)
 			}
 
-			return u.GetOwnedPrivateRepos(), nil
+			return int(u.GetOwnedPrivateRepos()), nil
 		} else {
 			o, resp, err := g.c.Organizations.Get(ctx, g.def.Path)
 			if err != nil {
@@ -237,14 +239,14 @@ func (g *GithubCodeHost) getTotalPrivateRepos(ctx context.Context) (int, error) 
 				return 0, errors.Newf("failed to get org %s. Got status %d code", g.def.Path, resp.StatusCode)
 			}
 
-			return o.GetOwnedPrivateRepos(), nil
+			return int(o.GetOwnedPrivateRepos()), nil
 		}
 	} else {
 		return g.def.RepositoryLimit, nil
 	}
 }
 
-func (g *GithubCodeHost) setPage(total int, remainder int) {
+func (g *GitHubCodeHost) setPage(total int, remainder int) {
 	// setting per page is not implemented yet so use GH default
 	perPage := 10
 	if g.perPage != 0 {
@@ -253,7 +255,7 @@ func (g *GithubCodeHost) setPage(total int, remainder int) {
 	g.page = int(math.Ceil(float64(total-remainder) / float64(perPage)))
 }
 
-func (g *GithubCodeHost) InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error) {
+func (g *GitHubCodeHost) InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error) {
 	t, err := g.getTotalPrivateRepos(ctx)
 	if err != nil {
 		return 0, 0, errors.Wrapf(err, "failed to get total private repos size for source %s", g.def.Path)

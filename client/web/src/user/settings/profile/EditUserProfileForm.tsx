@@ -6,10 +6,10 @@ import { gql, useMutation } from '@sourcegraph/http-client'
 import { Container, Button, Alert, Form } from '@sourcegraph/wildcard'
 
 import { refreshAuthenticatedUser } from '../../../auth'
-import { EditUserProfilePage, UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
+import type { EditUserProfilePage, UpdateUserResult, UpdateUserVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 
-import { UserProfileFormFields, UserProfileFormFieldsValue } from './UserProfileFormFields'
+import { UserProfileFormFields, type UserProfileFormFieldsValue } from './UserProfileFormFields'
 
 export const UPDATE_USER = gql`
     mutation UpdateUser($user: ID!, $username: String!, $displayName: String, $avatarURL: String) {

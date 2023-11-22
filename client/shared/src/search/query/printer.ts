@@ -1,4 +1,4 @@
-import { Token } from './token'
+import type { Token } from './token'
 
 /**
  * stringHuman creates a valid query string from a scanned query formatted for human
@@ -9,17 +9,19 @@ export const stringHuman = (tokens: Token[]): string => {
     const result: string[] = []
     for (const token of tokens) {
         switch (token.type) {
-            case 'whitespace':
+            case 'whitespace': {
                 result.push(' ')
                 break
-            case 'openingParen':
+            }
+            case 'openingParen': {
                 result.push('(')
                 break
-            case 'closingParen':
+            }
+            case 'closingParen': {
                 result.push(')')
                 break
-            case 'filter':
-                // eslint-disable-next-line no-case-declarations
+            }
+            case 'filter': {
                 let value = ''
                 if (token.value) {
                     if (token.value.quoted) {
@@ -30,24 +32,28 @@ export const stringHuman = (tokens: Token[]): string => {
                 }
                 result.push(`${token.field.value}:${value}`)
                 break
-            case 'literal':
+            }
+            case 'literal': {
                 if (token.quoted) {
                     result.push(JSON.stringify(token.value))
                 } else {
                     result.push(token.value)
                 }
                 break
-            case 'pattern':
+            }
+            case 'pattern': {
                 if (token.delimited) {
                     result.push(`/${token.value}/`)
                 } else {
                     result.push(token.value)
                 }
                 break
+            }
             case 'keyword':
-            case 'comment':
+            case 'comment': {
                 result.push(token.value)
                 break
+            }
         }
     }
     return result.join('')

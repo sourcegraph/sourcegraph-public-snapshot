@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
 import { LineChart } from './LineChart'
 import { FLAT_SERIES } from './story/mocks'

@@ -1,5 +1,5 @@
 import { RangeSetBuilder, type Extension } from '@codemirror/state'
-import { Decoration, EditorView, ViewPlugin, type DecorationSet } from '@codemirror/view'
+import { Decoration, type EditorView, ViewPlugin, type DecorationSet } from '@codemirror/view'
 import prism from 'prismjs'
 
 import { SyntaxKind } from '$lib/shared'
@@ -63,37 +63,51 @@ export function highlight(): Extension {
 
 function getType(type: string): SyntaxKind | null {
     switch (type) {
-        case 'comment':
+        case 'comment': {
             return SyntaxKind.Comment
-        case 'keyword':
+        }
+        case 'keyword': {
             return SyntaxKind.IdentifierKeyword
-        case 'builtin':
+        }
+        case 'builtin': {
             return SyntaxKind.IdentifierBuiltin
+        }
         case 'class-name':
-        case 'function':
+        case 'function': {
             return SyntaxKind.IdentifierFunction
-        case 'boolean':
+        }
+        case 'boolean': {
             return SyntaxKind.BooleanLiteral
-        case 'number':
+        }
+        case 'number': {
             return SyntaxKind.NumericLiteral
-        case 'string':
+        }
+        case 'string': {
             return SyntaxKind.StringLiteral
-        case 'char':
+        }
+        case 'char': {
             return SyntaxKind.CharacterLiteral
+        }
         case 'variable':
-        case 'symbol':
+        case 'symbol': {
             return SyntaxKind.Identifier
-        case 'constant':
+        }
+        case 'constant': {
             return SyntaxKind.IdentifierConstant
-        case 'property':
+        }
+        case 'property': {
             return SyntaxKind.IdentifierAttribute
-        case 'punctuation':
+        }
+        case 'punctuation': {
             return SyntaxKind.PunctuationDelimiter
-        case 'operator':
+        }
+        case 'operator': {
             return SyntaxKind.IdentifierOperator
+        }
         case 'regex':
-        case 'url':
+        case 'url': {
             return SyntaxKind.UnspecifiedSyntaxKind
+        }
     }
     return null
 }

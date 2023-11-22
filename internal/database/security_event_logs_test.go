@@ -10,16 +10,28 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	// test setup and teardown
+	prevConf := conf.Get()
+	t.Cleanup(func() {
+		conf.Mock(prevConf)
+	})
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		Log: &schema.Log{
+			SecurityEventLog: &schema.SecurityEventLog{Location: "all"},
+		},
+	}})
+
 	logger, exportLogs := logtest.Captured(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	var testCases = []struct {
 		name  string
@@ -59,16 +71,19 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 		},
 		{
 			name:  "JustUser",
+			actor: &actor.Actor{UID: 1}, // if we have a userID, we should have a valid actor UID
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 1, AnonymousUserID: ""},
 			err:   "<nil>",
 		},
 		{
 			name:  "JustAnonymous",
+			actor: &actor.Actor{AnonymousUID: "blah"},
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 0, AnonymousUserID: "blah"},
 			err:   "<nil>",
 		},
 		{
 			name:  "ValidInsert",
+			actor: &actor.Actor{UID: 1}, // if we have a userID, we should have a valid actor UID
 			event: &SecurityEvent{Name: "test_event", UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
 			err:   "<nil>",
 		},

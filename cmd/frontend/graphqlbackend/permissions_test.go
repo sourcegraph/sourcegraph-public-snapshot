@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 func TestPermissionsResolver(t *testing.T) {
@@ -25,7 +25,7 @@ func TestPermissionsResolver(t *testing.T) {
 
 	ctx := context.Background()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	admin := createTestUser(t, db, true)
 	user := createTestUser(t, db, false)
@@ -40,15 +40,15 @@ func TestPermissionsResolver(t *testing.T) {
 
 	ps, err := db.Permissions().BulkCreate(ctx, []database.CreatePermissionOpts{
 		{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    "READ",
 		},
 		{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    "WRITE",
 		},
 		{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    "EXECUTE",
 		},
 	})
@@ -136,7 +136,7 @@ func TestUserPermissionsListing(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := createTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
@@ -158,7 +158,7 @@ func TestUserPermissionsListing(t *testing.T) {
 	require.NoError(t, err)
 
 	p, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    "READ",
 	})
 	require.NoError(t, err)

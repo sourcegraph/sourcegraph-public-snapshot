@@ -1,8 +1,7 @@
 .root {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
     flex-grow: 1;
+    flex-direction: column;
     justify-content: center;
 }
 
@@ -10,8 +9,8 @@
     display: flex;
     text-align: center;
     gap: 2rem;
-    justify-content: space-between;
-    margin: -1.5rem auto 0.5rem;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
 
     &-step {
         display: flex;
@@ -86,8 +85,6 @@
     width: 100%;
     flex-grow: 1;
     margin: auto;
-    max-width: 55rem;
-    padding: 0 0.5rem 0.5rem;
 }
 
 .actions {

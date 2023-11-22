@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { MockedProvider, MockedProviderProps } from '@apollo/client/testing'
+import { MockedProvider, type MockedProviderProps } from '@apollo/client/testing'
 
 import { generateCache } from '../../backend/apolloCache'
 

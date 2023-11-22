@@ -1,12 +1,12 @@
 package main
 
 import (
-	"strings"
+	"os"
+	"path/filepath"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/run"
-
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/docgen"
@@ -19,7 +19,7 @@ var helpCommand = &cli.Command{
 	Name:            "help",
 	ArgsUsage:       " ", // no args accepted for now
 	Usage:           "Get help and docs about sg",
-	Category:        CategoryUtil,
+	Category:        category.Util,
 	HideHelpCommand: true, // we don't want a "sg help help" :)
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
@@ -54,9 +54,13 @@ var helpCommand = &cli.Command{
 		}
 
 		if output := cmd.String("output"); output != "" {
-			cmd := run.Cmd(cmd.Context, "cp /dev/stdin", output).
-				Input(strings.NewReader(generatedSgReferenceHeader + "\n\n" + doc))
-			if err := root.Run(cmd).Wait(); err != nil {
+			rootDir, err := root.RepositoryRoot()
+			if err != nil {
+				return err
+			}
+			output = filepath.Join(rootDir, output)
+
+			if err := os.WriteFile(output, []byte(generatedSgReferenceHeader+"\n\n"+doc), 0644); err != nil {
 				return errors.Wrapf(err, "failed to write reference to %q", output)
 			}
 			return nil

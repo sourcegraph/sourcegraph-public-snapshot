@@ -1,11 +1,11 @@
 import { useCallback, useMemo, useRef } from 'react'
 
-import { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
+import type { ApolloError, QueryResult, WatchQueryFetchPolicy } from '@apollo/client'
 
-import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
+import { type GraphQLResult, useQuery } from '@sourcegraph/http-client'
 import { useSearchParameters, useInterval } from '@sourcegraph/wildcard'
 
-import { Connection, ConnectionQueryArguments } from '../ConnectionType'
+import type { Connection, ConnectionQueryArguments } from '../ConnectionType'
 import { asGraphQLResult, hasNextPage, parseQueryInt } from '../utils'
 
 import { useShowMorePaginationUrl } from './useShowMorePaginationUrl'
@@ -16,6 +16,7 @@ export interface UseShowMorePaginationResult<TResult, TData> {
     error?: ApolloError
     fetchMore: () => void
     refetchAll: () => void
+    refetchFirst: () => void
     loading: boolean
     hasNextPage: boolean
     /**
@@ -32,6 +33,8 @@ interface UseShowMorePaginationConfig<TResult> {
     useURL?: boolean
     /** Allows modifying how the query interacts with the Apollo cache */
     fetchPolicy?: WatchQueryFetchPolicy
+    /** Allows specifying the Apollo error policy */
+    errorPolicy?: 'all' | 'none' | 'ignore'
     /**
      * Set to enable polling of all the nodes currently loaded in the connection.
      *
@@ -42,12 +45,15 @@ interface UseShowMorePaginationConfig<TResult> {
     pollInterval?: number
     /** Allows running an optional callback on any successful request */
     onCompleted?: (data: TResult) => void
+    onError?: (error: ApolloError) => void
 
     // useAlternateAfterCursor is used to indicate that a custom field instead of the
     // standard "after" field is used to for pagination. This is typically a
     // workaround for existing APIs where after may already be in use for
     // another field.
     useAlternateAfterCursor?: boolean
+    /** Skip the query if this condition is true */
+    skip?: boolean
 }
 
 interface UseShowMorePaginationParameters<TResult, TVariables, TData> {
@@ -131,8 +137,11 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
             ...initialControls,
         },
         notifyOnNetworkStatusChange: true, // Ensures loading state is updated on `fetchMore`
+        skip: options?.skip,
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
+        onError: options?.onError,
+        errorPolicy: options?.errorPolicy,
     })
 
     /**
@@ -195,6 +204,7 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
         })
     }
 
+    // Refetch the current nodes
     const refetchAll = useCallback(async (): Promise<void> => {
         const first = connection?.nodes.length || firstReference.current.actual
 
@@ -203,6 +213,15 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
             first,
         })
     }, [connection?.nodes.length, refetch, variables])
+
+    // Refetch the first page. Use this function if the number of nodes in the
+    // connection might have changed since the last refetch.
+    const refetchFirst = useCallback(async (): Promise<void> => {
+        await refetch({
+            ...variables,
+            first,
+        })
+    }, [first, refetch, variables])
 
     // We use `refetchAll` to poll for all the nodes currently loaded in the
     // connection, vs. just providing a `pollInterval` to the underlying `useQuery`, which
@@ -215,6 +234,7 @@ export const useShowMorePagination = <TResult, TVariables extends {}, TData>({
         loading,
         error,
         fetchMore: fetchMoreData,
+        refetchFirst,
         refetchAll,
         hasNextPage: connection ? hasNextPage(connection) : false,
         startPolling: startExecution,

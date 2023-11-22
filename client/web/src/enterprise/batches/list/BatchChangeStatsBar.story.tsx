@@ -1,16 +1,16 @@
-import { Meta, DecoratorFn, Story } from '@storybook/react'
+import type { Meta, Decorator, StoryFn } from '@storybook/react'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { GlobalChangesetsStatsResult } from '../../../graphql-operations'
+import type { GlobalChangesetsStatsResult } from '../../../graphql-operations'
 
 import { GLOBAL_CHANGESETS_STATS } from './backend'
 import { BatchChangeStatsBar } from './BatchChangeStatsBar'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/list/BatchChangeStatsBar',
@@ -25,7 +25,7 @@ const statBarData: GlobalChangesetsStatsResult = {
     globalChangesetsStats: { __typename: 'GlobalChangesetsStats', open: 7, closed: 5, merged: 21 },
 }
 
-export const BatchChangeStatsBarStory: Story = () => (
+export const BatchChangeStatsBarStory: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider

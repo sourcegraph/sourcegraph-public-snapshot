@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 
@@ -28,6 +28,11 @@ func newCacheItem[T any](value T) *cacheItem[T] {
 		Value:     value,
 		Timestamp: time.Now(),
 	}
+}
+
+type NotificationClient interface {
+	Send(info *BuildNotification) error
+	GetNotification(buildNumber int) *SlackNotification
 }
 
 type Client struct {
@@ -107,7 +112,7 @@ func NewClient(logger log.Logger, slackToken, githubToken, channel string) *Clie
 	history := make(map[int]*SlackNotification)
 
 	return &Client{
-		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
+		logger:  logger.Scoped("notificationClient"),
 		slack:   *slackClient,
 		team:    teamResolver,
 		channel: channel,
@@ -146,17 +151,13 @@ func (c *Client) sendUpdatedMessage(info *BuildNotification, previous *SlackNoti
 	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
 	logger.Debug("creating slack json")
 
-	blocks, err := c.createMessageBlocks(logger, info, previous.AuthorMention)
-	if err != nil {
-		return previous, err
-	}
-
+	blocks := c.createMessageBlocks(info, previous.AuthorMention)
 	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
 	var id, channel string
 	logger.Debug("sending updated notification")
 	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
 	// Note: for UpdateMessage using the #channel-name format doesn't work, you need the Slack ChannelID.
-	channel, id, _, err = c.slack.UpdateMessage(previous.ChannelID, previous.ID, msgOptBlocks)
+	channel, id, _, err := c.slack.UpdateMessage(previous.ChannelID, previous.ID, msgOptBlocks)
 	if err != nil {
 		logger.Error("failed to update message", log.Error(err))
 		return previous, err
@@ -188,11 +189,7 @@ func (c *Client) sendNewMessage(info *BuildNotification) (*SlackNotification, er
 		author = SlackMention(teammate)
 	}
 
-	blocks, err := c.createMessageBlocks(logger, info, author)
-	if err != nil {
-		return nil, err
-	}
-
+	blocks := c.createMessageBlocks(info, author)
 	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
 	var id, channel string
 
@@ -251,10 +248,9 @@ func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 		return nil, err
 	}
 	return result, nil
-
 }
 
-func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification, author string) ([]slack.Block, error) {
+func (c *Client) createMessageBlocks(info *BuildNotification, author string) []slack.Block {
 	msg, _, _ := strings.Cut(info.Message, "\n")
 	msg += fmt.Sprintf(" (%s)", info.Commit[:7])
 
@@ -289,8 +285,8 @@ func (c *Client) createMessageBlocks(logger log.Logger, info *BuildNotification,
 				},
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,
-					URL:  "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake?"},
+					URL:  "https://buildkite.com/organizations/sourcegraph/analytics/suites/sourcegraph-bazel?branch=main",
+					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View test analytics"},
 				},
 			}...,
 		),
@@ -312,7 +308,7 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 		),
 	}
 
-	return blocks, nil
+	return blocks
 }
 
 func generateSlackHeader(info *BuildNotification) string {

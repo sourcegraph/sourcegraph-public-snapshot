@@ -1,0 +1,129 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+:global(.theme-dark) {
+    --cody-blob-bg-gradient: linear-gradient(339.95deg, #15171e -44.65%, #49169d 15.56%, #5e398c 88.23%);
+    --cody-repo-bg-gradient: linear-gradient(339.95deg, #15171e -44.65%, #49169d -16.82%, #1e212e 88.23%), #ffffff;
+    --cody-repo-border: var(--gray-09);
+}
+
+:global(.theme-light) {
+    --cody-blob-bg-gradient: linear-gradient(339.95deg, #ffffff -44.65%, #d0b9f5 -16.82%, rgba(255, 255, 255, 0) 88.23%),
+        #ffffff;
+    --cody-repo-bg-gradient: var(--cody-blob-bg-gradient);
+    --cody-repo-border: var(--gray-03);
+}
+
+.close-button {
+    top: 0;
+    right: 0;
+}
+
+.repo-card-wrapper {
+    padding: 0.065rem !important;
+    background: var(--cody-repo-border);
+
+    .card {
+        background: var(--cody-repo-bg-gradient);
+    }
+}
+
+.blob-card-wrapper {
+    padding: 0.065rem !important;
+
+    .card {
+        background: var(--cody-blob-bg-gradient);
+    }
+}
+
+.card {
+    padding-top: 0.5rem;
+    gap: 1rem;
+}
+
+.card-title {
+    color: var(--body-color);
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+    margin-bottom: 0.6875rem;
+}
+
+.card-list {
+    font-size: 1rem;
+    line-height: 1.25rem;
+    color: var(--body-color);
+    width: max-content;
+}
+
+.card-images {
+    width: 100%;
+    align-items: self-end;
+
+    @media (--md-breakpoint-down) {
+        width: unset;
+    }
+}
+
+.card-image {
+    max-width: 35.688rem;
+    max-height: 7.438rem;
+}
+
+.no-auth-card {
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    background: var(--cody-bg-gradient);
+    padding-right: 0.75rem;
+    padding-top: 1.25rem;
+    padding-bottom: 1rem;
+    padding-left: 1.875rem;
+    gap: 1.5rem;
+}
+
+.card-description {
+    margin-bottom: 0.75rem;
+    margin-top: 0.125rem;
+}
+.auth-buttons-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.813rem;
+}
+
+.terms-link {
+    color: var(--cody-link-color);
+    text-decoration: underline;
+}
+
+.auth-button,
+.email-auth-button {
+    text-align: center;
+    border: none;
+    max-width: 11.938rem;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.188rem;
+    margin-bottom: 0.313rem;
+    margin-top: 0;
+}
+
+.auth-button {
+    background-color: var(--white) !important;
+    color: var(--black) !important;
+}
+
+.email-auth-button {
+    background-color: var(--white);
+    color: var(--body-color) !important;
+    border: 1px solid var(--border-color);
+
+    svg {
+        color: var(--email-icon-color);
+        height: 1.125rem;
+    }
+
+    :global(.theme-dark) & {
+        color: var(--gray-08) !important;
+    }
+}

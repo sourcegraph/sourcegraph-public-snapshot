@@ -1,9 +1,9 @@
-import React, { forwardRef, ReactNode, useContext } from 'react'
+import React, { forwardRef, type ReactNode, useContext } from 'react'
 
 import { noop } from 'lodash'
 import { useCallbackRef, useMergeRefs } from 'use-callback-ref'
 
-import { ForwardReferenceComponent } from '../../../types'
+import type { ForwardReferenceComponent } from '../../../types'
 import { PopoverContext } from '../contexts/internal-context'
 import { PopoverOpenEventReason } from '../types'
 

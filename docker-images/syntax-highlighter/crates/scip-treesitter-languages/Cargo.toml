@@ -17,25 +17,25 @@ tree-sitter-highlight.workspace = true
 
 tree-sitter-c = "0.20.2"
 tree-sitter-c-sharp = "0.20.0"
-tree-sitter-cpp = "0.20.0"
-tree-sitter-go = "0.19.1"
-tree-sitter-java = "0.20.0"
+tree-sitter-cpp = "0.20.3"
+tree-sitter-go = "0.20.0"
+tree-sitter-java = "0.20.2"
 tree-sitter-javascript = "0.20.0"
-# Since there is no version tag, we pin the dependency to a specific revision
-tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet", rev = "009e6f06266f46ae07077dd6c8026ded56ab7dd8" }
-tree-sitter-nickel = { git = "https://github.com/nickel-lang/tree-sitter-nickel", rev = "d6c7eeb751038f934b5b1aa7ff236376d0235c56" }
+tree-sitter-scala = "0.20.1"
 tree-sitter-python = "0.20.2"
-# Since there is no version tag, we pin the dependency to a specific revision
-tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl", rev = "e1b4844afd17b7dc019a436b1ac890568d79a1f2" }
-tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", rev = "f422a0dca6847c692e811f06fd92c6a75d647222" }
 tree-sitter-ruby = "0.20.0"
 tree-sitter-rust = "0.20.3"
 tree-sitter-typescript = "0.20.2"
-# Since there is no version tag, we pin the dependency to a specific revision
-tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg", rev = "d956b54ea151b12f19c945f7be421c3dcd3a77ba" }
 
-# Using a fork of tree-sitter-scala because upstream Rust crate didn't compile.
-tree-sitter-scala = { git = "https://github.com/sourcegraph/tree-sitter-scala", rev = "6cd3cb6074624dd3d88e458343475ca4c701cb06" }
+tree-sitter-jsonnet = { git = "https://github.com/sourcegraph/tree-sitter-jsonnet", rev = "009e6f06266f46ae07077dd6c8026ded56ab7dd8" }
+tree-sitter-kotlin = { git = "https://github.com/fwcd/tree-sitter-kotlin", rev = "100d79fd96b56a1b99099a8d2f3c114b8687acfb" }
+tree-sitter-matlab = { git = "https://github.com/acristoffers/tree-sitter-matlab", rev = "6071891a8c39600203eba20513666cf93b4d650a" }
+tree-sitter-nickel = { git = "https://github.com/nickel-lang/tree-sitter-nickel", rev = "d6c7eeb751038f934b5b1aa7ff236376d0235c56" }
+tree-sitter-perl = { git = "https://github.com/sourcegraph/tree-sitter-perl", rev = "e1b4844afd17b7dc019a436b1ac890568d79a1f2" }
+tree-sitter-pod = { git = "https://github.com/sourcegraph/tree-sitter-pod", rev = "f422a0dca6847c692e811f06fd92c6a75d647222" }
+tree-sitter-xlsg = { git = "https://github.com/sourcegraph/tree-sitter-xlsg", rev = "d956b54ea151b12f19c945f7be421c3dcd3a77ba" }
+tree-sitter-zig = { git = "https://github.com/maxxnino/tree-sitter-zig", rev = "2c7b6308d906d7aec4b3e1fafaaeca447a8a2c2f" }
+
 
 # As of 2022 Apr 06, the upstream crate seems to have paused development,
 # and it relies to tree-sitter 0.19.x creating a type mismatch. So depend

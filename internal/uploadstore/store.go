@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 // Store is an expiring key/value store backed by a managed blob store.
@@ -31,6 +32,9 @@ type Store interface {
 	// ExpireObjects iterates all objects with the given prefix and deletes them when
 	// the age of the object exceeds the given max age.
 	ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error
+
+	// List returns an iterator over all keys with the given prefix.
+	List(ctx context.Context, prefix string) (*iterator.Iterator[string], error)
 }
 
 var storeConstructors = map[string]func(ctx context.Context, config Config, operations *Operations) (Store, error){

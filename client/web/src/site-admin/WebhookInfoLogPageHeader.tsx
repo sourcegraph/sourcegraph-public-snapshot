@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { useQuery } from '@sourcegraph/http-client'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
-import { WebhookByIDLogPageHeaderResult } from '../graphql-operations'
+import type { WebhookByIDLogPageHeaderResult } from '../graphql-operations'
 
 import { WEBHOOK_BY_ID_LOG_PAGE_HEADER } from './webhooks/backend'
 import { PerformanceGauge } from './webhooks/PerformanceGauge'

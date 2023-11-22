@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react'
 
-import { mdiChevronDown, mdiChevronUp, mdiSync } from '@mdi/js'
+import { mdiChevronDown, mdiChevronRight, mdiSync } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
@@ -10,9 +10,9 @@ import { Button, Alert, Icon, H4, Text, ErrorMessage, ErrorAlert } from '@source
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
-import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
+import { ChangesetSpecType, type ExternalChangesetFields } from '../../../../graphql-operations'
 import {
-    queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
+    type queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     reenqueueChangeset,
 } from '../backend'
 
@@ -75,7 +75,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             {selectable ? (
                 <div className="p-2">
@@ -178,7 +178,7 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (

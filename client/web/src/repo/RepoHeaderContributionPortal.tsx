@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { RepoHeaderContribution, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
+import type { RepoHeaderContribution, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 
 interface Props extends RepoHeaderContribution, RepoHeaderContributionsLifecycleProps {}
 

@@ -2,7 +2,8 @@
 .tmp/
 
 # Bazel
-bazel-*
+/bazel-*
+.bazelrc-nix
 
 # Vim
 *.swp
@@ -54,29 +55,6 @@ pnpm-debug.log
 
 /cmd/frontend/internal/graphqlbackend/node_modules
 
-/ui/artifacts
-/ui/node_modules
-/ui/assets/_goTemplates.js
-/ui/assets/analytics.js
-/ui/assets/bundle.js
-/ui/assets/bundle.css
-/ui/assets/sourcebox.js
-/ui/assets/sourcebox.css
-/ui/assets/test.js
-/ui/assets/test.css
-/ui/assets/webpack.manifest.json
-/ui/assets/vs
-/ui/assets/*.html
-/ui/assets/*.map
-/ui/assets/*.txt
-/ui/assets/extension
-/ui/.tmp
-/ui/assets/scripts/
-/ui/assets/styles/
-/ui/assets/*.br
-/ui/assets/*.gz
-/ui/assets/stats-*
-
 *.json.actual
 
 eb-bundle.zip
@@ -115,7 +93,7 @@ out/
 client/shared/src/schema/*.d.ts
 puppeteer/
 package-lock.json
-/dist
+dist/
 sourcegraph-webapp-*.tgz
 *.tsbuildinfo
 graphql-operations.ts
@@ -189,3 +167,28 @@ index.scip
 /an
 /tr
 /cache-*.tar
+
+# Backward compatibility database tests patch, generated on the fly in CI
+# for `bazel test @sourcegraph_back_compat//...` targets.
+/dev/backcompat/back_compat_migrations.patch
+
+# Generated on CI only
+.aspect/bazelrc/ci.sourcegraph.bazelrc
+
+# nix
+result
+result-*
+
+# Windows
+/cmd/sourcegraph/__debug_bin.exe
+
+# For locally building and testing shared packages from the sourcegraph/cody repository on
+# the web client.
+/cody
+
+/playwright
+
+# JUnit execution reports
+junit.xml
+
+/enterprise/

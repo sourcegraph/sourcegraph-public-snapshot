@@ -1,9 +1,11 @@
 import assert from 'assert'
 
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { afterEach, beforeEach, describe, it } from 'mocha'
+
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../../context'
 import {
     CAPTURE_GROUP_INSIGHT,
     COMPUTE_INSIGHT,

@@ -1,7 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom'
 
 import { userURL } from '..'
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 
 /**

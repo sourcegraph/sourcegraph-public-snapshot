@@ -5,7 +5,6 @@ import (
 	"unicode/utf8"
 
 	"github.com/grafana/regexp"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -106,15 +105,13 @@ func (*RepoSearchJob) Name() string {
 	return "RepoSearchJob"
 }
 
-func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+func (s *RepoSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
-		res = append(res,
-			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
-			log.Object("repoNamePatterns", s.RepoNamePatterns),
-		)
+		res = append(res, trace.Scoped("repoOpts", s.RepoOpts.Attributes()...)...)
+		res = append(res, trace.Stringers("repoNamePatterns", s.RepoNamePatterns))
 	}
 	return res
 }

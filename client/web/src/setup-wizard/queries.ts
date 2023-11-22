@@ -9,6 +9,7 @@ export const CODE_HOST_FRAGMENT = gql`
         displayName
         lastSyncAt
         nextSyncAt
+        lastSyncError
         config
     }
 `
@@ -23,6 +24,14 @@ export const ADD_CODE_HOST = gql`
     ${CODE_HOST_FRAGMENT}
 `
 
+export const ADD_LOCAL_REPOSITORIES = gql`
+    mutation AddLocalRepositories($paths: [String!]!) {
+        addLocalRepositories(paths: $paths) {
+            __typename
+        }
+    }
+`
+
 export const UPDATE_CODE_HOST = gql`
     mutation UpdateRemoteCodeHost($input: UpdateExternalServiceInput!) {
         updateExternalService(input: $input) {
@@ -31,4 +40,12 @@ export const UPDATE_CODE_HOST = gql`
     }
 
     ${CODE_HOST_FRAGMENT}
+`
+
+export const DELETE_CODE_HOST = gql`
+    mutation DeleteRemoteCodeHost($id: ID!) {
+        deleteExternalService(externalService: $id) {
+            alwaysNil
+        }
+    }
 `

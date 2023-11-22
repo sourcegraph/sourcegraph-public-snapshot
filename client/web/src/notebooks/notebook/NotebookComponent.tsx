@@ -4,27 +4,27 @@ import { mdiPlayCircleOutline, mdiDownload, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import { Navigate, useLocation } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap, tap } from 'rxjs/operators'
 
-import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
+import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, useEventObservable, Icon } from '@sourcegraph/wildcard'
 
-import { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
-import { AuthenticatedUser } from '../../auth'
-import { NotebookFields } from '../../graphql-operations'
-import { OwnConfigProps } from '../../own/OwnConfigProps'
-import { EnterprisePageRoutes } from '../../routes.constants'
-import { SearchStreamingProps } from '../../search'
+import type { Block, BlockDirection, BlockInit, BlockInput, BlockType } from '..'
+import type { AuthenticatedUser } from '../../auth'
+import type { NotebookFields } from '../../graphql-operations'
+import type { OwnConfigProps } from '../../own/OwnConfigProps'
+import { PageRoutes } from '../../routes.constants'
+import type { SearchStreamingProps } from '../../search'
 import { NotebookFileBlock } from '../blocks/file/NotebookFileBlock'
 import { NotebookMarkdownBlock } from '../blocks/markdown/NotebookMarkdownBlock'
 import { NotebookQueryBlock } from '../blocks/query/NotebookQueryBlock'
 import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 
-import { Notebook, CopyNotebookProps } from '.'
+import { Notebook, type CopyNotebookProps } from '.'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { NotebookOutline } from './NotebookOutline'
 import { focusBlockElement, useNotebookEventHandlers } from './useNotebookEventHandlers'
@@ -34,7 +34,7 @@ import styles from './NotebookComponent.module.scss'
 export interface NotebookComponentProps
     extends SearchStreamingProps,
         TelemetryProps,
-        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery' | 'enableOwnershipSearch'>,
+        Omit<StreamingSearchResultsListProps, 'location' | 'allExpanded' | 'executedQuery'>,
         OwnConfigProps {
     isReadOnly?: boolean
     blocks: BlockInit[]
@@ -381,9 +381,10 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 }
 
                 switch (block.type) {
-                    case 'md':
+                    case 'md': {
                         return <NotebookMarkdownBlock {...block} {...blockProps} isEmbedded={isEmbedded} />
-                    case 'file':
+                    }
+                    case 'file': {
                         return (
                             <NotebookFileBlock
                                 {...block}
@@ -392,7 +393,8 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                             />
                         )
-                    case 'query':
+                    }
+                    case 'query': {
                         return (
                             <NotebookQueryBlock
                                 {...block}
@@ -407,7 +409,8 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 authenticatedUser={authenticatedUser}
                             />
                         )
-                    case 'symbol':
+                    }
+                    case 'symbol': {
                         return (
                             <NotebookSymbolBlock
                                 {...block}
@@ -417,6 +420,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 platformContext={platformContext}
                             />
                         )
+                    }
                 }
             },
             [
@@ -456,9 +460,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         }, [])
 
         if (copiedNotebookOrError && !isErrorLike(copiedNotebookOrError) && copiedNotebookOrError !== LOADING) {
-            return (
-                <Navigate to={EnterprisePageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} replace={true} />
-            )
+            return <Navigate to={PageRoutes.Notebook.replace(':id', copiedNotebookOrError.id)} replace={true} />
         }
 
         return (

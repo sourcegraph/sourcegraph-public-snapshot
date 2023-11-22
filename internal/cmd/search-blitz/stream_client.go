@@ -85,6 +85,10 @@ func (s *streamClient) search(ctx context.Context, query, queryName string) (*me
 	return &m, nil
 }
 
+func (s *streamClient) attribution(ctx context.Context, snippet, queryName string) (*metrics, error) {
+	return nil, errors.New("attribution not supported in stream client")
+}
+
 func (s *streamClient) clientType() string {
 	return "stream"
 }

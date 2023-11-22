@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { TabsSettings } from '.'
+import type { TabsSettings } from '.'
 
 export interface TabsState {
     settings: Required<TabsSettings>

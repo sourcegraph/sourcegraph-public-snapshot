@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
@@ -7,7 +7,7 @@ import { WebStory } from '../components/WebStory'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
 import { allStatusMessages, newStatusMessageMock } from './StatusMessagesNavItem.mocks'
 
-const decorator: DecoratorFn = Story => <Story />
+const decorator: Decorator = Story => <Story />
 
 const config: Meta = {
     title: 'web/nav/StatusMessagesNavItem',
@@ -16,7 +16,7 @@ const config: Meta = {
 
 export default config
 
-export const NoMessages: Story = () => (
+export const NoMessages: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={[newStatusMessageMock([])]}>
@@ -28,7 +28,7 @@ export const NoMessages: Story = () => (
 
 NoMessages.storyName = 'No messages'
 
-export const AllMessageTypes: Story = () => (
+export const AllMessageTypes: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider mocks={[newStatusMessageMock(allStatusMessages)]}>
@@ -40,7 +40,7 @@ export const AllMessageTypes: Story = () => (
 
 AllMessageTypes.storyName = 'All message types'
 
-export const IndexingMessage: Story = () => (
+export const IndexingMessage: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider
@@ -62,7 +62,7 @@ export const IndexingMessage: Story = () => (
 
 IndexingMessage.storyName = 'Indexing progress'
 
-export const GitUpdatesDisabled: Story = () => (
+export const GitUpdatesDisabled: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider

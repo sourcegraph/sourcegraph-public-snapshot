@@ -1,11 +1,11 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
-import { UserAreaUserFields } from '../../graphql-operations'
+import type { UserAreaUserFields } from '../../graphql-operations'
 
 import { UserProfile } from './UserProfile'
 
-const decorator: DecoratorFn = story => <div className="p-3 container list-unstyled">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container list-unstyled">{story()}</div>
 
 const config: Meta = {
     title: 'web/src/user/profile',
@@ -46,4 +46,4 @@ const mockUser: UserAreaUserFields = {
     },
 }
 
-export const Profile: Story = () => <WebStory>{() => <UserProfile user={mockUser} />}</WebStory>
+export const Profile: StoryFn = () => <WebStory>{() => <UserProfile user={mockUser} />}</WebStory>

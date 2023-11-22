@@ -1,9 +1,9 @@
-import { FC, useEffect } from 'react'
+import { type FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import {
@@ -25,7 +25,7 @@ import { ExternalServiceNode } from './ExternalServiceNode'
 interface Props extends TelemetryProps {
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /**
@@ -35,15 +35,20 @@ export const ExternalServicesPage: FC<Props> = ({
     telemetryService,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('SiteAdminExternalServices')
     }, [telemetryService])
 
+    const location = useLocation()
+    const searchParameters = new URLSearchParams(location.search)
+    const repoID = searchParameters.get('repoID') || null
+
     const { loading, hasNextPage, fetchMore, connection, error } = useExternalServicesConnection({
         first: null,
         after: null,
+        repo: repoID,
     })
 
     const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
@@ -52,14 +57,14 @@ export const ExternalServicesPage: FC<Props> = ({
         <Navigate to="/site-admin/external-services/new" replace={true} />
     ) : (
         <div className="site-admin-external-services-page">
-            <PageTitle title="Manage code hosts" />
+            <PageTitle title="Code host connections" />
             <PageHeader
-                path={[{ text: 'Manage code hosts' }]}
-                description="Manage code host connections to sync repositories."
+                path={[{ text: 'Code host connections' }]}
+                description="Code host connections to sync repositories."
                 headingElement="h2"
                 actions={
                     <>
-                        {isSourcegraphApp && (
+                        {isCodyApp && (
                             <ButtonLink className="mr-2" to="/setup" variant="secondary" as={Link}>
                                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add local code
                             </ButtonLink>
@@ -71,7 +76,7 @@ export const ExternalServicesPage: FC<Props> = ({
                             as={Link}
                             disabled={editingDisabled}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add connection
                         </ButtonLink>
                     </>
                 }
@@ -85,7 +90,7 @@ export const ExternalServicesPage: FC<Props> = ({
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
-                    <ConnectionList as="ul" className="list-group" aria-label="CodeHosts">
+                    <ConnectionList as="ul" className="list-group" aria-label="Code Host Connections">
                         {connection?.nodes?.map(node => (
                             <ExternalServiceNode key={node.id} node={node} editingDisabled={editingDisabled} />
                         ))}
@@ -97,8 +102,8 @@ export const ExternalServicesPage: FC<Props> = ({
                                 first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
-                                noun="code host"
-                                pluralNoun="code hosts"
+                                noun="code host connection"
+                                pluralNoun="code host connections"
                                 hasNextPage={hasNextPage}
                             />
                             {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}

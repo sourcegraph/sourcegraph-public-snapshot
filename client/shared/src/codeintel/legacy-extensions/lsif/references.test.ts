@@ -1,13 +1,13 @@
-/* eslint-disable etc/no-deprecated */
 import * as assert from 'assert'
 
 import * as sinon from 'sinon'
+import { describe, it } from 'vitest'
 
 import * as sourcegraph from '../api'
-import { QueryGraphQLFn } from '../util/graphql'
+import type { QueryGraphQLFn } from '../util/graphql'
 
-import { GenericLSIFResponse } from './api'
-import { ReferencesResponse, MAX_REFERENCE_PAGE_REQUESTS, referencesForPosition } from './references'
+import type { GenericLSIFResponse } from './api'
+import { type ReferencesResponse, MAX_REFERENCE_PAGE_REQUESTS, referencesForPosition } from './references'
 import {
     gatherValues,
     makeEnvelope,
@@ -114,7 +114,7 @@ describe('referencesForPosition', () => {
 
         const values = [[location]]
         for (let index = 1; index < MAX_REFERENCE_PAGE_REQUESTS; index++) {
-            const lastCopy = [...values[values.length - 1]]
+            const lastCopy = [...values.at(-1)!]
             lastCopy.push(location)
             values.push(lastCopy)
         }

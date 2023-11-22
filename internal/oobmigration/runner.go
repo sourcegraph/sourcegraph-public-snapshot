@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -53,7 +53,7 @@ func newRunner(observationCtx *observation.Context, store storeIface, refreshTic
 
 	return &Runner{
 		store:         store,
-		logger:        observationCtx.Logger.Scoped("oobmigration", ""),
+		logger:        observationCtx.Logger.Scoped("oobmigration"),
 		refreshTicker: refreshTicker,
 		operations:    newOperations(observationCtx),
 		migrators:     map[int]migratorAndOption{},
@@ -435,8 +435,8 @@ func updateProgress(ctx context.Context, store storeIface, migration *Migration,
 }
 
 func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) (err error) {
-	ctx, _, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("migrationID", migration.ID),
+	ctx, _, endObservation := operations.upForMigration(migration.ID).With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("migrationID", migration.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -445,8 +445,8 @@ func runMigrationUp(ctx context.Context, migration *Migration, migrator Migrator
 }
 
 func runMigrationDown(ctx context.Context, migration *Migration, migrator Migrator, logger log.Logger, operations *operations) (err error) {
-	ctx, _, endObservation := operations.downForMigration(migration.ID).With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("migrationID", migration.ID),
+	ctx, _, endObservation := operations.downForMigration(migration.ID).With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("migrationID", migration.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 

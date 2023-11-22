@@ -3,19 +3,19 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { mdiSourceBranch, mdiChartLineVariant, mdiFileDocument, mdiArchive, mdiMonitorStar } from '@mdi/js'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, Icon, Link, Tab, TabPanel, TabPanels, Text } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { resetFilteredConnectionURLQuery } from '../../../components/FilteredConnection'
-import { BatchSpecState, BatchChangeFields, BatchSpecSource } from '../../../graphql-operations'
+import { BatchSpecState, type BatchChangeFields, BatchSpecSource } from '../../../graphql-operations'
 import { BatchChangeTabList, BatchChangeTabs } from '../BatchChangeTabs'
 import { BatchSpecDownloadButton, BatchSpecMeta } from '../BatchSpec'
 import { BatchSpecInfo } from '../BatchSpecNode'
 import { BatchChangeBatchSpecList } from '../BatchSpecsPage'
 
-import {
+import type {
     queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs,
     queryAllChangesetIDs as _queryAllChangesetIDs,
 } from './backend'

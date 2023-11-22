@@ -3,21 +3,54 @@ package database
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestAccessTokens(t *testing.T) {
+	// perform test setup and teardown
+	prevConfg := conf.Get()
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		Log: &schema.Log{
+			SecurityEventLog: &schema.SecurityEventLog{Location: "database"},
+		},
+	}})
+	t.Cleanup(func() {
+		conf.Mock(prevConfg)
+	})
+
+	t.Run("TestAccessTokens_parallel", func(t *testing.T) {
+		t.Run("testAccessTokens_Create", testAccessTokens_Create)
+		t.Run("testAccessTokens_Delete", testAccessTokens_Delete)
+		t.Run("testAccessTokens_Create", testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent)
+		t.Run("testAccessTokens_List", testAccessTokens_List)
+		t.Run("testAccessTokens_Lookup", testAccessTokens_Lookup)
+		t.Run("testAccessToken_Lookup_deletedUser", testAccessTokens_Lookup_deletedUser)
+		t.Run("testAccessTokens_tokenSHA256Hash", testAccessTokens_tokenSHA256Hash)
+	})
+
+	// Don't run parallel as it's mocking an expired license
+	t.Run("testAccessToken_Lookup_expiredLicense", testAccessTokens_Lookup_expiredLicense)
+}
 
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
 // to the user.
-func TestAccessTokens_Create(t *testing.T) {
+//
+// testAccessTokens_Create requires the site_config to be mocked to enable security event logging to the database.
+// This test is run in TestAccessTokens
+func testAccessTokens_Create(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -47,6 +80,10 @@ func TestAccessTokens_Create(t *testing.T) {
 	}
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 1)
 
+	if !strings.HasPrefix(tv0, "sgp_") {
+		t.Errorf("got %q, want prefix 'sgp_'", tv0)
+	}
+
 	got, err := db.AccessTokens().GetByID(ctx, tid0)
 	if err != nil {
 		t.Fatal(err)
@@ -61,7 +98,7 @@ func TestAccessTokens_Create(t *testing.T) {
 		t.Errorf("got %q, want %q", got.Note, want)
 	}
 
-	gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, "a")
+	gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,11 +127,12 @@ func TestAccessTokens_Create(t *testing.T) {
 	}
 }
 
-func TestAccessTokens_Delete(t *testing.T) {
+// testAccessTokens_Delete requires the site_config to be mocked to enable security event logging to the database
+// This test is run in TestAccessTokens
+func testAccessTokens_Delete(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -165,10 +203,11 @@ func assertSecurityEventCount(t *testing.T, db DB, event SecurityEventName, expe
 	assert.Equal(t, expectedCount, count)
 }
 
-func TestAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
+// This test is run in TestAccessTokens
+func testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -197,16 +236,16 @@ func TestAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
-
 }
 
-func TestAccessTokens_List(t *testing.T) {
+// This test is run in TestAccessTokens
+func testAccessTokens_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject1, err := db.Users().Create(ctx, NewUser{
@@ -280,13 +319,14 @@ func TestAccessTokens_List(t *testing.T) {
 
 // 🚨 SECURITY: This tests the routine that verifies access tokens, which the security of the entire
 // system depends on.
-func TestAccessTokens_Lookup(t *testing.T) {
+// This test is run in TestAccessTokens
+func testAccessTokens_Lookup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -315,7 +355,7 @@ func TestAccessTokens_Lookup(t *testing.T) {
 	}
 
 	for _, scope := range []string{"a", "b"} {
-		gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, scope)
+		gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: scope})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -325,12 +365,12 @@ func TestAccessTokens_Lookup(t *testing.T) {
 	}
 
 	// Lookup with a nonexistent scope and ensure it fails.
-	if _, err := db.AccessTokens().Lookup(ctx, tv0, "x"); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "x"}); err == nil {
 		t.Fatal(err)
 	}
 
 	// Lookup with an empty scope and ensure it fails.
-	if _, err := db.AccessTokens().Lookup(ctx, tv0, ""); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: ""}); err == nil {
 		t.Fatal(err)
 	}
 
@@ -338,25 +378,26 @@ func TestAccessTokens_Lookup(t *testing.T) {
 	if err := db.AccessTokens().DeleteByID(ctx, tid0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 		t.Fatal(err)
 	}
 
 	// Try to Lookup a token that was never created.
-	if _, err := db.AccessTokens().Lookup(ctx, "abcdefg" /* this token value was never created */, "a"); err == nil {
+	if _, err := db.AccessTokens().Lookup(ctx, "abcdefg" /* this token value was never created */, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 		t.Fatal(err)
 	}
 }
 
 // 🚨 SECURITY: This tests that deleting the subject or creator user of an access token invalidates
 // the token, and that no new access tokens may be created for deleted users.
-func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
+// This test is run in TestAccessTokens
+func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	t.Run("subject", func(t *testing.T) {
@@ -386,7 +427,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 		if err := db.Users().Delete(ctx, subject.ID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
+		if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 			t.Fatal("Lookup: want error looking up token for deleted subject user")
 		}
 
@@ -422,7 +463,7 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 		if err := db.Users().Delete(ctx, creator.ID); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
+		if _, err := db.AccessTokens().Lookup(ctx, tv0, TokenLookupOpts{RequiredScope: "a"}); err == nil {
 			t.Fatal("Lookup: want error looking up token for deleted creator user")
 		}
 
@@ -430,4 +471,84 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 			t.Fatal("Create: want error creating token for deleted creator user")
 		}
 	})
+}
+
+// 🚨 SECURITY: This tests that deleting the subject or creator user of an access token invalidates
+// the token, and that no new access tokens may be created for deleted users.
+// This test is run in TestAccessTokens
+func testAccessTokens_Lookup_expiredLicense(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	adminUser, err := db.Users().Create(ctx, NewUser{
+		Email:                 "u1@example.com",
+		Username:              "u1",
+		Password:              "p1",
+		EmailVerificationCode: "c1",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, adminUser.ID, true))
+
+	regularUser, err := db.Users().Create(ctx, NewUser{
+		Email:                 "u2@example.com",
+		Username:              "u2",
+		Password:              "p2",
+		EmailVerificationCode: "c2",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, adminToken, err := db.AccessTokens().Create(ctx, adminUser.ID, []string{"a"}, "n0", adminUser.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, regularToken, err := db.AccessTokens().Create(ctx, regularUser.ID, []string{"a"}, "n0", regularUser.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := db.AccessTokens().Lookup(ctx, adminToken, TokenLookupOpts{RequiredScope: "a", OnlyAdmin: true}); err != nil {
+		t.Fatal("Lookup: lookup should not fail for admin user")
+	}
+	if _, err := db.AccessTokens().Lookup(ctx, regularToken, TokenLookupOpts{RequiredScope: "a", OnlyAdmin: true}); err == nil {
+		t.Fatal("Lookup: lookup should fail for regular user")
+	}
+}
+
+// This test is run in TestAccessTokens
+func testAccessTokens_tokenSHA256Hash(t *testing.T) {
+	testCases := []struct {
+		name      string
+		token     string
+		wantError bool
+	}{
+		{name: "old prefix-less format", token: "0123456789012345678901234567890123456789"},
+		{name: "old prefix format", token: "sgp_0123456789012345678901234567890123456789"},
+		{name: "new local identifier format", token: "sgp_local_0123456789012345678901234567890123456789"},
+		{name: "new identifier format", token: "sgp_abcdef0123456789_0123456789012345678901234567890123456789"},
+		{name: "empty", token: "", wantError: true},
+		{name: "invalid", token: "×", wantError: true},
+		{name: "invalid", token: "xxx", wantError: true},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			hash, err := tokenSHA256Hash(tc.token)
+			if tc.wantError {
+				assert.ErrorContains(t, err, "invalid token")
+			} else {
+				assert.NoError(t, err)
+				if len(hash) != 32 {
+					t.Errorf("got %d characters, want 32", len(hash))
+				}
+			}
+		})
+	}
 }

@@ -1,10 +1,9 @@
-import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 import { BrowserRouter } from 'react-router-dom'
 
 import { registerHighlightContributions } from '@sourcegraph/common'
-import { HoverOverlay, HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
+import { HoverOverlay, type HoverOverlayClassProps } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import {
     commonProps,
     FIXTURE_ACTIONS,
@@ -14,8 +13,9 @@ import {
 
 import browserExtensionStyles from '../../app.scss'
 import bitbucketCodeHostStyles from '../code-hosts/bitbucket/codeHost.module.scss'
+import bitbucketStyles from '@atlassian/aui/dist/aui/css/aui.css'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <>
         <style>{bitbucketStyles}</style>
         <style>{browserExtensionStyles}</style>
@@ -46,7 +46,7 @@ const BITBUCKET_CLASS_PROPS: HoverOverlayClassProps = {
     iconClassName: 'aui-icon',
 }
 
-export const BitbucketStyles: Story = (props = {}) => (
+export const BitbucketStyles: StoryFn = (props = {}) => (
     <BrowserRouter>
         <HoverOverlay
             {...commonProps()}
@@ -62,4 +62,4 @@ export const BitbucketStyles: Story = (props = {}) => (
 )
 BitbucketStyles.storyName = 'Bitbucket styles'
 
-export const Branded: Story = () => <BitbucketStyles useBrandedLogo={true} />
+export const Branded: StoryFn = () => <BitbucketStyles useBrandedLogo={true} />

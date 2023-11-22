@@ -1,7 +1,8 @@
 import AJV from 'ajv'
 import addFormats from 'ajv-formats'
+import { describe, expect, it } from 'vitest'
 
-import { AutoIndexJobDescriptionFields } from '../../../../../graphql-operations'
+import type { AutoIndexJobDescriptionFields } from '../../../../../graphql-operations'
 import schema from '../../schema.json'
 
 import { autoIndexJobsToFormData } from './auto-index-to-form-job'

@@ -4,10 +4,10 @@ import classNames from 'classnames'
 
 import { Alert, Container, PageHeader, H5, Link } from '@sourcegraph/wildcard'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 
-import { queryWebhookLogs as _queryWebhookLogs, SelectedExternalService } from './backend'
+import { queryWebhookLogs as _queryWebhookLogs, type SelectedExternalService } from './backend'
 import { WebhookLogNode } from './WebhookLogNode'
 import { WebhookLogPageHeader } from './WebhookLogPageHeader'
 

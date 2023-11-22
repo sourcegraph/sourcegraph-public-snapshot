@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "batch",
@@ -16,13 +17,14 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
 go_test(
     name = "batch_test",
+    timeout = "moderate",
     srcs = ["batch_test.go"],
     embed = [":batch"],
     tags = [
@@ -33,6 +35,5 @@ go_test(
         "//internal/database/dbtest",
         "//internal/database/dbutil",
         "@com_github_google_go_cmp//cmp",
-        "@com_github_sourcegraph_log//logtest",
     ],
 )

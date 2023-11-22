@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 	"testing/quick"
+	"unicode/utf8"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
@@ -228,6 +229,42 @@ func TestSearch(t *testing.T) {
 		require.Equal(t, []string{"file1", "file1a"}, matches[0].ModifiedFiles)
 		require.Equal(t, []string{"file2", "file3"}, matches[1].ModifiedFiles)
 		require.Equal(t, []string{"file1"}, matches[2].ModifiedFiles)
+	})
+
+	t.Run("non utf8 elements", func(t *testing.T) {
+		cmds := []string{
+			"echo lorem ipsum dolor sit amet > file1",
+			"git add -A",
+			"GIT_COMMITTER_NAME=camden1 " +
+				"GIT_COMMITTER_EMAIL=camden1@ccheek.com " +
+				"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
+				"GIT_AUTHOR_NAME=\xc0mden " +
+				"GIT_AUTHOR_EMAIL=\xc0mden1@ccheek.com " +
+				"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
+				"git commit -m \xc0mmit1 ",
+		}
+		dir := initGitRepository(t, cmds...)
+
+		query := &protocol.AuthorMatches{Expr: "c"}
+		tree, err := ToMatchTree(query)
+		require.NoError(t, err)
+		searcher := &CommitSearcher{
+			RepoDir:              dir,
+			Query:                tree,
+			IncludeModifiedFiles: true,
+		}
+		var matches []*protocol.CommitMatch
+		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
+			matches = append(matches, match)
+		})
+		require.NoError(t, err)
+
+		require.Len(t, matches, 1)
+		match := matches[0]
+		require.True(t, utf8.ValidString(match.Author.Name))
+		require.True(t, utf8.ValidString(match.Author.Email))
+		require.True(t, utf8.ValidString(match.Message.Content))
+
 	})
 }
 
@@ -480,9 +517,9 @@ index 0000000000..7e54670557
 	require.True(t, mergedResult.Satisfies())
 
 	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff)
-	expectedFormatted := `/dev/null internal/compute/match.go
-@@ -0,0 +6,6 @@ 
-+
+	expectedFormatted := "/dev/null internal/compute/match.go\n" +
+		"@@ -0,0 +6,6 @@ \n" +
+		`+
 +       "github.com/sourcegraph/sourcegraph/internal/search/result"
 +)
 +
@@ -526,9 +563,9 @@ index 0000000000..7e54670557
 	// check formatting w/ sub-repo perms filtering
 	filteredDiff := filterRawDiff(parsedDiff, setupSubRepoFilterFunc())
 	formattedWithFiltering, ranges := FormatDiff(filteredDiff, highlights.Diff)
-	expectedFormatted = `/dev/null internal/compute/match.go
-@@ -0,0 +6,6 @@ 
-+
+	expectedFormatted = "/dev/null internal/compute/match.go\n" +
+		"@@ -0,0 +6,6 @@ \n" +
+		`+
 +       "github.com/sourcegraph/sourcegraph/internal/search/result"
 +)
 +

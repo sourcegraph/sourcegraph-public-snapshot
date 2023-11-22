@@ -39,10 +39,10 @@ func (fs Fakes) AddTeam(t *types.Team) int32 {
 	return u.ID
 }
 
-func (teams *Teams) CreateTeam(_ context.Context, t *types.Team) error {
+func (teams *Teams) CreateTeam(_ context.Context, t *types.Team) (*types.Team, error) {
 	u := *t
 	teams.addTeam(&u)
-	return nil
+	return &u, nil
 }
 
 func (teams *Teams) addTeam(t *types.Team) {
@@ -238,7 +238,7 @@ func (teams *Teams) ListTeamMembers(ctx context.Context, opts database.ListTeamM
 	return selected, next, nil
 }
 
-func (teams *Teams) CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error {
+func (teams *Teams) CreateTeamMember(_ context.Context, members ...*types.TeamMember) error {
 	for _, newMember := range members {
 		exists := false
 		for _, existingMember := range teams.members {
@@ -256,7 +256,7 @@ func (teams *Teams) CreateTeamMember(ctx context.Context, members ...*types.Team
 	return nil
 }
 
-func (teams *Teams) DeleteTeamMember(ctx context.Context, members ...*types.TeamMember) error {
+func (teams *Teams) DeleteTeamMember(_ context.Context, members ...*types.TeamMember) error {
 	for _, m := range members {
 		var index int
 		var found bool
@@ -275,7 +275,7 @@ func (teams *Teams) DeleteTeamMember(ctx context.Context, members ...*types.Team
 	return nil
 }
 
-func (teams *Teams) IsTeamMember(ctx context.Context, teamID, userID int32) (bool, error) {
+func (teams *Teams) IsTeamMember(_ context.Context, teamID, userID int32) (bool, error) {
 	for _, m := range teams.members {
 		if m.TeamID == teamID && m.UserID == userID {
 			return true, nil

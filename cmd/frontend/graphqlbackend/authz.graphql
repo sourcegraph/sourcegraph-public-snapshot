@@ -210,7 +210,16 @@ extend type Query {
         Optional filter to find permissions sync jobs for a repository. Please provide either this or userID, but not both.
         """
         repoID: ID
+        """
+        Optional filter to filter only partially successful sync jobs.
+        """
+        partial: Boolean
     ): PermissionsSyncJobsConnection!
+
+    """
+    Returns various permissions syncing statistics.
+    """
+    permissionsSyncingStats: PermissionsSyncingStats!
 
     """
     Returns a list of Bitbucket Project permissions sync jobs for a given set of parameters.
@@ -336,6 +345,19 @@ enum RepositoryPermission {
 }
 
 """
+PermissionSource indicates where a permission originated from.
+
+REPO_SYNC: The permission was synced from the code host, via repo-centric permission sync.
+USER_SYNC: The permission was synced from the code host using user-centric permission sync.
+API: The permission was set explicitly via the GraphQL API.
+"""
+enum PermissionSource {
+    REPO_SYNC
+    USER_SYNC
+    API
+}
+
+"""
 Permissions information of a repository or a user.
 """
 type PermissionsInfo {
@@ -352,7 +374,11 @@ type PermissionsInfo {
     The last updated time of permissions, the value is updated whenever there is a
     change to the database row (i.e. incremental update).
     """
-    updatedAt: DateTime!
+    updatedAt: DateTime
+    """
+    What was the source of the last permission update. The value is updated whenever different source last touched the database row (i.e. permission sync or explicit permissions update)
+    """
+    source: PermissionSource
     """
     If true for a repo, it indicates access to the repo is allowed for all users.
     It will always be false for users.
@@ -567,6 +593,7 @@ enum PermissionsSyncJobReason {
     REASON_REPO_UPDATED_FROM_CODE_HOST
     REASON_USER_EMAIL_REMOVED
     REASON_USER_EMAIL_VERIFIED
+    REASON_USER_ADDED
     REASON_USER_ADDED_TO_ORG
     REASON_USER_REMOVED_FROM_ORG
     REASON_USER_ACCEPTED_ORG_INVITE
@@ -742,6 +769,14 @@ type PermissionsSyncJob implements Node {
     State of providers (code hosts) during permission sync job.
     """
     codeHostStates: [CodeHostState!]!
+    """
+    Show if the job has finished with a partially successful result.
+    """
+    partialSuccess: Boolean!
+    """
+    Rank of the permissions syncing job in processing queue.
+    """
+    placeInQueue: Int
 }
 
 """
@@ -814,4 +849,38 @@ type BitbucketProjectPermissionJob {
     Shows that current project is accessible by any user of the project.
     """
     Unrestricted: Boolean!
+}
+
+"""
+Various permissions syncing statistics.
+"""
+type PermissionsSyncingStats {
+    """
+    The number of permissions sync jobs in the queue.
+    """
+    queueSize: Int!
+    """
+    The number of users with latest permissions sync job failing.
+    """
+    usersWithLatestJobFailing: Int!
+    """
+    The number of repositories with latest permissions sync job failing.
+    """
+    reposWithLatestJobFailing: Int!
+    """
+    The number of users with no permissions.
+    """
+    usersWithNoPermissions: Int!
+    """
+    The number of repositories with no permissions.
+    """
+    reposWithNoPermissions: Int!
+    """
+    The number of users with old permissions.
+    """
+    usersWithStalePermissions: Int!
+    """
+    The number of repository with old permissions.
+    """
+    reposWithStalePermissions: Int!
 }

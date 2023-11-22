@@ -1,7 +1,7 @@
 import { Facet } from '@codemirror/state'
-import { EditorView, PluginValue, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { type EditorView, type PluginValue, ViewPlugin, type ViewUpdate } from '@codemirror/view'
 
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 
 /**
  * Transactions which modify the input because a history item was selected are
@@ -63,7 +63,7 @@ const historyView = ViewPlugin.fromClass(
 
         private onKeyDown = (event: KeyboardEvent): void => {
             switch (event.key) {
-                case 'ArrowUp':
+                case 'ArrowUp': {
                     {
                         event.preventDefault()
                         const nextHistoryEntry = this.currentHistoryEntry + 1
@@ -73,7 +73,8 @@ const historyView = ViewPlugin.fromClass(
                         }
                     }
                     break
-                case 'ArrowDown':
+                }
+                case 'ArrowDown': {
                     {
                         event.preventDefault()
                         const previousHistoryEntry = this.currentHistoryEntry - 1
@@ -81,6 +82,7 @@ const historyView = ViewPlugin.fromClass(
                         this.updateInput()
                     }
                     break
+                }
             }
         }
     }

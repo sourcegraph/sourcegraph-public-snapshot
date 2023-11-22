@@ -7,8 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -18,11 +16,11 @@ func init() {
 }
 
 func TestBatchInserter(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
-	expectedValues := makeTestValues(2, 0)
+	tableSizeFactor := 2
+	expectedValues := makeTestValues(tableSizeFactor, 0)
 	testInsert(t, db, expectedValues)
 
 	rows, err := db.Query("SELECT col1, col2, col3, col4, col5 from batch_inserter_test")
@@ -47,9 +45,40 @@ func TestBatchInserter(t *testing.T) {
 	}
 }
 
+func TestBatchInserterThin(t *testing.T) {
+	db := dbtest.NewDB(t)
+	setupTestTableThin(t, db)
+
+	tableSizeFactor := 2
+	var expectedValues [][]any
+	for i := 0; i < MaxNumPostgresParameters*tableSizeFactor; i++ {
+		expectedValues = append(expectedValues, []any{i})
+	}
+	testInsertThin(t, db, expectedValues)
+
+	rows, err := db.Query("SELECT col1 from batch_inserter_test_thin")
+	if err != nil {
+		t.Fatalf("unexpected error querying data: %s", err)
+	}
+	defer rows.Close()
+
+	var values [][]any
+	for rows.Next() {
+		var v1 int
+		if err := rows.Scan(&v1); err != nil {
+			t.Fatalf("unexpected error scanning data: %s", err)
+		}
+
+		values = append(values, []any{v1})
+	}
+
+	if diff := cmp.Diff(expectedValues, values); diff != "" {
+		t.Errorf("unexpected table contents (-want +got):\n%s", diff)
+	}
+}
+
 func TestBatchInserterWithReturn(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -67,8 +96,7 @@ func TestBatchInserterWithReturn(t *testing.T) {
 }
 
 func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -87,8 +115,7 @@ func TestBatchInserterWithReturnWithConflicts(t *testing.T) {
 }
 
 func TestBatchInserterWithConflict(t *testing.T) {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	setupTestTable(t, db)
 
 	tableSizeFactor := 2
@@ -119,8 +146,7 @@ func TestBatchInserterWithConflict(t *testing.T) {
 }
 
 func BenchmarkBatchInserter(b *testing.B) {
-	logger := logtest.Scoped(b)
-	db := dbtest.NewDB(logger, b)
+	db := dbtest.NewDB(b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 0)
 
@@ -133,8 +159,7 @@ func BenchmarkBatchInserter(b *testing.B) {
 }
 
 func BenchmarkBatchInserterLargePayload(b *testing.B) {
-	logger := logtest.Scoped(b)
-	db := dbtest.NewDB(logger, b)
+	db := dbtest.NewDB(b)
 	setupTestTable(b, db)
 	expectedValues := makeTestValues(10, 4096)
 
@@ -155,6 +180,18 @@ func setupTestTable(t testing.TB, db *sql.DB) {
 			col3 integer NOT NULL,
 			col4 integer NOT NULL,
 			col5 text
+		)
+	`
+	if _, err := db.Exec(createTableQuery); err != nil {
+		t.Fatalf("unexpected error creating test table: %s", err)
+	}
+}
+
+func setupTestTableThin(t testing.TB, db *sql.DB) {
+	createTableQuery := `
+		CREATE TABLE batch_inserter_test_thin (
+			id SERIAL,
+			col1 integer NOT NULL UNIQUE
 		)
 	`
 	if _, err := db.Exec(createTableQuery); err != nil {
@@ -190,6 +227,21 @@ func testInsert(t testing.TB, db *sql.DB, expectedValues [][]any) {
 	ctx := context.Background()
 
 	inserter := NewInserter(ctx, db, "batch_inserter_test", MaxNumPostgresParameters, "col1", "col2", "col3", "col4", "col5")
+	for _, values := range expectedValues {
+		if err := inserter.Insert(ctx, values...); err != nil {
+			t.Fatalf("unexpected error inserting values: %s", err)
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		t.Fatalf("unexpected error flushing: %s", err)
+	}
+}
+
+func testInsertThin(t testing.TB, db *sql.DB, expectedValues [][]any) {
+	ctx := context.Background()
+
+	inserter := NewInserter(ctx, db, "batch_inserter_test_thin", MaxNumPostgresParameters, "col1")
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)

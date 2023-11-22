@@ -2,12 +2,12 @@ import React, { useMemo } from 'react'
 
 import { Routes, Route } from 'react-router-dom'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { withAuthenticatedUser } from '../../../auth/withAuthenticatedUser'
 import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../../batches/utils'
 import { NotFoundPage } from '../../../components/HeroPage'
@@ -46,7 +46,6 @@ const BatchChangeClosePage = lazyComponent<BatchChangeClosePageProps, 'BatchChan
 interface Props extends TelemetryProps, SettingsCascadeProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
 }
 
 /**
@@ -55,7 +54,6 @@ interface Props extends TelemetryProps, SettingsCascadeProps {
 export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     authenticatedUser,
     isSourcegraphDotCom,
-    isSourcegraphApp,
     ...props
 }) => {
     const canCreate: true | string = useMemo(() => {
@@ -79,7 +77,6 @@ export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChil
                             canCreate={canCreate}
                             authenticatedUser={authenticatedUser}
                             isSourcegraphDotCom={isSourcegraphDotCom}
-                            isSourcegraphApp={isSourcegraphApp}
                             {...props}
                         />
                     }

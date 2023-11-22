@@ -1,9 +1,9 @@
 import { useCallback, useContext, useState } from 'react'
 
-import { ErrorLike, logger } from '@sourcegraph/common'
+import { type ErrorLike, logger } from '@sourcegraph/common'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { CodeInsightsBackendContext, Insight } from '../core'
+import { CodeInsightsBackendContext, type Insight } from '../core'
 import { getTrackingTypeByInsightType } from '../pings'
 
 type DeletionInsight = Pick<Insight, 'id' | 'type'>

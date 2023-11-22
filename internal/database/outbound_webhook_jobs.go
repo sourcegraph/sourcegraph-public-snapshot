@@ -27,12 +27,16 @@ type OutboundWebhookJobStore interface {
 	Create(ctx context.Context, eventType string, scope *string, payload []byte) (*types.OutboundWebhookJob, error)
 	DeleteBefore(ctx context.Context, before time.Time) error
 	GetByID(ctx context.Context, id int64) (*types.OutboundWebhookJob, error)
+	GetLast(ctx context.Context) (*types.OutboundWebhookJob, error)
 }
 
-type OutboundWebhookJobNotFoundErr struct{ id int64 }
+type OutboundWebhookJobNotFoundErr struct{ id *int64 }
 
 func (err OutboundWebhookJobNotFoundErr) Error() string {
-	return fmt.Sprintf("outbound webhook job not found: %v", err.id)
+	if err.id != nil {
+		return fmt.Sprintf("outbound webhook job with id %v not found", err.id)
+	}
+	return "outbound webhook job not found"
 }
 
 func (OutboundWebhookJobNotFoundErr) NotFound() bool { return true }
@@ -112,7 +116,23 @@ func (s *outboundWebhookJobStore) GetByID(ctx context.Context, id int64) (*types
 
 	var job types.OutboundWebhookJob
 	if err := s.scanOutboundWebhookJob(&job, s.QueryRow(ctx, q)); err == sql.ErrNoRows {
-		return nil, OutboundWebhookJobNotFoundErr{id}
+		return nil, OutboundWebhookJobNotFoundErr{id: &id}
+	} else if err != nil {
+		return nil, err
+	}
+
+	return &job, nil
+}
+
+func (s *outboundWebhookJobStore) GetLast(ctx context.Context) (*types.OutboundWebhookJob, error) {
+	q := sqlf.Sprintf(
+		outboundWebhookJobGetLastQueryFmtstr,
+		sqlf.Join(OutboundWebhookJobColumns, ","),
+	)
+
+	var job types.OutboundWebhookJob
+	if err := s.scanOutboundWebhookJob(&job, s.QueryRow(ctx, q)); err == sql.ErrNoRows {
+		return nil, OutboundWebhookJobNotFoundErr{}
 	} else if err != nil {
 		return nil, err
 	}
@@ -222,4 +242,15 @@ FROM
 	outbound_webhook_jobs
 WHERE
 	id = %s
+`
+
+const outboundWebhookJobGetLastQueryFmtstr = `
+-- source: internal/database/outbound_webhook_jobs.go:GetLast
+SELECT
+	%s
+FROM
+	outbound_webhook_jobs
+ORDER BY
+	id DESC
+LIMIT 1
 `

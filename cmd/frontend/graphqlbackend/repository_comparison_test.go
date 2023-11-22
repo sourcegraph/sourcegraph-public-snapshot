@@ -16,12 +16,11 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -75,7 +74,7 @@ func TestRepositoryComparison(t *testing.T) {
 		CreatedAt: time.Now(),
 	}
 
-	gsClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
+	gsClient := gitserver.NewMockClientWithExecReader(nil, func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
 		}
@@ -135,7 +134,7 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 
 		mockGSClient := gitserver.NewMockClient()
-		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
@@ -185,7 +184,7 @@ func TestRepositoryComparison(t *testing.T) {
 		}
 
 		mockGSClient := gitserver.NewMockClient()
-		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
+		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 			if opts.Path == "" {
 				t.Fatalf("expected a path as part of commits args")
 			}
@@ -998,9 +997,10 @@ func TestFileDiffHighlighter(t *testing.T) {
 type dummyFileResolver struct {
 	path, name string
 
-	richHTML     string
-	url          string
-	canonicalURL string
+	richHTML      string
+	url           string
+	canonicalURL  string
+	changelistURL string
 
 	content func(context.Context, *GitTreeContentPageArgs) (string, error)
 }
@@ -1041,6 +1041,10 @@ func (d *dummyFileResolver) URL(ctx context.Context) (string, error) {
 
 func (d *dummyFileResolver) CanonicalURL() string {
 	return d.canonicalURL
+}
+
+func (d *dummyFileResolver) ChangelistURL(ctx context.Context) (*string, error) {
+	return &d.changelistURL, nil
 }
 
 func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {

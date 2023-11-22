@@ -1,7 +1,9 @@
 import * as assert from 'assert'
 
+import { describe, it } from 'vitest'
+
 import { cStyleComment, javaStyleComment, leadingHashPattern, pythonStyleComment } from '../language-specs/comments'
-import { CommentStyle } from '../language-specs/language-spec'
+import type { CommentStyle } from '../language-specs/language-spec'
 
 import { findDocstring } from './docstrings'
 

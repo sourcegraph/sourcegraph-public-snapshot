@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiCircleOffOutline } from '@mdi/js'
-import { Location, useLocation, useNavigate } from 'react-router-dom'
+import { type Location, useLocation, useNavigate } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
     Container,
@@ -20,7 +20,7 @@ import {
     Select,
 } from '@sourcegraph/wildcard'
 
-import { DataSummary, DataSummaryItem } from '../components/DataSummary'
+import { DataSummary, type DataSummaryItem } from '../components/DataSummary'
 import { DashboardTree } from '../components/tree/DashboardTree'
 import { getIndexerKey, sanitizePath, getIndexRoot } from '../components/tree/util'
 import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../constants'

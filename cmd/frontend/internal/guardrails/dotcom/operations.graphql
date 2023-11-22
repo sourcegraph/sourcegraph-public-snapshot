@@ -1,0 +1,10 @@
+# Searches the instances indexed code for code matching snippet.
+query SnippetAttribution($snippet: String!, $first: Int!) {
+    snippetAttribution(snippet: $snippet, first: $first) {
+        totalCount
+        limitHit
+        nodes {
+            repositoryName
+        }
+    }
+}

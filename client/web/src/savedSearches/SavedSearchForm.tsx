@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
 
 import { LazyQueryInput } from '@sourcegraph/branded'
-import { QueryState } from '@sourcegraph/shared/src/search'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { QueryState } from '@sourcegraph/shared/src/search'
 import {
     Container,
     PageHeader,
@@ -21,10 +20,10 @@ import {
     Form,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { PageTitle } from '../components/PageTitle'
-import { Scalars, SearchPatternType } from '../graphql-operations'
-import { NamespaceProps } from '../namespaces'
+import { type Scalars, SearchPatternType } from '../graphql-operations'
+import type { NamespaceProps } from '../namespaces'
 
 import styles from './SavedSearchForm.module.scss'
 
@@ -94,9 +93,6 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
 
     const { query, description, notify, notifySlack, slackWebhookURL } = values
 
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
     useEffect(() => {
@@ -133,13 +129,12 @@ export const SavedSearchForm: React.FunctionComponent<React.PropsWithChildren<Sa
                             queryState={queryState}
                             onChange={setQueryState}
                             preventNewLine={true}
-                            applySuggestionsOnEnter={applySuggestionsOnEnter}
                         />
                     </Label>
                     {props.defaultValues?.notify && (
                         <div className="form-group mb-0">
                             {/* Label is for visual benefit, input has more specific label attached */}
-                            {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+                            {}
                             <Label className={styles.label} id="saved-search-form-email-notifications">
                                 Email notifications
                             </Label>

@@ -3,7 +3,7 @@
 (raw_string_literal) @string
 
 (null) @constant.null
-(nullptr) @constant.null
+("nullptr") @constant.null
 (number_literal) @number
 (char_literal) @character
 (true) @boolean

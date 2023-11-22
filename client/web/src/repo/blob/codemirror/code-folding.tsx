@@ -1,13 +1,12 @@
 import { foldEffect, foldGutter, foldKeymap, foldService } from '@codemirror/language'
-import { EditorState, Extension, StateField } from '@codemirror/state'
-import { EditorView, keymap, ViewPlugin, ViewUpdate } from '@codemirror/view'
+import { type EditorState, type Extension, StateField } from '@codemirror/state'
+import { EditorView, keymap, ViewPlugin, type ViewUpdate } from '@codemirror/view'
 import { mdiMenuDown, mdiMenuRight } from '@mdi/js'
 import { createRoot } from 'react-dom/client'
 
 import { Icon } from '@sourcegraph/wildcard/src'
 
-import { rangeToCmSelection } from './occurrence-utils'
-import { getCodeIntelTooltipState } from './token-selection/code-intel-tooltips'
+import { getSelectedToken } from './codeintel/token-selection'
 
 enum CharCode {
     /**
@@ -62,12 +61,12 @@ function computeFoldableRanges(state: EditorState): Map<number, number> {
             continue
         }
 
-        let previous = previousRanges[previousRanges.length - 1]
+        let previous = previousRanges.at(-1)!
         if (previous.indent > indent) {
             // remove ranges with larger indent
             do {
                 previousRanges.pop()
-                previous = previousRanges[previousRanges.length - 1]
+                previous = previousRanges.at(-1)!
             } while (previous.indent > indent)
 
             // new folding range
@@ -114,6 +113,26 @@ function getFoldRange(state: EditorState, lineStart: number): { from: number; to
     return { from: startLine.to, to: endLine.to }
 }
 
+const theme = EditorView.theme({
+    '.cm-foldGutter': {
+        '& .fold-marker': {
+            height: '1rem',
+            width: '1rem',
+        },
+
+        '& .fold-icon': {
+            width: '100%',
+            height: '100%',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+        },
+    },
+    '.cm-foldPlaceholder': {
+        background: 'var(--color-bg-3)',
+        borderColor: 'var(--border-color)',
+    },
+})
+
 /**
  * Enables indent-based code folding.
  */
@@ -142,9 +161,8 @@ export function codeFoldingExtension(): Extension {
                 for (const transaction of update.transactions) {
                     for (const effect of transaction.effects) {
                         if (effect.is(foldEffect)) {
-                            const focusedOccurrence = getCodeIntelTooltipState(view, 'focus')?.occurrence
-                            if (focusedOccurrence) {
-                                const range = rangeToCmSelection(view.state, focusedOccurrence.range)
+                            const range = getSelectedToken(view.state)
+                            if (range) {
                                 if (range.from >= effect.value.from && range.to <= effect.value.to) {
                                     // Occurrence is inside the folded range.
                                     // It will be removed from DOM triggering editor's blur.
@@ -158,21 +176,6 @@ export function codeFoldingExtension(): Extension {
             },
         })),
 
-        EditorView.theme({
-            '.cm-foldGutter .fold-marker': {
-                height: '1rem',
-                width: '1rem',
-            },
-            '.cm-foldGutter .fold-icon': {
-                width: '100%',
-                height: '100%',
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-            },
-            '.cm-foldPlaceholder': {
-                background: 'var(--color-bg-3)',
-                borderColor: 'var(--border-color)',
-            },
-        }),
+        theme,
     ]
 }

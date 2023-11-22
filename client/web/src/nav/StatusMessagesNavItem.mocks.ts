@@ -1,8 +1,8 @@
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
-import { StatusAndRepoCountResult } from '../graphql-operations'
+import type { StatusAndRepoCountResult } from '../graphql-operations'
 
 import { STATUS_AND_REPO_COUNT } from './StatusMessagesNavItemQueries'
 

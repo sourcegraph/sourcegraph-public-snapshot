@@ -1,0 +1,77 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: dumped
+---
+  package MyPackage;
+  
+  public class globals {
+//             ^^^^^^^ definition scip-ctags globals#
+      private static int field1;
+//                       ^^^^^^ definition scip-ctags globals#field1.
+      protected static int field2;
+//                         ^^^^^^ definition scip-ctags globals#field2.
+      public static int field3;
+//                      ^^^^^^ definition scip-ctags globals#field3.
+      private int field4;
+//                ^^^^^^ definition scip-ctags globals#field4.
+      protected int field5;
+//                  ^^^^^^ definition scip-ctags globals#field5.
+      public int field6;
+//               ^^^^^^ definition scip-ctags globals#field6.
+  
+      private static void method1() {}
+//                        ^^^^^^^ definition scip-ctags globals#method1().
+      protected static void method2() {}
+//                          ^^^^^^^ definition scip-ctags globals#method2().
+      public static void method3() {}
+//                       ^^^^^^^ definition scip-ctags globals#method3().
+      private void method4() {}
+//                 ^^^^^^^ definition scip-ctags globals#method4().
+      protected void method5() {}
+//                   ^^^^^^^ definition scip-ctags globals#method5().
+      public void method6() {}
+//                ^^^^^^^ definition scip-ctags globals#method6().
+  
+      public static final String COOLEST_STRING = "probably this one";
+//                               ^^^^^^^^^^^^^^ definition scip-ctags globals#COOLEST_STRING.
+  
+      public record Person (String name, String address) {}
+//                  ^^^^^^ definition scip-ctags globals#Person#
+//                                 ^^^^ definition scip-ctags globals#Person#name.
+//                                              ^^^^^^^ definition scip-ctags globals#Person#address.
+  
+      public class ClassInAClass {
+//                 ^^^^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#
+          boolean classy = true;
+//                ^^^^^^ definition scip-ctags globals#ClassInAClass#classy.
+  
+          public static enum Enum {
+//                           ^^^^ definition scip-ctags globals#ClassInAClass#Enum#
+              these,
+//            ^^^^^ definition scip-ctags globals#ClassInAClass#Enum#these.
+              should,
+//            ^^^^^^ definition scip-ctags globals#ClassInAClass#Enum#should.
+              be,
+//            ^^ definition scip-ctags globals#ClassInAClass#Enum#be.
+              recognized,
+//            ^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#Enum#recognized.
+              as,
+//            ^^ definition scip-ctags globals#ClassInAClass#Enum#as.
+              terms
+//            ^^^^^ definition scip-ctags globals#ClassInAClass#Enum#terms.
+          }
+  
+          public interface Goated {
+//                         ^^^^^^ definition scip-ctags globals#ClassInAClass#Goated#
+              boolean withTheSauce();
+//                    ^^^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#Goated#withTheSauce().
+          }
+  
+          public void myCoolMethod() {
+//                    ^^^^^^^^^^^^ definition scip-ctags globals#ClassInAClass#myCoolMethod().
+              class WhatIsGoingOn {}
+              boolean iThinkThisIsAllowedButWeDontReallyCare = true;
+          }
+      }
+  }
+

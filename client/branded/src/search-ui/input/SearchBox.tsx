@@ -1,23 +1,28 @@
-import { FC, useCallback, useMemo, useRef } from 'react'
+import { type FC, useCallback, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextInputProps, QueryState, SubmitSearchProps, EditorHint } from '@sourcegraph/shared/src/search'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import {
+    type SearchContextInputProps,
+    type QueryState,
+    type SubmitSearchProps,
+    EditorHint,
+} from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import type { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
+import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { IEditor, LazyQueryInput, LazyQueryInputProps } from './LazyQueryInput'
+import { type IEditor, LazyQueryInput, type LazyQueryInputProps } from './LazyQueryInput'
 import { SearchButton } from './SearchButton'
 import { SearchContextDropdown } from './SearchContextDropdown'
 import { SearchHelpDropdownButton } from './SearchHelpDropdownButton'
 import { SearchHistoryDropdown } from './SearchHistoryDropdown'
-import { Toggles, TogglesProps } from './toggles'
+import { Toggles, type TogglesProps } from './toggles'
 
 import styles from './SearchBox.module.scss'
 
@@ -26,16 +31,7 @@ export interface SearchBoxProps
         SearchContextInputProps,
         TelemetryProps,
         PlatformContextProps<'requestGraphQL'>,
-        Pick<
-            LazyQueryInputProps,
-            | 'autoFocus'
-            | 'onFocus'
-            | 'onSubmit'
-            | 'interpretComments'
-            | 'onChange'
-            | 'onCompletionItemSelected'
-            | 'applySuggestionsOnEnter'
-        > {
+        Pick<LazyQueryInputProps, 'autoFocus' | 'onFocus' | 'onSubmit' | 'interpretComments' | 'onChange'> {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean // significant for query suggestions
     showSearchContext: boolean
@@ -50,13 +46,11 @@ export interface SearchBoxProps
     /** Don't show search help button */
     hideHelpButton?: boolean
 
-    /** Set in JSContext only available to the web app. */
-    isExternalServicesUserModeAll?: boolean
-
     /** Called with the underlying editor instance on creation. */
     onEditorCreated?: (editor: IEditor) => void
 
-    /** Whether or not to show the search history button. Also disables the
+    /**
+     * Whether or not to show the search history button. Also disables the
      * search button. Does not affect history in the search input itself (via
      * arrow up/down)
      */
@@ -183,13 +177,11 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         interpretComments={props.interpretComments}
                         isSourcegraphDotCom={props.isSourcegraphDotCom}
                         onChange={props.onChange}
-                        onCompletionItemSelected={props.onCompletionItemSelected}
                         onFocus={props.onFocus}
                         onSubmit={props.onSubmit}
                         patternType={props.patternType}
                         queryState={queryState}
                         selectedSearchContextSpec={props.selectedSearchContextSpec}
-                        applySuggestionsOnEnter={props.applySuggestionsOnEnter}
                         searchHistory={recentSearchesWithoutSearchContext}
                         onSelectSearchFromHistory={onInlineSearchHistorySelect}
                     />
@@ -200,13 +192,10 @@ export const SearchBox: FC<SearchBoxProps> = props => {
                         setCaseSensitivity={props.setCaseSensitivity}
                         searchMode={props.searchMode}
                         setSearchMode={props.setSearchMode}
-                        settingsCascade={props.settingsCascade}
                         submitSearch={props.submitSearchOnToggle}
                         navbarSearchQuery={queryState.query}
                         className={styles.searchBoxToggles}
-                        showCopyQueryButton={props.showCopyQueryButton}
                         structuralSearchDisabled={props.structuralSearchDisabled}
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                     />
                 </div>
             </div>

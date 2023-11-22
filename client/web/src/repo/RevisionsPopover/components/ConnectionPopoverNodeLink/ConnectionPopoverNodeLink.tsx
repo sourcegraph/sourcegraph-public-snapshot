@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Link, LinkProps } from '@sourcegraph/wildcard'
+import { Link, type LinkProps } from '@sourcegraph/wildcard'
 
-import { GitReferenceNode, GitReferenceNodeProps } from '../../../GitReference'
+import { GitReferenceNode, type GitReferenceNodeProps } from '../../../GitReference'
 
 import styles from './ConnectionPopoverNodeLink.module.scss'
 

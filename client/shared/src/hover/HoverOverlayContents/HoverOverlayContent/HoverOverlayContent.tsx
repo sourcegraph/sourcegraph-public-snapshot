@@ -3,9 +3,9 @@ import React from 'react'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
 
-import { HoverMerged } from '@sourcegraph/client-api'
+import type { HoverMerged } from '@sourcegraph/client-api'
 import { asError, renderMarkdown } from '@sourcegraph/common'
-import { Alert, AlertProps, Badge, Text } from '@sourcegraph/wildcard'
+import { Alert, type AlertProps, Badge, Text } from '@sourcegraph/wildcard'
 
 import hoverOverlayStyle from '../../HoverOverlay.module.scss'
 import hoverOverlayContentsStyle from '../../HoverOverlayContents.module.scss'

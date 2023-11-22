@@ -1,14 +1,17 @@
 import { MockedProvider } from '@apollo/client/testing'
-import { cleanup } from '@testing-library/react'
+import { cleanup, screen } from '@testing-library/react'
 import { EMPTY, NEVER } from 'rxjs'
 import sinon from 'sinon'
+import { afterEach, describe, expect, it } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { RepositoryFields } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import { type RepositoryFields, RepositoryType } from '../../graphql-operations'
 
-import { Props, TreePage } from './TreePage'
+import { type Props, TreePage } from './TreePage'
 
 describe('TreePage', () => {
     afterEach(cleanup)
@@ -16,6 +19,7 @@ describe('TreePage', () => {
     const repoDefaults = (): RepositoryFields => ({
         id: 'repo-id',
         name: 'repo name',
+        sourceType: RepositoryType.GIT_REPOSITORY,
         url: 'http://repo.url.example.com',
         description: 'Awesome for testing',
         viewerCanAdminister: false,
@@ -29,6 +33,7 @@ describe('TreePage', () => {
             displayName: 'Default Branch Display Name',
             abbrevName: 'def-branch-abbr',
         },
+        metadata: [],
     })
 
     const treePagePropsDefaults = (repositoryFields: RepositoryFields): Props => ({
@@ -52,6 +57,7 @@ describe('TreePage', () => {
             urlToFile: () => '',
             sourcegraphURL: 'https://sourcegraph.com',
             clientApplication: 'sourcegraph',
+            telemetryRecorder: noOpTelemetryRecorder,
         },
         telemetryService: NOOP_TELEMETRY_SERVICE,
         codeIntelligenceEnabled: false,
@@ -62,6 +68,8 @@ describe('TreePage', () => {
         setBreadcrumb: sinon.spy(),
         useBreadcrumb: sinon.spy(),
         ownEnabled: false,
+        authenticatedUser: null,
+        context: { authProviders: [] },
     })
 
     describe('repo page', () => {
@@ -89,6 +97,33 @@ describe('TreePage', () => {
                 </MockedProvider>
             )
             expect(result.queryByTestId('repo-fork-badge')).toHaveTextContent('Fork')
+        })
+
+        it('Should displays cody CTA', () => {
+            const repo = repoDefaults()
+            const props = treePagePropsDefaults(repo)
+            window.context = window.context || {}
+            window.context.codyEnabled = true
+            window.context.codyEnabledForCurrentUser = true
+
+            const mockUser = {
+                id: 'userID',
+                username: 'username',
+                emails: [{ email: 'user@me.com', isPrimary: true, verified: true }],
+                siteAdmin: true,
+            } as AuthenticatedUser
+
+            renderWithBrandedContext(
+                <MockedProvider>
+                    <TreePage {...{ ...props, isSourcegraphDotCom: true, authenticatedUser: mockUser }} />
+                </MockedProvider>
+            )
+
+            expect(screen.getByText('Try Cody on this repository')).toBeVisible()
+            expect(screen.getByText('Click the Ask Cody button above and to the right of this banner')).toBeVisible()
+            expect(
+                screen.getByText('Ask Cody a question like “Explain the structure of this repository”')
+            ).toBeVisible()
         })
     })
 })

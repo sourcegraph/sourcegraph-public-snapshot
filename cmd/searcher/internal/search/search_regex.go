@@ -10,14 +10,13 @@ import (
 	"unicode/utf8"
 
 	"github.com/grafana/regexp"
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/zoekt/query"
 )
@@ -261,21 +260,14 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *zipFile, limit in
 }
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
-func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) error {
-	var err error
-	span, ctx := ot.StartSpanFromContext(ctx, "RegexSearch") //nolint:staticcheck // OT is deprecated
-	ext.Component.Set(span, "regex_search")
+func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
+	tr, ctx := trace.New(ctx, "regexSearch")
+	defer tr.EndWithErr(&err)
+
 	if rg.re != nil {
-		span.SetTag("re", rg.re.String())
+		tr.SetAttributes(attribute.Stringer("re", rg.re))
 	}
-	span.SetTag("path", rg.matchPath.String())
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	tr.SetAttributes(attribute.Stringer("path", rg.matchPath))
 
 	if !patternMatchesContent && !patternMatchesPaths {
 		patternMatchesContent = true
@@ -286,7 +278,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	if deadline, ok := ctx.Deadline(); ok {
 		// If a deadline is set, try to finish before the deadline expires.
 		timeout := time.Duration(0.9 * float64(time.Until(deadline)))
-		span.LogFields(otlog.Int64("RegexSearchTimeout", int64(timeout)))
+		tr.AddEvent("set timeout", attribute.Stringer("duration", timeout))
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 	} else {
 		ctx, cancel = context.WithCancel(ctx)
@@ -375,9 +367,10 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 		err = ctx.Err()
 	}
 
-	span.LogFields(
-		otlog.Int("filesSkipped", int(filesSkipped.Load())),
-		otlog.Int("filesSearched", int(filesSearched.Load())),
+	tr.AddEvent(
+		"done",
+		attribute.Int("filesSkipped", int(filesSkipped.Load())),
+		attribute.Int("filesSearched", int(filesSearched.Load())),
 	)
 
 	return err

@@ -1,9 +1,11 @@
-import React, { FC } from 'react'
+import React, { type FC } from 'react'
 
 import classNames from 'classnames'
 
-import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import type { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
+
+import type { RateLimiterState } from './backend'
 
 import styles from '../../site-admin/WebhookInformation.module.scss'
 
@@ -14,13 +16,48 @@ interface ExternalServiceInformationProps {
     icon: React.ComponentType<React.PropsWithChildren<{ className?: string }>>
     kind: ExternalServiceKind
     displayName: string
+    rateLimiterState?: RateLimiterState | null
     codeHostID: string
     reposNumber: number
     syncInProgress: boolean
+    gitHubApp?: {
+        id: string
+        name: string
+    } | null
+}
+
+export const RateLimiterStateInfo: FC<{ rateLimiterState: RateLimiterState }> = props => {
+    const { rateLimiterState } = props
+    const rateLimiterDebug = Object.entries(rateLimiterState).map(([key, value]) => (
+        <div key={key}>
+            {key}: {value.toString()}
+        </div>
+    ))
+
+    return (
+        <tr>
+            <th className={styles.tableHeader}>Rate limit</th>
+            {rateLimiterState.infinite ? (
+                <td>
+                    <Tooltip content={rateLimiterDebug}>
+                        <span>No rate limit</span>
+                    </Tooltip>
+                </td>
+            ) : (
+                <td>
+                    <Tooltip content={rateLimiterDebug}>
+                        <span>
+                            {(rateLimiterState.limit / rateLimiterState.interval).toFixed(2)} requests per second
+                        </span>
+                    </Tooltip>
+                </td>
+            )}
+        </tr>
+    )
 }
 
 export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = props => {
-    const { icon, kind, displayName, codeHostID, reposNumber, syncInProgress } = props
+    const { icon, kind, displayName, codeHostID, reposNumber, syncInProgress, gitHubApp, rateLimiterState } = props
 
     return (
         <table className={classNames(styles.table, 'table')}>
@@ -32,6 +69,16 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                         {kind}
                     </td>
                 </tr>
+                {gitHubApp && (
+                    <tr>
+                        <th className={styles.tableHeader}>GitHub App</th>
+                        <td>
+                            <Link to={`/site-admin/github-apps/${encodeURIComponent(gitHubApp.id)}`}>
+                                {gitHubApp.name}
+                            </Link>
+                        </td>
+                    </tr>
+                )}
                 <tr>
                     <th className={styles.tableHeader}>Display name</th>
                     <td>{displayName}</td>
@@ -52,6 +99,7 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                         )}
                     </td>
                 </tr>
+                {rateLimiterState && <RateLimiterStateInfo rateLimiterState={rateLimiterState} />}
             </tbody>
         </table>
     )

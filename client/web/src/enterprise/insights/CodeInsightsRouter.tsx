@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 
 const CodeInsightsAppLazyRouter = lazyComponent(() => import('./CodeInsightsAppRouter'), 'CodeInsightsAppRouter')
 
@@ -15,11 +15,10 @@ const CodeInsightsDotComGetStartedLazy = lazyComponent(
 export interface CodeInsightsRouterProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
 }
 
 export const CodeInsightsRouter: FC<CodeInsightsRouterProps> = props => {
-    const { authenticatedUser, telemetryService, isSourcegraphApp } = props
+    const { authenticatedUser, telemetryService } = props
 
     if (!window.context?.codeInsightsEnabled) {
         return (
@@ -30,11 +29,5 @@ export const CodeInsightsRouter: FC<CodeInsightsRouterProps> = props => {
         )
     }
 
-    return (
-        <CodeInsightsAppLazyRouter
-            authenticatedUser={authenticatedUser}
-            telemetryService={telemetryService}
-            isSourcegraphApp={isSourcegraphApp}
-        />
-    )
+    return <CodeInsightsAppLazyRouter authenticatedUser={authenticatedUser} telemetryService={telemetryService} />
 }

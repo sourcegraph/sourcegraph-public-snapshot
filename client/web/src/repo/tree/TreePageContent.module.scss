@@ -14,17 +14,12 @@
     @media (--md-breakpoint-down) {
         grid-template-areas:
             'files files files'
-            'contributors contributors contributors'
-            'commits commits commits';
+            'contributors contributors contributors';
     }
 }
 
 .files {
     grid-area: files;
-}
-
-.commits {
-    grid-area: commits;
 }
 
 .contributors {
@@ -42,14 +37,54 @@
     border-top: 1px solid var(--border-color);
 }
 
-.git-commit-node {
-    padding: 0.25rem 0;
+.table {
+    table-layout: fixed;
+}
 
-    &-message-subject {
-        font-weight: normal;
+.link-dark {
+    &,
+    &:hover,
+    &:focus {
+        color: var(--light-blue);
     }
 }
 
-.table {
-    table-layout: fixed;
+.extra-info {
+    align-self: start;
+    grid-area: contributors;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+
+    @media (--lg-breakpoint-up) {
+        padding: 0.5rem 0 0.5rem 1.5rem;
+        border-top: none;
+        border-bottom: none;
+        border-right: none;
+    }
+
+    p {
+        margin: 0;
+    }
+
+    :global(.theme-dark) & {
+        background-color: transparent;
+    }
+}
+
+.extra-info-section-item {
+    &-header-icon {
+        opacity: 0;
+        transition: opacity 0.1s ease-in-out;
+    }
+
+    &:hover &-header-icon {
+        opacity: 1;
+    }
+}
+
+/** TODO(#51791): Extract common component or unify together with FileOwnershipEntry. */
+.badge {
+    text-transform: uppercase;
+    margin-right: 0.5rem;
 }

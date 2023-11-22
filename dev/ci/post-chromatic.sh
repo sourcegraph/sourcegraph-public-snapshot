@@ -10,7 +10,15 @@ set -eu -o pipefail
 # - BUILDKITE_PULL_REQUEST
 # - RENDER_PREVIEW_GITHUB_TOKEN
 
+exit_status=$?
 chromatic_publish_output=$(</dev/stdin)
+
+if [ $exit_status -eq 0 ]; then
+  echo "$chromatic_publish_output"
+else
+  echo "$chromatic_publish_output"
+  exit 1
+fi
 
 echo "$chromatic_publish_output"
 
@@ -40,35 +48,35 @@ else
   exit 1
 fi
 
-if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
-  # GitHub pull request number and GitHub api token are set
-  # Appending Storybook link into App preview section
-  github_pr_api_url="https://api.github.com/repos/${owner_and_repo}/pulls/${pr_number}"
+if [[ -n "${github_api_key}" && -n "${pr_number}" && "${pr_number}" != "false" ]]; then
+  github_pr_comments_api_url="https://api.github.com/repos/${owner_and_repo}/issues/${pr_number}/comments"
 
-  pr_description=$(curl -sSf --request GET \
-    --url "${github_pr_api_url}" \
+  app_preview_comment_id=$(curl -sSf --request GET \
+    --url "${github_pr_comments_api_url}" \
     --user "apikey:${github_api_key}" \
     --header 'Accept: application/vnd.github.v3+json' \
-    --header 'Content-Type: application/json' | jq -r '.body')
+    --header 'Content-Type: application/json' | jq '.[] | select(.body | contains("📖 [Storybook live preview]")) | .id')
 
-  # Assume Chromatic publish finishes after Render PR preview job
-  if [[ "${pr_description}" == *"## App preview"* ]]; then
-    echo "Updating PR #${pr_number} in ${owner_and_repo} description"
+  app_preview_comment_body=$(printf '%s\n' \
+    "📖 [Storybook live preview](${chromatic_storybook_url})" | jq -Rs .)
 
-    # Check if Storybook link exists for adding new link or replacing existing one
-    if [[ "$pr_description" =~ \[Storybook\]\(https:\/\/[[:alnum:]]*\-[[:alnum:]]*\.chromatic\.com\) ]]; then
-      pr_description=$(echo "$pr_description" | sed -e "s|\[Storybook\](https:\/\/[[:alnum:]]*\-[[:alnum:]]*\.chromatic\.com)|[Storybook](${chromatic_storybook_url})|" | jq -Rs .)
-    else
-      pr_description=$(echo "$pr_description" | sed -e "s|\[[[:alpha:]]*\](https:\/\/.*.onrender.com)|&\n- [Storybook](${chromatic_storybook_url})|" | jq -Rs .)
-    fi
+  if [[ -z "${app_preview_comment_id}" ]]; then
+    echo "Adding new App preview comment to PR #${pr_number} in ${owner_and_repo}"
 
-    curl -sSf -o /dev/null --request PATCH \
-      --url "${github_pr_api_url}" \
+    curl -sSf -o /dev/null --request POST \
+      --url "${github_pr_comments_api_url}" \
       --user "apikey:${github_api_key}" \
       --header 'Accept: application/vnd.github.v3+json' \
       --header 'Content-Type: application/json' \
-      --data "{ \"body\": ${pr_description} }"
+      --data "{ \"body\": ${app_preview_comment_body} }"
   else
-    echo "Couldn't find \"App preview\" section in description of PR #${pr_number} in ${owner_and_repo}"
+    echo "Updating App preview comment (id: ${app_preview_comment_id}) in PR #${pr_number} in ${owner_and_repo}"
+
+    curl -sSf -o /dev/null --request PATCH \
+      --url "https://api.github.com/repos/${owner_and_repo}/issues/comments/${app_preview_comment_id}" \
+      --user "apikey:${github_api_key}" \
+      --header 'Accept: application/vnd.github.v3+json' \
+      --header 'Content-Type: application/json' \
+      --data "{ \"body\": ${app_preview_comment_body} }"
   fi
 fi

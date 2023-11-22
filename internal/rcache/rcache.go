@@ -3,6 +3,7 @@ package rcache
 import (
 	"fmt"
 	"os"
+	"testing"
 	"time"
 	"unicode/utf8"
 
@@ -23,7 +24,7 @@ const dataVersionToDelete = "v1"
 // DeleteOldCacheData deletes the rcache data in the given Redis instance
 // that's prefixed with dataVersionToDelete
 func DeleteOldCacheData(c redis.Conn) error {
-	return deleteAllKeysWithPrefix(c, dataVersionToDelete)
+	return redispool.DeleteAllKeysWithPrefix(c, dataVersionToDelete)
 }
 
 // Cache implements httpcache.Cache
@@ -88,7 +89,7 @@ func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
 }
 
 func (r *Cache) Increase(key string) {
-	err := kv().Incr(r.rkeyPrefix() + key)
+	_, err := kv().Incr(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "INCR", "error", err)
 		return
@@ -132,6 +133,15 @@ func (r *Cache) GetHashItem(key string, hashKey string) (string, error) {
 	return kv().HGet(r.rkeyPrefix()+key, hashKey).String()
 }
 
+// DeleteHashItem deletes a key in a HASH.
+// It returns an integer representing the amount of deleted hash keys:
+// If the key exists and the hash key exists, it will return 1.
+// If the key exists but the hash key does not, it will return 0.
+// If the key does not exist, it will return 0.
+func (r *Cache) DeleteHashItem(key string, hashKey string) (int, error) {
+	return kv().HDel(r.rkeyPrefix()+key, hashKey).Int()
+}
+
 // GetHashAll returns the members of the HASH stored at `key`, in no particular order.
 func (r *Cache) GetHashAll(key string) (map[string]string, error) {
 	return kv().HGetAll(r.rkeyPrefix() + key).StringMap()
@@ -159,7 +169,7 @@ type TB interface {
 
 // SetupForTest adjusts the globalPrefix and clears it out. You will have
 // conflicts if you do `t.Parallel()`
-func SetupForTest(t TB) {
+func SetupForTest(t testing.TB) {
 	t.Helper()
 
 	pool := &redis.Pool{
@@ -187,40 +197,10 @@ func SetupForTest(t TB) {
 		}
 	}
 
-	err := deleteAllKeysWithPrefix(c, globalPrefix)
+	err := redispool.DeleteAllKeysWithPrefix(c, globalPrefix)
 	if err != nil {
 		log15.Error("Could not clear test prefix", "name", t.Name(), "globalPrefix", globalPrefix, "error", err)
 	}
-}
-
-// The number of keys to delete per batch.
-// The maximum number of keys that can be unpacked
-// is determined by the Lua config LUAI_MAXCSTACK
-// which is 8000 by default.
-// See https://www.lua.org/source/5.1/luaconf.h.html
-var deleteBatchSize = 5000
-
-func deleteAllKeysWithPrefix(c redis.Conn, prefix string) error {
-	const script = `
-redis.replicate_commands()
-local cursor = '0'
-local prefix = ARGV[1]
-local batchSize = ARGV[2]
-local result = ''
-repeat
-	local keys = redis.call('SCAN', cursor, 'MATCH', prefix, 'COUNT', batchSize)
-	if #keys[2] > 0
-	then
-		result = redis.call('DEL', unpack(keys[2]))
-	end
-
-	cursor = keys[1]
-until cursor == '0'
-return result
-`
-
-	_, err := c.Do("EVAL", script, 0, prefix+":*", deleteBatchSize)
-	return err
 }
 
 var kvMock redispool.KeyValue

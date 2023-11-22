@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "awskms",
@@ -7,12 +8,14 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
+        "//internal/encryption/aeshelper",
+        "//internal/encryption/envelope",
+        "//internal/encryption/wrapper",
         "//lib/errors",
         "//schema",
         "@com_github_aws_aws_sdk_go_v2//aws",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
         "@com_github_aws_aws_sdk_go_v2_service_kms//:kms",
-        "@com_github_aws_aws_sdk_go_v2_service_kms//types",
     ],
 )
 
@@ -23,13 +26,17 @@ go_test(
     data = glob(["testdata/**"]),
     embed = [":awskms"],
     deps = [
+        "//internal/encryption/envelope",
         "//internal/httpcli",
         "//internal/httptestutil",
         "//schema",
         "@com_github_aws_aws_sdk_go_v2//aws/transport/http",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
         "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",
+        "@com_github_aws_aws_sdk_go_v2_service_kms//:kms",
+        "@com_github_aws_aws_sdk_go_v2_service_kms//types",
         "@com_github_dnaeon_go_vcr//cassette",
         "@com_github_dnaeon_go_vcr//recorder",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -1,8 +1,8 @@
-import { ApolloClient, gql } from '@apollo/client'
+import { type ApolloClient, gql } from '@apollo/client'
 
-import { InputStatus, useFieldAPI, ValidationResult } from '@sourcegraph/wildcard'
+import { InputStatus, type useFieldAPI, type ValidationResult } from '@sourcegraph/wildcard'
 
-import { GetSearchContextByNameResult } from '../../../../../../../../../graphql-operations'
+import type { GetSearchContextByNameResult } from '../../../../../../../../../graphql-operations'
 
 export const REPO_FILTER_VALIDATORS = isValidRegexp
 

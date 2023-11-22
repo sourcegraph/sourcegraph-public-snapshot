@@ -124,7 +124,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		cleanup := setExecutorAccessToken(t, "")
 		defer cleanup()
 
-		resp, err := userClient.Get(*baseURL + "/.executors/")
+		resp, err := userClient.Get(*baseURL + "/.executors/test/auth")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -152,7 +152,7 @@ func TestCodeIntelEndpoints(t *testing.T) {
 		// sleep 5s to wait for site configuration to be restored from gqltest
 		time.Sleep(5 * time.Second)
 
-		resp, err := userClient.Get(*baseURL + "/.executors/")
+		resp, err := userClient.Get(*baseURL + "/.executors/test/auth")
 		if err != nil {
 			t.Fatal(err)
 		}

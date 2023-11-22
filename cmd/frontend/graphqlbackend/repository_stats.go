@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -22,36 +22,19 @@ type repositoryStatsResolver struct {
 	repoStatistics     database.RepoStatistics
 	repoStatisticsErr  error
 
-	gitDirBytesOnce sync.Once
-	gitDirBytes     int64
-	gitDirBytesErr  error
+	embeddedStatsOnce sync.Once
+	embeddedRepos     int32
+	embeddedStatsErr  error
+}
+
+func (r *repositoryStatsResolver) Embedded(ctx context.Context) (int32, error) {
+	return r.computeEmbeddedRepos(ctx)
 }
 
 func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, error) {
-	gitDirBytes, err := r.computeGitDirBytes(ctx)
-	if err != nil {
-		return 0, err
-	}
-	return BigInt(gitDirBytes), nil
+	gitDirBytes, err := r.db.GitserverRepos().GetGitserverGitDirSize(ctx)
+	return BigInt(gitDirBytes), err
 
-}
-
-func (r *repositoryStatsResolver) computeGitDirBytes(ctx context.Context) (int64, error) {
-	r.gitDirBytesOnce.Do(func() {
-		stats, err := gitserver.NewClient().ReposStats(ctx)
-		if err != nil {
-			r.gitDirBytesErr = err
-			return
-		}
-
-		var gitDirBytes int64
-		for _, stat := range stats {
-			gitDirBytes += stat.GitDirBytes
-		}
-		r.gitDirBytes = gitDirBytes
-	})
-
-	return r.gitDirBytes, r.gitDirBytesErr
 }
 
 func (r *repositoryStatsResolver) Indexed(ctx context.Context) (int32, error) {
@@ -88,12 +71,12 @@ func (r *repositoryStatsResolver) IndexedLinesCount(ctx context.Context) (BigInt
 
 func (r *repositoryStatsResolver) computeIndexedStats(ctx context.Context) (int32, int64, error) {
 	r.indexedStatsOnce.Do(func() {
-		repos, err := search.ListAllIndexed(ctx)
+		repos, err := search.ListAllIndexed(ctx, search.Indexed())
 		if err != nil {
 			r.indexedStatsErr = err
 			return
 		}
-		r.indexedRepos = int32(len(repos.Minimal)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		r.indexedRepos = int32(repos.Stats.Repos)
 		r.indexedLinesCount = int64(repos.Stats.DefaultBranchNewLinesCount) + int64(repos.Stats.OtherBranchesNewLinesCount)
 	})
 
@@ -153,6 +136,19 @@ func (r *repositoryStatsResolver) computeRepoStatistics(ctx context.Context) (da
 		r.repoStatistics, r.repoStatisticsErr = r.db.RepoStatistics().GetRepoStatistics(ctx)
 	})
 	return r.repoStatistics, r.repoStatisticsErr
+}
+
+func (r *repositoryStatsResolver) computeEmbeddedRepos(ctx context.Context) (int32, error) {
+	r.embeddedStatsOnce.Do(func() {
+		count, err := repo.NewRepoEmbeddingJobsStore(r.db).CountRepoEmbeddings(ctx)
+		if err != nil {
+			r.embeddedStatsErr = err
+			return
+		}
+		r.embeddedRepos = int32(count)
+	})
+
+	return r.embeddedRepos, r.embeddedStatsErr
 }
 
 func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsResolver, error) {

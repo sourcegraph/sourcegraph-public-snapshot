@@ -7,7 +7,7 @@ import { Alert, H5, Text } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../auth/accessToken'
 import { CopyableText } from '../../components/CopyableText'
-import { AccessTokenFields } from '../../graphql-operations'
+import type { AccessTokenFields } from '../../graphql-operations'
 
 interface AccessTokenCreatedAlertProps {
     token: AccessTokenFields
@@ -25,11 +25,24 @@ export const AccessTokenCreatedAlert: React.FunctionComponent<
     return (
         <Alert className={classNames('access-token-created-alert', className)} variant="success">
             <Text>Copy the new access token now. You won't be able to see it again.</Text>
-            <CopyableText className="test-access-token" text={tokenSecret} size={48} />
-            <H5 className="mt-4 mb-2">
-                <strong>Example usage</strong>
-            </H5>
-            <CodeSnippet code={curlExampleCommand(tokenSecret, isSudoToken)} className="mb-0" language="bash" />
+            <CopyableText className="test-access-token" text={tokenSecret} size={48} secret={true}>
+                {({ isRedacted }) => {
+                    const secretToDisplay = isRedacted ? tokenSecret.replaceAll(/./g, '*') : tokenSecret
+                    return (
+                        <>
+                            <H5 className="mt-4 mb-2">
+                                <strong>Example usage</strong>
+                            </H5>
+                            <CodeSnippet
+                                code={curlExampleCommand(secretToDisplay, isSudoToken)}
+                                className="mb-0"
+                                language="bash"
+                                withCopyButton={true}
+                            />
+                        </>
+                    )
+                }}
+            </CopyableText>
         </Alert>
     )
 }

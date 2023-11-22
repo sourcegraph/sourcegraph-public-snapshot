@@ -2,7 +2,7 @@ import React from 'react'
 
 import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
-import { Meta } from '@storybook/react'
+import type { Meta } from '@storybook/react'
 
 import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import {
@@ -13,7 +13,7 @@ import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../components/WebStory'
 import { CodeInsightsBackendContext, CodeInsightsGqlBackend } from '../core'
-import { DashboardPermissions } from '../pages/dashboards/dashboard-view/utils/get-dashboard-permissions'
+import type { DashboardPermissions } from '../pages/dashboards/dashboard-view/utils/get-dashboard-permissions'
 
 import { GaConfirmationModal } from './GaConfirmationModal'
 
@@ -53,7 +53,7 @@ export const GaConfirmationModalExample: React.FunctionComponent<React.PropsWith
             <TemporarySettingsContext.Provider value={settingsStorage}>
                 <div>
                     <H2>Some content</H2>
-                    <GaConfirmationModal isSourcegraphApp={false} />
+                    <GaConfirmationModal />
                 </div>
             </TemporarySettingsContext.Provider>
         </CodeInsightsBackendContext.Provider>

@@ -1,20 +1,18 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "grpc",
     srcs = [
         "grpc.go",
         "panics.go",
-        "propagator.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/conf",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
-        "@org_golang_google_grpc//metadata",
         "@org_golang_google_grpc//status",
         "@org_golang_x_net//http2",
         "@org_golang_x_net//http2/h2c",

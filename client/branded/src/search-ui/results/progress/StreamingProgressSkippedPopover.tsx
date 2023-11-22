@@ -1,10 +1,13 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState, type FC, useMemo, useEffect } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
-import { Skipped } from '@sourcegraph/shared/src/search/stream'
+import { useMutation, gql } from '@sourcegraph/http-client'
+import type { Skipped, Progress } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Collapse,
@@ -17,11 +20,15 @@ import {
     H3,
     Markdown,
     Form,
+    ProductStatusBadge,
+    Alert,
+    ErrorAlert,
+    LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
-import { SyntaxHighlightedSearchQuery } from '../../components/SyntaxHighlightedSearchQuery'
+import { SyntaxHighlightedSearchQuery } from '../../components'
 
-import { StreamingProgressProps } from './StreamingProgress'
+import { validateQueryForExhaustiveSearch } from './exhaustive-search/exhaustive-search-validation'
 import { sortBySeverity, limitHit } from './utils'
 
 import styles from './StreamingProgressSkippedPopover.module.scss'
@@ -42,7 +49,6 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
     return (
         <div
             className={classNames(
-                'pt-2 w-100',
                 styles.streamingSkippedItem,
                 skipped.severity !== 'info' && styles.streamingSkippedItemWarn
             )}
@@ -93,10 +99,18 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
     )
 }
 
-export const StreamingProgressSkippedPopover: React.FunctionComponent<
-    React.PropsWithChildren<Pick<StreamingProgressProps, 'progress' | 'onSearchAgain'>>
-> = ({ progress, onSearchAgain }) => {
+interface StreamingProgressSkippedPopoverProps extends TelemetryProps {
+    query: string
+    progress: Progress
+    isSearchJobsEnabled?: boolean
+    onSearchAgain: (additionalFilters: string[]) => void
+}
+
+export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopoverProps> = props => {
+    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService } = props
+
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
+
     const submitHandler = useCallback(
         (event: React.FormEvent) => {
             onSearchAgain([...selectedSuggestedSearches])
@@ -122,7 +136,7 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
 
     return (
         <>
-            <Text className="mx-3 mt-3">
+            <Text className={classNames('mx-3 mt-3', isSearchJobsEnabled && 'mb-0')}>
                 Found {limitHit(progress) ? 'more than ' : ''}
                 {progress.matchCount} {pluralize('result', progress.matchCount)}
                 {progress.repositoriesCount !== undefined
@@ -135,55 +149,254 @@ export const StreamingProgressSkippedPopover: React.FunctionComponent<
                 .
             </Text>
 
-            {sortedSkippedItems.length > 0 && <H3 className="mx-3">Some results skipped:</H3>}
-            {sortedSkippedItems.map((skipped, index) => (
+            {isSearchJobsEnabled ? (
+                <SlimSkippedReasons items={sortedSkippedItems} />
+            ) : (
+                <SkippedReasons items={sortedSkippedItems} />
+            )}
+
+            {sortedSkippedItems.some(skipped => skipped.suggested) && (
+                <SkippedItemsSearch
+                    slim={isSearchJobsEnabled ?? false}
+                    items={sortedSkippedItems}
+                    disabled={selectedSuggestedSearches.size === 0}
+                    onSearchSettingsChange={checkboxHandler}
+                    onSubmit={submitHandler}
+                />
+            )}
+
+            {isSearchJobsEnabled && (
+                <>
+                    <hr className="mx-3 mt-3" />
+                    <ExhaustiveSearchMessage query={query} telemetryService={telemetryService} />
+                </>
+            )}
+        </>
+    )
+}
+
+interface SkippedReasonsProps {
+    items: Skipped[]
+}
+
+const SkippedReasons: FC<SkippedReasonsProps> = props => {
+    const { items } = props
+
+    return (
+        <>
+            {items.length > 0 && <H3 className="mx-3">Some results skipped:</H3>}
+            {items.map((skipped, index) => (
                 <SkippedMessage
                     key={skipped.reason}
                     skipped={skipped}
                     // Start with first item open, but only if it's not info severity or if there's only one item
-                    startOpen={index === 0 && (skipped.severity !== 'info' || sortedSkippedItems.length === 1)}
+                    startOpen={index === 0 && (skipped.severity !== 'info' || items.length === 1)}
                 />
             ))}
-            {sortedSkippedItems.some(skipped => skipped.suggested) && (
-                <Form className="pb-3 px-3" onSubmit={submitHandler} data-testid="popover-form">
-                    <div className="mb-2 mt-3">Search again:</div>
-                    <div className="form-check">
-                        {sortedSkippedItems.map(
-                            (skipped, index) =>
-                                skipped.suggested && (
-                                    <Checkbox
-                                        key={skipped.suggested.queryExpression}
-                                        value={skipped.suggested.queryExpression}
-                                        onChange={checkboxHandler}
-                                        data-testid={`streaming-progress-skipped-suggest-check-${index}`}
-                                        id={`streaming-progress-skipped-suggest-check-${index}`}
-                                        wrapperClassName="mb-1 d-block"
-                                        label={
-                                            <>
-                                                {skipped.suggested.title} (
-                                                <SyntaxHighlightedSearchQuery
-                                                    query={skipped.suggested.queryExpression}
-                                                />
-                                                )
-                                            </>
-                                        }
-                                    />
-                                )
-                        )}
-                    </div>
-
-                    <Button
-                        type="submit"
-                        className="mt-2"
-                        variant="primary"
-                        disabled={selectedSuggestedSearches.size === 0}
-                        data-testid="skipped-popover-form-submit-btn"
-                    >
-                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
-                        Search again
-                    </Button>
-                </Form>
-            )}
         </>
+    )
+}
+
+const SlimSkippedReasons: FC<SkippedReasonsProps> = props => {
+    const { items } = props
+
+    if (items.length === 0) {
+        return null
+    }
+
+    return (
+        <div className={styles.streamingSkippedItem}>
+            <Collapse openByDefault={items.length === 1}>
+                {({ isOpen }) => (
+                    <>
+                        <CollapseHeader
+                            as={Button}
+                            outline={true}
+                            variant="primary"
+                            className={classNames(styles.button, 'p-2 w-100 bg-transparent border-0')}
+                        >
+                            <H4 className="d-flex align-items-center mb-0 w-100">
+                                <Icon
+                                    aria-label="Information"
+                                    svgPath={mdiInformationOutline}
+                                    className={classNames(styles.icon, 'flex-shrink-0')}
+                                />
+
+                                <span className="flex-grow-1 text-left">Why was the limit reached?</span>
+
+                                <Icon
+                                    aria-hidden={true}
+                                    className={classNames('flex-shrink-0', styles.chevron)}
+                                    svgPath={isOpen ? mdiChevronDown : mdiChevronLeft}
+                                />
+                            </H4>
+                        </CollapseHeader>
+
+                        <CollapsePanel className={styles.nestedCollapseReasons}>
+                            {items.map((skipped, index) => (
+                                <SkippedMessage
+                                    key={skipped.reason}
+                                    skipped={skipped}
+                                    // Start with first item open, but only if it's not info severity or if there's only one item
+                                    startOpen={index === 0 && (skipped.severity !== 'info' || items.length === 1)}
+                                />
+                            ))}
+                        </CollapsePanel>
+
+                        {!isOpen && <div className={classNames(styles.bottomBorderSpacer, 'mt-1')} />}
+                    </>
+                )}
+            </Collapse>
+        </div>
+    )
+}
+
+interface SkippedItemsSearchProps {
+    slim: boolean
+    items: Skipped[]
+    disabled: boolean
+    onSearchSettingsChange: (event: React.FormEvent<HTMLInputElement>) => void
+    onSubmit: (event: React.FormEvent) => void
+}
+
+const SkippedItemsSearch: FC<SkippedItemsSearchProps> = props => {
+    const { slim, items, disabled, onSearchSettingsChange, onSubmit } = props
+
+    return (
+        <Form className={classNames('px-3', { 'pb-3': !slim })} onSubmit={onSubmit} data-testid="popover-form">
+            <div className="mb-2 mt-3">Search again:</div>
+            <div className="form-check">
+                {items.map(
+                    (skipped, index) =>
+                        skipped.suggested && (
+                            <Checkbox
+                                key={skipped.suggested.queryExpression}
+                                value={skipped.suggested.queryExpression}
+                                onChange={onSearchSettingsChange}
+                                data-testid={`streaming-progress-skipped-suggest-check-${index}`}
+                                id={`streaming-progress-skipped-suggest-check-${index}`}
+                                wrapperClassName="mb-1 d-block"
+                                label={
+                                    <>
+                                        {skipped.suggested.title} (
+                                        <SyntaxHighlightedSearchQuery query={skipped.suggested.queryExpression} />)
+                                    </>
+                                }
+                            />
+                        )
+                )}
+            </div>
+
+            <Button
+                type="submit"
+                className="mt-2"
+                variant={slim ? 'secondary' : 'primary'}
+                disabled={disabled}
+                size={slim ? 'sm' : undefined}
+                data-testid="skipped-popover-form-submit-btn"
+            >
+                <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
+                {slim ? <>Modify and re-run</> : <>Search again</>}
+            </Button>
+        </Form>
+    )
+}
+
+const CREATE_SEARCH_JOB = gql`
+    mutation CreateSearchJob($query: String!) {
+        createSearchJob(query: $query) {
+            id
+            query
+            state
+            URL
+            startedAt
+            finishedAt
+            repoStats {
+                total
+                completed
+                failed
+                inProgress
+            }
+            creator {
+                id
+                displayName
+                username
+                avatarURL
+            }
+        }
+    }
+`
+
+interface ExhaustiveSearchMessageProps extends TelemetryProps {
+    query: string
+}
+
+export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props => {
+    const { query, telemetryService } = props
+    const navigate = useNavigate()
+    const [createSearchJob, { loading, error }] = useMutation(CREATE_SEARCH_JOB)
+
+    const validationErrors = useMemo(() => validateQueryForExhaustiveSearch(query), [query])
+
+    useEffect(() => {
+        const validState = validationErrors.length > 0 ? 'invalid' : 'valid'
+
+        telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
+
+        if (validationErrors.length > 0) {
+            const errorTypes = validationErrors.map(error => error.type)
+
+            telemetryService.log('SearchJobsValidationErrors', { errors: errorTypes }, { errors: errorTypes })
+        }
+    }, [telemetryService, validationErrors])
+
+    const handleCreateSearchJobClick = async (): Promise<void> => {
+        await createSearchJob({ variables: { query } })
+
+        telemetryService.log('SearchJobsCreateClick', {}, {})
+        navigate('/search-jobs')
+    }
+
+    return (
+        <section className={styles.exhaustiveSearch}>
+            <header className={styles.exhaustiveSearchHeader}>
+                <Text className="m-0">Create a search job:</Text>
+                <ProductStatusBadge status="experimental" />
+            </header>
+
+            {validationErrors.length > 0 && (
+                <Alert variant="secondary" withIcon={false}>
+                    <ul className={styles.exhaustiveSearchWarningList}>
+                        {validationErrors.map(validationError => (
+                            <li key={validationError.reason}>{validationError.reason}</li>
+                        ))}
+                    </ul>
+                </Alert>
+            )}
+
+            <Text className={classNames(validationErrors.length > 0 && 'text-muted', styles.exhaustiveSearchText)}>
+                Search jobs exhaustively return all matches of a query. Results can be downloaded via CSV.
+            </Text>
+
+            {error && <ErrorAlert error={error} className="mt-3" />}
+            <Button
+                variant="secondary"
+                size="sm"
+                disabled={validationErrors.length > 0 || loading}
+                className={styles.exhaustiveSearchSubmit}
+                onClick={handleCreateSearchJobClick}
+            >
+                {loading ? (
+                    <>
+                        <LoadingSpinner /> Starting search job
+                    </>
+                ) : (
+                    <>
+                        <Icon aria-hidden={true} svgPath={mdiMagnify} />
+                        Create a search job
+                    </>
+                )}
+            </Button>
+        </section>
     )
 }

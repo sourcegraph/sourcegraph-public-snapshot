@@ -23,7 +23,7 @@ To target an S3 bucket you've already provisioned, set the following environment
 
 **_Note:_** If a non-default region is supplied, ensure that the subdomain of the endpoint URL (_the `AWS_ENDPOINT` value_) matches the target region.
 
-> NOTE: You don't need to set the `PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved. 
+> NOTE: You don't need to set the `PRECISE_CODE_INTEL_UPLOAD_AWS_ACCESS_KEY_ID` environment variable when using `PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS=true` because role credentials will be automatically resolved. Attach the IAM role to the EC2 instances hosting the `frontend`, `worker`, and `precise-code-intel-worker` containers in a multi-node environment.
 
 
 ### Using GCS

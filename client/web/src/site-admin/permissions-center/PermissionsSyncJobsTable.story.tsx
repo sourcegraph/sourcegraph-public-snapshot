@@ -1,25 +1,27 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { addMinutes, formatRFC3339, subMinutes } from 'date-fns'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import {
+    CodeHostStatus,
     ExternalServiceKind,
     PermissionsSyncJobPriority,
     PermissionsSyncJobReason,
     PermissionsSyncJobReasonGroup,
     PermissionsSyncJobState,
 } from '@sourcegraph/shared/src/graphql-operations'
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
-import { PermissionsSyncJob } from '../../graphql-operations'
+import type { PermissionsSyncJob } from '../../graphql-operations'
 
-import { PERMISSIONS_SYNC_JOBS_QUERY } from './backend'
+import { PERMISSIONS_SYNC_JOBS_QUERY, PERMISSIONS_SYNC_JOBS_STATS } from './backend'
 import { PermissionsSyncJobsTable } from './PermissionsSyncJobsTable'
 
-const decorator: DecoratorFn = Story => <Story />
+const decorator: Decorator = Story => <Story />
 
 const config: Meta = {
     title: 'web/src/site-admin/permissions-center/PermissionsSyncJobsTable',
@@ -38,13 +40,16 @@ const SG_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.reason.group === Perm
 const WEBHOOK_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.reason.group === PermissionsSyncJobReasonGroup.WEBHOOK)
 
 const CANCELED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.CANCELED)
-const COMPLETED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.COMPLETED)
+const COMPLETED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(
+    job => job.state === PermissionsSyncJobState.COMPLETED && !job.partialSuccess
+)
+const PARTIAL_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.partialSuccess)
 const ERRORED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.ERRORED)
 const FAILED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.FAILED)
 const PROCESSING_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.PROCESSING)
 const QUEUED_JOBS_MOCK_DATA = JOBS_MOCK_DATA.filter(job => job.state === PermissionsSyncJobState.QUEUED)
 
-export const SixSyncJobsFound: Story = () => (
+export const SixSyncJobsFound: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider
@@ -56,15 +61,39 @@ export const SixSyncJobsFound: Story = () => (
                         generateResponse(null, PermissionsSyncJobReasonGroup.SOURCEGRAPH, SG_JOBS_MOCK_DATA, 3),
                         generateResponse(null, PermissionsSyncJobReasonGroup.WEBHOOK, WEBHOOK_JOBS_MOCK_DATA, 8),
                         generateResponse(PermissionsSyncJobState.CANCELED, null, CANCELED_JOBS_MOCK_DATA, 4),
-                        generateResponse(PermissionsSyncJobState.COMPLETED, null, COMPLETED_JOBS_MOCK_DATA, 4),
+                        generateResponse(PermissionsSyncJobState.COMPLETED, null, COMPLETED_JOBS_MOCK_DATA, 2),
                         generateResponse(PermissionsSyncJobState.ERRORED, null, ERRORED_JOBS_MOCK_DATA, 3),
                         generateResponse(PermissionsSyncJobState.FAILED, null, FAILED_JOBS_MOCK_DATA, 3),
                         generateResponse(PermissionsSyncJobState.PROCESSING, null, PROCESSING_JOBS_MOCK_DATA, 3),
                         generateResponse(PermissionsSyncJobState.QUEUED, null, QUEUED_JOBS_MOCK_DATA, 3),
+                        generateResponse(null, null, PARTIAL_JOBS_MOCK_DATA, 2, true),
+                        {
+                            request: {
+                                query: getDocumentNode(PERMISSIONS_SYNC_JOBS_STATS),
+                                variables: {},
+                            },
+                            result: {
+                                data: {
+                                    permissionsSyncingStats: {
+                                        queueSize: 1337,
+                                        usersWithLatestJobFailing: 228101,
+                                        reposWithLatestJobFailing: 3,
+                                        usersWithNoPermissions: 4,
+                                        reposWithNoPermissions: 5,
+                                        usersWithStalePermissions: 6,
+                                        reposWithStalePermissions: 42,
+                                    },
+                                },
+                            },
+                            nMatches: Number.POSITIVE_INFINITY,
+                        },
                     ])
                 }
             >
-                <PermissionsSyncJobsTable telemetryService={NOOP_TELEMETRY_SERVICE} />
+                <PermissionsSyncJobsTable
+                    telemetryService={NOOP_TELEMETRY_SERVICE}
+                    telemetryRecorder={noOpTelemetryRecorder}
+                />
             </MockedTestProvider>
         )}
     </WebStory>
@@ -107,49 +136,55 @@ function getSyncJobs(): PermissionsSyncJob[] {
         let state: PermissionsSyncJobState
         let reason: reason
         switch (index % 6) {
-            case 0:
+            case 0: {
                 state = PermissionsSyncJobState.CANCELED
                 reason = {
                     group: PermissionsSyncJobReasonGroup.WEBHOOK,
                     reason: PermissionsSyncJobReason.REASON_GITHUB_REPO_EVENT,
                 }
                 break
-            case 1:
+            }
+            case 1: {
                 state = PermissionsSyncJobState.COMPLETED
                 reason = {
                     group: PermissionsSyncJobReasonGroup.WEBHOOK,
                     reason: PermissionsSyncJobReason.REASON_GITHUB_REPO_EVENT,
                 }
                 break
-            case 2:
+            }
+            case 2: {
                 state = PermissionsSyncJobState.ERRORED
                 reason = {
                     group: PermissionsSyncJobReasonGroup.MANUAL,
                     reason: PermissionsSyncJobReason.REASON_MANUAL_REPO_SYNC,
                 }
                 break
-            case 3:
+            }
+            case 3: {
                 state = PermissionsSyncJobState.FAILED
                 reason = {
                     group: PermissionsSyncJobReasonGroup.MANUAL,
                     reason: PermissionsSyncJobReason.REASON_MANUAL_USER_SYNC,
                 }
                 break
-            case 4:
+            }
+            case 4: {
                 state = PermissionsSyncJobState.PROCESSING
                 reason = {
                     group: PermissionsSyncJobReasonGroup.SCHEDULE,
                     reason: PermissionsSyncJobReason.REASON_REPO_OUTDATED_PERMS,
                 }
                 break
+            }
             case 5:
-            default:
+            default: {
                 state = PermissionsSyncJobState.QUEUED
                 reason = {
                     group: PermissionsSyncJobReasonGroup.SOURCEGRAPH,
                     reason: PermissionsSyncJobReason.REASON_USER_EMAIL_VERIFIED,
                 }
                 break
+            }
         }
 
         const subject: subject =
@@ -173,7 +208,17 @@ function getSyncJobs(): PermissionsSyncJob[] {
                       avatarURL: null,
                   }
 
-        jobs.push(createSyncJobMock(index.toString(), state, subject, reason))
+        jobs.push(
+            createSyncJobMock(
+                index.toString(),
+                state,
+                subject,
+                reason,
+                state === PermissionsSyncJobState.COMPLETED && index > 10,
+                index % 4 === 0 ? 0 : index + 10,
+                index % 4 === 0 ? 0 : index + 5
+            )
+        )
     }
     return jobs
 }
@@ -182,7 +227,8 @@ function generateResponse(
     state: PermissionsSyncJobState | null,
     reasonGroup: PermissionsSyncJobReasonGroup | null,
     jobs: PermissionsSyncJob[],
-    count: number
+    count: number,
+    partial: boolean = false
 ) {
     return {
         request: {
@@ -194,6 +240,9 @@ function generateResponse(
                 before: null,
                 reasonGroup: reasonGroup ?? null,
                 state: state ?? null,
+                searchType: null,
+                query: '',
+                partial,
             },
         },
         result: {
@@ -218,7 +267,10 @@ function createSyncJobMock(
     id: string,
     state: PermissionsSyncJobState,
     subject: subject,
-    reason: reason
+    reason: reason,
+    partial: boolean = false,
+    permissionsAdded: number = 1337,
+    permissionsRemoved: number = 42
 ): PermissionsSyncJob {
     return {
         __typename: 'PermissionsSyncJob',
@@ -236,9 +288,9 @@ function createSyncJobMock(
                 ? formatRFC3339(addMinutes(TIMESTAMP_MOCK, 2))
                 : null,
         processAfter: null,
-        permissionsAdded: 1337,
-        permissionsRemoved: 42,
-        permissionsFound: 1337 + 42,
+        permissionsAdded,
+        permissionsRemoved,
+        permissionsFound: permissionsAdded + permissionsRemoved,
         failureMessage: null,
         cancellationReason: null,
         ranForMs: null,
@@ -250,6 +302,25 @@ function createSyncJobMock(
         priority: PermissionsSyncJobPriority.LOW,
         noPerms: false,
         invalidateCaches: false,
-        codeHostStates: [],
+        codeHostStates: partial
+            ? [
+                  {
+                      __typename: 'CodeHostState',
+                      providerID: '1',
+                      providerType: 'github',
+                      status: CodeHostStatus.SUCCESS,
+                      message: 'success!',
+                  },
+                  {
+                      __typename: 'CodeHostState',
+                      providerID: '1',
+                      providerType: 'gitlab',
+                      status: CodeHostStatus.ERROR,
+                      message: 'error!',
+                  },
+              ]
+            : [],
+        partialSuccess: partial,
+        placeInQueue: 1,
     }
 }

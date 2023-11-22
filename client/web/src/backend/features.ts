@@ -1,16 +1,16 @@
-import { Observable, from, concat } from 'rxjs'
+import { type Observable, from, concat } from 'rxjs'
 import { switchMap } from 'rxjs/operators'
 
-import { HoverMerged } from '@sourcegraph/client-api'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import type { HoverMerged } from '@sourcegraph/client-api'
+import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import type { DocumentHighlight } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
-    FileSpec,
-    UIPositionSpec,
-    RepoSpec,
-    ResolvedRevisionSpec,
+    type FileSpec,
+    type UIPositionSpec,
+    type RepoSpec,
+    type ResolvedRevisionSpec,
     toURIWithPath,
 } from '@sourcegraph/shared/src/util/url'
 

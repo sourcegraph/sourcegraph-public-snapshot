@@ -55,20 +55,23 @@ func MakeGitRepository(t *testing.T, cmds ...string) api.RepoName {
 	return repo
 }
 
-// MakeBareGitRepository calls initGitRepository to create a new Git
-// repository and returns a handle to a bare clone of it.
-func MakeBareGitRepository(t *testing.T, cmds ...string) api.RepoName {
+// MakeGitRepositoryAndReturnDir calls initGitRepository to create a new Git repository and returns
+// the repo name and directory.
+func MakeGitRepositoryAndReturnDir(t *testing.T, cmds ...string) (api.RepoName, string) {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
-	repo := api.RepoName(filepath.Base(dir) + "-bare")
-	bareDir := filepath.Join(filepath.Dir(dir), string(repo), ".git")
-	if err := os.Mkdir(filepath.Dir(bareDir), 0700); err != nil {
-		t.Fatal(err)
+	repo := api.RepoName(filepath.Base(dir))
+	return repo, dir
+}
+
+func GetHeadCommitFromGitDir(t *testing.T, gitDir string) string {
+	t.Helper()
+	cmd := CreateGitCommand(gitDir, "bash", []string{"-c", "git rev-parse HEAD"}...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Command %q failed. Output was: %s, Error: %+v\n ", cmd, out, err)
 	}
-	if _, err := exec.Command("git", "clone", "--bare", dir, bareDir).Output(); err != nil {
-		t.Fatal(err)
-	}
-	return repo
+	return strings.Trim(string(out), "\n")
 }
 
 // InitGitRepository initializes a new Git repository and runs commands in a new
@@ -102,7 +105,15 @@ func InitGitRepository(t *testing.T, cmds ...string) string {
 func CreateGitCommand(dir, name string, args ...string) *exec.Cmd {
 	c := exec.Command(name, args...)
 	c.Dir = dir
-	c.Env = []string{"GIT_CONFIG=" + path.Join(dir, ".git", "config")}
+	c.Env = []string{
+		"GIT_CONFIG=" + path.Join(dir, ".git", "config"),
+		"GIT_COMMITTER_NAME=a",
+		"GIT_COMMITTER_EMAIL=a@a.com",
+		"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z",
+		"GIT_AUTHOR_NAME=a",
+		"GIT_AUTHOR_EMAIL=a@a.com",
+		"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z",
+	}
 	if systemPath, ok := os.LookupEnv("PATH"); ok {
 		c.Env = append(c.Env, "PATH="+systemPath)
 	}

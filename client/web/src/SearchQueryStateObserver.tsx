@@ -1,15 +1,15 @@
-import { FC, useLayoutEffect, useRef, useState } from 'react'
+import { type FC, useLayoutEffect, useRef, useState } from 'react'
 
-import { Location, useLocation } from 'react-router-dom'
+import { type Location, useLocation } from 'react-router-dom'
 import { BehaviorSubject } from 'rxjs'
 import { first } from 'rxjs/operators'
 
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { isSearchContextSpecAvailable } from '@sourcegraph/shared/src/search'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 
 import { getQueryStateFromLocation } from './search'
-import { useExperimentalQueryInput } from './search/useExperimentalSearchInput'
+import { useV2QueryInput } from './search/useV2QueryInput'
 import { setQueryStateFromURL } from './stores/navbarSearchQueryState'
 
 export const GLOBAL_SEARCH_CONTEXT_SPEC = 'global'
@@ -30,7 +30,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
     const selectedSearchContextSpecRef = useRef(selectedSearchContextSpec)
     selectedSearchContextSpecRef.current = selectedSearchContextSpec
 
-    const [enableExperimentalSearchInput] = useExperimentalQueryInput()
+    const [enableV2QueryInput] = useV2QueryInput()
 
     // Create `locationSubject` once on mount. New values are provided in the `useEffect` hook.
 
@@ -67,9 +67,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
 
                 // TODO (#48103): Remove/simplify when new search input is released
                 const processedQuery =
-                    !enableExperimentalSearchInput &&
-                    parsedSearchURLAndContext.searchContextSpec &&
-                    searchContextsEnabled
+                    !enableV2QueryInput && parsedSearchURLAndContext.searchContextSpec && searchContextsEnabled
                         ? omitFilter(
                               parsedSearchURLAndContext.query,
                               parsedSearchURLAndContext.searchContextSpec.filter
@@ -86,7 +84,7 @@ export const SearchQueryStateObserver: FC<SearchQueryStateObserverProps> = props
         platformContext,
         searchContextsEnabled,
         selectedSearchContextSpecRef,
-        enableExperimentalSearchInput,
+        enableV2QueryInput,
         setSelectedSearchContextSpec,
     ])
 

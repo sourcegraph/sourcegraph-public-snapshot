@@ -1,10 +1,10 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, type FC } from 'react'
 
 import { parseISO } from 'date-fns'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike, numberWithCommas } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import {
     LoadingSpinner,
@@ -15,10 +15,11 @@ import {
     ButtonLink,
     Tooltip,
     ErrorAlert,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { queryGraphQL } from '../../../backend/graphql'
-import { ProductLicenseInfoResult } from '../../../graphql-operations'
+import type { ProductLicenseInfoResult } from '../../../graphql-operations'
 import { formatUserCount } from '../../../productSubscription/helpers'
 import { ExpirationDate } from '../../productSubscription/ExpirationDate'
 import { ProductCertificate } from '../../productSubscription/ProductCertificate'
@@ -49,6 +50,8 @@ const queryProductLicenseInfo = (): Observable<{
             tags
             userCount
             expiresAt
+            isValid
+            licenseInvalidityReason
         }
     `).pipe(
         map(dataOrThrowErrors),
@@ -110,22 +113,10 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
         <div>
             <ProductCertificate
                 title={productNameWithBrand}
-                detail={
-                    license ? (
-                        <>
-                            {formatUserCount(license.userCount, true)} license,{' '}
-                            <ExpirationDate
-                                date={parseISO(license.expiresAt)}
-                                showRelative={true}
-                                lowercase={true}
-                                showPrefix={true}
-                            />
-                        </>
-                    ) : null
-                }
+                detail={<LicenseDetails license={license} />}
                 footer={
                     <CardFooter className="d-flex align-items-center justify-content-between">
-                        {license ? (
+                        {license?.isValid ? (
                             <>
                                 <div>
                                     <strong>User licenses:</strong> {numberWithCommas(currentUserCount)} currently used
@@ -189,5 +180,37 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
                     )
                 ))}
         </div>
+    )
+}
+
+interface LicenseDetailsProps {
+    license: ProductLicenseInfoResult['site']['productSubscription']['license']
+}
+
+const LicenseDetails: FC<LicenseDetailsProps> = ({ license }) => {
+    if (!license) {
+        return null
+    }
+
+    if (license.isValid) {
+        return (
+            <>
+                {formatUserCount(license.userCount, true)} license,{' '}
+                <ExpirationDate
+                    date={parseISO(license.expiresAt)}
+                    showRelative={true}
+                    lowercase={true}
+                    showPrefix={true}
+                />
+            </>
+        )
+    }
+
+    return (
+        <Alert variant="danger">
+            <Text className="mb-0">
+                The Sourcegraph license key is invalid. Reason: {license.licenseInvalidityReason}
+            </Text>
+        </Alert>
     )
 }

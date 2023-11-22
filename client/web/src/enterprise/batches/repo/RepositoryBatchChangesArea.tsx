@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { AuthenticatedUser } from '../../../auth'
-import { BreadcrumbSetters } from '../../../components/Breadcrumbs'
-import { RepositoryFields } from '../../../graphql-operations'
+import type { AuthenticatedUser } from '../../../auth'
+import type { BreadcrumbSetters } from '../../../components/Breadcrumbs'
+import type { RepositoryFields } from '../../../graphql-operations'
 
 import { BatchChangeRepoPage } from './BatchChangeRepoPage'
 

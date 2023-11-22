@@ -1,0 +1,53 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "processor",
+    srcs = ["bulk_processor.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/batches/processor",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/batches/global",
+        "//internal/batches/graphql",
+        "//internal/batches/service",
+        "//internal/batches/sources",
+        "//internal/batches/state",
+        "//internal/batches/store",
+        "//internal/batches/types",
+        "//internal/batches/webhooks",
+        "//internal/errcode",
+        "//internal/gitserver",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "processor_test",
+    timeout = "short",
+    srcs = ["bulk_processor_test.go"],
+    embed = [":processor"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/batches/global",
+        "//internal/batches/sources/testing",
+        "//internal/batches/store",
+        "//internal/batches/testing",
+        "//internal/batches/types",
+        "//internal/batches/webhooks",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/errcode",
+        "//internal/extsvc",
+        "//internal/extsvc/github",
+        "//internal/httpcli",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

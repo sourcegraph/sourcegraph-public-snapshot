@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
@@ -23,7 +24,7 @@ func TestSchemaResolver_OutboundWebhooks(t *testing.T) {
 	t.Run("not site admin", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		ctx, _, _ := fakeUser(t, context.Background(), db, false)
 
 		runMustBeSiteAdminTest(t, []any{"outboundWebhooks"}, &Test{
@@ -80,7 +81,7 @@ func TestSchemaResolver_OutboundWebhooks(t *testing.T) {
 					}
 				}
 
-				store := database.NewMockOutboundWebhookStore()
+				store := dbmocks.NewMockOutboundWebhookStore()
 				store.CountFunc.SetDefaultHook(func(ctx context.Context, opts database.OutboundWebhookCountOpts) (int64, error) {
 					assertEventTypes(t, opts.EventTypes)
 					return 4, nil
@@ -99,7 +100,7 @@ func TestSchemaResolver_OutboundWebhooks(t *testing.T) {
 					}, nil
 				})
 
-				db := database.NewMockDB()
+				db := dbmocks.NewMockDB()
 				db.OutboundWebhooksFunc.SetDefaultReturn(store)
 				ctx, _, _ := fakeUser(t, context.Background(), db, true)
 
@@ -148,7 +149,7 @@ func TestSchemaResolver_OutboundWebhooks(t *testing.T) {
 
 func TestSchemaResolver_OutboundWebhookEventTypes(t *testing.T) {
 	t.Run("not site admin", func(t *testing.T) {
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		ctx, _, _ := fakeUser(t, context.Background(), db, false)
 
 		runMustBeSiteAdminTest(t, []any{"outboundWebhookEventTypes"}, &Test{
@@ -203,7 +204,7 @@ func TestSchemaResolver_OutboundWebhookEventTypes(t *testing.T) {
 					outbound.MockGetRegisteredEventTypes = nil
 				})
 
-				db := database.NewMockDB()
+				db := dbmocks.NewMockDB()
 				ctx, _, _ := fakeUser(t, context.Background(), db, true)
 
 				RunTest(t, &Test{
@@ -245,7 +246,7 @@ func TestSchemaResolver_CreateOutboundWebhook(t *testing.T) {
 	t.Run("not site admin", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		ctx, _, _ := fakeUser(t, context.Background(), db, false)
 
 		runMustBeSiteAdminTest(t, []any{"createOutboundWebhook"}, &Test{
@@ -265,7 +266,7 @@ func TestSchemaResolver_CreateOutboundWebhook(t *testing.T) {
 	t.Run("site admin", func(t *testing.T) {
 		t.Parallel()
 
-		store := database.NewMockOutboundWebhookStore()
+		store := dbmocks.NewMockOutboundWebhookStore()
 		store.CreateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.OutboundWebhook) error {
 			valueOf := func(e *encryption.Encryptable) string {
 				t.Helper()
@@ -286,7 +287,7 @@ func TestSchemaResolver_CreateOutboundWebhook(t *testing.T) {
 			return nil
 		})
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.OutboundWebhooksFunc.SetDefaultReturn(store)
 		ctx, _, _ := fakeUser(t, context.Background(), db, true)
 
@@ -333,7 +334,7 @@ func TestSchemaResolver_DeleteOutboundWebhook(t *testing.T) {
 	t.Run("not site admin", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		ctx, _, _ := fakeUser(t, context.Background(), db, false)
 
 		runMustBeSiteAdminTest(t, []any{"deleteOutboundWebhook"}, &Test{
@@ -353,13 +354,13 @@ func TestSchemaResolver_DeleteOutboundWebhook(t *testing.T) {
 	t.Run("site admin", func(t *testing.T) {
 		t.Parallel()
 
-		store := database.NewMockOutboundWebhookStore()
+		store := dbmocks.NewMockOutboundWebhookStore()
 		store.DeleteFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
 			assert.EqualValues(t, 1, id)
 			return nil
 		})
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.OutboundWebhooksFunc.SetDefaultReturn(store)
 		ctx, _, _ := fakeUser(t, context.Background(), db, true)
 
@@ -408,7 +409,7 @@ func TestSchemaResolver_UpdateOutboundWebhook(t *testing.T) {
 	t.Run("not site admin", func(t *testing.T) {
 		t.Parallel()
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		ctx, _, _ := fakeUser(t, context.Background(), db, false)
 
 		runMustBeSiteAdminTest(t, []any{"updateOutboundWebhook"}, &Test{
@@ -436,7 +437,7 @@ func TestSchemaResolver_UpdateOutboundWebhook(t *testing.T) {
 			},
 		}
 
-		store := database.NewMockOutboundWebhookStore()
+		store := dbmocks.NewMockOutboundWebhookStore()
 
 		// The update happens in a transaction, so we need to mock those methods
 		// as well.
@@ -452,7 +453,7 @@ func TestSchemaResolver_UpdateOutboundWebhook(t *testing.T) {
 			return nil
 		})
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.OutboundWebhooksFunc.SetDefaultReturn(store)
 		ctx, _, _ := fakeUser(t, context.Background(), db, true)
 
@@ -493,7 +494,7 @@ func TestSchemaResolver_UpdateOutboundWebhook(t *testing.T) {
 
 var fakeUserID int32
 
-func fakeUser(t *testing.T, inputCtx context.Context, db *database.MockDB, siteAdmin bool) (ctx context.Context, user *types.User, store *database.MockUserStore) {
+func fakeUser(t *testing.T, inputCtx context.Context, db *dbmocks.MockDB, siteAdmin bool) (ctx context.Context, user *types.User, store *dbmocks.MockUserStore) {
 	t.Helper()
 
 	user = &types.User{
@@ -501,7 +502,7 @@ func fakeUser(t *testing.T, inputCtx context.Context, db *database.MockDB, siteA
 		SiteAdmin: siteAdmin,
 	}
 
-	store = database.NewMockUserStore()
+	store = dbmocks.NewMockUserStore()
 	store.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 	db.UsersFunc.SetDefaultReturn(store)
 

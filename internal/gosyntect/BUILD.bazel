@@ -9,8 +9,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/gosyntect",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/env",
+        "//internal/httpcli",
+        "//internal/trace",
+        "//lib/codeintel/languages",
         "//lib/errors",
-        "@com_github_opentracing_contrib_go_stdlib//nethttp",
-        "@com_github_opentracing_opentracing_go//:opentracing-go",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

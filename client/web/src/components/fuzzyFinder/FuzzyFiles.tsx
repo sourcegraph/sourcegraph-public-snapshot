@@ -1,24 +1,24 @@
-import { ApolloClient } from '@apollo/client'
+import type { ApolloClient } from '@apollo/client'
 import { mdiFileDocumentOutline } from '@mdi/js'
 
 import { getDocumentNode, gql } from '@sourcegraph/http-client'
 import { Icon } from '@sourcegraph/wildcard'
 
 import { getWebGraphQLClient } from '../../backend/graphql'
-import { SearchValue } from '../../fuzzyFinder/SearchValue'
-import { createUrlFunction } from '../../fuzzyFinder/WordSensitiveFuzzySearch'
-import {
+import type { FuzzySearchTransformer, createUrlFunction } from '../../fuzzyFinder/FuzzySearch'
+import type { SearchValue } from '../../fuzzyFinder/SearchValue'
+import type {
     FileNamesResult,
     FileNamesVariables,
     FuzzyFinderFilesResult,
     FuzzyFinderFilesVariables,
 } from '../../graphql-operations'
-import { UserHistory } from '../useUserHistory'
+import type { UserHistory } from '../useUserHistory'
 
-import { FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'
-import { emptyFuzzyCache, PersistableQueryResult } from './FuzzyLocalCache'
+import { type FuzzyFSM, newFuzzyFSMFromValues } from './FuzzyFsm'
+import { emptyFuzzyCache, type PersistableQueryResult } from './FuzzyLocalCache'
 import { FuzzyQuery } from './FuzzyQuery'
-import { FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
+import { type FuzzyRepoRevision, fuzzyRepoRevisionSearchFilter } from './FuzzyRepoRevision'
 
 export const FUZZY_GIT_LSFILES_QUERY = gql`
     query FileNames($repository: String!, $commit: String!) {
@@ -70,40 +70,6 @@ function fileIcon(filename: string): JSX.Element {
     )
 }
 
-export async function loadFilesFSM(
-    apolloClient: ApolloClient<object> | undefined,
-    repoRevision: FuzzyRepoRevision,
-    createURL: createUrlFunction
-): Promise<FuzzyFSM> {
-    try {
-        const client = apolloClient || (await getWebGraphQLClient())
-        const response = await client.query<FileNamesResult, FileNamesVariables>({
-            query: getDocumentNode(FUZZY_GIT_LSFILES_QUERY),
-            variables: { repository: repoRevision.repositoryName, commit: repoRevision.revision },
-        })
-        if (response.errors && response.errors.length > 0) {
-            return { key: 'failed', errorMessage: JSON.stringify(response.errors) }
-        }
-        if (response.error) {
-            return { key: 'failed', errorMessage: JSON.stringify(response.error) }
-        }
-        const filenames = response.data.repository?.commit?.fileNames || []
-        return newFuzzyFSM(filenames, createURL)
-    } catch (error) {
-        return { key: 'failed', errorMessage: JSON.stringify(error) }
-    }
-}
-
-export function newFuzzyFSM(filenames: string[], createUrl: createUrlFunction): FuzzyFSM {
-    return newFuzzyFSMFromValues(
-        filenames.map(text => ({
-            text,
-            icon: fileIcon(text),
-        })),
-        createUrl
-    )
-}
-
 export class FuzzyRepoFiles {
     private fsm: FuzzyFSM = { key: 'empty' }
     constructor(
@@ -140,7 +106,7 @@ export class FuzzyRepoFiles {
             icon: fileIcon(text),
             historyRanking: () => this.userHistory.lastAccessedFilePath(this.repoRevision.repositoryName, text),
         }))
-        this.updateFSM(newFuzzyFSMFromValues(values, this.createURL))
+        this.updateFSM(newFuzzyFSMFromValues(values, { createURL: this.createURL, transformer: lineNumberTransformer }))
         this.loopIndexing()
         return values
     }
@@ -167,6 +133,51 @@ export class FuzzyRepoFiles {
     }
 }
 
+export interface FuzzyFileQuery {
+    filename: string
+    line?: number
+    column?: number
+}
+
+export function parseFuzzyFileQuery(query: string): FuzzyFileQuery {
+    if (query.endsWith(':')) {
+        // Infer the line number or column number if the user is typing :.
+        // Without this logic, the fuzzy finder briefly becomes empty for a
+        // split second when the user types a : character before typing the line
+        // number or column number.
+        query = query + '0'
+    }
+    const lineNumberPattern = /^([^:]+):(\d+)(?::(\d+))?$/
+    const match = query.match(lineNumberPattern)
+    if (match && match.length > 3) {
+        const value: FuzzyFileQuery = { filename: match[1] }
+        const line = Number.parseInt(match[2], 10)
+        if (isFinite(line)) {
+            value.line = line
+        }
+        const column = Number.parseInt(match[3], 10)
+        if (isFinite(column)) {
+            value.column = column
+        }
+        return value
+    }
+    return { filename: query }
+}
+
+const lineNumberTransformer: FuzzySearchTransformer = {
+    modifyQuery: (query: string) => {
+        const parsed = parseFuzzyFileQuery(query)
+        return parsed.filename
+    },
+    modifyURL: (query: string, url: string) => {
+        const parsed = parseFuzzyFileQuery(query)
+        if (parsed.line !== undefined && isFinite(parsed.line)) {
+            return `${url}?L${parsed.line}`
+        }
+        return url
+    },
+}
+
 export class FuzzyFiles extends FuzzyQuery {
     private readonly isGlobalFiles = true
     constructor(
@@ -175,7 +186,7 @@ export class FuzzyFiles extends FuzzyQuery {
         private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
         private readonly userHistory: UserHistory
     ) {
-        super(onNamesChanged, emptyFuzzyCache)
+        super(onNamesChanged, emptyFuzzyCache, { transformer: lineNumberTransformer })
     }
 
     /* override */ protected searchValues(): SearchValue[] {
@@ -191,7 +202,7 @@ export class FuzzyFiles extends FuzzyQuery {
 
     /* override */ protected rawQuery(query: string): string {
         const repoFilter = this.isGlobalFiles ? '' : fuzzyRepoRevisionSearchFilter(this.repoRevision.current)
-        return `${repoFilter}type:path count:100 ${query}`
+        return `${repoFilter}type:path count:100 ${parseFuzzyFileQuery(query).filename}`
     }
 
     /* override */ protected async handleRawQueryPromise(query: string): Promise<PersistableQueryResult[]> {

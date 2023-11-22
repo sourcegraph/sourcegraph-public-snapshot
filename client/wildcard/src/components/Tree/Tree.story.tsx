@@ -1,16 +1,16 @@
 import { mdiFileDocumentOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Icon } from '../Icon'
 import { Link } from '../Link'
 
-import { Tree, TreeNode } from '.'
+import { Tree, type TreeNode } from '.'
 
 import styles from './Tree.story.module.scss'
 
-const decorator: DecoratorFn = story => <BrandedStory>{() => <div className="p-5">{story()}</div>}</BrandedStory>
+const decorator: Decorator = story => <BrandedStory>{() => <div className="p-5">{story()}</div>}</BrandedStory>
 
 const config: Meta = {
     title: 'wildcard/Tree',
@@ -40,10 +40,10 @@ const folder = [
     { id: 8, name: 'bundle.js', children: [], parent: 7 },
     { id: 9, name: '.npmignore', children: [], parent: 0 },
     { id: 10, name: 'package.json', children: [], parent: 0 },
-    { id: 11, name: 'webpack.config.js', children: [], parent: 0 },
+    { id: 11, name: 'foo.config.js', children: [], parent: 0 },
 ] satisfies TreeNode[]
 
-export const Basic: Story = () => (
+export const Basic: StoryFn = () => (
     <Tree
         data={folder}
         defaultExpandedIds={[0, 1, 4, 5, 7]}

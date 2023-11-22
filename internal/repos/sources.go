@@ -27,7 +27,7 @@ type Sourcer func(context.Context, *types.ExternalService) (Source, error)
 // The provided decorator functions will be applied to the Source.
 func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(ctx context.Context, svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(ctx, logger.Scoped("source", ""), db, svc, cf)
+		src, err := NewSource(ctx, logger.Scoped("source"), db, svc, cf)
 		if err != nil {
 			return nil, err
 		}
@@ -42,25 +42,23 @@ func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
 func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
-	externalServicesStore := db.ExternalServices()
-
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(ctx, logger.Scoped("GithubSource", "GitHub repo source"), externalServicesStore, svc, cf)
+		return NewGitHubSource(ctx, logger.Scoped("GithubSource"), db, svc, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", "GitLab repo source"), svc, cf)
+		return NewGitLabSource(ctx, logger.Scoped("GitLabSource"), svc, cf)
 	case extsvc.KindAzureDevOps:
-		return NewAzureDevOpsSource(ctx, logger.Scoped("AzureDevOpsSource", "GitLab repo source"), svc, cf)
+		return NewAzureDevOpsSource(ctx, logger.Scoped("AzureDevOpsSource"), svc, cf)
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, svc, cf)
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(ctx, logger.Scoped("BitbucketServerSource", "bitbucket server repo source"), svc, cf)
+		return NewBitbucketServerSource(ctx, logger.Scoped("BitbucketServerSource"), svc, cf)
 	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(ctx, logger.Scoped("BitbucketCloudSource", "bitbucket cloud repo source"), svc, cf)
+		return NewBitbucketCloudSource(ctx, logger.Scoped("BitbucketCloudSource"), svc, cf)
 	case extsvc.KindGitolite:
 		return NewGitoliteSource(ctx, svc, cf)
 	case extsvc.KindPhabricator:
-		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource", "phabricator repo source"), svc, cf)
+		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource"), svc, cf)
 	case extsvc.KindAWSCodeCommit:
 		return NewAWSCodeCommitSource(ctx, svc, cf)
 	case extsvc.KindPerforce:
@@ -81,7 +79,9 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	case extsvc.KindRubyPackages:
 		return NewRubyPackagesSource(ctx, svc, cf)
 	case extsvc.KindOther:
-		return NewOtherSource(ctx, svc, cf, logger.Scoped("OtherSource", ""))
+		return NewOtherSource(ctx, svc, cf, logger.Scoped("OtherSource"))
+	case extsvc.VariantLocalGit.AsKind():
+		return NewLocalGitSource(ctx, logger.Scoped("LocalSource"), svc)
 	default:
 		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
 	}
@@ -210,9 +210,9 @@ func sourceErrorFormatFunc(es []error) string {
 		len(es), strings.Join(points, "\n\t"))
 }
 
-// listAll calls ListRepos on the given Source and collects the SourceResults
+// ListAll calls ListRepos on the given Source and collects the SourceResults
 // the Source sends over a channel into a slice of *types.Repo and a single error
-func listAll(ctx context.Context, src Source) ([]*types.Repo, error) {
+func ListAll(ctx context.Context, src Source) ([]*types.Repo, error) {
 	results := make(chan SourceResult)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

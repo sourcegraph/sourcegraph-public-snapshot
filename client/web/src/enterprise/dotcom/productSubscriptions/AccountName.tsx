@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Link } from '@sourcegraph/wildcard'
 
-import { ProductLicenseSubscriptionAccount } from '../../../graphql-operations'
+import type { ProductLicenseSubscriptionAccount } from '../../../graphql-operations'
 import { userURL } from '../../../user'
 
 /**

@@ -11,6 +11,73 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func TestVariantConfigPrototypePointers(t *testing.T) {
+	// every call to `Variant::ConfigPrototype` should return a new instance of the prototype type
+	// or nil if there is no prototype defined for that variant
+	for variant := range variantValuesMap {
+		x := variant.ConfigPrototype()
+		y := variant.ConfigPrototype()
+		if x != nil && x == y {
+			t.Errorf("%s pointers are the same: %p == %p", variant.AsKind(), x, y)
+		}
+	}
+	// check all of the current prototypes, thanks to Cody generating this code for me!
+	if y, ok := VariantAWSCodeCommit.ConfigPrototype().(*schema.AWSCodeCommitConnection); !ok {
+		t.Errorf("wrong type for AWS CodeCommit configuration prototype: %T", y)
+	}
+	if y, ok := VariantAzureDevOps.ConfigPrototype().(*schema.AzureDevOpsConnection); !ok {
+		t.Errorf("wrong type for Azure DevOps configuration prototype: %T", y)
+	}
+	if y, ok := VariantBitbucketCloud.ConfigPrototype().(*schema.BitbucketCloudConnection); !ok {
+		t.Errorf("wrong type for Bitbucket Cloud configuration prototype: %T", y)
+	}
+	if y, ok := VariantBitbucketServer.ConfigPrototype().(*schema.BitbucketServerConnection); !ok {
+		t.Errorf("wrong type for Bitbucket Server configuration prototype: %T", y)
+	}
+	if y, ok := VariantGerrit.ConfigPrototype().(*schema.GerritConnection); !ok {
+		t.Errorf("wrong type for Gerrit configuration prototype: %T", y)
+	}
+	if y, ok := VariantGitHub.ConfigPrototype().(*schema.GitHubConnection); !ok {
+		t.Errorf("wrong type for GitHub configuration prototype: %T", y)
+	}
+	if y, ok := VariantGitLab.ConfigPrototype().(*schema.GitLabConnection); !ok {
+		t.Errorf("wrong type for GitLab configuration prototype: %T", y)
+	}
+	if y, ok := VariantGitolite.ConfigPrototype().(*schema.GitoliteConnection); !ok {
+		t.Errorf("wrong type for Gitolite configuration prototype: %T", y)
+	}
+	if y, ok := VariantGoPackages.ConfigPrototype().(*schema.GoModulesConnection); !ok {
+		t.Errorf("wrong type for Go Packages configuration prototype: %T", y)
+	}
+	if y, ok := VariantJVMPackages.ConfigPrototype().(*schema.JVMPackagesConnection); !ok {
+		t.Errorf("wrong type for JVM Packages configuration prototype: %T", y)
+	}
+	if y, ok := VariantNpmPackages.ConfigPrototype().(*schema.NpmPackagesConnection); !ok {
+		t.Errorf("wrong type for NPM Packages configuration prototype: %T", y)
+	}
+	if y, ok := VariantOther.ConfigPrototype().(*schema.OtherExternalServiceConnection); !ok {
+		t.Errorf("wrong type for Other configuration prototype: %T", y)
+	}
+	if y, ok := VariantPagure.ConfigPrototype().(*schema.PagureConnection); !ok {
+		t.Errorf("wrong type for Pagure configuration prototype: %T", y)
+	}
+	if y, ok := VariantPerforce.ConfigPrototype().(*schema.PerforceConnection); !ok {
+		t.Errorf("wrong type for Perforce configuration prototype: %T", y)
+	}
+	if y, ok := VariantPhabricator.ConfigPrototype().(*schema.PhabricatorConnection); !ok {
+		t.Errorf("wrong type for Phabricator configuration prototype: %T", y)
+	}
+	if y, ok := VariantPythonPackages.ConfigPrototype().(*schema.PythonPackagesConnection); !ok {
+		t.Errorf("wrong type for Python Packages configuration prototype: %T", y)
+	}
+	if y, ok := VariantRubyPackages.ConfigPrototype().(*schema.RubyPackagesConnection); !ok {
+		t.Errorf("wrong type for Ruby Packages configuration prototype: %T", y)
+	}
+	if y, ok := VariantRustPackages.ConfigPrototype().(*schema.RustPackagesConnection); !ok {
+		t.Errorf("wrong type for Rust Packages configuration prototype: %T", y)
+	}
+}
+
 func TestExtractToken(t *testing.T) {
 	for _, tc := range []struct {
 		config string
@@ -64,52 +131,60 @@ func TestExtractToken(t *testing.T) {
 
 func TestExtractRateLimitConfig(t *testing.T) {
 	for _, tc := range []struct {
-		name   string
-		config string
-		kind   string
-		want   rate.Limit
+		name          string
+		config        string
+		kind          string
+		want          rate.Limit
+		expectDefault bool
 	}{
 		{
-			name:   "GitLab default",
-			config: `{"url": "https://example.com/"}`,
-			kind:   KindGitLab,
-			want:   rate.Inf,
+			name:          "GitLab default",
+			config:        `{"url": "https://example.com/"}`,
+			kind:          KindGitLab,
+			want:          rate.Inf,
+			expectDefault: true,
 		},
 		{
-			name:   "GitHub default",
-			config: `{"url": "https://example.com/"}`,
-			kind:   KindGitHub,
-			want:   rate.Inf,
+			name:          "GitHub default",
+			config:        `{"url": "https://example.com/"}`,
+			kind:          KindGitHub,
+			want:          rate.Inf,
+			expectDefault: true,
 		},
 		{
-			name:   "Bitbucket Server default",
-			config: `{"url": "https://example.com/"}`,
-			kind:   KindBitbucketServer,
-			want:   8.0,
+			name:          "Bitbucket Server default",
+			config:        `{"url": "https://example.com/"}`,
+			kind:          KindBitbucketServer,
+			want:          8.0,
+			expectDefault: true,
 		},
 		{
-			name:   "Bitbucket Cloud default",
-			config: `{"url": "https://example.com/"}`,
-			kind:   KindBitbucketCloud,
-			want:   2.0,
+			name:          "Bitbucket Cloud default",
+			config:        `{"url": "https://example.com/"}`,
+			kind:          KindBitbucketCloud,
+			want:          2.0,
+			expectDefault: true,
 		},
 		{
-			name:   "GitLab non-default",
-			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindGitLab,
-			want:   1.0,
+			name:          "GitLab non-default",
+			config:        `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindGitLab,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "GitHub non-default",
-			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindGitHub,
-			want:   1.0,
+			name:          "GitHub non-default",
+			config:        `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindGitHub,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "Bitbucket Server non-default",
-			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindBitbucketServer,
-			want:   1.0,
+			name:          "Bitbucket Server non-default",
+			config:        `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindBitbucketServer,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
 			name:   "Bitbucket Cloud non-default",
@@ -118,46 +193,55 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			want:   1.0,
 		},
 		{
-			name:   "NPM default",
-			config: `{"registry": "https://registry.npmjs.org"}`,
-			kind:   KindNpmPackages,
-			want:   6000.0 / 3600.0,
+			name:          "NPM default",
+			config:        `{"registry": "https://registry.npmjs.org"}`,
+			kind:          KindNpmPackages,
+			want:          6000.0 / 3600.0,
+			expectDefault: true,
 		},
 		{
-			name:   "NPM non-default",
-			config: `{"registry": "https://registry.npmjs.org", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindNpmPackages,
-			want:   1.0,
+			name:          "NPM non-default",
+			config:        `{"registry": "https://registry.npmjs.org", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindNpmPackages,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "Go mod default",
-			config: `{"urls": ["https://example.com"]}`,
-			kind:   KindGoPackages,
-			want:   57600.0 / 3600.0,
+			name:          "Go mod default",
+			config:        `{"urls": ["https://example.com"]}`,
+			kind:          KindGoPackages,
+			want:          57600.0 / 3600.0,
+			expectDefault: true,
 		},
 		{
-			name:   "Go mod non-default",
-			config: `{"urls": ["https://example.com"], "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindNpmPackages,
-			want:   1.0,
+			name:          "Go mod non-default",
+			config:        `{"urls": ["https://example.com"], "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindNpmPackages,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "No trailing slash",
-			config: `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindBitbucketCloud,
-			want:   1.0,
+			name:          "No trailing slash",
+			config:        `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindBitbucketCloud,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "Empty JVM config",
-			config: "",
-			kind:   KindJVMPackages,
-			want:   2.0,
+			name:          "Empty JVM config",
+			config:        "",
+			kind:          KindJVMPackages,
+			want:          2.0,
+			expectDefault: true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			rlc, err := ExtractRateLimit(tc.config, tc.kind)
+			rlc, isDefault, err := ExtractRateLimit(tc.config, tc.kind)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if isDefault != tc.expectDefault {
+				t.Fatalf("expected default value: %+v, got: %+v", tc.expectDefault, isDefault)
 			}
 			if diff := cmp.Diff(tc.want, rlc); diff != "" {
 				t.Fatal(diff)

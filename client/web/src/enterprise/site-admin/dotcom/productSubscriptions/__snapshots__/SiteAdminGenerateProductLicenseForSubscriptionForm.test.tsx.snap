@@ -1,206 +1,331 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
-<DocumentFragment>
+exports[`SiteAdminGenerateProductLicenseForSubscriptionForm > renders 1`] = `
+<body>
   <div
-    class="site-admin-generate-product-license-for-subscription-form"
-  >
-    <form
-      class=""
+    aria-hidden="true"
+  />
+  <reach-portal>
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="0"
+    />
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="1"
+    />
+    <div
+      data-focus-lock-disabled="false"
     >
-      <div
-        aria-live="polite"
-        class="alert alertInfo"
-        role="alert"
-      >
-        Please read the 
-        <a
-          class="anchorLink"
-          href="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer"
-        >
-          guide for how to create a license key for a new prospect or new customer.
-        </a>
-      </div>
-      <div
-        class="form-group"
-      >
-        <label
-          class="label"
-          for="site-admin-create-product-subscription-page__customer_input"
-        >
-          Customer
-        </label>
+      <div>
         <div
-          class="container loader-input loaderInput"
+          data-reach-dialog-overlay=""
         >
-          <input
-            class="form-control with-invalid-icon"
-            id="site-admin-create-product-subscription-page__customer_input"
-            type="text"
-            value="foo"
-          />
-        </div>
-        <small
-          class="form-text text-muted"
-        >
-          Name of the customer. Defaults to the Account name from the subscription.
-        </small>
-      </div>
-      <div
-        class="form-group"
-      >
-        <div
-          class="form-group mb-0"
-        >
-          <label
-            class="label"
-            for="site-admin-create-product-subscription-page__plan_select"
+          <div
+            aria-labelledby="generateLicense"
+            aria-modal="true"
+            class="modal center"
+            data-reach-dialog-content=""
+            role="dialog"
+            tabindex="-1"
           >
-            Plan
-          </label>
-          <select
-            class="form-control"
-            id="site-admin-create-product-subscription-page__plan_select"
-            label="Plan"
-          >
-            <option
-              value="enterprise-1"
+            <h3
+              class="h3"
+              id="generateLicense"
             >
-              enterprise-1
-            </option>
-          </select>
+              Generate new product license
+            </h3>
+            <div
+              aria-live="polite"
+              class="alert alertInfo"
+              role="alert"
+            >
+              Please read the
+               
+              <a
+                class="anchorLink"
+                href="https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer"
+              >
+                guide for how to create a license key for a new prospect or new customer.
+              </a>
+            </div>
+            <div
+              class="site-admin-generate-product-license-for-subscription-form"
+            >
+              <form
+                class=""
+              >
+                <label
+                  class="label label"
+                >
+                  <div
+                    class="mb-2"
+                  >
+                    Customer
+                  </div>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock ml-0 mb-2 mt-n1"
+                  >
+                    Name of the customer. Defaults to the Account name from the subscription.
+                  </small>
+                  <div
+                    class="container loader-input loaderInput"
+                  >
+                    <input
+                      class="form-control with-invalid-icon"
+                      id="site-admin-create-product-subscription-page__customer_input"
+                      type="text"
+                      value="foo"
+                    />
+                  </div>
+                </label>
+                <label
+                  class="label label"
+                >
+                  <div
+                    class="mb-2"
+                  >
+                    Salesforce Subscription ID
+                  </div>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock ml-0 mb-2 mt-n1"
+                  >
+                    Subscription ID from Salesforce.
+                  </small>
+                  <div
+                    class="container loader-input loaderInput"
+                  >
+                    <input
+                      class="form-control with-invalid-icon"
+                      id="site-admin-create-product-subscription-page__salesforce_sub_id_input"
+                      type="text"
+                      value=""
+                    />
+                  </div>
+                </label>
+                <label
+                  class="label label"
+                >
+                  <div
+                    class="mb-2"
+                  >
+                    Salesforce Opportunity ID
+                  </div>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock ml-0 mb-2 mt-n1"
+                  >
+                    Opportunity ID from Salesforce.
+                  </small>
+                  <div
+                    class="container loader-input loaderInput"
+                  >
+                    <input
+                      class="form-control with-invalid-icon"
+                      id="site-admin-create-product-subscription-page__salesforce_op_id_input"
+                      type="text"
+                      value=""
+                    />
+                  </div>
+                </label>
+                <div
+                  class="form-group mb-2"
+                >
+                  <label
+                    class="label"
+                    for="site-admin-create-product-subscription-page__plan_select"
+                  >
+                    Plan
+                  </label>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock ml-0 mb-2 mt-n1"
+                  >
+                    Subscription plan. Required parameter.
+                  </small>
+                  <select
+                    class="form-control"
+                    id="site-admin-create-product-subscription-page__plan_select"
+                    label="Plan"
+                  >
+                    <option
+                      value="enterprise-1"
+                    >
+                      enterprise-1
+                    </option>
+                  </select>
+                </div>
+                <label
+                  class="label label"
+                >
+                  <div
+                    class="mb-2"
+                  >
+                    Tags
+                  </div>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock ml-0 mb-2 mt-n1"
+                  >
+                    Comma separated list of tags. Tags restrict a license.
+                  </small>
+                  <div
+                    class="container loader-input loaderInput"
+                  >
+                    <input
+                      class="form-control with-invalid-icon"
+                      id="site-admin-create-product-subscription-page__tags"
+                      list="known-tags"
+                      type="text"
+                      value=""
+                    />
+                  </div>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock mt-2"
+                  >
+                    <p
+                      class="mb-0"
+                    />
+                  </small>
+                </label>
+                <datalist
+                  id="known-tags"
+                >
+                  <option
+                    value="batch-changes"
+                  >
+                    batch-changes
+                  </option>
+                  <option
+                    value="true-up"
+                  >
+                    true-up
+                  </option>
+                  <option
+                    value="trial"
+                  >
+                    trial
+                  </option>
+                </datalist>
+                <label
+                  class="label label"
+                >
+                  <div
+                    class="mb-2"
+                  >
+                    Users
+                  </div>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock ml-0 mb-2 mt-n1"
+                  >
+                    The maximum number of users permitted on this license.
+                  </small>
+                  <div
+                    class="container loader-input loaderInput"
+                  >
+                    <input
+                      class="form-control with-invalid-icon"
+                      id="site-admin-create-product-subscription-page__userCount"
+                      min="1"
+                      type="number"
+                      value="1"
+                    />
+                  </div>
+                </label>
+                <label
+                  class="label label"
+                >
+                  <div
+                    class="mb-2"
+                  >
+                    Expires At
+                  </div>
+                  <div
+                    class="container loader-input loaderInput"
+                  >
+                    <input
+                      class="form-control with-invalid-icon"
+                      id="site-admin-create-product-subscription-page__expiresAt"
+                      max="2011-06-25"
+                      min="2006-01-03"
+                      type="date"
+                      value="2006-01-02"
+                    />
+                  </div>
+                  <small
+                    class="text-muted form-text font-weight-normal descriptionBlock mt-2"
+                  >
+                    <span>
+                      Valid until 
+                      Jan 2, 2006, 11:59:59 PM
+                       (2 hours remaining)
+                    </span>
+                    <p
+                      class=""
+                    >
+                      Set to
+                       
+                      <button
+                        class="btn btnLink btnSm p-0 mr-2"
+                        type="button"
+                      >
+                        7 days
+                      </button>
+                      <button
+                        class="btn btnLink btnSm p-0 mr-2"
+                        type="button"
+                      >
+                        14 days
+                      </button>
+                      <button
+                        class="btn btnLink btnSm p-0 mr-2"
+                        type="button"
+                      >
+                        30 days
+                      </button>
+                      <button
+                        class="btn btnLink btnSm p-0 mr-2"
+                        type="button"
+                      >
+                        60 days
+                      </button>
+                      <button
+                        class="btn btnLink btnSm p-0 mr-2"
+                        type="button"
+                      >
+                        1 year
+                      </button>
+                    </p>
+                  </small>
+                </label>
+                <div
+                  class="d-flex justify-content-end"
+                >
+                  <button
+                    aria-disabled="false"
+                    class="btn btnSecondary btnOutline mr-2"
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    aria-disabled="false"
+                    class="btn btnPrimary d-flex justify-content-center align-items-center"
+                    type="submit"
+                  >
+                    Generate license
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-        <small
-          class="form-text text-muted"
-        >
-          Subscription plan. Required parameter.
-        </small>
       </div>
-      <div
-        class="form-group"
-      >
-        <label
-          class="label"
-          for="site-admin-create-product-subscription-page__tags"
-        >
-          Tags
-        </label>
-        <div
-          class="container loader-input loaderInput mb-0"
-        >
-          <input
-            class="form-control with-invalid-icon"
-            id="site-admin-create-product-subscription-page__tags"
-            list="known-tags"
-            type="text"
-            value=""
-          />
-        </div>
-        <datalist
-          id="known-tags"
-        />
-        <div
-          class="mt-1"
-        />
-        <small
-          class="form-text text-muted"
-        >
-          Comma separated list of tags. Tags restrict a license.
-        </small>
-      </div>
-      <div
-        class="form-group"
-      >
-        <label
-          class="label"
-          for="site-admin-create-product-subscription-page__userCount"
-        >
-          Users
-        </label>
-        <div
-          class="container loader-input loaderInput"
-        >
-          <input
-            class="form-control with-invalid-icon"
-            id="site-admin-create-product-subscription-page__userCount"
-            min="1"
-            type="number"
-            value="1"
-          />
-        </div>
-      </div>
-      <div
-        class="form-group"
-      >
-        <label
-          class="label"
-          for="site-admin-create-product-subscription-page__expiresAt"
-        >
-          Expires At
-        </label>
-        <div
-          class="container loader-input loaderInput"
-        >
-          <input
-            class="form-control with-invalid-icon"
-            id="site-admin-create-product-subscription-page__expiresAt"
-            max="2011-06-25"
-            min="2006-01-03"
-            type="date"
-            value="2007-01-03"
-          />
-        </div>
-        <small
-          class="form-text text-muted"
-        >
-          <span>
-            Valid until Jan 3, 2007, 11:59:59 PM (1 year remaining)
-          </span>
-        </small>
-        <small
-          class="form-text text-muted d-block mt-1"
-        >
-          Set to 
-          <button
-            class="btn btnLink btnSm p-0 mr-2"
-            type="button"
-          >
-            7 days
-          </button>
-          <button
-            class="btn btnLink btnSm p-0 mr-2"
-            type="button"
-          >
-            14 days
-          </button>
-          <button
-            class="btn btnLink btnSm p-0 mr-2"
-            type="button"
-          >
-            30 days
-          </button>
-          <button
-            class="btn btnLink btnSm p-0 mr-2"
-            type="button"
-          >
-            60 days
-          </button>
-          <button
-            class="btn btnLink btnSm p-0 mr-2"
-            type="button"
-          >
-            1 year
-          </button>
-        </small>
-      </div>
-      <button
-        aria-disabled="false"
-        class="btn btnPrimary"
-        type="submit"
-      >
-        Generate license
-      </button>
-    </form>
-  </div>
-</DocumentFragment>
+    </div>
+    <div
+      data-focus-guard="true"
+      style="width: 1px; height: 0px; padding: 0px; overflow: hidden; position: fixed; top: 1px; left: 1px;"
+      tabindex="0"
+    />
+  </reach-portal>
+</body>
 `;

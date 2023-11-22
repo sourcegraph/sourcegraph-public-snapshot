@@ -9,11 +9,11 @@ import { catchError, startWith } from 'rxjs/operators'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { asError, isErrorLike, renderMarkdown, pluralize } from '@sourcegraph/common'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { SearchContextRepositoryRevisionsFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import {
     Badge,
@@ -203,7 +203,7 @@ export const SearchContextPage: React.FunctionComponent<SearchContextPageProps> 
             )}
             {searchContext.viewerCanManage && (
                 <Button
-                    to={`/contexts/${searchContext.spec}/edit`}
+                    to={`/contexts/${encodeURIComponent(searchContext.spec)}/edit`}
                     data-testid="edit-search-context-link"
                     variant="secondary"
                     as={Link}

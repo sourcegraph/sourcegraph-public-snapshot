@@ -131,7 +131,7 @@ If that fails, then that points to the Sourcegraph setup or infrastructure as a 
 
 If executing the `steps.run` command fails, you can try to recreate whether executing the step manually in a container works.
 
-An approximiation of what `src` does under the hood is the following command:
+An approximation of what `src` does under the hood is the following command:
 
 ```
 docker run --rm --init --workdir /work \
@@ -176,8 +176,35 @@ If not, please update to the latest version of [Docker Desktop](https://docs.doc
 
 If you're experiencing `src-cli` hanging at the "Determining Workspace Type" step of the Batch Change we have found that clearing the Docker build cache using `docker builder prune` and restarting the Docker Daemon has resolved the issue. Please contact support if this does not resolve your issue. 
 
+### Using Rancher Desktop or Colima?
+
+If you encounter the error `docker: Error response from daemon: invalid mount config for type 'bind': bind source path does not exist`, try configuring the env var SRC_BATCH_TMP_DIR to reference an accessible directory.
+
+For Colima:
+```
+export SRC_BATCH_TMP_DIR=/tmp/colima/batchchange
+```
+
+For Rancher Desktop:
+```
+export SRC_BATCH_TMP_DIR=/tmp/rancher-desktop/batchchange
+```
+
 ## Publishing changesets
 
 ### Do you have the right credentials?
 
 When publishing changesets fails, make sure that you have [configured credentials](../how-tos/configuring_credentials.md) with all of the required scopes and from an account with write access to the changeset's repository on the code host.
+
+### Do you have email privacy enabled on GitHub?
+
+In case you encounter an error informing that your push was rejected due to the presence of an email address that isn't
+permitted to be public, there are a couple of possible solutions.
+
+You can choose either to:
+
+1. Permit your email address to be public.
+2. Disable the feature **Block command line pushes that expose my email**.
+
+Instructions for both of these potential solutions can be found in
+the [GitHub Email Settings](https://github.com/settings/emails).

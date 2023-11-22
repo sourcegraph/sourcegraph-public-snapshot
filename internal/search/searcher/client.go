@@ -6,12 +6,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
-
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -20,8 +17,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -47,11 +44,8 @@ func Search(
 		return MockSearch(ctx, repo, repoID, commit, p, fetchTimeout, onMatches)
 	}
 
-	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo, commit))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "searcher.client", repo.Attr(), commit.Attr())
+	defer tr.EndWithErr(&err)
 
 	r := protocol.Request{
 		Repo:   repo,
@@ -77,7 +71,6 @@ func Search(
 		},
 		Indexed:      indexed,
 		FetchTimeout: fetchTimeout,
-		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
 	}
 
 	body, err := json.Marshal(r)
@@ -89,7 +82,7 @@ func Search(
 	// relatively expensive to fetch from gitserver. So we use consistent
 	// hashing to increase cache hits.
 	consistentHashKey := string(repo) + "@" + string(commit)
-	tr.LazyPrintf("%s", consistentHashKey)
+	tr.AddEvent("calculated hash", attribute.String("consistentHashKey", consistentHashKey))
 
 	nodes, err := searcherURLs.Endpoints()
 	if err != nil {
@@ -104,7 +97,7 @@ func Search(
 	for attempt := 0; attempt < 2; attempt++ {
 		url := urls[attempt%len(urls)]
 
-		tr.LazyPrintf("attempt %d: %s", attempt, url)
+		tr.AddEvent("attempting text search", attribute.String("url", url), attribute.Int("attempt", attempt))
 		limitHit, err = textSearchStream(ctx, url, body, onMatches)
 		if err == nil || errcode.IsTimeout(err) {
 			return limitHit, err
@@ -120,26 +113,20 @@ func Search(
 			return false, err
 		}
 
-		tr.LazyPrintf("transient error %s", err.Error())
+		tr.AddEvent("transient error", trace.Error(err))
 	}
 
 	return false, err
 }
 
-func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (bool, error) {
-	req, err := http.NewRequest("GET", url, bytes.NewReader(body))
+func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (_ bool, err error) {
+	tr, ctx := trace.New(ctx, "searcher.textSearchStream")
+	defer tr.EndWithErr(&err)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewReader(body))
 	if err != nil {
 		return false, err
 	}
-	req = req.WithContext(ctx)
-
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req, //nolint:staticcheck // Drop once we get rid of OpenTracing
-		nethttp.OperationName("Searcher Client"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
-	// Do not lose the context returned by TraceRequest
-	ctx = req.Context()
 
 	resp, err := searchDoer.Do(req)
 	if err != nil {

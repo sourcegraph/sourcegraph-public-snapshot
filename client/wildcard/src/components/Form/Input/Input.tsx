@@ -1,11 +1,11 @@
-import { FC, forwardRef, ReactNode, HTMLAttributes } from 'react'
+import { type FC, forwardRef, type ReactNode, type HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
 import { Label } from '../..'
 import { useAutoFocus } from '../../../hooks'
-import { ForwardReferenceComponent } from '../../../types'
+import type { ForwardReferenceComponent } from '../../../types'
 import { ErrorMessage } from '../../ErrorMessage'
 import { LoaderInput } from '../LoaderInput'
 
@@ -23,6 +23,7 @@ export { Label }
 export interface InputProps {
     /**
      * Text label of input.
+     *
      * @deprecated Use <Label /> composition components instead
      */
     label?: ReactNode

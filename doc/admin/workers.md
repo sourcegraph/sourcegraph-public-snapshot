@@ -40,10 +40,6 @@ This job periodically checks for auto-indexability on repositories in the backgr
 
 This job periodically checks for dependency packages that can be auto-indexed and queues indexing jobs for a remote executor instance to perform. Read how to [enable](../code_navigation/how-to/enable_auto_indexing.md) and [configure](../code_navigation/how-to/configure_auto_indexing.md) auto-indexing.
 
-#### `codeintel-autoindexing-janitor`
-
-This job periodically removes stale autoindexing records.
-
 #### `codeintel-metrics-reporter`
 
 This job periodically emits metrics to be scraped by Prometheus about code intelligence background jobs.
@@ -153,6 +149,16 @@ This job periodically fetches the list of indexed repositories from Zoekt shards
 #### `auth-sourcegraph-operator-cleaner`
 
 This job periodically cleans up the Sourcegraph Operator user accounts on the instance. It hard deletes expired Sourcegraph Operator user accounts based on the configured lifecycle duration every minute. It skips users that have external accounts connected other than service type `sourcegraph-operator` (i.e. a special case handling for "sourcegraph.sourcegraph.com").
+
+#### `license-check`
+
+This job starts the periodic license check that ensures the Sourcegraph instance is in compliance with its license and that the license is still valid. If the license is not valid anymore, features will be disabled and a warning banner will be shown.
+
+**Scaling notes**: There must always be just a *single instance* of `license-check` worker. Scaling this worker horizontally would result in unexpected behavior. See [the horizontal scaling second](#2-scale-horizontally) below for additional details.
+
+#### `rate-limit-config`
+
+This job periodically takes the rate limit configurations in the database, and copies them into Redis, where our rate limiters will start using them.
 
 ## Deploying workers
 

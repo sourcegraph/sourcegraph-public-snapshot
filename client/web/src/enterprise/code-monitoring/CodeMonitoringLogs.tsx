@@ -15,7 +15,7 @@ import {
     ShowMoreButton,
     SummaryContainer,
 } from '../../components/FilteredConnection/ui'
-import {
+import type {
     CodeMonitorWithEvents,
     MonitorTriggerEventsResult,
     MonitorTriggerEventsVariables,

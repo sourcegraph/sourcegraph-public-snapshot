@@ -1,0 +1,78 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "background",
+    srcs = [
+        "action.go",
+        "background.go",
+        "email.go",
+        "metrics.go",
+        "slack.go",
+        "test_mocks.go",
+        "webhook.go",
+        "workers.go",
+    ],
+    embedsrcs = [
+        "email_template.html.tmpl",
+        "email_template.txt.tmpl",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codemonitors/background",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/codemonitors",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/errcode",
+        "//internal/featureflag",
+        "//internal/gitserver/gitdomain",
+        "//internal/goroutine",
+        "//internal/httpcli",
+        "//internal/observation",
+        "//internal/search/result",
+        "//internal/txemail",
+        "//internal/txemail/txtypes",
+        "//internal/types",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker",
+        "//internal/workerutil/dbworker/store",
+        "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_slack_go_slack//:slack",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "background_test",
+    timeout = "short",
+    srcs = [
+        "email_test.go",
+        "slack_test.go",
+        "webhook_test.go",
+        "workers_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":background"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/search/result",
+        "//internal/txemail",
+        "//schema",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
+    ],
+)

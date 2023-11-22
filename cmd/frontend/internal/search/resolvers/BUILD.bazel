@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resolvers",
+    srcs = [
+        "resolver.go",
+        "search_job.go",
+        "search_job_stats.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/resolvers",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/gqlutil",
+        "//internal/search/exhaustive/service",
+        "//internal/search/exhaustive/store",
+        "//internal/search/exhaustive/types",
+        "//internal/types",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

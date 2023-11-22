@@ -1,6 +1,6 @@
 import { isMacPlatform, isSafari } from '@sourcegraph/common'
 
-import { KeyboardShortcut } from '../keyboardShortcuts'
+import type { KeyboardShortcut } from '../keyboardShortcuts'
 
 type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'switchTheme'
@@ -11,15 +11,15 @@ type KEYBOARD_SHORTCUT_IDENTIFIERS =
     | 'fuzzyFinderRepos'
     | 'fuzzyFinderSymbols'
     | 'fuzzyFinderFiles'
-    | 'copyFullQuery'
     | 'focusCodeEditor'
     | 'focusFileTree'
     | 'focusSymbols'
+    | 'focusCody'
 
 export type KEYBOARD_SHORTCUT_MAPPING = Record<KEYBOARD_SHORTCUT_IDENTIFIERS, KeyboardShortcut>
 
 export const EXPERIMENTAL_BLOB_PAGE_SHORTCUTS: Record<
-    'focusCodeEditor' | 'focusFileTree' | 'focusSymbols',
+    'focusCodeEditor' | 'focusFileTree' | 'focusSymbols' | 'focusCody',
     KeyboardShortcut
 > = {
     focusCodeEditor: {
@@ -33,6 +33,10 @@ export const EXPERIMENTAL_BLOB_PAGE_SHORTCUTS: Record<
     focusSymbols: {
         title: 'Focus symbols',
         keybindings: [{ ordered: ['s'] }],
+    },
+    focusCody: {
+        title: 'Focus Cody',
+        keybindings: [{ held: ['Alt'], ordered: ['/'] }],
     },
 }
 
@@ -75,9 +79,5 @@ export const KEYBOARD_SHORTCUTS: KEYBOARD_SHORTCUT_MAPPING = {
         title: 'Fuzzy find symbols',
         keybindings: [{ held: isSafari() ? ['Mod', 'Shift'] : ['Mod'], ordered: ['o'] }],
         hideInHelp: true,
-    },
-    copyFullQuery: {
-        title: 'Copy full query',
-        keybindings: [{ held: ['Mod', 'Shift'], ordered: ['c'] }],
     },
 }

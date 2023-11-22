@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { H1, H2, Code, Text } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
@@ -28,7 +28,7 @@ const config: Meta = {
 
 export default config
 
-export const GlobalAlerts: Story = () => (
+export const GlobalAlerts: StoryFn = () => (
     <div>
         <H1>Global Alert</H1>
         <Text>

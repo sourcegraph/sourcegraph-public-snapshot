@@ -2,9 +2,9 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     OutboundWebhookFieldsWithStats,
     OutboundWebhooksListResult,
     OutboundWebhooksListVariables,

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "api",
@@ -16,4 +17,9 @@ go_test(
     timeout = "short",
     srcs = ["version_check_test.go"],
     embed = [":api"],
+    deps = [
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
 )

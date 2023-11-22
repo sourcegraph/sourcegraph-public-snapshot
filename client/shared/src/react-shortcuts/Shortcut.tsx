@@ -1,8 +1,8 @@
 import * as React from 'react'
 
-import { Key, ModifierKey } from './keys'
-import { Data } from './ShortcutManager'
-import { Consumer, Context } from './ShortcutProvider'
+import type { Key, ModifierKey } from './keys'
+import type { Data } from './ShortcutManager'
+import { Consumer, type Context } from './ShortcutProvider'
 
 export interface Props {
     /**

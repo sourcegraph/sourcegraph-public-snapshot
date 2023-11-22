@@ -9,17 +9,16 @@
 </p>
 </aside>
 
-This document details how a site administrator can supply a Lua script to customize the way [Sourcegraph detects precise code intelligence indexing jobs from repository contents](../explanations/auto_indexing_inference).
+This document details how a site administrator can supply a Lua script to customize the way [Sourcegraph detects precise code intelligence indexing jobs from repository contents](../explanations/auto_indexing_inference.md).
 
-By default, Sourcegraph will attempt to infer (or hint) index jobs for the following languages:
+By default, Sourcegraph will attempt to infer index jobs for the following languages:
 
-- `C++`
-- [`Go`](../explanations/auto_indexing_inference#go)
-- [`Java`/`Scala`/`Kotlin`](../explanations/auto_indexing_inference#java)
+- [`Go`](../explanations/auto_indexing_inference.md#go)
+- [`Java`/`Scala`/`Kotlin`](../explanations/auto_indexing_inference.md#java)
 - `Python`
 - `Ruby`
-- [`Rust`](../explanations/auto_indexing_inference#rust)
-- [`TypeScript`/`JavaScript`](../explanations/auto_indexing_inference#typescript)
+- [`Rust`](../explanations/auto_indexing_inference.md#rust)
+- [`TypeScript`/`JavaScript`](../explanations/auto_indexing_inference.md#typescript)
 
 Inference logic can be disabled or altered in the case when the target repositories do not conform to a pattern that the Sourcegraph default inference logic recognizes. Inference logic is controlled by a **Lua override script** that can be supplied in the UI under `Admin > Code graph > Inference`.
 
@@ -46,7 +45,7 @@ return require("sg.autoindex.config").new({
 
 To **add** additional behaviors, you can create and register a new **recognizer**. A recognizer is an interface that requests some set of files from a repository, and returns a set of auto-indexing job configurations that could produce a precise code intelligence index.
 
-A _path recognizer_ is a concrete recognizer that advertises a set of path _globs_ it is interested in, then invokes its `generate` function with matching paths from a repository. In the following, all files matching `Snek.module` (`Snek.module`, `proj/Snek.module`, `proj/sub/Snek.module`, etc) are passed to a call to `generate` (if non-empty). The generate function will then return a list of indexing job descriptions. The [guide for auto-indexing jobs configuration](auto_indexing_configuration#keys-1) gives detailed descriptions on the fields of this object.
+A _path recognizer_ is a concrete recognizer that advertises a set of path _globs_ it is interested in, then invokes its `generate` function with matching paths from a repository. In the following, all files matching `Snek.module` (`Snek.module`, `proj/Snek.module`, `proj/sub/Snek.module`, etc) are passed to a call to `generate` (if non-empty). The generate function will then return a list of indexing job descriptions. The [guide for auto-indexing jobs configuration](auto_indexing_configuration.md#keys-1) gives detailed descriptions on the fields of this object.
 
 ```lua
 local path = require("path")
@@ -60,10 +59,10 @@ local snek_recognizer = recognizer.new_path_recognizer {
     pattern.new_path_basename("Snek.module"),
 
     -- Ignore any files in test or vendor directories
-    pattern.new_path_exclude(pattern.new_path_combine {
+    pattern.new_path_exclude(
       pattern.new_path_segment("test"),
-      pattern.new_path_segment("vendor"),
-    }),
+      pattern.new_path_segment("vendor")
+    ),
   },
 
   -- Called with list of matching Snek.module files
@@ -74,9 +73,9 @@ local snek_recognizer = recognizer.new_path_recognizer {
       table.insert(jobs, {
         indexer = "acme/snek:latest",  -- Run this indexer...
         root = path.dirname(paths[i]), -- ...in this directory
-        steps = {},
-        indexer_args = {},
-        outfile = "",
+        local_steps = {"snekpm install"}, -- Install dependencies
+        indexer_args = {"snek", "index", ".", "--output", "index.scip"},
+        outfile = "index.scip",
       })
     end
 
@@ -94,37 +93,96 @@ return require("sg.autoindex.config").new({
 
 There are a number of specific and general-purpose Lua libraries made accessible via the built-in `require`.
 
+The type signatures for the functions below use the following syntax:
+
+- `(A1, ..., An) -> R`: Function type with arguments of type `A1, ..., An` and return type `R`.
+- `array[A]`: Table with indexes 1 to N of elements of type `A`.
+- `table[K, V]`: Table with keys of type `K` and values of type `V`.
+- `A | B`: Union type (includes values of type `A` and type `B`).
+- `A...`: Variadic (0 or more values of A, without being wrapped in a table).
+- `"mystring"`: Literal string type with only `"mystring"` as the allowed value.
+- `{K1: V1, K2: V2, ...}`: Heterogenous table (object) with a key of type `K1` mapping to a value of type `V1` etc.
+- `void`: no value returned from function
+
 ### `sg.autoindex.recognizer`
 
 This auto-indexing-specific library defines the following two functions.
 
 <!-- TODO - document paths_for_content;api.register -->
-- `new_path_recognizer` creates a `recognizer` from a config object containing `patterns` and `generate` fields. See the [example](#example) above for basic usage.
+- `new_path_recognizer` creates a `Recognizer` from a config object containing `patterns` and `generate` fields. See the [example](#example) above for basic usage.
+  - Type:
+    ```
+    ({
+      "patterns": array[pattern],
+      "patterns_for_content": array[pattern],
+      "generate": (registration_api, paths: array[string], contents_by_path: table[string, string]) -> array[index_job],
+    }) -> recognizer
+    ```
+    where `index_job` is an object with the following shape:
+    ```
+    index_job = {
+      "indexer": string, -- Docker image for the indexer
+      "root": string,    -- working directory for invoking the indexer
+      "steps": array[{   -- preparatory steps to run before invoking the indexer (e.g. installing dependencies)
+        "root": string,  -- working directory for this step
+        "image": string  -- Docker image to use for preparatory step
+        "commands": array[string] -- List of commands to run inside the Docker image
+      }],
+      "local_steps": array[string] -- List of commands to run inside the indexer image at "root" before invoking
+                                   -- the indexer (e.g. to install dependencies)
+      "indexer_args": array[string], -- command-line invocation for the indexer
+      "outfile": string,             -- path to the index generated by the indexer
+      "requested_envvars": array[string], -- List of environment variables needed. These are made accessible
+                                          -- to steps, local_steps, and the indexer_args command.
+    }
+    ```
+    For installing dependencies, if the indexer image contains the relevant package manager(s),
+    then it is simpler to install dependencies using `local_steps`. Otherwise,
+    the `steps` field allows more customizability.
+
 - `new_fallback_recognizer` creates a `recognizer` from an ordered list of `recognizer`s. Each `recognizer` is called sequentially, until one of them emits non-empty results.
+  - Type: `(array[recognizer]) -> recognizer`
+
+The `registration_api` object has the following API:
+- `register` which queues a `recognizer` to be run at a later stage.
+  This makes it possible to add more recognizers dynamically,
+  such as based on whether specific configuration files were found or not.
+  - Type: `(recognizer) -> void`
 
 ### `sg.autoindex.patterns`
 
 This auto-indexing-specific library defines the following four path pattern constructors.
 
-- `new_path_literal(pattern)` creates a `pattern` that matches an exact filepath.
-- `new_path_segment(pattern)` creates a `pattern` that matches a directory name.
-- `new_path_basename(pattern)` creates a `pattern` that matches a basename exactly.
-- `new_path_extension(ext_no_dot)` creates a `pattern` that matches files with a given extension.
+- `new_path_literal(fullpath)` creates a `pattern` that matches an exact filepath.
+  - Type: `(string) -> pattern`
+- `new_path_segment(segment)` creates a `pattern` that matches a directory name.
+  - Type: `(string) -> pattern`
+- `new_path_basename(basename)` creates a `pattern` that matches a basename exactly.
+  - Type: `(string) -> pattern`
+- `new_path_extension(ext_no_leading_dot)` creates a `pattern` that matches files with a given extension. 
+  - Type: `(string) -> pattern`
 
 This library also defines the following two pattern collection constructors.
 
 - `new_path_combine(patterns)` creates a pattern collection object (to be used with [recognizers](#sg-autoindex-recognizers)) from the given set of path `pattern`s.
+  - Type: `((pattern | array[pattern])...) -> pattern`
 - `new_path_exclude(patterns)` creates a new _inverted_ pattern collection object. Paths matching these `pattern`s are filtered out from the set of matching filepaths given to a recognizer's `generate` function.
+  - Type: `((pattern | array[pattern])...) -> pattern`
 
-### `paths`
+### `path`
 
-This library defines the following five path utility functions:
+This library defines the following utility functions:
 
-- `ancestors(path)` returns a path's parent, grandparent, etc as a list.
-- `basename(path)` returns the basename of the given path.
-- `dirname(path)` returns the dirname of the given path.
-- `join(paths)` returns a filepath created by joining the given path segments via filepath separator.
-- `split(path)` split a path into an ordered sequence of path segments.
+- `ancestors(path)` returns a list `{dirname(path), dirname(dirname(path)), ...}`. The last element in the list will be an empty string.
+  - Type: `(string) -> array[string]`
+- `basename(path)` returns the basename of the given path as defined by Go's [filepath.Base](https://pkg.go.dev/path/filepath#Base).
+  - Type: `(string) -> string`
+- `dirname(path)` returns the dirname of the given path as defined by Go's [filepath.Dir](https://pkg.go.dev/path/filepath#Dir), except that it (1) returns an empty path instead of `"."` if the path is empty and (2) removes a leading `/` if present.
+  - Type: `string -> string`
+- `join(path1, path2)` returns a filepath created by joining the given path segments via filepath separator.
+  - Type: `(string, string) -> string`
+- `split(path)` is a convenience function that returns `dirname(path), basename(path)`.
+  - Type: `(string) -> string, string`
 
 ### `json`
 

@@ -14,16 +14,22 @@ In the near future, other Sourcegraph features like Batch Changes may also rely 
 
 ## How to check blobstore is working as expected
 
-First grab a root shell into the container, for example in a Docker Compose deployment:
+First, grab a root shell into the container, for example in a Docker Compose deployment:
 
 ```
 docker exec -u 0 -it blobstore sh
 ```
 
-Then you may try creating a bucket by running a curl request like this:
+or in a Kubernetes deployment:
 
 ```
-curl -i -X PUT http://127.0.0.1:9000/create-bucket-test-2022-01-09-attempt0
+kubectl exec -it deployment/blobstore -- sh
+```
+
+Then, try manually creating a bucket by running a curl request like this:
+
+```
+curl -i -X PUT http://127.0.0.1:9000/create-bucket-test-attempt1
 ```
 
 You should see a `200 OK` success like this:
@@ -32,7 +38,7 @@ You should see a `200 OK` success like this:
 HTTP/1.1 200 OK
 Date: Mon, 09 Jan 2023 20:41:49 GMT
 x-amz-request-id: 4442587FB7D0A2F9
-Location: /create-bucket-test-2022-01-09-attempt0
+Location: /create-bucket-test-attempt1
 Content-Length: 0
 Server: Jetty(11.0.11)
 ```
@@ -48,7 +54,7 @@ From a shell inside the container, you can run `ls -lah /data` to check the file
 total 16K    
 drwxr-xr-x    4 sourcegr sourcegr    4.0K Jan  9 20:41 .
 drwxr-xr-x    1 root     root        4.0K Jan  9 20:29 ..
-drwxr-x--x    2 sourcegr sourcegr    4.0K Jan  9 20:41 create-bucket-test-2022-01-09-attempt0
+drwxr-x--x    2 sourcegr sourcegr    4.0K Jan  9 20:41 create-bucket-test-attempt1
 drwxr-x--x    2 sourcegr sourcegr    4.0K Dec  5 22:36 lsif-uploads
 ```
 
@@ -65,6 +71,12 @@ If blobstore appears to be working fine according to all of the above, but you a
 ```
 docker exec -u 0 -it sourcegraph-frontend-internal sh
 ```
+or
+
+```
+kubectl exec -it -u 0 sourcegraph-frontend-internal sh
+```
+
 
 ```
 curl -i http://blobstore:9000/

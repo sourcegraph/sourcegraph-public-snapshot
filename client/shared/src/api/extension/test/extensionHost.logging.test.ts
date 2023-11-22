@@ -1,9 +1,10 @@
 import { BehaviorSubject } from 'rxjs'
 import sinon from 'sinon'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { logger } from '@sourcegraph/common'
 
-import { ClientAPI } from '../../client/api/api'
+import type { ClientAPI } from '../../client/api/api'
 import { pretendRemote } from '../../util'
 import { proxySubscribable } from '../api/common'
 

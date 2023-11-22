@@ -1,7 +1,7 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
 
 import { CreateCodeMonitorPage } from './CreateCodeMonitorPage'
@@ -17,7 +17,7 @@ export default config
 
 window.context.emailEnabled = true
 
-export const CreateCodeMonitorPageStory: Story = () => (
+export const CreateCodeMonitorPageStory: StoryFn = () => (
     <WebStory>
         {props => (
             <CreateCodeMonitorPage

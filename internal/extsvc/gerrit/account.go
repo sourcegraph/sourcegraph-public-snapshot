@@ -11,6 +11,7 @@ import (
 
 // AccountData stores information of a Gerrit account.
 type AccountData struct {
+	Name      string `json:"name"`
 	Username  string `json:"username"`
 	Email     string `json:"email"`
 	AccountID int32  `json:"account_id"`
@@ -39,7 +40,8 @@ func GetPublicExternalAccountData(ctx context.Context, data *extsvc.AccountData)
 	}
 
 	return &extsvc.PublicAccountData{
-		DisplayName: &usr.Username,
+		DisplayName: usr.Name,
+		Login:       usr.Username,
 	}, nil
 }
 

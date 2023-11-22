@@ -5,12 +5,15 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
 )
 
 type testRegisterer struct{}
@@ -19,8 +22,9 @@ func (testRegisterer) Register(prometheus.Collector) error  { return nil }
 func (testRegisterer) MustRegister(...prometheus.Collector) {}
 func (testRegisterer) Unregister(prometheus.Collector) bool { return true }
 
-// TestRegisterer is a behaviorless Prometheus Registerer usable for unit tests.
-var TestRegisterer prometheus.Registerer = testRegisterer{}
+// NoOpRegisterer is a behaviorless Prometheus Registerer usable for unit tests
+// or to disable metrics collection.
+var NoOpRegisterer prometheus.Registerer = testRegisterer{}
 
 // registerer exists so we can override it in tests
 var registerer = prometheus.DefaultRegisterer
@@ -33,10 +37,11 @@ type RequestMeter struct {
 }
 
 const (
-	labelCategory = "category"
-	labelCode     = "code"
-	labelHost     = "host"
-	labelTask     = "task"
+	labelCategory  = "category"
+	labelCode      = "code"
+	labelHost      = "host"
+	labelTask      = "task"
+	labelFromCache = "from_cache"
 )
 
 var taskKey struct{}
@@ -62,7 +67,7 @@ func NewRequestMeter(subsystem, help string) *RequestMeter {
 		Subsystem: subsystem,
 		Name:      "requests_total",
 		Help:      help,
-	}, []string{labelCategory, labelCode, labelHost, labelTask})
+	}, []string{labelCategory, labelCode, labelHost, labelTask, labelFromCache})
 	registerer.MustRegister(requestCounter)
 
 	// TODO(uwedeportivo):
@@ -134,12 +139,20 @@ func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Respon
 		code = strconv.Itoa(resp.StatusCode)
 	}
 
+	// X-From-Cache=1 if the returned response is from the cache created by
+	// httpcli.NewCachedTransportOpt
+	var fromCache = "false"
+	if resp != nil && resp.Header.Get("X-From-Cache") != "" {
+		fromCache = "true"
+	}
+
 	d := time.Since(start)
 	t.meter.counter.With(map[string]string{
-		labelCategory: category,
-		labelCode:     code,
-		labelHost:     r.URL.Host,
-		labelTask:     TaskFromContext(r.Context()),
+		labelCategory:  category,
+		labelCode:      code,
+		labelHost:      r.URL.Host,
+		labelTask:      TaskFromContext(r.Context()),
+		labelFromCache: fromCache,
 	}).Inc()
 
 	t.meter.duration.WithLabelValues(category, code, r.URL.Host).Observe(d.Seconds())
@@ -164,6 +177,7 @@ type diskCollector struct {
 	path          string
 	availableDesc *prometheus.Desc
 	totalDesc     *prometheus.Desc
+	logger        log.Logger
 }
 
 func newDiskCollector(path string) prometheus.Collector {
@@ -182,6 +196,7 @@ func newDiskCollector(path string) prometheus.Collector {
 			nil,
 			constLabels,
 		),
+		logger: log.Scoped("diskCollector"),
 	}
 }
 
@@ -191,10 +206,13 @@ func (c *diskCollector) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
-	var stat syscall.Statfs_t
-	_ = syscall.Statfs(c.path, &stat)
-	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(stat.Bavail*uint64(stat.Bsize)))
-	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(stat.Blocks*uint64(stat.Bsize)))
+	usage, err := du.New(c.path)
+	if err != nil {
+		c.logger.Error("error getting disk usage info", log.Error(err))
+		return
+	}
+	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(usage.Available()))
+	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(usage.Size()))
 }
 
 func mustRegisterOnce(c prometheus.Collector) {

@@ -1,0 +1,65 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "autoindexing",
+    srcs = [
+        "iface.go",
+        "init.go",
+        "observability.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/autoindexing/internal/background",
+        "//internal/codeintel/autoindexing/internal/background/dependencies",
+        "//internal/codeintel/autoindexing/internal/background/scheduler",
+        "//internal/codeintel/autoindexing/internal/background/summary",
+        "//internal/codeintel/autoindexing/internal/enqueuer",
+        "//internal/codeintel/autoindexing/internal/inference",
+        "//internal/codeintel/autoindexing/internal/jobselector",
+        "//internal/codeintel/autoindexing/internal/store",
+        "//internal/codeintel/autoindexing/shared",
+        "//internal/codeintel/dependencies",
+        "//internal/codeintel/uploads/shared",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/goroutine",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "autoindexing_test",
+    timeout = "short",
+    srcs = [
+        "mocks_test.go",
+        "service_test.go",
+    ],
+    embed = [":autoindexing"],
+    tags = [
+        # requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/autoindexing/internal/jobselector",
+        "//internal/codeintel/autoindexing/internal/store",
+        "//internal/codeintel/autoindexing/shared",
+        "//internal/codeintel/dependencies",
+        "//internal/codeintel/uploads/shared",
+        "//internal/database/dbmocks",
+        "//internal/gitserver",
+        "//internal/observation",
+        "//internal/repoupdater/protocol",
+        "//internal/types",
+        "//lib/codeintel/autoindex/config",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

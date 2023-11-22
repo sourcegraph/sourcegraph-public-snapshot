@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { getRelativeTime } from '$lib/relativeTime'
-    import { currentDate as now } from '$lib/stores'
+    import Timestamp from '$lib/Timestamp.svelte'
     import { numberWithCommas } from '$lib/common'
     import type { GitRefFields } from '$lib/graphql-operations'
 
@@ -10,8 +9,6 @@
     $: authorDate = ref.target.commit ? new Date(ref.target.commit.author.date) : null
     $: behind = ref.target.commit?.behindAhead?.behind
     $: ahead = ref.target.commit?.behindAhead?.ahead
-
-    $: relativeTime = authorDate ? getRelativeTime(authorDate, $now) : ''
 </script>
 
 <tr>
@@ -19,7 +16,11 @@
         <a href={ref.url}><span class="ref px-1 py-0">{ref.displayName}</span></a>
     </td>
     <td colspan={behind || ahead ? 1 : 2}>
-        <a href={ref.url}><small>Updated {relativeTime} by {authorName}</small></a>
+        <a href={ref.url}>
+            <small
+                >Updated {#if authorDate}<Timestamp date={authorDate} strict />{/if} by {authorName}</small
+            ></a
+        >
     </td>
     {#if ahead || behind}
         <td class="diff">

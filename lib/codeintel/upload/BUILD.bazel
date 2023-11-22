@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "upload",
@@ -18,6 +19,7 @@ go_library(
         "//lib/errors",
         "//lib/output",
         "@com_github_klauspost_pgzip//:pgzip",
+        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_scip//bindings/go/scip",
         "@org_golang_google_protobuf//proto",
     ],

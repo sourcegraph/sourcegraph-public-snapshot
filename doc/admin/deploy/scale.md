@@ -46,7 +46,6 @@ Here is a list of components you can find in a typical Sourcegraph deployment:
 |                                                     |                                                                                                                                                                                          |
 | :-------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`frontend`](scale.md#frontend)                     | Serves the web application, extensions, and graphQL services. Almost every service has a link back to the frontend, from which it gathers configuration updates.                         |
-| [`github-proxy`](scale.md#github-proxy)             | Proxies all requests to github.com to keep track of rate limits and prevent triggering abuse mechanisms.                                                                                 |
 | [`gitserver`](scale.md#gitserver)                   | Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git.                                                                |
 | [`precise-code-intel`](scale.md#precise-code-intel) | Converts LSIF upload file into Postgres data. The entire index must be read into memory to be correlated.                                                                                |
 | [`repo-updater`](scale.md#repo-updater)             | Tracks the state of repositories. It is responsible for automatically scheduling updates using gitserver and for synchronizing metadata between code hosts and external services.        |
@@ -232,40 +231,6 @@ Serves the Sourcegraph web application, extensions, and graphQL API services.
 
 ---
 
-### github-proxy
-
-```
-Proxies all requests to github.com to keep track of rate limits.
-It also prevents triggering abuse mechanisms.
-```
-
-| Replica     |                                                         |
-| :---------- | :------------------------------------------------------ |
-| `Overview`  | Singleton                                               |
-| `Factors`   | -                                                       |
-| `Guideline` | A Singleton service should not have more than 1 replica |
-
-| CPU         |                                                        |
-| :---------- | :----------------------------------------------------- |
-| `Overview`  | A thread is dispatched per request                     |
-| `Factors`   | Number of API requests to GitHub and GitHub Enterprise |
-| `Guideline` | The default value should work for all deployments      |
-
-| Memory      |                                                             |
-| :---------- | :---------------------------------------------------------- |
-| `Overview`  | Linear to the concurrent number of API requests proxied     |
-| `Factors`   | Number of API requests to GitHub and GitHub Enterprise      |
-| `Guideline` | The default setup should be sufficient for most deployments |
-
-| Storage     |      |
-| :---------- | :--- |
-| `Overview`  | -    |
-| `Factors`   | -    |
-| `Guideline` | -    |
-| `Type`      | None |
-
----
-
 ### gitserver
 
 ```
@@ -340,9 +305,10 @@ A Jaeger instance for end-to-end distributed tracing
 ### blobstore
 
 ```
-A blobstore instance that serves as local S3-compatible object storage.
-It holds index uploads for precise code navigation before they can be processed.
-The data is for temporary storage and content will be automatically deleted once processed.
+A blobstore instance that serves as local S3-compatible object storage. It
+holds files such as search jobs results and index uploads for precise code
+navigation.
+
 ```
 
 | Replica     |                                                         |

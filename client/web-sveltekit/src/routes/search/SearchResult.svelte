@@ -1,44 +1,22 @@
-<script lang="ts">
-    import { mdiBitbucket, mdiGithub, mdiGitlab, mdiStar } from '@mdi/js'
-
-    import type { SearchMatch } from '$lib/shared'
-    import Icon from '$lib/Icon.svelte'
-    import { formatRepositoryStarCount } from '$lib/branded'
-    import Tooltip from '$lib/Tooltip.svelte'
-
-    function codeHostIcon(repoName: string): { hostName: string; svgPath?: string } {
-        const hostName = repoName.split('/')[0]
-        const iconMap: { [key: string]: string } = {
-            'github.com': mdiGithub,
-            'gitlab.com': mdiGitlab,
-            'bitbucket.org': mdiBitbucket,
-        }
-        return { hostName, svgPath: iconMap[hostName] }
-    }
-
-    export let result: SearchMatch
-
-    $: icon = codeHostIcon(result.repository)
-</script>
-
-<article>
+<article data-testid="search-result">
     <div class="header">
-        {#if icon.svgPath}
-            <Tooltip tooltip={icon.hostName}>
-                <Icon class="text-muted" aria-label={icon.hostName} svgPath={icon.svgPath} inline />{' '}
-            </Tooltip>
-        {/if}
+        <div class="icon">
+            <slot name="icon" />
+        </div>
         <div class="title">
             <slot name="title" />
-            {#if result.repoStars}
-                <div class="star">
-                    <Icon inline svgPath={mdiStar} --color="var(--yellow)" />
-                    {formatRepositoryStarCount(result.repoStars)}
-                </div>
-            {/if}
+        </div>
+        <div class="info">
+            <slot name="info" />
         </div>
     </div>
-    <slot />
+    {#if $$slots.default || $$slots.body}
+        <slot name="body">
+            <div class="body">
+                <slot />
+            </div>
+        </slot>
+    {/if}
 </article>
 
 <style lang="scss">
@@ -49,6 +27,10 @@
         position: sticky;
         top: 0;
         background-color: var(--body-bg);
+    }
+
+    .icon {
+        flex-shrink: 0;
     }
 
     .title {
@@ -72,7 +54,15 @@
         }
     }
 
-    .star {
+    .info {
         margin-left: auto;
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .body {
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+        background-color: var(--code-bg);
     }
 </style>

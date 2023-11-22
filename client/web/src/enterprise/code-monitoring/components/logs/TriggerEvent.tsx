@@ -11,8 +11,8 @@ import { Button, Link, Icon } from '@sourcegraph/wildcard'
 import { ConnectionList } from '../../../../components/FilteredConnection/ui'
 import {
     EventStatus,
-    MonitorActionEvents,
-    MonitorTriggerEventWithActions,
+    type MonitorActionEvents,
+    type MonitorTriggerEventWithActions,
     SearchPatternType,
 } from '../../../../graphql-operations'
 
@@ -47,12 +47,15 @@ export const TriggerEvent: React.FunctionComponent<
         }
 
         switch (triggerEvent.status) {
-            case EventStatus.ERROR:
+            case EventStatus.ERROR: {
                 return 'Unknown error occurred when running the search'
-            case EventStatus.PENDING:
+            }
+            case EventStatus.PENDING: {
                 return 'Search is pending'
-            default:
+            }
+            default: {
                 return 'Search ran successfully'
+            }
         }
     }
 
@@ -136,22 +139,28 @@ function getActionEventMessage(actionEvent: MonitorActionEvents['nodes'][number]
     }
 
     switch (actionEvent.status) {
-        case EventStatus.ERROR:
+        case EventStatus.ERROR: {
             return 'Unknown error occurred when sending the notification'
-        case EventStatus.PENDING:
+        }
+        case EventStatus.PENDING: {
             return 'Notification is pending'
-        default:
+        }
+        default: {
             return 'Notification sent successfully'
+        }
     }
 }
 
 function getActionEventTitle(action: MonitorTriggerEventWithActions['actions']['nodes'][number]): string {
     switch (action.__typename) {
-        case 'MonitorEmail':
+        case 'MonitorEmail': {
             return 'Email'
-        case 'MonitorSlackWebhook':
+        }
+        case 'MonitorSlackWebhook': {
             return 'Slack'
-        case 'MonitorWebhook':
+        }
+        case 'MonitorWebhook': {
             return 'Webhook'
+        }
     }
 }

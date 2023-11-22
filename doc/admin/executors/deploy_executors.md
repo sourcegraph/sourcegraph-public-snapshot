@@ -1,13 +1,5 @@
 # Deploying Sourcegraph executors
 
-<aside class="beta">
-<p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
-</p>
-
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
-</aside>
-
 [Executors](index.md) provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
 
 - [Automatically indexing a repository for precise code navigation](../../code_navigation/explanations/auto_indexing.md)
@@ -79,7 +71,6 @@ Machines on Cloud Providers have additional constraints for use with firecracker
   a [metal instance (`.metal`)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
 - **GCP:** the instance
   must [enable nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling)
-
 ## Configure Sourcegraph
 
 Executors must be run separately from your Sourcegraph instance.
@@ -106,19 +97,23 @@ Once the shared secret is set in Sourcegraph, you can start setting up executors
   </a>
 </div>
 
-<!-- Hidden for now while they're still experimental. -->
-<!-- <div class="grid">
+<div class="grid">
   <a class="btn-app btn" href="/admin/executors/deploy_executors_kubernetes">
-    <h3>Kubernetes</h3>
-    <p>Run executors on kubernetes</p>
+    <h3>Native Kubernetes</h3>
+    <p>Run executors natively on kubernetes.</p>
+    <p>Requires certain RBAC Roles.</p>
+  </a>
+  <a class="btn-app btn" href="/admin/executors/deploy_executors_dind">
+    <h3>Kubernetes (dind)</h3>
+    <p>Run executors on kubernetes with docker-in-docker.</p>
     <p>Requires privileged access to a container runtime.</p>
   </a>
   <a class="btn-app btn" href="/admin/executors/deploy_executors_docker">
     <h3>Docker Compose</h3>
-    <p>Run executors on any linux amd64 machine with docker-compose</p>
+    <p>Run executors on any linux amd64 machine with docker-compose.</p>
     <p>Requires privileged access to a container runtime.</p>
   </a>
-</div> -->
+</div>
 
 ## Confirm executors are working
 
@@ -199,3 +194,106 @@ For Google Container Registry, [follow this guide](https://cloud.google.com/cont
 ### Configuring the auth config for use in executors
 
 Now that the config has been obtained, it can be used for the `EXECUTOR_DOCKER_AUTH_CONFIG` environment variable (and terraform variable `docker_auth_config`) or you can create an [executor secret](executor_secrets.md#creating-a-new-secret) called `DOCKER_AUTH_CONFIG`. Global executor secrets will be available to every execution, while user and organization level executor secrets will only be available to the namespaces executions.
+
+## Using custom certificates with executors 
+
+By default, executors will search for certificates in the following files and directories:
+
+| Directory or file                                   | Distribution              |
+|-----------------------------------------------------|---------------------------|
+| `/etc/ssl/certs/ca-certificates.crt`                | Debian/Ubuntu/Gentoo etc. |
+| `/etc/pki/tls/certs/ca-bundle.crt`                  | Fedora/RHEL 6             |
+| `/etc/ssl/ca-bundle.pem`                            | OpenSUSE                  |
+| `/etc/pki/tls/cacert.pem`                           | OpenELEC                  |
+| `/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem` | CentOS/RHEL 7             |
+| `/etc/ssl/cert.pem`                                 | Alpine Linux              |
+| `/etc/ssl/certs`                                    | SLES10/SLES11             |
+| `/etc/pki/tls/certs`                                | Fedora/RHEL               |   
+| `/system/etc/security/cacerts`                      | Android                   |
+
+If your environment makes use of custom certificates, you can add them to one of these locations in order for executors to pick them up.
+        
+### Adding certificates to a binary deployment
+> NOTE: see the [troubleshooting guide](./executors_troubleshooting.md#connecting-to-cloud-provider-executor-instances) for instructions on how to connect to cloud provider VMs.
+        
+After successfully [deploying binaries](./deploy_executors_binary.md), follow these steps: 
+1. Copy your certificates to `/etc/ssl/certs`. 
+1. If you are using systemd, run `systemctl restart executor`. If not, proceed to the next step. 
+1. Run `executor run` on the VM in order to restart the executor service.
+
+#### Adding certificates with Firecracker
+
+When running executors with the [firecracker runtime](index.md#firecracker), custom certificates need to be added in 
+the container that is running within the Firecracker VM. To add custom certificates, you must create a new Docker image 
+that contains the certificates. For example,
+
+```dockerfile
+FROM upstream:tag
+
+# Copy the certificates into the container
+COPY customcert.crt /usr/local/share/ca-certificates/customcert.crt
+# Update the certificate store
+RUN chmod 644 /usr/local/share/ca-certificates/customcert.crt && update-ca-certificates
+# ...
+```
+
+##### Code Intel
+
+Once the custom image is built, you can configure the executor to use it by setting
+the `codeIntelAutoIndexing.indexerMap` to use the custom image. For example,
+
+```json
+"codeIntelAutoIndexing.indexerMap": {
+  "go": "myregistry.company.com/scip-go:custom"
+}
+```
+
+### Adding certificates to a Kubernetes deployment using manifests
+
+First, add the certificate data as a secret in your preferred namespace:
+```shell
+SECRET_NAME=custom-certs
+CERT_PATH=/path/to/cert.pem 
+kubectl create secret generic $SECRET_NAME --from-file=customcert.crt=$CERT_PATH
+```
+
+Or as a declarative manifest:
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: custom-certs
+data:
+  customcert.crt: $(base64 -i /path/to/cert.pem)
+type: Opaque
+```
+
+Next, mount the secret in the executor deployment. Add the following snippet to `spec.template.spec.volumes` of each executor deployment:
+```yaml
+- name: custom-certs
+  secret:
+    secretName: custom-certs
+```
+
+Also add this snippet to `spec.template.spec.containers.volumeMounts` of each executor deployment (specifically, the executor container, in case you inject any sidecars):
+```yaml
+- mountPath: /etc/ssl/certs
+  name: custom-certs
+  readOnly: true
+```
+
+Next, apply the updated YAML manifests. Once the executors have rolled out, they should be picking up your custom certificates.
+
+### Adding certificates to a Kubernetes deployment using Helm
+        
+You may follow the same instructions for the manifest deployment to set custom certificates.
+
+### Adding certificates to a Docker Compose deployment
+
+First, ensure that the certificate file is present on the host machine. Next, add the volume to the [executor compose file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-docker/-/blob/docker-compose/executors/executor.docker-compose.yaml?L26-30):
+
+```yaml
+- '/path/to/certs:/etc/ssl/certs'
+```
+
+Next, restart the deployment with `docker-compose down` and `docker-compose up -d`.

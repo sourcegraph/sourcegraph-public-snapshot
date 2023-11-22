@@ -6,9 +6,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -55,8 +55,8 @@ func (m mockAuthnProvider) ExternalAccountInfo(ctx context.Context, account exts
 	}
 
 	return &extsvc.PublicAccountData{
-		Login:       &data.Username,
-		DisplayName: &data.Name,
+		Login:       data.Username,
+		DisplayName: data.Name,
 	}, nil
 }
 
@@ -84,9 +84,9 @@ func TestExternalAccountDataResolver_PublicAccountDataFromJSON(t *testing.T) {
 		},
 	}
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(alice, nil)
 	users.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
 		if username == "alice" {
@@ -95,7 +95,7 @@ func TestExternalAccountDataResolver_PublicAccountDataFromJSON(t *testing.T) {
 		return bob, nil
 	})
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&account}, nil)
 
 	db.UsersFunc.SetDefaultReturn(users)

@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -25,11 +26,11 @@ type (
 	// A OtherSource yields repositories from a single Other connection configured
 	// in Sourcegraph via the external services configuration.
 	OtherSource struct {
-		svc     *types.ExternalService
-		conn    *schema.OtherExternalServiceConnection
-		exclude excludeFunc
-		client  httpcli.Doer
-		logger  log.Logger
+		svc      *types.ExternalService
+		conn     *schema.OtherExternalServiceConnection
+		excluder repoExcluder
+		client   httpcli.Doer
+		logger   log.Logger
 	}
 
 	// A srcExposeItem is the object model returned by src-cli when serving git repos
@@ -61,22 +62,26 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Pattern(r.Pattern)
+		ex.AddRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
+	if envvar.SourcegraphDotComMode() && c.MakeReposPublicOnDotCom {
+		svc.Unrestricted = true
+	}
+
 	return &OtherSource{
-		svc:     svc,
-		conn:    &c,
-		exclude: exclude,
-		client:  cli,
-		logger:  logger,
+		svc:      svc,
+		conn:     &c,
+		excluder: ex,
+		client:   cli,
+		logger:   logger,
 	}, nil
 }
 
@@ -132,7 +137,7 @@ func (s OtherSource) ExternalServices() types.ExternalServices {
 }
 
 func (s OtherSource) excludes(r *types.Repo) bool {
-	return s.exclude(string(r.Name))
+	return s.excluder.ShouldExclude(string(r.Name))
 }
 
 func (s OtherSource) cloneURLs() ([]*url.URL, error) {
@@ -198,6 +203,7 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*types.Repo,
 		Metadata: &extsvc.OtherRepoMetadata{
 			RelativePath: strings.TrimPrefix(repoURL, serviceID),
 		},
+		Private: !s.svc.Unrestricted,
 	}, nil
 }
 
@@ -259,7 +265,8 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, bool, error)
 	loggedDeprecationError := false
 	for _, r := range data.Items {
 		repo := &types.Repo{
-			URI: r.URI,
+			URI:     r.URI,
+			Private: !s.svc.Unrestricted,
 		}
 		// The only required fields are URI and ClonePath
 		if r.URI == "" {

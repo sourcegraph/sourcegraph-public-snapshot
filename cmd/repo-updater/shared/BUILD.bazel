@@ -1,8 +1,10 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "shared",
     srcs = [
+        "debug.go",
         "main.go",
         "service.go",
     ],
@@ -12,11 +14,14 @@ go_library(
     deps = [
         "//cmd/frontend/envvar",
         "//cmd/frontend/globals",
-        "//cmd/repo-updater/repoupdater",
+        "//cmd/repo-updater/internal/authz",
+        "//cmd/repo-updater/internal/repoupdater",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/authz/providers",
         "//internal/batches",
+        "//internal/batches/syncer",
         "//internal/codeintel/dependencies",
         "//internal/conf",
         "//internal/conf/conftypes",
@@ -26,7 +31,9 @@ go_library(
         "//internal/encryption/keyring",
         "//internal/env",
         "//internal/extsvc",
+        "//internal/gitserver",
         "//internal/goroutine",
+        "//internal/goroutine/recorder",
         "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/httpcli",
@@ -35,8 +42,10 @@ go_library(
         "//internal/observation",
         "//internal/ratelimit",
         "//internal/repos",
+        "//internal/repos/scheduler",
         "//internal/repoupdater/v1:repoupdater",
         "//internal/service",
+        "//internal/timeutil",
         "//internal/trace",
         "//internal/types",
         "//lib/errors",
@@ -57,6 +66,7 @@ go_test(
     embed = [":shared"],
     deps = [
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/types",
         "@com_github_stretchr_testify//assert",
     ],

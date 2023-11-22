@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 	"sort"
 	"strconv"
 	"testing"
@@ -14,18 +15,25 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
-	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient())
+	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient("graphql.test"))
 }
 
 func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverClient gitserver.Client) *graphql.Schema {
 	t.Helper()
 
-	parsedSchema, parseSchemaErr := NewSchema(db, gitserverClient, nil, OptionalResolver{})
+	parsedSchema, parseSchemaErr := NewSchema(
+		db,
+		gitserverClient,
+		[]OptionalResolver{},
+		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
+		graphql.MaxDepth(conf.RateLimits().GraphQLMaxDepth),
+	)
 	if parseSchemaErr != nil {
 		t.Fatal(parseSchemaErr)
 	}
@@ -82,6 +90,7 @@ func RunTest(t *testing.T, test *Test) {
 
 	if test.ExpectedResult == "" {
 		if result.Data != nil {
+			t.Logf("%v", test)
 			t.Errorf("got: %s", result.Data)
 			t.Fatal("want: null")
 		}
@@ -132,4 +141,14 @@ func sortErrors(errs []*gqlerrors.QueryError) {
 	sort.Slice(errs, func(i, j int) bool {
 		return fmt.Sprintf("%s", errs[i].Path) < fmt.Sprintf("%s", errs[j].Path)
 	})
+}
+
+// printStackTrace wraps panic recovery from given Handler and prints the stack trace.
+type printStackTrace struct {
+	Handler gqlerrors.PanicHandler
+}
+
+func (t printStackTrace) MakePanicError(ctx context.Context, value interface{}) *gqlerrors.QueryError {
+	debug.PrintStack()
+	return t.Handler.MakePanicError(ctx, value)
 }

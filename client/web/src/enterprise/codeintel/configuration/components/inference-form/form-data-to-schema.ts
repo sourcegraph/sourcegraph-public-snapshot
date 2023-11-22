@@ -1,4 +1,4 @@
-import { InferenceFormData, SchemaCompatibleInferenceFormData } from './types'
+import type { InferenceFormData, SchemaCompatibleInferenceFormData } from './types'
 
 export const formDataToSchema = (formData: InferenceFormData): SchemaCompatibleInferenceFormData => {
     // Remove all meta information from the form data

@@ -1,0 +1,14 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "diagnosticsserver",
+    srcs = ["diagnosticsserver.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway/internal/diagnosticsserver",
+    visibility = ["//cmd/telemetry-gateway:__subpackages__"],
+    deps = [
+        "//internal/authbearer",
+        "//internal/trace",
+        "//internal/version",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

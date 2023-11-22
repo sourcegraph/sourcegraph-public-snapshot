@@ -1,4 +1,4 @@
-import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiChevronRight, mdiDelete, mdiMapSearch, mdiRedo } from '@mdi/js'
@@ -9,9 +9,9 @@ import { tap } from 'rxjs/operators'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Checkbox,
@@ -28,15 +28,15 @@ import {
 
 import {
     FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
+    type FilteredConnectionFilter,
+    type FilteredConnectionQueryArguments,
 } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import {
-    IndexerListResult,
-    IndexerListVariables,
-    PreciseIndexesVariables,
-    PreciseIndexFields,
+    type IndexerListResult,
+    type IndexerListVariables,
+    type PreciseIndexesVariables,
+    type PreciseIndexFields,
     PreciseIndexState,
 } from '../../../../graphql-operations'
 import { FlashMessage } from '../../configuration/components/FlashMessage'
@@ -375,7 +375,6 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                                           className="mr-2"
                                                           variant="secondary"
                                                           disabled={selection !== 'all' && selection.size === 0}
-                                                          // eslint-disable-next-line @typescript-eslint/no-misused-promises
                                                           onClick={onReindex}
                                                       >
                                                           <Icon aria-hidden={true} svgPath={mdiRedo} /> Mark{' '}
@@ -399,7 +398,6 @@ export const CodeIntelPreciseIndexesPage: FunctionComponent<CodeIntelPreciseInde
                                                   className="mr-2"
                                                   variant="danger"
                                                   disabled={selection !== 'all' && selection.size === 0}
-                                                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
                                                   onClick={onDelete}
                                               >
                                                   <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete{' '}

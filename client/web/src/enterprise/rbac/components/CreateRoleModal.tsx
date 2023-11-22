@@ -14,11 +14,11 @@ import {
     useCheckboxes,
     useForm,
     useField,
-    SubmissionResult,
+    type SubmissionResult,
 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../components/LoaderButton'
-import { useCreateRole, PermissionsMap } from '../backend'
+import { useCreateRole, type PermissionsMap } from '../backend'
 
 import { PermissionsList } from './Permissions'
 
@@ -43,7 +43,7 @@ export const CreateRoleModal: React.FunctionComponent<React.PropsWithChildren<Cr
     afterCreate,
     allPermissions,
 }) => {
-    const labelId = 'addRole'
+    const labelId = 'createRole'
 
     const [createRole, { loading, error }] = useCreateRole(afterCreate)
     const onSubmit = (values: CreateRoleModalFormValues): SubmissionResult => {
@@ -97,6 +97,7 @@ export const CreateRoleModal: React.FunctionComponent<React.PropsWithChildren<Cr
                     isChecked={isChecked}
                     onBlur={onBlur}
                     onChange={onChange}
+                    roleName={nameInput.input.value}
                 />
                 {error && !loading && <ErrorAlert error={error} className="my-2" />}
 

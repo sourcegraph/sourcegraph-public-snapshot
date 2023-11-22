@@ -1,4 +1,4 @@
-import { concat, defer, fromEvent, Observable, of } from 'rxjs'
+import { concat, defer, fromEvent, type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 /**

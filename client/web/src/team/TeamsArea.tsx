@@ -3,13 +3,12 @@ import * as React from 'react'
 import { Routes, Route } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { withAuthenticatedUser } from '../auth/withAuthenticatedUser'
 import { RouteError } from '../components/ErrorBoundary'
 import { NotFoundPage } from '../components/HeroPage'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 import type { TeamAreaProps } from './area/TeamArea'
 import type { TeamListPageProps } from './list/TeamListPage'
@@ -31,17 +30,8 @@ export interface Props {
  * Renders a layout of a sidebar and a content area to display team-related pages.
  */
 const AuthenticatedTeamsArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
-    const [enableTeams, fetchStatus, fetchError] = useFeatureFlag('search-ownership')
-
-    switch (fetchStatus) {
-        case 'initial':
-            return <LoadingSpinner className="m-2" />
-        case 'error':
-            return <ErrorAlert prefix="Failed to load teams feature flag" error={fetchError} />
-    }
-
     // No teams on sourcegraph.com
-    if (!enableTeams || props.isSourcegraphDotCom) {
+    if (props.isSourcegraphDotCom) {
         return <NotFoundPage pageType="team" />
     }
     return (

@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -18,61 +20,235 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	internalrepos "github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const syncExternalServiceTimeout = 15 * time.Second
-
 type ExternalServicesService interface {
-	SyncExternalService(context.Context, *types.ExternalService, time.Duration) error
+	ValidateConnection(ctx context.Context, svc *types.ExternalService) error
+	ListNamespaces(ctx context.Context, externalServiceID *int64, kind string, config string) ([]*types.ExternalServiceNamespace, error)
+	DiscoverRepos(ctx context.Context, externalServiceID *int64, kind string, config string, first int32, query string, excludeRepos []string) ([]*types.ExternalServiceRepository, error)
 	ExcludeRepoFromExternalServices(context.Context, []int64, api.RepoID) error
 }
 
 type externalServices struct {
-	logger            log.Logger
-	db                database.DB
-	repoupdaterClient *repoupdater.Client
+	logger log.Logger
+	db     database.DB
+
+	mockSourcer internalrepos.Sourcer
 }
 
-func NewExternalServices(logger log.Logger, db database.DB, repoupdaterClient *repoupdater.Client) ExternalServicesService {
+func NewExternalServices(logger log.Logger, db database.DB) ExternalServicesService {
 	return &externalServices{
-		logger:            logger.Scoped("ExternalServices", "service related to external service functionality"),
-		db:                db,
-		repoupdaterClient: repoupdaterClient,
+		logger: logger.Scoped("ExternalServices"),
+		db:     db,
 	}
 }
 
-// SyncExternalService will eagerly trigger a repo-updater sync. It accepts a
-// timeout as an argument which is recommended to be 5 seconds unless the caller
-// has special requirements for it to be larger or smaller.
-func (e *externalServices) SyncExternalService(ctx context.Context, svc *types.ExternalService, timeout time.Duration) (err error) {
-	logger := e.logger.Scoped("SyncExternalService", "handles triggering of repo-updater syncing for a particular external service")
-	// Set a timeout to validate external service sync. It usually fails in
-	// under 5s if there is a problem.
-	ctx, cancel := context.WithTimeout(ctx, timeout)
+func NewMockExternalServices(logger log.Logger, db database.DB, mockSourcer internalrepos.Sourcer) ExternalServicesService {
+	return &externalServices{
+		logger:      logger.Scoped("ExternalServices"),
+		db:          db,
+		mockSourcer: mockSourcer,
+	}
+}
+
+const validateConnectionTimeout = 15 * time.Second
+
+func (e *externalServices) ValidateConnection(ctx context.Context, svc *types.ExternalService) error {
+	ctx, cancel := context.WithTimeout(ctx, validateConnectionTimeout)
 	defer cancel()
 
-	defer func() {
-		// err is either nil or contains an actual error from the API call. And we return it
-		// nonetheless.
-		err = errors.Wrapf(err, "error in SyncExternalService for service %q with ID %d", svc.Kind, svc.ID)
+	genericSourcer := newGenericSourcer(log.Scoped("externalservice.validateconnection"), e.db)
+	genericSrc, err := genericSourcer(ctx, svc)
+	if err != nil {
+		if ctx.Err() != nil && ctx.Err() == context.DeadlineExceeded {
+			return errors.Newf("failed to validate external service connection within %s", validateConnectionTimeout)
+		}
+		return err
+	}
 
-		// If context error is anything but a deadline exceeded error, we do not want to propagate
-		// it. But we definitely want to log the error as a warning.
-		if ctx.Err() != nil && ctx.Err() != context.DeadlineExceeded {
-			logger.Warn("context error discarded", log.Error(ctx.Err()))
-			err = nil
+	return externalServiceValidate(ctx, svc, genericSrc)
+}
+
+func externalServiceValidate(ctx context.Context, es *types.ExternalService, src internalrepos.Source) error {
+	if v, ok := src.(internalrepos.UserSource); ok {
+		return v.ValidateAuthenticator(ctx)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	results := make(chan internalrepos.SourceResult)
+
+	defer func() {
+		cancel()
+
+		// We need to drain the rest of the results to not leak a blocked goroutine.
+		for range results {
 		}
 	}()
 
-	_, err = e.repoupdaterClient.SyncExternalService(ctx, svc.ID)
-	return err
+	go func() {
+		src.ListRepos(ctx, results)
+		close(results)
+	}()
+
+	select {
+	case res := <-results:
+		// As soon as we get the first result back, we've got what we need to validate the external service.
+		return res.Err
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 }
 
-// ExcludeRepoFromExternalService excludes given repo from given external service config.
+func (e *externalServices) ListNamespaces(ctx context.Context, externalServiceID *int64, kind string, config string) ([]*types.ExternalServiceNamespace, error) {
+	var externalSvc *types.ExternalService
+	if externalServiceID != nil {
+		var err error
+		externalSvc, err = e.db.ExternalServices().GetByID(ctx, *externalServiceID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		externalSvc = &types.ExternalService{
+			Kind:   kind,
+			Config: extsvc.NewUnencryptedConfig(config),
+		}
+	}
+
+	var (
+		genericSrc internalrepos.Source
+		err        error
+	)
+	if e.mockSourcer != nil {
+		genericSrc, err = e.mockSourcer(ctx, externalSvc)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		genericSourcer := newGenericSourcer(log.Scoped("externalservice.namespacediscovery"), e.db)
+		genericSrc, err = genericSourcer(ctx, externalSvc)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err := genericSrc.CheckConnection(ctx); err != nil {
+		return nil, err
+	}
+
+	discoverableSrc, ok := genericSrc.(internalrepos.DiscoverableSource)
+	if !ok {
+		return nil, errors.New(internalrepos.UnimplementedDiscoverySource)
+	}
+
+	results := make(chan internalrepos.SourceNamespaceResult)
+	go func() {
+		discoverableSrc.ListNamespaces(ctx, results)
+		close(results)
+	}()
+
+	var sourceErrs error
+	namespaces := make([]*types.ExternalServiceNamespace, 0)
+
+	for res := range results {
+		if res.Err != nil {
+			sourceErrs = errors.Append(sourceErrs, &internalrepos.SourceError{Err: res.Err, ExtSvc: externalSvc})
+			continue
+		}
+		namespaces = append(namespaces, &types.ExternalServiceNamespace{
+			ID:         res.Namespace.ID,
+			Name:       res.Namespace.Name,
+			ExternalID: res.Namespace.ExternalID,
+		})
+	}
+
+	if sourceErrs != nil {
+		return nil, err
+	}
+
+	return namespaces, nil
+}
+
+func (e *externalServices) DiscoverRepos(ctx context.Context, externalServiceID *int64, kind string, config string, first int32, query string, excludeRepos []string) ([]*types.ExternalServiceRepository, error) {
+	var externalSvc *types.ExternalService
+	if externalServiceID != nil {
+		var err error
+		externalSvc, err = e.db.ExternalServices().GetByID(ctx, *externalServiceID)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		externalSvc = &types.ExternalService{
+			Kind:   kind,
+			Config: extsvc.NewUnencryptedConfig(config),
+		}
+	}
+
+	var (
+		genericSrc internalrepos.Source
+		err        error
+	)
+	if e.mockSourcer != nil {
+		genericSrc, err = e.mockSourcer(ctx, externalSvc)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		genericSourcer := newGenericSourcer(log.Scoped("externalservice.repodiscovery"), e.db)
+		genericSrc, err = genericSourcer(ctx, externalSvc)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if err = genericSrc.CheckConnection(ctx); err != nil {
+		return nil, err
+	}
+
+	discoverableSrc, ok := genericSrc.(internalrepos.DiscoverableSource)
+	if !ok {
+		return nil, errors.New(internalrepos.UnimplementedDiscoverySource)
+	}
+
+	results := make(chan internalrepos.SourceResult)
+
+	if first > 100 {
+		first = 100
+	}
+
+	go func() {
+		discoverableSrc.SearchRepositories(ctx, query, int(first), excludeRepos, results)
+		close(results)
+	}()
+
+	var sourceErrs error
+	repositories := make([]*types.ExternalServiceRepository, 0)
+
+	for res := range results {
+		if res.Err != nil {
+			sourceErrs = errors.Append(sourceErrs, &internalrepos.SourceError{Err: res.Err, ExtSvc: externalSvc})
+			continue
+		}
+		repositories = append(repositories, &types.ExternalServiceRepository{
+			ID:         res.Repo.ID,
+			Name:       res.Repo.Name,
+			ExternalID: res.Repo.ExternalRepo.ID,
+		})
+	}
+
+	if sourceErrs != nil {
+		return nil, sourceErrs
+	}
+
+	return repositories, nil
+}
+
+// ExcludeRepoFromExternalServices excludes given repo from given external service config.
 //
 // Function is pretty beefy, what it does is:
 // - finds an external service by ID and checks if it supports repo exclusion
@@ -84,7 +260,7 @@ func (e *externalServices) ExcludeRepoFromExternalServices(ctx context.Context, 
 		return err
 	}
 
-	logger := e.logger.Scoped("ExcludeRepoFromExternalServices", "excluding a repo from external service config").With(log.Int32("repoID", int32(repoID)))
+	logger := e.logger.Scoped("ExcludeRepoFromExternalServices").With(log.Int32("repoID", int32(repoID)))
 	for _, extSvcID := range externalServiceIDs {
 		logger = logger.With(log.Int64("externalServiceID", extSvcID))
 	}
@@ -96,8 +272,9 @@ func (e *externalServices) ExcludeRepoFromExternalServices(ctx context.Context, 
 	// Error during triggering a sync is omitted, because this should not prevent
 	// from excluding the repo. The repo stays excluded and the sync will come
 	// eventually.
+	s := internalrepos.NewStore(logger, e.db)
 	for _, externalService := range externalServices {
-		err = e.SyncExternalService(ctx, externalService, syncExternalServiceTimeout)
+		err = s.EnqueueSingleSyncJob(ctx, externalService.ID)
 		if err != nil {
 			logger.Warn("Failed to trigger external service sync after adding a repo exclusion.")
 		}
@@ -254,4 +431,14 @@ func schemaContainsExclusion[T comparable](exclusions []*T, newExclusion *T) boo
 		}
 	}
 	return false
+}
+
+func newGenericSourcer(logger log.Logger, db database.DB) internalrepos.Sourcer {
+	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
+	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
+	sourcerLogger := logger.Scoped("repos.Sourcer")
+	db = database.NewDBWith(sourcerLogger.Scoped("db"), db)
+	dependenciesService := dependencies.NewService(observation.NewContext(logger), db)
+	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
+	return internalrepos.NewSourcer(sourcerLogger, db, cf, internalrepos.WithDependenciesService(dependenciesService))
 }

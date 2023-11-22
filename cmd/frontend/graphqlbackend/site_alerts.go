@@ -8,19 +8,23 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/gomodule/redigo/redis"
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
+	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -65,7 +69,7 @@ type AlertFuncArgs struct {
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
-	settings, err := DecodedViewerFinalSettings(ctx, r.db)
+	settings, err := settings.CurrentUserFinal(ctx, r.db)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +94,7 @@ var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", 
 
 func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsSingleBinary() {
 			return nil
 		}
 		if c.SiteConfig().ExternalURL == "" {
@@ -191,10 +195,12 @@ func init() {
 
 	// Warn if customer is using GitLab on a version < 12.0.
 	AlertFuncs = append(AlertFuncs, gitlabVersionAlert)
+
+	AlertFuncs = append(AlertFuncs, codyGatewayUsageAlert)
 }
 
 func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
-	licenseInfo := hooks.GetLicenseInfo(args.IsSiteAdmin)
+	licenseInfo := hooks.GetLicenseInfo()
 	if licenseInfo == nil {
 		return nil
 	}
@@ -214,8 +220,6 @@ func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
 }
 
 func updateAvailableAlert(args AlertFuncArgs) []*Alert {
-	// TODO(app): App Update Messaging
-	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
 	if deploy.IsApp() {
 		return nil
 	}
@@ -263,7 +267,7 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 }
 
 func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
+	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsSingleBinary() {
 		return nil
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
@@ -284,8 +288,6 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 }
 
 func outOfDateAlert(args AlertFuncArgs) []*Alert {
-	// TODO(app): App Update Messaging
-	// See: https://github.com/sourcegraph/sourcegraph/issues/48851
 	if deploy.IsApp() {
 		return nil
 	}
@@ -430,6 +432,45 @@ func gitlabVersionAlert(args AlertFuncArgs) []*Alert {
 	}
 
 	return nil
+}
+
+func codyGatewayUsageAlert(args AlertFuncArgs) []*Alert {
+	// We only show this alert to site admins.
+	if !args.IsSiteAdmin {
+		return nil
+	}
+
+	var alerts []*Alert
+
+	for _, feat := range codygateway.AllFeatures {
+		val := redispool.Store.Get(fmt.Sprintf("%s:%s", codygateway.CodyGatewayUsageRedisKeyPrefix, string(feat)))
+		usage, err := val.Int()
+		if err != nil {
+			if err == redis.ErrNil {
+				continue
+			}
+			log15.Warn("Failed to read Cody Gateway usage for feature", "feature", feat)
+			continue
+		}
+		if usage > 99 {
+			alerts = append(alerts, &Alert{
+				TypeValue:    AlertTypeError,
+				MessageValue: fmt.Sprintf("The Cody limit for %s has been reached. If you run into this regularly, please contact Sourcegraph.", feat.DisplayName()),
+			})
+		} else if usage >= 90 {
+			alerts = append(alerts, &Alert{
+				TypeValue:    AlertTypeWarning,
+				MessageValue: fmt.Sprintf("The Cody limit for %s is 90%% used. If you run into this regularly, please contact Sourcegraph.", feat.DisplayName()),
+			})
+		} else if usage >= 75 {
+			alerts = append(alerts, &Alert{
+				TypeValue:    AlertTypeInfo,
+				MessageValue: fmt.Sprintf("The Cody limit for %s is 75%% used. If you run into this regularly, please contact Sourcegraph.", feat.DisplayName()),
+			})
+		}
+	}
+
+	return alerts
 }
 
 func pluralize(v int, singular, plural string) string {

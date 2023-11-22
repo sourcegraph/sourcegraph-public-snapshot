@@ -1,11 +1,12 @@
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
+import { describe, expect, it } from 'vitest'
 
 import { renderWithBrandedContext } from '../../testing'
 import { AnchorLink } from '../Link'
 
 import { NavMenu } from '.'
-import { NavMenuSectionProps } from './NavMenu'
+import type { NavMenuSectionProps } from './NavMenu'
 
 describe('<NavMenu />', () => {
     it('Should render Menu Items Correctly', () => {

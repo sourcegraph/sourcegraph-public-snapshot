@@ -24,7 +24,7 @@ Engineering
 Product
 ```
 
-Teams in Sourcegraph are usable in [Sourcegraph Own](../../own), and other features in the future. Teams can be code owners and will influence the Own experience. You can search for code owned by a specific team, and in the future advanced ownership analytics will be informed by given team structures.
+Teams in Sourcegraph are usable in [code ownership](../../own/index.md), and other features in the future. Teams can be code owners and will influence the code ownership experience. You can search for code owned by a specific team, and in the future advanced ownership analytics will be informed by given team structures.
 
 ## Configuring teams
 
@@ -314,7 +314,7 @@ done
 
 Using the GitLab API, you can ingest teams data from GitLab into Sourcegraph. You may want to run this process regularly.
 
-> NOTE: GitLab teams are not globally unique in name, only within their parent team. This is different to how teams work in Sourcegraph, where names are globally unique. You have to choose globally unique names when ingesting GitLab teams. This can affect name matching in Sourcegraph Own.
+> NOTE: GitLab teams are not globally unique in name, only within their parent team. This is different to how teams work in Sourcegraph, where names are globally unique. You have to choose globally unique names when ingesting GitLab teams. This can affect name matching in code ownership.
 
 ```
 TODO: Script here that scrapes the GitLab API for teams and converts them into Sourcegraph teams.

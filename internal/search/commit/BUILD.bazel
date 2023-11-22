@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "commit",
@@ -20,8 +21,8 @@ go_library(
         "//internal/trace",
         "//internal/types",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_conc//pool",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -32,6 +33,7 @@ go_test(
     embed = [":commit"],
     deps = [
         "//internal/database",
+        "//internal/database/dbmocks",
         "//internal/gitserver/protocol",
         "//internal/search/query",
         "//internal/types",

@@ -1,6 +1,8 @@
 package deploy
 
-import "os"
+import (
+	"os"
+)
 
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in client/web/src/jscontext.ts:
 // https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
@@ -13,6 +15,7 @@ const (
 	Helm          = "helm"
 	Kustomize     = "kustomize"
 	App           = "app"
+	SingleProgram = "single-program"
 	K3s           = "k3s"
 )
 
@@ -70,9 +73,14 @@ func IsDeployTypeSingleDockerContainer(deployType string) bool {
 	return deployType == SingleDocker
 }
 
-// IsDeployTypeSingleProgram tells if the given deployment type is a single Go program.
+// IsDeployTypeApp tells if the given deployment is Cody App.
 func IsDeployTypeApp(deployType string) bool {
 	return deployType == App
+}
+
+// IsDeployTypeSingleProgram tells if the given deployment is a single program.
+func IsDeployTypeSingleProgram(deployType string) bool {
+	return deployType == SingleProgram
 }
 
 // IsDev tells if the given deployment type is "dev".
@@ -88,13 +96,14 @@ func IsValidDeployType(deployType string) bool {
 		IsDeployTypePureDocker(deployType) ||
 		IsDeployTypeSingleDockerContainer(deployType) ||
 		IsDev(deployType) ||
-		IsDeployTypeApp(deployType)
+		IsDeployTypeApp(deployType) ||
+		IsDeployTypeSingleProgram(deployType)
 }
 
-// IsApp tells if the running deployment is a Sourcegraph App deployment.
+// IsApp tells if the running deployment is a Cody App deployment.
 //
-// Sourcegraph App is always a single-binary, but not all single-binary deployments are
-// a Sourcegraph app.
+// Cody App is always a single-binary, but not all single-binary deployments are
+// a Cody app.
 //
 // In the future, all Sourcegraph deployments will be a single-binary. For example gitserver will
 // be `sourcegraph --as=gitserver` or similar. Use IsSingleBinary() for code that should always
@@ -106,15 +115,13 @@ func IsApp() bool {
 
 // IsSingleBinary tells if the running deployment is a single-binary or not.
 //
-// Sourcegraph App is always a single-binary, but not all single-binary deployments are
-// a Sourcegraph app.
+// Cody App is always a single-binary, but not all single-binary deployments are
+// a Cody app.
 //
 // In the future, all Sourcegraph deployments will be a single-binary. For example gitserver will
 // be `sourcegraph --as=gitserver` or similar. Use IsSingleBinary() for code that should always
 // run in a single-binary setting, and use IsApp() for code that should only run as part of the
 // Sourcegraph desktop app.
 func IsSingleBinary() bool {
-	// TODO(single-binary): check in the future if this is any single-binary deployment, not just
-	// app.
-	return Type() == App
+	return Type() == App || Type() == SingleProgram
 }

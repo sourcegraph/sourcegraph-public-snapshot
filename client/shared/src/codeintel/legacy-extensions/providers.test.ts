@@ -1,7 +1,8 @@
 import * as assert from 'assert'
 
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import * as sinon from 'sinon'
+import { beforeEach, describe, it } from 'vitest'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 

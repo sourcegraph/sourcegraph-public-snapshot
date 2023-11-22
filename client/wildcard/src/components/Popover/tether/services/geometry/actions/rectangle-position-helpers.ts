@@ -1,5 +1,5 @@
-import { createRectangle, Rectangle } from '../../../models/geometry/rectangle'
-import { ElementPosition, Flipping, Position } from '../../../models/tether-models'
+import { createRectangle, type Rectangle } from '../../../models/geometry/rectangle'
+import { type ElementPosition, Flipping, Position } from '../../../models/tether-models'
 import { POSITION_VARIANTS } from '../constants'
 
 /**

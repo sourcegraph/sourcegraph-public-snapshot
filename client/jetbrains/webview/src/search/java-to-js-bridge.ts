@@ -8,7 +8,7 @@ import {
     wasServerAccessSuccessful,
 } from './index'
 import { indicateFinishedLoading } from './js-to-java-bridge'
-import { PluginConfig, Theme } from './types'
+import type { PluginConfig, Theme } from './types'
 
 export type ActionName = 'themeChanged' | 'pluginSettingsChanged'
 

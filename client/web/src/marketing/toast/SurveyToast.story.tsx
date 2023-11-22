@@ -1,10 +1,10 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
 import { SurveyToast } from '.'
 
-const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
+const decorator: Decorator = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
 
 const config: Meta = {
     title: 'web/SurveyToast',
@@ -13,4 +13,4 @@ const config: Meta = {
 
 export default config
 
-export const Toast: Story = () => <SurveyToast forceVisible={true} authenticatedUser={null} />
+export const Toast: StoryFn = () => <SurveyToast forceVisible={true} authenticatedUser={null} />

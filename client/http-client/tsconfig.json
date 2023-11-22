@@ -5,13 +5,15 @@
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",
-    "baseUrl": "./src",
     "jsx": "react-jsx",
   },
-  "include": ["./src/**/*", "./*.ts"],
+  "include": ["src"],
   "references": [
     {
       "path": "../common",
+    },
+    {
+      "path": "../testing",
     },
   ],
 }

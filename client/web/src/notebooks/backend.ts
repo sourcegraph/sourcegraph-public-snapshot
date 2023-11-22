@@ -1,27 +1,27 @@
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../backend/graphql'
 import {
-    CreateNotebookResult,
-    CreateNotebookStarResult,
-    CreateNotebookStarVariables,
-    CreateNotebookVariables,
-    DeleteNotebookResult,
-    DeleteNotebookStarResult,
-    DeleteNotebookStarVariables,
-    DeleteNotebookVariables,
-    FetchNotebookResult,
-    FetchNotebookVariables,
-    ListNotebooksResult,
-    ListNotebooksVariables,
-    Maybe,
-    NotebookFields,
-    Scalars,
-    UpdateNotebookResult,
-    UpdateNotebookVariables,
+    type CreateNotebookResult,
+    type CreateNotebookStarResult,
+    type CreateNotebookStarVariables,
+    type CreateNotebookVariables,
+    type DeleteNotebookResult,
+    type DeleteNotebookStarResult,
+    type DeleteNotebookStarVariables,
+    type DeleteNotebookVariables,
+    type FetchNotebookResult,
+    type FetchNotebookVariables,
+    type ListNotebooksResult,
+    type ListNotebooksVariables,
+    type Maybe,
+    type NotebookFields,
+    type Scalars,
+    type UpdateNotebookResult,
+    type UpdateNotebookVariables,
     NotebooksOrderBy,
 } from '../graphql-operations'
 

@@ -1,8 +1,8 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { TickRendererProps } from '@visx/axis'
+import type { TickRendererProps } from '@visx/axis'
 import { Group } from '@visx/group'
-import { TextProps } from '@visx/text'
+import type { TextProps } from '@visx/text'
 import classNames from 'classnames'
 
 import styles from './Tick.module.scss'

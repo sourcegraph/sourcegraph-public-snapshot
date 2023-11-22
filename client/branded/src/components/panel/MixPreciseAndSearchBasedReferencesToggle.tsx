@@ -2,8 +2,8 @@ import React, { useCallback } from 'react'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { updateSettings } from '@sourcegraph/shared/src/api/client/services/settings'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeOrError, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './TabbedPanelContent.module.scss'
@@ -50,5 +50,5 @@ export const MixPreciseAndSearchBasedReferencesToggle = (props: Props): React.Re
 }
 
 function getSettingsValue(settings: SettingsCascadeOrError, key: string): boolean {
-    return !isErrorLike(settings.final) && settings.final !== null && settings.final[key]
+    return !isErrorLike(settings.final) && settings.final?.[key]
 }

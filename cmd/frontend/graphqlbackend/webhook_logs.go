@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// webhookLogArgs are the arguments common to the two queries that provide
+// WebhookLogsArgs are the arguments common to the two queries that provide
 // access to webhook logs: the webhookLogs method on the top level query, and on
 // the ExternalService type.
 type WebhookLogsArgs struct {
@@ -143,7 +143,7 @@ func NewWebhookLogConnectionResolver(
 	}
 
 	return &WebhookLogConnectionResolver{
-		logger:            log.Scoped("webhookLogConnectionResolver", ""),
+		logger:            log.Scoped("webhookLogConnectionResolver"),
 		args:              args,
 		externalServiceID: externalServiceID,
 		store:             db.WebhookLogs(keyring.Default().WebhookLogKey),

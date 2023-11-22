@@ -140,7 +140,7 @@ volumes:
 
 You can "disable services" by assigning them to one or more [profiles](https://docs.docker.com/compose/profiles/), so that when running the `docker compose up` command, services assigned to profiles will not be started unless explicitly specified in the command (e.g., `docker compose --profile disabled up`).
 
-For example, when you need to disable the internal codeintel-db in order to use an external database, you can assign `codeintel-db` to a profile called `disabled`: 
+For example, when you need to disable the internal codeintel-db in order to use an external database, you can assign `codeintel-db` to a profile called `disabled`:
 
 ```yaml
 # docker-compose.override.yaml
@@ -153,7 +153,7 @@ services:
 
 ### Enable tracing
 
-Tracing should be enabled in the `docker-compose.yaml` file by default. 
+Tracing should be enabled in the `docker-compose.yaml` file by default.
 
 If not, you can enable it by setting the environment variable to `SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json` in the `jaeger` container:
 
@@ -165,6 +165,14 @@ services:
     environment:
       - 'SAMPLING_STRATEGIES_FILE=/etc/jaeger/sampling_strategies.json'
 ```
+
+### Enabling Embeddings service
+
+The Embeddings service handles searching embeddings for Cody context. It can be enabled using the [override file](https://sourcegraph.com/github.com/sourcegraph/deploy-sourcegraph-docker/-/blob/docker-compose/embeddings/embeddings.docker-compose.yaml)
+
+#### Configuring the Embeddings service
+By default the Embeddings service uses the `blobstore` service for storing embeddings indexes.
+To configure an external [object store](./../../../cody/core-concepts/embeddings/manage-embeddings.md#store-embedding-indexes) the override file can modified by setting environment variables. These variables **must** be set on both the `worker` and `embeddings` services.
 
 ### Git configuration
 
@@ -225,6 +233,6 @@ See ["Environment variables in Compose"](https://docs.docker.com/compose/environ
 
 ### Use an external database
 
-The Docker Compose configuration has its own internal PostgreSQL and Redis databases. 
+The Docker Compose configuration has its own internal PostgreSQL and Redis databases.
 
 You can alternatively configure Sourcegraph to [use external services](../../external_services/index.md).

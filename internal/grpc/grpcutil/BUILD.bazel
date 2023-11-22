@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "grpcutil",
+    srcs = ["util.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "grpcutil_test",
+    srcs = ["util_test.go"],
+    embed = [":grpcutil"],
+    deps = ["@com_github_google_go_cmp//cmp"],
+)

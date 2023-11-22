@@ -14,7 +14,7 @@ import { cppSpec, cudaSpec } from './cpp'
 import { goSpec } from './go'
 import { createIdentCharPattern, rubyIdentCharPattern } from './identifiers'
 import { javaSpec } from './java'
-import { LanguageSpec } from './language-spec'
+import type { LanguageSpec } from './language-spec'
 import { pythonSpec } from './python'
 import { typescriptSpec } from './typescript'
 
@@ -70,6 +70,7 @@ const dartSpec: LanguageSpec = {
     stylized: 'Dart',
     fileExts: ['dart'],
     commentStyles: [{ lineRegex: tripleSlashPattern }],
+    textDocumentImplemenationSupport: true,
 }
 
 const elixirSpec: LanguageSpec = {

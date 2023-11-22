@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "run",
@@ -29,7 +30,6 @@ go_library(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_rjeczalik_notify//:notify",
         "@com_github_sourcegraph_conc//pool",
-        "@org_golang_x_sync//errgroup",
         "@org_golang_x_sync//semaphore",
     ],
 )

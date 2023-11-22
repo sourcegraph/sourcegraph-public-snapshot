@@ -1,18 +1,15 @@
 <script lang="ts">
-    import { createPopper, type Placement } from '@popperjs/core'
-    import { onClickOutside } from './dom'
+    import type { Placement } from '@popperjs/core'
+
+    import { createPopover, onClickOutside } from './dom'
+    import { afterUpdate } from 'svelte'
 
     export let placement: Placement = 'bottom'
 
+    const { update, popover } = createPopover()
+
     let isOpen = false
     let trigger: HTMLElement | null
-    let content: HTMLElement | null
-
-    function createInstance(target: HTMLElement, content: HTMLElement) {
-        return createPopper(target, content, {
-            placement,
-        })
-    }
 
     function toggle(open?: boolean): void {
         isOpen = open === undefined ? !isOpen : open
@@ -28,20 +25,18 @@
         trigger = node
     }
 
-    $: if (isOpen && trigger && content) {
-        createInstance(trigger, content)
-    }
+    afterUpdate(update)
 </script>
 
 <slot {toggle} {registerTrigger} />
-{#if isOpen}
-    <div class="content" bind:this={content} use:onClickOutside on:click-outside={clickOutside}>
-        <slot name="content" />
+{#if trigger && isOpen}
+    <div use:popover={{ target: trigger, options: { placement } }} use:onClickOutside on:click-outside={clickOutside}>
+        <slot name="content" {toggle} />
     </div>
 {/if}
 
 <style lang="scss">
-    .content {
+    div {
         isolation: isolate;
         z-index: 1000;
         min-width: 10rem;

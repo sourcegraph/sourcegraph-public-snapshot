@@ -2,11 +2,11 @@ import {
     ChangesetSpecOperation,
     ChangesetSpecType,
     ChangesetState,
-    HiddenChangesetApplyPreviewFields,
-    Maybe,
-    Scalars,
-    VisibleChangesetApplyPreviewFields,
-    VisibleChangesetSpecFields,
+    type HiddenChangesetApplyPreviewFields,
+    type Maybe,
+    type Scalars,
+    type VisibleChangesetApplyPreviewFields,
+    type VisibleChangesetSpecFields,
 } from '../../../../graphql-operations'
 
 export const hiddenChangesetApplyPreviewStories: Record<string, HiddenChangesetApplyPreviewFields> = {

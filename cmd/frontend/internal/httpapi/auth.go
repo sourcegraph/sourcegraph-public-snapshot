@@ -11,26 +11,34 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const authAuditEntity = "httpapi/auth"
+
 // AccessTokenAuthMiddleware authenticates the user based on the
 // token query parameter or the "Authorization" header.
-func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Handler) http.Handler {
-	logger = logger.Scoped("accessTokenAuth", "Access token authentication middleware")
+func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.Handler) http.Handler {
+	baseLogger = baseLogger.Scoped("accessTokenAuth")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// SCIM uses an auth token which is checked separately in the SCIM package.
 		if strings.HasPrefix(r.URL.Path, "/.api/scim/v2") {
 			next.ServeHTTP(w, r)
 			return
 		}
+
+		logger := trace.Logger(r.Context(), baseLogger)
 
 		w.Header().Add("Vary", "Authorization")
 
@@ -50,9 +58,9 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 			var err error
 			token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
 			if err != nil {
-				if authz.IsUnrecognizedScheme(err) {
+				if !envvar.SourcegraphDotComMode() && authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.
-					// 🚨 SECURITY: md5sum the authorization header value so we redact it
+					// 🚨 SECURITY: sha256 the authorization header value so we redact it
 					// while still retaining the ability to link it back to a token, assuming
 					// the logs reader has the value in clear.
 					var redactedValue string
@@ -81,7 +89,14 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 				// Report errors on malformed Authorization headers for schemes we do handle, to
 				// make it clear to the client that their request is not proceeding with their
 				// supplied credentials.
-				logger.Error("invalid Authorization header", log.Error(err))
+				audit.Log(r.Context(), logger, audit.Record{
+					Entity: authAuditEntity,
+					Action: "check_authorization_header",
+					Fields: []log.Field{
+						log.String("problem", "invalid Authorization header"),
+						log.Error(err),
+					},
+				})
 				http.Error(w, "Invalid Authorization header.", http.StatusUnauthorized)
 				return
 			}
@@ -104,15 +119,21 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 			} else {
 				requiredScope = authz.ScopeSiteAdminSudo
 			}
-			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
+
+			info, err := licensing.GetConfiguredProductLicenseInfo()
+			if err != nil {
+				http.Error(w, "Could not check license for access token authorization.", http.StatusInternalServerError)
+				return
+			}
+
+			opts := database.TokenLookupOpts{
+				RequiredScope: requiredScope,
+				OnlyAdmin:     info.IsExpired(),
+			}
+
+			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, opts)
 			if err != nil {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
-					logger.Error(
-						"invalid access token",
-						log.String("token", token),
-						log.Error(err),
-					)
-
 					anonymousId, anonCookieSet := cookie.AnonymousUID(r)
 					if !anonCookieSet {
 						anonymousId = fmt.Sprintf("unknown user @ %s", time.Now()) // we don't have a reliable user identifier at the time of the failure
@@ -210,11 +231,15 @@ func AccessTokenAuthMiddleware(db database.DB, logger log.Logger, next http.Hand
 				// the necessary scope in the Lookup call above.
 				user, err := db.Users().GetByUsername(r.Context(), sudoUser)
 				if err != nil {
-					logger.Error(
-						"invalid username used with sudo access token",
-						log.String("sudoUser", sudoUser),
-						log.Error(err),
-					)
+					audit.Log(r.Context(), logger, audit.Record{
+						Entity: authAuditEntity,
+						Action: "check_sudo_access",
+						Fields: []log.Field{
+							log.String("problem", "invalid username used with sudo access token"),
+							log.String("sudoUser", sudoUser),
+							log.Error(err),
+						},
+					})
 					var message string
 					if errcode.IsNotFound(err) {
 						message = "Unable to sudo to nonexistent user."

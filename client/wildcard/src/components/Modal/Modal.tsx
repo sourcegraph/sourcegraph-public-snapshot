@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { DialogProps, DialogOverlay, DialogContent } from '@reach/dialog'
+import { type DialogProps, DialogOverlay, DialogContent } from '@reach/dialog'
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '../../types'
+import type { ForwardReferenceComponent } from '../../types'
 
-import { MODAL_POSITIONS } from './constants'
+import type { MODAL_POSITIONS } from './constants'
 
 import styles from './Modal.module.scss'
 

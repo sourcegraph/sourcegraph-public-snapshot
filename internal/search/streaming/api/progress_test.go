@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 var updateGolden = flag.Bool("update", false, "Updastdata goldens")
@@ -27,12 +28,12 @@ func TestSearchProgress(t *testing.T) {
 	cases := map[string]ProgressStats{
 		"empty": {},
 		"zeroresults": {
-			RepositoriesCount: intPtr(0),
+			RepositoriesCount: pointers.Ptr(0),
 		},
 		"timedout100": {
 			MatchCount:          0,
 			ElapsedMilliseconds: 0,
-			RepositoriesCount:   intPtr(100),
+			RepositoriesCount:   pointers.Ptr(100),
 			ExcludedArchived:    0,
 			ExcludedForks:       0,
 			Timedout:            timedout100,
@@ -44,7 +45,7 @@ func TestSearchProgress(t *testing.T) {
 		"all": {
 			MatchCount:          1,
 			ElapsedMilliseconds: 0,
-			RepositoriesCount:   intPtr(5),
+			RepositoriesCount:   pointers.Ptr(5),
 			BackendsMissing:     1,
 			ExcludedArchived:    1,
 			ExcludedForks:       5,
@@ -91,8 +92,4 @@ func TestNumber(t *testing.T) {
 			t.Errorf("number(%d) got %q want %q", n, got, want)
 		}
 	}
-}
-
-func intPtr(i int) *int {
-	return &i
 }

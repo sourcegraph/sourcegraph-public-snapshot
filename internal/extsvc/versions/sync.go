@@ -46,7 +46,7 @@ func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Con
 		return nil, err
 	}
 
-	sourcerLogger := observationCtx.Logger.Scoped("repos.Sourcer", "repository source for syncing")
+	sourcerLogger := observationCtx.Logger.Scoped("repos.Sourcer")
 	sourcerCF := httpcli.NewExternalClientFactory(
 		httpcli.NewLoggingMiddleware(sourcerLogger),
 	)
@@ -63,7 +63,13 @@ func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Con
 
 	return []goroutine.BackgroundRoutine{
 		// Pass a fresh context, see docs for shared.Job
-		goroutine.NewPeriodicGoroutine(context.Background(), "repomgmt.version-syncer", "sync versions of external services", syncInterval, handler),
+		goroutine.NewPeriodicGoroutine(
+			context.Background(),
+			handler,
+			goroutine.WithName("repomgmt.version-syncer"),
+			goroutine.WithDescription("sync versions of external services"),
+			goroutine.WithInterval(syncInterval),
+		),
 	}, nil
 }
 

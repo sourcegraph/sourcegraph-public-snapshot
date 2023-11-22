@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -424,9 +425,11 @@ func TestPathMatches(t *testing.T) {
 
 // githubStore fetches from github and caches across test runs.
 var githubStore = &Store{
-	FetchTar:       fetchTarFromGithub,
-	Path:           "/tmp/search_test/store",
-	ObservationCtx: &observation.TestContext,
+	GitserverClient: gitserver.NewClient("test"),
+	FetchTar:        fetchTarFromGithub,
+	Path:            "/tmp/search_test/store",
+	Log:             observation.TestContext.Logger,
+	ObservationCtx:  &observation.TestContext,
 }
 
 func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {

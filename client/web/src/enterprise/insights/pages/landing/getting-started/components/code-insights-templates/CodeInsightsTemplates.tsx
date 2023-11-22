@@ -1,11 +1,11 @@
-import React, { MouseEvent, useContext, useState } from 'react'
+import React, { type MouseEvent, useContext, useState } from 'react'
 
 import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Card,
@@ -35,16 +35,18 @@ import {
 } from '../../../CodeInsightsLandingPageContext'
 import { CodeInsightsQueryBlock } from '../code-insights-query-block/CodeInsightsQueryBlock'
 
-import { Template, getTemplateSections } from './constants'
+import { type Template, getTemplateSections } from './constants'
 
 import styles from './CodeInsightsTemplates.module.scss'
 
 function getTemplateURL(template: Template): string {
     switch (template.type) {
-        case InsightType.CaptureGroup:
+        case InsightType.CaptureGroup: {
             return `/insights/create/capture-group?${encodeCaptureInsightURL(template.templateValues)}`
-        case InsightType.SearchBased:
+        }
+        case InsightType.SearchBased: {
             return `/insights/create/search?${encodeSearchInsightUrl(template.templateValues)}`
+        }
     }
 }
 

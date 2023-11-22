@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "mounted",
@@ -7,6 +8,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/encryption",
+        "//internal/encryption/aeshelper",
+        "//internal/encryption/envelope",
+        "//internal/encryption/wrapper",
         "//lib/errors",
         "//schema",
     ],
@@ -18,9 +22,9 @@ go_test(
     srcs = ["key_test.go"],
     embed = [":mounted"],
     deps = [
+        "//lib/errors",
         "//schema",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@io_k8s_apimachinery//pkg/util/rand",
     ],
 )

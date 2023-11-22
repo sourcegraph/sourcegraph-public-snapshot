@@ -9,7 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/lib/gitservice"
 )
 
@@ -34,7 +33,6 @@ func TestHandler(t *testing.T) {
 	}
 
 	ts := httptest.NewServer(&gitservice.Handler{
-		Logger: logtest.Scoped(t),
 		Dir: func(s string) string {
 			return filepath.Join(root, s, ".git")
 		},

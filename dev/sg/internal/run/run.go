@@ -29,6 +29,11 @@ import (
 const MAX_CONCURRENT_BUILD_PROCS = 4
 
 func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Command) error {
+	if len(cmds) == 0 {
+		// Exit early if there are no commands to run.
+		return nil
+	}
+
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
@@ -179,7 +184,6 @@ func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan 
 				} else if cmd.Install == "" && cmd.InstallFunc != "" {
 					fn, ok := installFuncs[cmd.InstallFunc]
 					if !ok {
-						c.installSemaphore.Release(1)
 						return "", errors.Newf("no install func with name %q found", cmd.InstallFunc)
 					}
 					return "", fn(ctx, makeEnvMap(c.parentEnv, cmd.Env))
@@ -315,11 +319,19 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 	waitingMessages := []string{
 		"Still waiting for %s to finish installing...",
 		"Yup, still waiting for %s to finish installing...",
-		"Looks like we're still waiting for %s to finish installing...",
-		"This is getting awkward now. We're still waiting for %s to finish installing...",
-		"Nothing more to say, I guess. Come on %s ...",
-		"It might be your computer? Still waiting for %s ...",
-		"Anyway... how are you? (Still waiting for %s ...)",
+		"Here's the bad news: still waiting for %s to finish installing. The good news is that we finally have a chance to talk, no?",
+		"Still waiting for %s to finish installing...",
+		"Hey, %s, there's people waiting for you, pal",
+		"Sooooo, how are ya? Yeah, waiting. I hear you. Wish %s would hurry up.",
+		"I mean, what is %s even doing?",
+		"I now expect %s to mean 'producing a miracle' with 'installing'",
+		"Still waiting for %s to finish installing...",
+		"Before this I think the longest I ever had to wait was at Disneyland in '99, but %s is now #1",
+		"Still waiting for %s to finish installing...",
+		"At this point it could be anything - does your computer still have power? Come on, %s",
+		"Might as well check Slack. %s is taking its time...",
+		"In German there's a saying: ein guter Käse braucht seine Zeit - a good cheese needs its time. Maybe %s is cheese?",
+		"If %ss turns out to be cheese I'm gonna lose it. Hey, hurry up, will ya",
 		"Still waiting for %s to finish installing...",
 	}
 	messageCount := 0
@@ -452,7 +464,13 @@ func printCmdError(out *output.Output, cmdName string, err error) {
 	case installErr:
 		message = "Failed to build " + cmdName
 		if e.originalErr != nil {
-			message += ": " + e.originalErr.Error()
+			if errWithout, ok := e.originalErr.(errorWithoutOutputer); ok {
+				// If we can, let's strip away the output, otherwise this gets
+				// too noisy.
+				message += ": " + errWithout.ErrorWithoutOutput()
+			} else {
+				message += ": " + e.originalErr.Error()
+			}
 		}
 		cmdOut = e.output
 	case reinstallErr:
@@ -549,26 +567,6 @@ var installFuncs = map[string]installFunc{
 		target := filepath.Join(root, fmt.Sprintf(".bin/jaeger-all-in-one-%s", version))
 
 		return download.ArchivedExecutable(ctx, url, target, fmt.Sprintf("%s/jaeger-all-in-one", archiveName))
-	},
-	"installDocsite": func(ctx context.Context, env map[string]string) error {
-		version := env["DOCSITE_VERSION"]
-		if version == "" {
-			return errors.New("could not find DOCSITE_VERSION in env")
-		}
-		root, err := root.RepositoryRoot()
-		if err != nil {
-			return err
-		}
-		target := filepath.Join(root, fmt.Sprintf(".bin/docsite_%s", version))
-		if _, err := os.Stat(target); err == nil {
-			return nil
-		} else if !os.IsNotExist(err) {
-			return err
-		}
-		archiveName := fmt.Sprintf("docsite_%s_%s_%s", version, runtime.GOOS, runtime.GOARCH)
-		url := fmt.Sprintf("https://github.com/sourcegraph/docsite/releases/download/%s/%s", version, archiveName)
-		_, err = download.Executable(ctx, url, target, false)
-		return err
 	},
 }
 

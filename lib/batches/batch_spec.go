@@ -43,6 +43,7 @@ type ChangesetTemplate struct {
 	Title     string                       `json:"title,omitempty" yaml:"title"`
 	Body      string                       `json:"body,omitempty" yaml:"body"`
 	Branch    string                       `json:"branch,omitempty" yaml:"branch"`
+	Fork      *bool                        `json:"fork,omitempty" yaml:"fork"`
 	Commit    ExpandedGitCommitDescription `json:"commit,omitempty" yaml:"commit"`
 	Published *overridable.BoolOrString    `json:"published" yaml:"published"`
 }

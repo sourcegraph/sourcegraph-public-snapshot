@@ -1,8 +1,29 @@
 .alert {
+    --alert-icon-display: block;
+    --alert-icon-block-width: 2.5rem;
+    --alert-content-padding: 0.5rem;
+    --alert-background-color: var(--color-bg-1);
+
+    overflow: hidden;
     position: relative;
     margin-bottom: 1rem;
+    color: var(--body-color);
     border-radius: var(--border-radius);
-    border: 1px solid transparent;
+    border: 1px solid var(--alert-border-color);
+
+    /* Apply `background-color` and `padding` only to .alert-variants because we also use `.alert` elements without variants. */
+    background-color: var(--alert-background-color);
+    padding: var(--alert-content-padding) var(--alert-content-padding) var(--alert-content-padding)
+        calc(var(--alert-icon-block-width) + var(--alert-content-padding));
+
+    &--with-no-icon {
+        padding: var(--alert-content-padding);
+
+        &::before,
+        &::after {
+            --alert-icon-display: none;
+        }
+    }
 }
 
 .alert a:not(.btn) {
@@ -26,22 +47,9 @@
 .alert-merged,
 .alert-note,
 .alert-waiting {
-    --alert-icon-block-width: 2.5rem;
-    --alert-content-padding: 0.5rem;
-    --alert-background-color: var(--color-bg-1);
-
-    color: var(--body-color);
-    overflow: hidden;
-    border-color: var(--alert-border-color);
-
-    /* Apply `background-color` and `padding` only to .alert-variants because we also use `.alert` elements without variants. */
-    background-color: var(--alert-background-color);
-    padding: var(--alert-content-padding) var(--alert-content-padding) var(--alert-content-padding)
-        calc(var(--alert-icon-block-width) + var(--alert-content-padding));
-
     &::before,
     &::after {
-        display: block;
+        display: var(--alert-icon-display);
         content: '';
         position: absolute;
         top: 0;

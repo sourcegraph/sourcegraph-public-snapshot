@@ -1,6 +1,6 @@
-import { FC, HTMLAttributes } from 'react'
+import type { FC, HTMLAttributes } from 'react'
 
-import { useDeepMemo, Series, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
+import { useDeepMemo, type Series, useDebounce, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {
@@ -19,7 +19,7 @@ import {
 import { useLivePreviewSeriesInsight, LivePreviewStatus } from '../../../core'
 
 import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
-import { InsightStep } from './search-insight'
+import type { InsightStep } from './search-insight'
 
 export interface LivePreviewSeries {
     query: string

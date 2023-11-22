@@ -7,7 +7,6 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -167,26 +166,23 @@ func AlertForInvalidRevision(revision string) *Alert {
 	}
 }
 
-func AlertForUnindexedLockfile(repoName api.RepoName, revisions []string) *Alert {
-	var description strings.Builder
-	fmt.Fprintf(&description, "No lockfile indexed in **%s** at these revisions yet:\n", repoName)
-	for _, r := range revisions {
-		fmt.Fprintf(&description, "- `%s`", r)
-	}
-
-	return &Alert{
-		PrometheusType: "unindexed_dependency_search",
-		Title:          "Lockfile not indexed",
-		Description:    description.String(),
-	}
-}
-
 func AlertForUnownedResult() *Alert {
 	return &Alert{
 		Kind:        "unowned-results",
 		Title:       "Some results have no owners",
-		Description: "For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring Sourcegraph Own](https://docs.sourcegraph.com/own).",
+		Description: "For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring code ownership](https://docs.sourcegraph.com/own).",
 		// Explicitly set a low priority, so other alerts take precedence.
 		Priority: 0,
+	}
+}
+
+// AlertForOwnershipSearchError returns an alert related to ownership search
+// error. This alert has higher priority than `AlertForUnownedResult`.
+func AlertForOwnershipSearchError() *Alert {
+	return &Alert{
+		Kind:        "ownership-search-error",
+		Title:       "Error during ownership search",
+		Description: "Ownership search returned an error.",
+		Priority:    1,
 	}
 }

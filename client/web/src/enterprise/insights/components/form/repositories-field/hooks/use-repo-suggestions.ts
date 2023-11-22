@@ -1,6 +1,6 @@
 import { gql, useQuery } from '@apollo/client'
 
-import { RepositorySearchSuggestionsResult } from '../../../../../../graphql-operations'
+import type { RepositorySearchSuggestionsResult } from '../../../../../../graphql-operations'
 
 const GET_REPOSITORY_SUGGESTION = gql`
     query RepositorySearchSuggestions($query: String) {

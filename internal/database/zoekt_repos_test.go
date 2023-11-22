@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
@@ -23,7 +24,7 @@ func TestZoektRepos_GetZoektRepo(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 
@@ -44,9 +45,10 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
+	timeUnix := int64(1686763487)
 
 	var repos types.MinimalRepos
 	for _, name := range []api.RepoName{
@@ -68,8 +70,11 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 	})
 
 	// 1/3 repo is indexed
-	indexed := map[uint32]*zoekt.MinimalRepoListEntry{
-		uint32(repos[0].ID): {Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}}},
+	indexed := zoekt.ReposMap{
+		uint32(repos[0].ID): {
+			Branches:      []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
+			IndexTimeUnix: timeUnix,
+		},
 	}
 
 	if err := s.UpdateIndexStatuses(ctx, indexed); err != nil {
@@ -79,13 +84,18 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 	assertZoektRepoStatistics(t, ctx, s, ZoektRepoStatistics{Total: 3, Indexed: 1, NotIndexed: 2})
 
 	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
-		repos[0].ID: {RepoID: repos[0].ID, IndexStatus: "indexed", Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}}},
+		repos[0].ID: {
+			RepoID:        repos[0].ID,
+			IndexStatus:   "indexed",
+			Branches:      []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
+			LastIndexedAt: time.Unix(timeUnix, 0),
+		},
 		repos[1].ID: {RepoID: repos[1].ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
 		repos[2].ID: {RepoID: repos[2].ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
 	})
 
 	// Index all repositories
-	indexed = map[uint32]*zoekt.MinimalRepoListEntry{
+	indexed = zoekt.ReposMap{
 		// different commit
 		uint32(repos[0].ID): {Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}}},
 		// new
@@ -119,7 +129,7 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 	})
 
 	// Add an additional branch to a single repository
-	indexed = map[uint32]*zoekt.MinimalRepoListEntry{
+	indexed = zoekt.ReposMap{
 		// additional branch
 		uint32(repos[2].ID): {Branches: []zoekt.RepositoryBranch{
 			{Name: "main", Version: "d00d00"},
@@ -155,7 +165,7 @@ func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
 
 	// Now we update the indexing status of a repository that doesn't exist and
 	// check that the index status in unchanged:
-	indexed = map[uint32]*zoekt.MinimalRepoListEntry{
+	indexed = zoekt.ReposMap{
 		9999: {Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d00d00"}}},
 	}
 	if err := s.UpdateIndexStatuses(ctx, indexed); err != nil {
@@ -202,17 +212,17 @@ func assertZoektRepos(t *testing.T, ctx context.Context, s *zoektReposStore, wan
 
 func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 	logger := logtest.Scoped(b)
-	db := NewDB(logger, dbtest.NewDB(logger, b))
+	db := NewDB(logger, dbtest.NewDB(b))
 	ctx := context.Background()
 	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
 
 	b.Logf("Creating %d repositories...", numRepos)
 
 	var (
-		indexedAll         = make(map[uint32]*zoekt.MinimalRepoListEntry, numRepos)
+		indexedAll         = make(zoekt.ReposMap, numRepos)
 		indexedAllBranches = []zoekt.RepositoryBranch{{Name: "main", Version: "d00d00"}}
 
-		indexedHalf         = make(map[uint32]*zoekt.MinimalRepoListEntry, numRepos/2)
+		indexedHalf         = make(zoekt.ReposMap, numRepos/2)
 		indexedHalfBranches = []zoekt.RepositoryBranch{{Name: "main-2", Version: "f00b4r"}}
 	)
 
@@ -222,9 +232,9 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 			b.Fatal(err)
 		}
 
-		indexedAll[uint32(i+1)] = &zoekt.MinimalRepoListEntry{Branches: indexedAllBranches}
+		indexedAll[uint32(i+1)] = zoekt.MinimalRepoListEntry{Branches: indexedAllBranches}
 		if i%2 == 0 {
-			indexedHalf[uint32(i+1)] = &zoekt.MinimalRepoListEntry{Branches: indexedHalfBranches}
+			indexedHalf[uint32(i+1)] = zoekt.MinimalRepoListEntry{Branches: indexedHalfBranches}
 		}
 	}
 	if err := inserter.Flush(ctx); err != nil {
@@ -252,7 +262,7 @@ func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
 
 	b.Run("update-none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			if err := s.UpdateIndexStatuses(ctx, make(map[uint32]*zoekt.MinimalRepoListEntry)); err != nil {
+			if err := s.UpdateIndexStatuses(ctx, make(zoekt.ReposMap)); err != nil {
 				b.Fatalf("unexpected error: %s", err)
 			}
 		}

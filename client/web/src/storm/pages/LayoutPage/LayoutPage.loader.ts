@@ -2,8 +2,8 @@ import { ApolloError } from '@apollo/client'
 
 import { gql } from '@sourcegraph/http-client'
 
-import { LayoutPageQueryResult, LayoutPageQueryVariables } from '../../../graphql-operations'
-import { createPreloadedQuery, QueryReference } from '../../backend/route-loader'
+import type { LayoutPageQueryResult, LayoutPageQueryVariables } from '../../../graphql-operations'
+import { createPreloadedQuery, type QueryReference } from '../../backend/route-loader'
 
 export const siteFlagFieldsFragment = gql`
     fragment SiteFlagFields on Site {
@@ -43,8 +43,7 @@ const LAYOUT_PAGE_QUERY = gql`
         # Preload feature flags
         flag1: evaluateFeatureFlag(flagName: "contrast-compliant-syntax-highlighting")
         flag2: evaluateFeatureFlag(flagName: "cody")
-        flag3: evaluateFeatureFlag(flagName: "search-ownership")
-        flag4: evaluateFeatureFlag(flagName: "blob-page-switch-areas-shortcuts")
+        flag3: evaluateFeatureFlag(flagName: "blob-page-switch-areas-shortcuts")
     }
 
     ${siteFlagFieldsFragment}

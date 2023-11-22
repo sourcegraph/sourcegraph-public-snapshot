@@ -1,0 +1,32 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//dev:proto.bzl", "write_proto_stubs_to_source")
+
+exports_files(["buf.gen.yaml"])
+
+proto_library(
+    name = "v1_proto",
+    srcs = ["internalapi.proto"],
+    strip_import_prefix = "/internal",  # keep
+    visibility = ["//visibility:private"],
+    deps = ["@com_google_protobuf//:duration_proto"],
+)
+
+go_proto_library(
+    name = "v1_go_proto",
+    compilers = [
+        "//:gen-go-grpc",
+        "@io_bazel_rules_go//proto:go_proto",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1",
+    proto = ":v1_proto",
+    visibility = ["//visibility:private"],
+)
+
+go_library(
+    name = "internalapi",
+    embed = [":v1_go_proto"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1",
+    visibility = ["//:__subpackages__"],
+)

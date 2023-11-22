@@ -1,14 +1,14 @@
-import { FC, useCallback, useState } from 'react'
+import { type FC, useCallback, useState } from 'react'
 
 import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RepoFile } from '@sourcegraph/shared/src/util/url'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
     Button,
     useLocalStorage,
@@ -24,9 +24,10 @@ import {
 } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
+import { useShowOnboardingTour } from '../tour/hooks'
 
 import { RepoRevisionSidebarFileTree } from './RepoRevisionSidebarFileTree'
 import { RepoRevisionSidebarSymbols } from './RepoRevisionSidebarSymbols'
@@ -54,6 +55,10 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
         SIDEBAR_KEY,
         settingsSchemaJSON.properties.fileSidebarVisibleByDefault.default
     )
+    const showOnboardingTour = useShowOnboardingTour({
+        authenticatedUser: props.authenticatedUser,
+        isSourcegraphDotCom: props.isSourcegraphDotCom,
+    })
 
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
@@ -90,14 +95,21 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     return (
         <>
             {isVisible ? (
-                <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY} ariaLabel="File sidebar">
+                <Panel
+                    defaultSize={256}
+                    minSize={150}
+                    position="left"
+                    storageKey={SIZE_STORAGE_KEY}
+                    ariaLabel="File sidebar"
+                >
                     <div className="d-flex flex-column h-100 w-100">
-                        <GettingStartedTour
-                            className="mr-3"
-                            telemetryService={props.telemetryService}
-                            isAuthenticated={!!props.authenticatedUser}
-                            isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        />
+                        {showOnboardingTour && (
+                            <GettingStartedTour
+                                className="mr-3"
+                                telemetryService={props.telemetryService}
+                                authenticatedUser={props.authenticatedUser}
+                            />
+                        )}
                         <Tabs
                             className="w-100 test-repo-revision-sidebar h-25 d-flex flex-column flex-grow-1"
                             index={persistedTabIndex}
@@ -138,7 +150,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                             >
                                 {/* TODO: See if we can render more here, instead of waiting for these props */}
                                 {props.repoID && props.commitID && (
-                                    <TabPanels>
+                                    <TabPanels className="h-100">
                                         <TabPanel>
                                             <RepoRevisionSidebarFileTree
                                                 key={initialFilePath}

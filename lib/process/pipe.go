@@ -8,7 +8,7 @@ import (
 	"io"
 	"io/fs"
 
-	"golang.org/x/sync/errgroup"
+	"github.com/sourcegraph/conc/pool"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -26,34 +26,44 @@ type cmdPiper interface {
 	StderrPipe() (io.ReadCloser, error)
 }
 
+// NewOutputScannerWithSplit creates a new bufio.Scanner using the given split
+// function with well-working defaults for the initial and max buf sizes.
+func NewOutputScannerWithSplit(r io.Reader, split bufio.SplitFunc) *bufio.Scanner {
+	scanner := bufio.NewScanner(r)
+	scanner.Split(split)
+	buf := make([]byte, initialBufSize)
+	scanner.Buffer(buf, maxTokenSize)
+	return scanner
+}
+
 // PipeOutput reads stdout/stderr output of the given command into the two
 // io.Writers.
 //
 // It returns a errgroup.Group. The caller *must* call the Wait() method of the
-// errgroup.Group after waiting for the *exec.Cmd to finish.
+// errgroup.Group **before** waiting for the *exec.Cmd to finish.
+//
+// The passed in context should be canceled when done.
 //
 // See this issue for more details: https://github.com/golang/go/issues/21922
-func PipeOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*errgroup.Group, error) {
+func PipeOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*pool.ErrorPool, error) {
 	pipe := func(w io.Writer, r io.Reader) error {
-		scanner := bufio.NewScanner(r)
-		scanner.Split(scanLinesWithNewline)
-
-		buf := make([]byte, initialBufSize)
-		scanner.Buffer(buf, maxTokenSize)
+		scanner := NewOutputScannerWithSplit(r, scanLinesWithNewline)
 
 		for scanner.Scan() {
-			fmt.Fprint(w, scanner.Text())
+			if _, err := fmt.Fprint(w, scanner.Text()); err != nil {
+				return err
+			}
 		}
 
 		return scanner.Err()
 	}
 
-	return pipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
+	return PipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
 }
 
 // PipeOutputUnbuffered is the unbuffered version of PipeOutput and uses
 // io.Copy instead of piping output line-based to the output.
-func PipeOutputUnbuffered(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*errgroup.Group, error) {
+func PipeOutputUnbuffered(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*pool.ErrorPool, error) {
 	pipe := func(w io.Writer, r io.Reader) error {
 		_, err := io.Copy(w, r)
 		// We can ignore ErrClosed because we get that if a process crashes
@@ -63,31 +73,45 @@ func PipeOutputUnbuffered(ctx context.Context, c cmdPiper, stdoutWriter, stderrW
 		return nil
 	}
 
-	return pipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
+	return PipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
 }
 
-func pipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer, fn pipe) (*errgroup.Group, error) {
+func PipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer, fn pipe) (*pool.ErrorPool, error) {
 	stdoutPipe, err := c.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to attach stdout pipe")
 	}
 
 	stderrPipe, err := c.StderrPipe()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to attach stderr pipe")
 	}
 
 	go func() {
-		// We start a goroutine here to make sure that our pipes are closed
-		// when the context is canceled.
+		// There is a deadlock condition due the following strange decisions:
 		//
-		// See enterprise/cmd/executor/internal/command/run.go for more details.
+		// 1. The pipes attached to a command are not closed if the context
+		//    attached to the command is canceled. The pipes are only closed
+		//    after Wait has been called.
+		// 2. According to the docs, we are not meant to call cmd.Wait() until
+		//    we have complete read the pipes attached to the command.
+		//
+		// Since we're following the expected usage, we block on a wait group
+		// tracking the consumption of stdout and stderr pipes in two separate
+		// goroutines between calls to Start and Wait. This means that if there
+		// is a reason the command is abandoned but the pipes are not closed
+		// (such as context cancellation), we will hang indefinitely.
+		//
+		// To be defensive, we'll forcibly close both pipes when the context has
+		// finished. These may return an ErrClosed condition, but we don't really
+		// care: the command package doesn't surface errors when closing the pipes
+		// either.
 		<-ctx.Done()
 		stdoutPipe.Close()
 		stderrPipe.Close()
 	}()
 
-	eg := &errgroup.Group{}
+	eg := pool.New().WithErrors()
 
 	eg.Go(func() error { return fn(stdoutWriter, stdoutPipe) })
 	eg.Go(func() error { return fn(stderrWriter, stderrPipe) })

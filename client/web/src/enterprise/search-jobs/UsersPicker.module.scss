@@ -1,0 +1,93 @@
+.popover {
+    display: flex;
+    flex-direction: column;
+    width: 20rem;
+    border-radius: var(--border-radius);
+}
+
+.pill {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.25rem;
+
+    &-avatar {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 50%;
+    }
+
+    &-text {
+        // Text element will be rendered within
+        // display flex block, so we can assume flex-grow
+        // is available in the given context.
+        flex-grow: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+.item {
+    display: grid;
+    grid-template-areas:
+        'avatar username role'
+        'avatar email .';
+
+    grid-template-rows: auto auto;
+    grid-template-columns: min-content auto min-content;
+    column-gap: 0.5rem;
+
+    $self: &;
+
+    &[data-highlighted] {
+        #{$self}-email,
+        #{$self}-role {
+            color: var(--dropdown-link-active-color);
+        }
+    }
+
+    &-avatar {
+        grid-area: avatar;
+        width: 1.75rem;
+        height: 1.75rem;
+        align-self: center;
+        border-radius: 50%;
+    }
+
+    &-username {
+        grid-area: username;
+        align-self: baseline;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &-email {
+        grid-area: email;
+        color: var(--text-muted);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.75rem;
+    }
+
+    &-role {
+        grid-area: role;
+        align-self: baseline;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+    }
+}
+
+.footer {
+    margin-top: 0.25rem;
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+
+    :global(.theme-dark) & {
+        background-color: var(--color-bg-3);
+    }
+
+    :global(.theme-light) & {
+        background-color: var(--oc-gray-1);
+    }
+}

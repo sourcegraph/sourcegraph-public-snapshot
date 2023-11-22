@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
 
 // Services is a bag of HTTP handlers and factory functions that are registered by the
@@ -41,8 +40,18 @@ type Services struct {
 	// Handler for exporting code insights data.
 	CodeInsightsDataExportHandler http.Handler
 
+	// Handler for exporting search jobs data.
+	SearchJobsDataExportHandler http.Handler
+	SearchJobsLogsHandler       http.Handler
+
 	// Handler for completions stream.
-	NewCompletionsStreamHandler NewCompletionsStreamHandler
+	NewChatCompletionsStreamHandler NewChatCompletionsStreamHandler
+
+	// Handler for code completions endpoint.
+	NewCodeCompletionsHandler NewCodeCompletionsHandler
+
+	// Handler for license v2 check.
+	NewDotcomLicenseCheckHandler NewDotcomLicenseCheckHandler
 
 	PermissionsGitHubWebhook  webhooks.Registerer
 	NewCodeIntelUploadHandler NewCodeIntelUploadHandler
@@ -50,7 +59,6 @@ type Services struct {
 	NewExecutorProxyHandler   NewExecutorProxyHandler
 	NewGitHubAppSetupHandler  NewGitHubAppSetupHandler
 	NewComputeStreamHandler   NewComputeStreamHandler
-	EnterpriseSearchJobs      jobutil.EnterpriseJobs
 	graphqlbackend.OptionalResolver
 }
 
@@ -77,8 +85,14 @@ type NewGitHubAppSetupHandler func() http.Handler
 // NewComputeStreamHandler creates a new handler for the Sourcegraph Compute streaming endpoint.
 type NewComputeStreamHandler func() http.Handler
 
-// NewCompletionsStreamHandler creates a new handler for the completions streaming endpoint.
-type NewCompletionsStreamHandler func() http.Handler
+// NewChatCompletionsStreamHandler creates a new handler for the completions streaming endpoint.
+type NewChatCompletionsStreamHandler func() http.Handler
+
+// NewCodeCompletionsHandler creates a new handler for the code completions endpoint.
+type NewCodeCompletionsHandler func() http.Handler
+
+// NewDotcomLicenseCheckHandler creates a new handler for the dotcom license check endpoint.
+type NewDotcomLicenseCheckHandler func() http.Handler
 
 // DefaultServices creates a new Services value that has default implementations for all services.
 func DefaultServices() Services {
@@ -103,8 +117,11 @@ func DefaultServices() Services {
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 		CodeInsightsDataExportHandler:   makeNotFoundHandler("code insights data export handler"),
-		NewCompletionsStreamHandler:     func() http.Handler { return makeNotFoundHandler("completions streaming endpoint") },
-		EnterpriseSearchJobs:            jobutil.NewUnimplementedEnterpriseJobs(),
+		NewDotcomLicenseCheckHandler:    func() http.Handler { return makeNotFoundHandler("dotcom license check handler") },
+		NewChatCompletionsStreamHandler: func() http.Handler { return makeNotFoundHandler("chat completions streaming endpoint") },
+		NewCodeCompletionsHandler:       func() http.Handler { return makeNotFoundHandler("code completions streaming endpoint") },
+		SearchJobsDataExportHandler:     makeNotFoundHandler("search jobs data export handler"),
+		SearchJobsLogsHandler:           makeNotFoundHandler("search jobs logs handler"),
 	}
 }
 

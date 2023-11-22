@@ -2,7 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -36,13 +36,13 @@ type Server struct {
 	logger       log.Logger
 	store        *build.Store
 	config       *config.Config
-	notifyClient *notify.Client
+	notifyClient notify.NotificationClient
 	http         *http.Server
 }
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
 func NewServer(logger log.Logger, c config.Config) *Server {
-	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
+	logger = logger.Scoped("server")
 	server := &Server{
 		logger:       logger,
 		store:        build.NewBuildStore(logger),
@@ -139,7 +139,7 @@ func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
 	eventName := h[0]
 	s.logger.Debug("received event", log.String("eventName", eventName))
 
-	data, err := ioutil.ReadAll(req.Body)
+	data, err := io.ReadAll(req.Body)
 	defer req.Body.Close()
 	if err != nil {
 		s.logger.Error("failed to read request body", log.Error(err))
@@ -166,10 +166,12 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful no notifcation is sent
 func (s *Server) notifyIfFailed(b *build.Build) error {
-	info := toBuildNotification(b)
+	// This determines the final build status
+	info := determineBuildStatusNotification(b)
+
 	if info.BuildStatus == string(build.BuildFailed) || info.BuildStatus == string(build.BuildFixed) {
 		s.logger.Info("sending notification for build", log.Int("buildNumber", b.GetNumber()), log.String("status", string(info.BuildStatus)))
-		// We lock the build while we send a notificationn so that we can ensure any late jobs do not interfere with what
+		// We lock the build while we send a notification so that we can ensure any late jobs do not interfere with what
 		// we're about to send.
 		b.Lock()
 		defer b.Unlock()
@@ -177,7 +179,7 @@ func (s *Server) notifyIfFailed(b *build.Build) error {
 		return err
 	}
 
-	s.logger.Info("build has not failed", log.Int("buildNumber", b.GetNumber()))
+	s.logger.Info("build has not failed", log.Int("buildNumber", b.GetNumber()), log.String("buildStatus", info.BuildStatus))
 	return nil
 }
 
@@ -222,15 +224,14 @@ func (s *Server) processEvent(event *build.Event) {
 	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.GetBuildNumber()), log.String("jobName", event.GetJobName()))
 	s.store.Add(event)
 	b := s.store.GetByBuildNumber(event.GetBuildNumber())
-	shouldNotify := event.IsBuildFinished() || (b.IsFailed() && event.IsJobFinished())
-	if shouldNotify {
+	if event.IsBuildFinished() {
 		if err := s.notifyIfFailed(b); err != nil {
 			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.GetBuildNumber()), log.Error(err))
 		}
 	}
 }
 
-func toBuildNotification(b *build.Build) *notify.BuildNotification {
+func determineBuildStatusNotification(b *build.Build) *notify.BuildNotification {
 	info := notify.BuildNotification{
 		BuildNumber:        b.GetNumber(),
 		ConsecutiveFailure: b.ConsecutiveFailure,
@@ -239,10 +240,15 @@ func toBuildNotification(b *build.Build) *notify.BuildNotification {
 		Message:            b.GetMessage(),
 		Commit:             b.GetCommit(),
 		BuildStatus:        "",
-		BuildURL:           *b.WebURL,
+		BuildURL:           b.GetWebURL(),
 		Fixed:              []notify.JobLine{},
 		Failed:             []notify.JobLine{},
 	}
+
+	// You may notice we do not check if the build is Failed and exit early, this is because of the following scenario
+	// 1st build comes through it failed - we send a notification. 2nd build - a retry - comes through,
+	// build passed. Now if we checked for build failed and didn't do any processing, we wouldn't be able
+	// to process that the build has been fixed
 
 	groups := build.GroupByStatus(b.Steps)
 	for _, j := range groups[build.JobFixed] {
@@ -252,14 +258,15 @@ func toBuildNotification(b *build.Build) *notify.BuildNotification {
 		info.Failed = append(info.Failed, j)
 	}
 
-	if len(groups[build.JobFailed]) > 0 {
+	if len(groups[build.JobInProgress]) > 0 {
+		info.BuildStatus = string(build.BuildInProgress)
+	} else if len(groups[build.JobFailed]) > 0 {
 		info.BuildStatus = string(build.BuildFailed)
 	} else if len(groups[build.JobFixed]) > 0 {
 		info.BuildStatus = string(build.BuildFixed)
 	} else {
 		info.BuildStatus = string(build.BuildPassed)
 	}
-
 	return &info
 }
 
@@ -271,7 +278,7 @@ func main() {
 	})
 	defer sync.Sync()
 
-	logger := log.Scoped("BuildTracker", "main entrypoint for Build Tracking Server")
+	logger := log.Scoped("BuildTracker")
 
 	serverConf, err := config.NewFromEnv()
 	if err != nil {

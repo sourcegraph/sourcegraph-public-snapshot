@@ -220,33 +220,6 @@ jobs:
                 }
               }
             }' -f project=$PROJECT_ID -f issue=$NODE_ID
-  iam-board:
-    runs-on: ubuntu-latest
-    env:
-      PROJECT_ID: PVT_kwDOADy5QM4ABlJF # https://github.com/orgs/sourcegraph/projects/259
-      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
-    steps:
-      - name: Get issue if relevant
-        if: ${{ contains(github.event.issue.labels.*.name, 'team/iam') }}
-        env:
-          NODE_ID: ${{ github.event.issue.node_id }}
-        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-      - name: Get pull request if relevant
-        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/iam') }}
-        env:
-          NODE_ID: ${{ github.event.pull_request.node_id }}
-        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-      - name: Add to IAM team board
-        if: ${{ env.NODE_ID != '' }}
-        run: |
-          gh api graphql -f query='
-            mutation($project:ID!, $issue:ID!) {
-              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
-                item {
-                  id
-                }
-              }
-            }' -f project=$PROJECT_ID -f issue=$NODE_ID
   executors-board:
     runs-on: ubuntu-latest
     env:
@@ -264,33 +237,6 @@ jobs:
           NODE_ID: ${{ github.event.pull_request.node_id }}
         run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
       - name: Add to Executors board
-        if: ${{ env.NODE_ID != '' }}
-        run: |
-          gh api graphql -f query='
-            mutation($project:ID!, $issue:ID!) {
-              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
-                item {
-                  id
-                }
-              }
-            }' -f project=$PROJECT_ID -f issue=$NODE_ID
-  repo-management-board:
-    runs-on: ubuntu-latest
-    env:
-      PROJECT_ID: PVT_kwDOADy5QM0Pnw # https://github.com/orgs/sourcegraph/projects/209
-      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
-    steps:
-      - name: Get issue if relevant
-        if: ${{ contains(github.event.issue.labels.*.name, 'team/repo-management') }}
-        env:
-          NODE_ID: ${{ github.event.issue.node_id }}
-        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-      - name: Get pull request if relevant
-        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/repo-management') }}
-        env:
-          NODE_ID: ${{ github.event.pull_request.node_id }}
-        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-      - name: Add to Repo Management board
         if: ${{ env.NODE_ID != '' }}
         run: |
           gh api graphql -f query='

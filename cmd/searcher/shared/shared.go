@@ -104,7 +104,7 @@ func setupTmpDir() error {
 func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
 	logger := observationCtx.Logger
 
-	// Ready immediately
+	// Ready as soon as the database connection has been established.
 	ready()
 
 	var cacheSizeBytes int64
@@ -124,17 +124,18 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 	}
 
 	// Explicitly don't scope Store logger under the parent logger
-	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
+	storeObservationCtx := observation.NewContext(log.Scoped("Store"))
 
-	git := gitserver.NewClient()
+	git := gitserver.NewClient("searcher")
 
 	sService := &search.Service{
 		Store: &search.Store{
+			GitserverClient: git,
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
 				// searcher needs access to all data in the archive.
 				ctx = actor.WithInternalActor(ctx)
-				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
+				return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
 					Format:  gitserver.ArchiveFormatTar,
 				})
@@ -147,7 +148,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 				// We pass in a nil sub-repo permissions checker and an internal actor here since
 				// searcher needs access to all data in the archive.
 				ctx = actor.WithInternalActor(ctx)
-				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
+				return git.ArchiveReader(ctx, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
 					Format:    gitserver.ArchiveFormatTar,
 					Pathspecs: pathspecs,

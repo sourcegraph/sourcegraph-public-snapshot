@@ -1,8 +1,8 @@
 package debugproxies
 
 import (
+	"database/sql"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"sort"
@@ -12,9 +12,9 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/errorutil"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,8 +36,8 @@ type ReverseProxyHandler struct {
 }
 
 func (rph *ReverseProxyHandler) AddToRouter(r *mux.Router, db database.DB) {
-	r.Handle("/", adminOnly(db, http.HandlerFunc(rph.serveIndex)))
-	r.PathPrefix("/proxies").Handler(http.StripPrefix("/-/debug/proxies", adminOnly(db, errorutil.Handler(rph.serveReverseProxy))))
+	r.Handle("/", AdminOnly(db, http.HandlerFunc(rph.serveIndex)))
+	r.PathPrefix("/proxies").Handler(http.StripPrefix("/-/debug/proxies", AdminOnly(db, errorutil.Handler(rph.serveReverseProxy))))
 }
 
 // serveIndex composes the simple index page with the endpoints sorted by their name.
@@ -131,7 +131,7 @@ func displayNameFromEndpoint(ep Endpoint) string {
 // request before it gets sent to the destination endpoint.
 func reverseProxyFromHost(db database.DB, host string, pathPrefix string) http.Handler {
 	// 🚨 SECURITY: Only admins can create reverse proxies from host
-	return adminOnly(db, &httputil.ReverseProxy{
+	return AdminOnly(db, &httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"
 			req.URL.Host = host
@@ -139,15 +139,27 @@ func reverseProxyFromHost(db database.DB, host string, pathPrefix string) http.H
 				req.URL.Path = req.URL.Path[i+len(pathPrefix):]
 			}
 		},
-		ErrorLog: log.New(env.DebugOut, fmt.Sprintf("k8s %s debug proxy: ", host), log.LstdFlags),
 	})
 }
 
-// adminOnly is a HTTP middleware which only allows requests by admins.
-func adminOnly(db database.DB, next http.Handler) http.Handler {
+// AdminOnly is an HTTP middleware which only allows requests by admins.
+func AdminOnly(db database.DB, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ff, err := db.FeatureFlags().GetFeatureFlag(r.Context(), "sourcegraph-operator-site-admin-hide-maintenance")
+		if err == nil {
+			hide, _ := ff.EvaluateGlobal()
+			a := actor.FromContext(r.Context())
+			if hide && !a.SourcegraphOperator {
+				http.Error(w, "Only Sourcegraph operators are allowed", http.StatusForbidden)
+				return
+			}
+		} else if err != nil && err != sql.ErrNoRows {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 

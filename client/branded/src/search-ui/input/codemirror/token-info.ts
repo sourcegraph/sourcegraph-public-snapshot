@@ -1,10 +1,10 @@
 import { type Extension, Facet, MapMode, type SelectionRange, StateEffect, StateField } from '@codemirror/state'
-import { Decoration, EditorView, hoverTooltip, TooltipView } from '@codemirror/view'
+import { Decoration, EditorView, hoverTooltip, type TooltipView } from '@codemirror/view'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import type { DecoratedToken } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
-import { Node } from '@sourcegraph/shared/src/search/query/parser'
+import type { Node } from '@sourcegraph/shared/src/search/query/parser'
 import { KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 import { resolveFilterMemoized } from '@sourcegraph/shared/src/search/query/utils'
 
@@ -24,29 +24,29 @@ const hoverStyle = [
             borderRadius: 'var(--border-radius)',
             boxShadow: 'var(--box-shadow)',
             maxWidth: '50vw',
-        },
 
-        '.cm-tooltip p:last-child': {
-            marginBottom: 0,
-        },
+            '& p:last-child': {
+                marginBottom: 0,
+            },
 
-        '.cm-tooltip code': {
-            backgroundColor: 'rgba(220, 220, 220, 0.4)',
-            borderRadius: 'var(--border-radius)',
-            padding: '0 0.4em',
+            '& code': {
+                backgroundColor: 'rgba(220, 220, 220, 0.4)',
+                borderRadius: 'var(--border-radius)',
+                padding: '0 0.4em',
+            },
         },
 
         '.cm-tooltip-section': {
             paddingBottom: '0.25rem',
             borderTopColor: 'var(--border-color)',
-        },
 
-        '.cm-tooltip-section:last-child': {
-            paddingTop: '0.25rem',
-            paddingBottom: 0,
-        },
-        '.cm-tooltip-section:last-child:first-child': {
-            padding: 0,
+            '&:last-child': {
+                paddingTop: '0.25rem',
+                paddingBottom: 0,
+            },
+            '&:last-child:first-child': {
+                padding: 0,
+            },
         },
     }),
     // Base style for custom classes
@@ -54,7 +54,7 @@ const hoverStyle = [
         '.sg-decorated-token-hover': {
             backgroundColor: 'var(--gray-02)',
         },
-        '&dark .sg-decorated-token-hover': {
+        '.theme-dark & .sg-decorated-token-hover': {
             backgroundColor: 'var(--gray-08)',
         },
     }),
@@ -86,7 +86,7 @@ export function tokenInfo(): Extension {
                 effect.is(setHighlighedTokenPosition)
             )
             if (effect) {
-                position = effect?.value
+                position = effect.value
             }
             if (position !== null) {
                 // Mapping the position might not be necessary since we clear
@@ -151,7 +151,7 @@ export function tokenInfo(): Extension {
         EditorView.domEventHandlers({
             mousemove(event, view) {
                 const position = view.posAtCoords(event)
-                let effects: StateEffect<any> | null = null
+                let effects: StateEffect<unknown> | null = null
 
                 // event.buttons === 0 means no button is pressed
                 if (event.buttons > 0) {
@@ -239,10 +239,11 @@ function getTokensTooltipInformation(tokens: readonly DecoratedToken[], position
     const tokensAtCursor = tokens.filter(token => {
         let { start, end } = token.range
         switch (token.type) {
-            case 'field':
+            case 'field': {
                 // +1 to include field separator :
                 end += 1
                 break
+            }
         }
         return start <= position && end > position
     })
@@ -272,27 +273,32 @@ function getTokensTooltipInformation(tokens: readonly DecoratedToken[], position
             case 'pattern':
             case 'metaRevision':
             case 'metaRepoRevisionSeparator':
-            case 'metaSelector':
+            case 'metaSelector': {
                 values.push(toHover(token))
                 range = token.range
                 break
+            }
             case 'metaRegexp':
             case 'metaStructural':
-            case 'metaPredicate':
+            case 'metaPredicate': {
                 values.push(toHover(token))
                 range = token.groupRange ? token.groupRange : token.range
                 break
-            case 'keyword':
+            }
+            case 'keyword': {
                 switch (token.kind) {
-                    case KeywordKind.And:
+                    case KeywordKind.And: {
                         values.push('Find results which match both the left and the right expression.')
                         range = token.range
                         break
-                    case KeywordKind.Or:
+                    }
+                    case KeywordKind.Or: {
                         values.push('Find results which match the left or the right expression.')
                         range = token.range
                         break
+                    }
                 }
+            }
         }
     }
 
@@ -306,11 +312,20 @@ function findOperatorNode(position: number, node: Node | null): Extract<Node, { 
     if (!node || node.type !== 'operator' || node.range.start >= position || node.range.end <= position) {
         return null
     }
-    for (const operand of node.operands) {
-        const result = findOperatorNode(position, operand)
+
+    if (node.left) {
+        const result = findOperatorNode(position, node.left)
         if (result) {
             return result
         }
     }
+
+    if (node.right) {
+        const result = findOperatorNode(position, node.right)
+        if (result) {
+            return result
+        }
+    }
+
     return node
 }

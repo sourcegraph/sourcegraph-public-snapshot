@@ -1,11 +1,11 @@
 import {
-    LineChartSearchInsightDataSeriesInput,
-    LineChartSearchInsightInput,
-    PieChartSearchInsightInput,
+    type LineChartSearchInsightDataSeriesInput,
+    type LineChartSearchInsightInput,
+    type PieChartSearchInsightInput,
     TimeIntervalStepUnit,
 } from '../../../../../../../graphql-operations'
 import { InsightType } from '../../../../types'
-import {
+import type {
     CreationInsightInput,
     MinimalCaptureGroupInsightData,
     MinimalComputeInsightData,
@@ -24,14 +24,18 @@ export function getInsightCreateGqlInput(
     dashboardId: string | null
 ): CreateInsightInput {
     switch (insight.type) {
-        case InsightType.SearchBased:
+        case InsightType.SearchBased: {
             return getSearchInsightCreateInput(insight, dashboardId)
-        case InsightType.CaptureGroup:
+        }
+        case InsightType.CaptureGroup: {
             return getCaptureGroupInsightCreateInput(insight, dashboardId)
-        case InsightType.Compute:
+        }
+        case InsightType.Compute: {
             return getComputeInsightCreateInput(insight, dashboardId)
-        case InsightType.LangStats:
+        }
+        case InsightType.LangStats: {
             return getLangStatsInsightCreateInput(insight, dashboardId)
+        }
     }
 }
 

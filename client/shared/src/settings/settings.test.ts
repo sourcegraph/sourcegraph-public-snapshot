@@ -1,13 +1,15 @@
+import { describe, expect, test } from 'vitest'
+
 import { createAggregateError, isErrorLike } from '@sourcegraph/common'
 
 import {
-    CustomMergeFunctions,
+    type CustomMergeFunctions,
     gqlToCascade,
     merge,
     mergeSettings,
-    Settings,
-    SettingsCascade,
-    SettingsSubject,
+    type Settings,
+    type SettingsCascade,
+    type SettingsSubject,
 } from './settings'
 
 const FIXTURE_ORG: SettingsSubject = {

@@ -1,6 +1,6 @@
 import { flatten } from 'lodash'
 
-import { BlockCommentStyle } from '../language-specs/language-spec'
+import type { BlockCommentStyle } from '../language-specs/language-spec'
 
 /**
  * The default regex for characters allowed in an identifier. It works well for

@@ -1,21 +1,21 @@
-import { FC, ReactNode } from 'react'
+import type { FC, ReactNode } from 'react'
 
 import { noop } from 'rxjs'
 
-import { FormChangeEvent, SubmissionErrors } from '@sourcegraph/wildcard'
+import type { FormChangeEvent, SubmissionErrors } from '@sourcegraph/wildcard'
 
 import {
     CreationUiLayout,
     CreationUIForm,
     CreationUIPreview,
     createDefaultEditSeries,
-    EditableDataSeries,
+    type EditableDataSeries,
     getSanitizedSeries,
 } from '../../../../../components'
-import { LineChartLivePreview, LivePreviewSeries } from '../../LineChartLivePreview'
-import { CreateInsightFormFields } from '../types'
+import { LineChartLivePreview, type LivePreviewSeries } from '../../LineChartLivePreview'
+import type { CreateInsightFormFields } from '../types'
 
-import { RenderPropertyInputs, SearchInsightCreationForm } from './SearchInsightCreationForm'
+import { type RenderPropertyInputs, SearchInsightCreationForm } from './SearchInsightCreationForm'
 import { useInsightCreationForm } from './use-insight-creation-form'
 
 export interface SearchInsightCreationContentProps {

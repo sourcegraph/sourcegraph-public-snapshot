@@ -2,11 +2,13 @@ import React, { useEffect, useMemo, type FC, type PropsWithChildren } from 'reac
 
 import { createRouter, type History, Action, type Location, type Router } from '@remix-run/router'
 import type { Navigation } from '@sveltejs/kit'
-import { RouterProvider, UNSAFE_enhanceManualRouteObjects, type RouteObject } from 'react-router-dom'
-import { RouterLink, setLinkComponent } from 'wildcard/src'
+import { RouterProvider, type RouteObject, UNSAFE_enhanceManualRouteObjects } from 'react-router-dom'
+
+import { RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { goto } from '$app/navigation'
 import { navigating } from '$app/stores'
+import { SettingsProvider, type SettingsCascadeOrError } from '$lib/shared'
 
 import { WildcardThemeContext, type WildcardTheme } from './wildcard'
 
@@ -20,7 +22,11 @@ const WILDCARD_THEME: WildcardTheme = {
  * Creates a minimal context for rendering React components inside Svelte, including a
  * custom React Router router to integrate with SvelteKit.
  */
-export const ReactAdapter: FC<PropsWithChildren<{ route: string }>> = ({ route, children }) => {
+export const ReactAdapter: FC<PropsWithChildren<{ route: string; settings: SettingsCascadeOrError }>> = ({
+    route,
+    children,
+    settings,
+}) => {
     const router = useMemo(
         () =>
             createSvelteKitRouter([
@@ -40,7 +46,9 @@ export const ReactAdapter: FC<PropsWithChildren<{ route: string }>> = ({ route, 
 
     return (
         <WildcardThemeContext.Provider value={WILDCARD_THEME}>
-            <RouterProvider router={router} />
+            <SettingsProvider settingsCascade={settings}>
+                <RouterProvider router={router} />
+            </SettingsProvider>
         </WildcardThemeContext.Provider>
     )
 }
@@ -129,7 +137,7 @@ function createSvelteKitHistory(): History {
                 // I noticed that at least on Notebook pages this won't scroll the target into view.
                 if (!state && prevState) {
                     switch (prevState.type) {
-                        case 'popstate':
+                        case 'popstate': {
                             action = Action.Pop
                             if (prevState.to) {
                                 listener({
@@ -139,7 +147,8 @@ function createSvelteKitHistory(): History {
                                 })
                             }
                             break
-                        case 'link':
+                        }
+                        case 'link': {
                             // This is a special case for SvelteKit. In a normal browser context it seems that `listen`
                             // should only handle popstate events. Listening to the SvelteKit 'link' event seems
                             // necessary to properly handle SvelteKit links which point to paths handled by this React
@@ -153,6 +162,7 @@ function createSvelteKitHistory(): History {
                                 listener({ action, location: createLocation(prevState.to.url), delta: 1 })
                             }
                             break
+                        }
                     }
                 }
                 prevState = state

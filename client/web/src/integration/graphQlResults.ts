@@ -1,9 +1,9 @@
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { mergeSettings } from '@sourcegraph/shared/src/settings/settings'
 import { currentUserMock, sharedGraphQlResults } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
 import { builtinAuthProvider, siteGQLID, siteID } from './jscontext'
 
@@ -85,6 +85,9 @@ export const commonWebGraphQlResults: Partial<WebGraphQlOperations & SharedGraph
             productVersion: '0.0.0+dev',
         },
         productVersion: '0.0.0+dev',
+        codeIntelligenceConfigurationPolicies: {
+            totalCount: 1,
+        },
     }),
 
     EventLogsData: () => ({

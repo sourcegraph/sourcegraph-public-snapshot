@@ -1,21 +1,21 @@
-import { FunctionComponent, useCallback } from 'react'
+import { type FunctionComponent, useCallback } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { mdiCheck, mdiClose, mdiMapSearch } from '@mdi/js'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { isErrorLike } from '@sourcegraph/common'
 import { displayRepoName, splitPath } from '@sourcegraph/shared/src/components/RepoLink'
 import { H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import {
-    Connection,
+    type Connection,
     FilteredConnection,
-    FilteredConnectionQueryArguments,
+    type FilteredConnectionQueryArguments,
 } from '../../../../components/FilteredConnection'
-import { PreciseIndexFields } from '../../../../graphql-operations'
+import type { PreciseIndexFields } from '../../../../graphql-operations'
 import {
-    NormalizedUploadRetentionMatch,
+    type NormalizedUploadRetentionMatch,
     queryPreciseIndexRetention as defaultQueryPreciseIndexRetention,
 } from '../hooks/queryPreciseIndexRetention'
 
@@ -161,7 +161,7 @@ const ReferenceList: FunctionComponent<ReferenceListProps> = ({ items, totalCoun
         </>
     ) : (
         <>
-            {[...items.slice(0, -1), <>and {items[items.length - 1]}</>].map((item, index) => (
+            {[...items.slice(0, -1), <>and {items.at(-1)}</>].map((item, index) => (
                 <>
                     {index !== 0 && <>, </>}
                     {item}

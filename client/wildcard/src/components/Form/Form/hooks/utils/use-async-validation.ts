@@ -1,11 +1,11 @@
-import { RefObject, useCallback, useRef } from 'react'
+import { type RefObject, useCallback, useRef } from 'react'
 
-import { EMPTY, from, Observable } from 'rxjs'
+import { EMPTY, from, type Observable } from 'rxjs'
 import { debounceTime, switchMap, tap } from 'rxjs/operators'
 
 import { useEventObservable } from '../../../../../hooks'
-import { FieldMetaState } from '../useForm'
-import { AsyncValidator, getCustomValidationContext, getCustomValidationMessage } from '../validators'
+import type { FieldMetaState } from '../useForm'
+import { type AsyncValidator, getCustomValidationContext, getCustomValidationMessage } from '../validators'
 
 const ASYNC_VALIDATION_DEBOUNCE_TIME = 500
 

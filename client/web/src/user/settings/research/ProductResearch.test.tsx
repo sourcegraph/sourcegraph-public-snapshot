@@ -1,4 +1,5 @@
-import { render, RenderResult } from '@testing-library/react'
+import { render, type RenderResult } from '@testing-library/react'
+import { beforeEach, describe, expect, test } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -10,7 +11,7 @@ describe('ProductResearchPage', () => {
     beforeEach(() => {
         queries = render(
             <ProductResearchPage
-                isSourcegraphApp={false}
+                isCodyApp={false}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 authenticatedUser={{
                     emails: [{ email: 'test@sourcegraph.com', isPrimary: true, verified: true }],

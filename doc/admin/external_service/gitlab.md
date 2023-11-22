@@ -7,7 +7,7 @@ To connect GitLab to Sourcegraph:
 1. Go to **Site admin > Manage code hosts > Add code host**
 2. Select **GitLab** (for GitLab.com) or **GitLab Self-Managed**.
 3. Set **url** to the URL of your GitLab instance, such as https://gitlab.example.com or https://gitlab.com (for GitLab.com).
-4. Create a GitLab access token using these [instructions](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) with repo scope, and set it to be the value of the token.
+4. Create a GitLab access token using these [instructions](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html#creating-a-personal-access-token) with the `read_api` and `read_repository` scopes, and set it to be the value of the token.
 5. Use the [Repository syncing documentation below](#repository-syncing) to select and add your preferred projects/repos to the configuration.
 6. You can use the action buttons above the text field to add the fields, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration) for additional fields.
 7. Click **Add repositories**.
@@ -44,7 +44,7 @@ Example config:
 There are three fields for configuring which projects are mirrored/synchronized:
 
 - [`projects`](gitlab.md#configuration)<br>A list of projects in `{"name": "group/name"}` or `{"id": id}` format. The order determines the order in which we sync project metadata and is safe to change.
-- [`projectQuery`](gitlab.md#configuration)<br>A list of strings with one pre-defined option (`none`), and/or an URL path and query that targets a GitLab API endpoint returning a list of projects.
+- [`projectQuery`](gitlab.md#configuration)<br>A list of strings with one pre-defined option (`none`), and/or an URL path and query that targets the [GitLab Projects API endpoint](https://docs.gitlab.com/ee/api/projects.html), returning a list of projects.
 - [`exclude`](gitlab.md#configuration)<br>A list of projects to exclude which takes precedence over the `projects`, and `projectQuery` fields. It has the same format as `projects`.
 
 ### Troubleshooting
@@ -87,6 +87,9 @@ Then, [add or edit a GitLab connection](#repository-syncing) and include the `au
   }
 }
 ```
+
+In this case, a user's OAuth token will be used to get a list of repositories that the user can access.
+[Repository-centric permissions syncing](../permissions/syncing.md) will be disabled.
 
 ### Administrator (sudo-level) access token
 
@@ -146,16 +149,28 @@ because Sourcegraph usernames are mutable.
 To configure GitLab as an authentication provider (which will enable sign-in via GitLab), see the
 [authentication documentation](../auth/index.md#gitlab).
 
-## Internal rate limits
+## Internal repositories
 
-Internal rate limiting can be configured to limit the rate at which requests are made from Sourcegraph to GitLab.
+GitLab also has internal repositories in addition to the usual public and private repositories. Depending on how your organization structure is configured, you may want to make these internal repositories available to everyone on your Sourcegraph instance without relying on permission syncs. To mark all internal repositories as public, add the following field to the code host connection:
 
-If enabled, the default rate is set at 36,000 per hour (10 per second) which can be configured via the `requestsPerHour` field (see below):
+```json
+{
+  // ...
+  "markInternalReposAsPublic": true
+}
+```
 
-- For Sourcegraph <=3.38, if rate limiting is configured more than once for the same code host instance, the most restrictive limit will be used.
-- For Sourcegraph >=3.39, rate limiting should be enabled and configured for each individual code host connection.
+When adding this configuration option, you may also want to configure your GitLab auth provider so that it does [not sync user permissions for internal repositories](../auth/index.md#dont-sync-user-permissions-for-internal-repositories).
 
-**NOTE** Internal rate limiting is only currently applied when synchronising changesets in [batch changes](../../batch_changes/index.md), repository permissions and repository metadata from code hosts.
+## Rate limits
+
+Always include a token in a configuration for a GitLab.com URL to avoid being denied service by GitLab's [unauthenticated rate limits](https://docs.gitlab.com/ee/user/gitlab_com/index.html#gitlabcom-specific-rate-limits).
+
+When Sourcegraph hits a rate limit imposed by GitLab, Sourcegraph waits the appropriate amount of time specified by GitLab before retrying the request. This can be several minutes in extreme cases.
+
+### Internal rate limits
+
+See [Internal rate limits](./rate_limits.md#internal-rate-limits).
 
 ## Configuration
 
@@ -172,16 +187,6 @@ The Sourcegraph instance's site admin must [update the `corsOrigin` site config 
   // ...
   "corsOrigin":
     "https://my-gitlab.example.com"
-  // ...
-}
-```
-
-The site admin should also set `alerts.codeHostIntegrationMessaging` in [global settings](../config/settings.md#editing-global-settings-for-site-admins) to ensure informational content for users in the Sourcegraph webapp references the native integration and not the browser extension.
-
-```json
-{
-  // ...
-  "alerts.codeHostIntegrationMessaging": "native-integration"
   // ...
 }
 ```

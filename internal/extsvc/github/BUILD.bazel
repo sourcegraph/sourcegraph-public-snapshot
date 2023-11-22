@@ -1,9 +1,9 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "github",
     srcs = [
-        "authenticators.go",
         "common.go",
         "doc.go",
         "v3.go",
@@ -13,8 +13,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/bytesize",
         "//internal/conf",
-        "//internal/conf/deploy",
         "//internal/encryption",
         "//internal/env",
         "//internal/extsvc",
@@ -23,17 +23,16 @@ go_library(
         "//internal/metrics",
         "//internal/oauthutil",
         "//internal/ratelimit",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//lib/errors",
-        "@com_github_golang_jwt_jwt_v4//:jwt",
-        "@com_github_google_go_github//github",
-        "@com_github_google_go_github_v41//github",
+        "@com_github_google_go_github_v55//github",
         "@com_github_graphql_go_graphql//language/ast",
         "@com_github_graphql_go_graphql//language/parser",
         "@com_github_graphql_go_graphql//language/visitor",
         "@com_github_masterminds_semver//:semver",
         "@com_github_segmentio_fasthash//fnv1",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )
@@ -49,15 +48,20 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":github"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/errcode",
         "//internal/extsvc/auth",
         "//internal/httpcli",
         "//internal/httptestutil",
+        "//internal/ratelimit",
         "//internal/rcache",
         "//internal/testutil",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
@@ -65,5 +69,6 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
     ],
 )

@@ -49,7 +49,10 @@ export const AutoIndexJobFieldsFragment = gql`
 export const INFER_JOBS_SCRIPT = gql`
     query InferAutoIndexJobsForRepo($repository: ID!, $rev: String, $script: String) {
         inferAutoIndexJobsForRepo(repository: $repository, rev: $rev, script: $script) {
-            ...AutoIndexJobDescriptionFields
+            jobs {
+                ...AutoIndexJobDescriptionFields
+            }
+            inferenceOutput
         }
     }
 

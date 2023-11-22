@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/opentracing/opentracing-go/log"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
@@ -152,7 +152,7 @@ func (f *FeelingLuckySearchJob) Name() string {
 	return "FeelingLuckySearchJob"
 }
 
-func (f *FeelingLuckySearchJob) Fields(job.Verbosity) []log.Field { return nil }
+func (f *FeelingLuckySearchJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
 
 func (f *FeelingLuckySearchJob) Children() []job.Describer {
 	return []job.Describer{f.initialJob}
@@ -201,7 +201,7 @@ func (g *generatedSearchJob) Name() string {
 
 func (g *generatedSearchJob) Children() []job.Describer { return []job.Describer{g.Child} }
 
-func (g *generatedSearchJob) Fields(job.Verbosity) []log.Field { return nil }
+func (g *generatedSearchJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
 
 func (g *generatedSearchJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *g

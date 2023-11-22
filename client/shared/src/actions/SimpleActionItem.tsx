@@ -2,7 +2,7 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { ButtonLink, ButtonLinkProps, Tooltip } from '@sourcegraph/wildcard'
+import { ButtonLink, type ButtonLinkProps, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SimpleActionItem.module.scss'
 

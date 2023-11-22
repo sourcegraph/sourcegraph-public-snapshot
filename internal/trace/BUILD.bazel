@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -6,12 +7,9 @@ go_library(
         "attributes.go",
         "buckets.go",
         "context.go",
-        "fields.go",
         "httptrace.go",
         "logger.go",
-        "otel_bridge.go",
         "trace.go",
-        "tracer.go",
         "url.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/trace",
@@ -19,15 +17,11 @@ go_library(
     deps = [
         "//internal/conf/conftypes",
         "//internal/env",
-        "//internal/trace/ot",
         "//internal/trace/policy",
         "//lib/errors",
         "@com_github_cockroachdb_redact//:redact",
         "@com_github_felixge_httpsnoop//:httpsnoop",
         "@com_github_gorilla_mux//:mux",
-        "@com_github_opentracing_opentracing_go//:opentracing-go",
-        "@com_github_opentracing_opentracing_go//ext",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
@@ -35,6 +29,15 @@ go_library(
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//codes",
         "@io_opentelemetry_go_otel_trace//:trace",
-        "@org_golang_x_net//trace",
+    ],
+)
+
+go_test(
+    name = "trace_test",
+    srcs = ["attributes_test.go"],
+    embed = [":trace"],
+    deps = [
+        "//lib/errors",
+        "@com_github_stretchr_testify//require",
     ],
 )

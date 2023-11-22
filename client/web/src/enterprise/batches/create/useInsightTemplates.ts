@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom'
 
-import { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
+import type { Settings, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 
 import { isGoCodeCheckerTemplatesEnabled } from '../../../batches'
 

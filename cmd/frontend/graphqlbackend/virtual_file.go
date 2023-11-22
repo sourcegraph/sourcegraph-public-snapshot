@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 )
@@ -57,6 +57,10 @@ func (r *VirtualFileResolver) URL(ctx context.Context) (string, error) {
 
 func (r *VirtualFileResolver) CanonicalURL() string {
 	return r.opts.CanonicalURL
+}
+
+func (r *VirtualFileResolver) ChangelistURL(_ context.Context) (*string, error) {
+	return nil, nil
 }
 
 func (r *VirtualFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {

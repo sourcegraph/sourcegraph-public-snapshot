@@ -214,7 +214,7 @@ func (s *executorSecretStore) Create(ctx context.Context, scope ExecutorSecretSc
 	}
 
 	// SECURITY: check that the current user is authorized to create a secret for the given namespace.
-	if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
+	if err := EnsureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
 	}
 
@@ -258,7 +258,7 @@ func (s *executorSecretStore) Update(ctx context.Context, scope ExecutorSecretSc
 	}
 
 	// SECURITY: check that the current user is authorized to update a secret in the given namespace.
-	if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
+	if err := EnsureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, s), secret); err != nil {
 		return err
 	}
 
@@ -297,7 +297,7 @@ func (s *executorSecretStore) Delete(ctx context.Context, scope ExecutorSecretSc
 		}
 
 		// SECURITY: check that the current user is authorized to delete a secret in the given namespace.
-		if err := ensureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, tx), secret); err != nil {
+		if err := EnsureActorHasNamespaceWriteAccess(ctx, NewDBWith(s.logger, tx), secret); err != nil {
 			return err
 		}
 
@@ -517,7 +517,7 @@ func scanExecutorSecret(secret *ExecutorSecret, key encryption.Key, s interface 
 	return nil
 }
 
-func ensureActorHasNamespaceWriteAccess(ctx context.Context, db DB, secret *ExecutorSecret) error {
+func EnsureActorHasNamespaceWriteAccess(ctx context.Context, db DB, secret *ExecutorSecret) error {
 	a := actor.FromContext(ctx)
 	if a.IsInternal() {
 		return nil

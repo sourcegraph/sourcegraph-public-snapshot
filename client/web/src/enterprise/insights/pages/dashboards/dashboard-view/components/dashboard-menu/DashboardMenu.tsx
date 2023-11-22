@@ -16,7 +16,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { CustomInsightDashboard } from '../../../../../core'
+import type { CustomInsightDashboard } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 
 import styles from './DashboardMenu.module.scss'
@@ -26,6 +26,7 @@ export enum DashboardMenuAction {
     Delete,
     Configure,
     AddRemoveInsights,
+    ResetGridLayout,
 }
 
 export interface DashboardMenuProps {
@@ -76,6 +77,15 @@ export const DashboardMenu: React.FunctionComponent<React.PropsWithChildren<Dash
                         Copy link
                     </MenuItem>
                 )}
+
+                <MenuItem
+                    as={Button}
+                    outline={true}
+                    className={styles.menuItem}
+                    onSelect={() => onSelect(DashboardMenuAction.ResetGridLayout)}
+                >
+                    Reset grid layout
+                </MenuItem>
 
                 {(menuPermissions.configure.display || menuPermissions.copy.display) &&
                     menuPermissions.delete.display && <MenuDivider />}

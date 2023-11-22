@@ -3,9 +3,9 @@
 // documentation for that. Its primary purpose is to show what Bootstrap's components look like with our styling
 // customizations.
 import { action } from '@storybook/addon-actions'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
-import 'storybook-addon-designs'
+import '@storybook/addon-designs'
 
 import { highlightCodeSafe, registerHighlightContributions } from '@sourcegraph/common'
 
@@ -18,7 +18,7 @@ import { preventDefault } from './utils'
 
 registerHighlightContributions()
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="p-3 container">{story()}</div>}</BrandedStory>
 )
 const config: Meta = {
@@ -33,7 +33,7 @@ const config: Meta = {
 
 export default config
 
-export const CodeTypography: Story = () => (
+export const CodeTypography: StoryFn = () => (
     <>
         <H1>Code</H1>
 
@@ -95,7 +95,7 @@ export const CodeTypography: Story = () => (
     </>
 )
 
-export const Colors: Story = () => (
+export const Colors: StoryFn = () => (
     <>
         <H1>Colors</H1>
 
@@ -113,7 +113,7 @@ Colors.parameters = {
     },
 }
 
-export const Layout: Story = () => (
+export const Layout: StoryFn = () => (
     <>
         <H1>Layout</H1>
 
@@ -208,7 +208,7 @@ export const Layout: Story = () => (
     </>
 )
 
-export const InputGroups: Story = () => (
+export const InputGroups: StoryFn = () => (
     <>
         <H1>Input groups</H1>
 
@@ -234,7 +234,7 @@ export const InputGroups: Story = () => (
 
 InputGroups.storyName = 'Input groups'
 
-export const Forms: Story = () => (
+export const Forms: StoryFn = () => (
     <>
         <H1>Forms</H1>
         <Text>
@@ -341,7 +341,7 @@ Forms.parameters = {
     },
 }
 
-export const ListGroups: Story = () => (
+export const ListGroups: StoryFn = () => (
     <>
         <H1>List groups</H1>
         <Text>
@@ -401,7 +401,7 @@ export const ListGroups: Story = () => (
 
 ListGroups.storyName = 'List groups'
 
-export const Meter: Story = args => (
+export const Meter: StoryFn = args => (
     <>
         <H1>Meter</H1>
         <Text>
@@ -442,26 +442,28 @@ export const Meter: Story = args => (
 Meter.argTypes = {
     min: {
         type: 'number',
-        defaultValue: 0,
     },
     max: {
         type: 'number',
-        defaultValue: 1,
     },
     high: {
         type: 'number',
-        defaultValue: 0.8,
     },
     low: {
         type: 'number',
-        defaultValue: 0.2,
     },
     optimum: {
         type: 'number',
-        defaultValue: 1,
     },
     value: {
         type: 'number',
-        defaultValue: 0.1,
     },
+}
+Meter.args = {
+    min: 0,
+    max: 1,
+    high: 0.8,
+    low: 0.2,
+    optimum: 1,
+    value: 0.1,
 }

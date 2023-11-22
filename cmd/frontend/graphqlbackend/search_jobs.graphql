@@ -1,0 +1,210 @@
+extend type Mutation {
+    """
+    EXPERIMENTAL: Create a new search job. The query will be validated before the search is created.
+    """
+    createSearchJob(
+        """
+        The query to run. This must be a valid search query.
+        """
+        query: String!
+    ): SearchJob!
+
+    """
+    EXPERIMENTAL: Cancel a search job. This will cancel all of the search's repositories and revisions.
+    """
+    cancelSearchJob(
+        """
+        The ID of the search job to cancel.
+        """
+        id: ID!
+    ): EmptyResponse
+
+    """
+    EXPERIMENTAL: Delete a search job. This will delete all of the search's repositories and revisions.
+    """
+    deleteSearchJob(
+        """
+        The ID of the search job to delete.
+        """
+        id: ID!
+    ): EmptyResponse!
+}
+
+extend type Query {
+    """
+    EXPERIMENTAL: Get a list of search jobs.
+    """
+    searchJobs(
+        """
+        The number of results to return.
+        """
+        first: Int
+        """
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
+        """
+        The cursor to start at.
+        """
+        after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
+        """
+        List of users ids by which we will filter out search jobs list.
+        """
+        userIDs: [ID!]
+        """
+        The query to filter the results by.
+        """
+        query: String
+        """
+        The states to filter the results by.
+        """
+        states: [SearchJobState!]
+        """
+        The order by which to sort the results.
+        """
+        orderBy: SearchJobsOrderBy = CREATED_AT
+        """
+        The determines the order of the returned searches. Defaults to ascending.
+        """
+        descending: Boolean = false
+    ): SearchJobConnection!
+}
+
+"""
+The state of a search job.
+"""
+enum SearchJobState {
+    """
+    The search job has been created and is waiting to be processed.
+    """
+    QUEUED
+    """
+    The search job is being processed.
+    """
+    PROCESSING
+    """
+    The search job had an error.
+    """
+    ERRORED
+    """
+    The search job has failed.
+    """
+    FAILED
+    """
+    The search job has completed.
+    """
+    COMPLETED
+    """
+    The search job was canceled.
+    """
+    CANCELED
+}
+
+"""
+The order by which search jobs are sorted.
+"""
+enum SearchJobsOrderBy {
+    """
+    Sort search jobs by their query.
+    """
+    QUERY
+    """
+    Sort search jobs by their creation date.
+    """
+    CREATED_AT
+    """
+    Sort search jobs by their state.
+    """
+    STATE
+}
+
+"""
+A search job.
+"""
+type SearchJob implements Node {
+    """
+    The ID of the search job.
+    """
+    id: ID!
+    """
+    The query to run.
+    """
+    query: String!
+    """
+    The state of the search job.
+    """
+    state: SearchJobState!
+    """
+    The user who created the search job.
+    """
+    creator: User
+    """
+    The date and time the search job was created.
+    """
+    createdAt: DateTime!
+    """
+    The date and time the search job was started.
+    """
+    startedAt: DateTime
+    """
+    The date and time the search job was finished.
+    """
+    finishedAt: DateTime
+    """
+    The url to download the search job results.
+    """
+    URL: String
+    """
+    The url to download search job logs.
+    """
+    logURL: String
+    """
+    The repository stats for the search job.
+    """
+    repoStats: SearchJobStats!
+}
+
+"""
+The repository stats for a search job.
+"""
+type SearchJobStats {
+    """
+    The total number of items.
+    """
+    total: Int!
+    """
+    The number of items that have completed.
+    """
+    completed: Int!
+    """
+    The number of items that have failed.
+    """
+    failed: Int!
+    """
+    The number of items that are in progress.
+    """
+    inProgress: Int!
+}
+
+"""
+A connection that returns search jobs.
+"""
+type SearchJobConnection {
+    """
+    The list of searches.
+    """
+    nodes: [SearchJob!]!
+    """
+    The total count of searches.
+    """
+    totalCount: Int!
+    """
+    Information to aid in pagination.
+    """
+    pageInfo: BidirectionalPageInfo!
+}

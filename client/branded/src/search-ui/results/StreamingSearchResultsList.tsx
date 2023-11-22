@@ -2,23 +2,29 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
-import { Observable } from 'rxjs'
+import type { Observable } from 'rxjs'
 
 import { TraceSpanProvider } from '@sourcegraph/observability-client'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
-import { FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import { type FilePrefetcher, PrefetchableFile } from '@sourcegraph/shared/src/components/PrefetchableFile'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { BuildSearchQueryURLParameters, QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type {
+    BuildSearchQueryURLParameters,
+    QueryState,
+    SearchContextProps,
+    SearchMode,
+    SubmitSearchParameters,
+} from '@sourcegraph/shared/src/search'
 import {
-    AggregateStreamingSearchResults,
+    type AggregateStreamingSearchResults,
     getMatchUrl,
     getRevision,
-    SearchMatch,
+    type SearchMatch,
 } from '@sourcegraph/shared/src/search/stream'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CommitSearchResult } from '../components/CommitSearchResult'
 import { FileContentSearchResult } from '../components/FileContentSearchResult'
@@ -41,14 +47,11 @@ export interface StreamingSearchResultsListProps
         Pick<SearchContextProps, 'searchContextsEnabled'>,
         PlatformContextProps<'requestGraphQL'> {
     isSourcegraphDotCom: boolean
-    enableOwnershipSearch: boolean
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     /** Clicking on a match opens the link in a new tab. */
     openMatchesInNewTab?: boolean
-    /** Available to web app through JS Context */
-    assetsRoot?: string
 
     /**
      * Latest run query. Resets scroll visibility state when changed.
@@ -77,6 +80,12 @@ export interface StreamingSearchResultsListProps
     setQueryState?: (queryState: QueryState) => void
     buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
 
+    searchMode?: SearchMode
+    setSearchMode?: (mode: SearchMode) => void
+    submitSearch?: (parameters: SubmitSearchParameters) => void
+    searchQueryFromURL?: string
+    caseSensitive?: boolean
+
     selectedSearchContextSpec?: string
 
     /**
@@ -84,6 +93,8 @@ export interface StreamingSearchResultsListProps
      * It's passed the index of the result in the list and the result type.
      */
     logSearchResultClicked?: (index: number, type: string) => void
+
+    enableRepositoryMetadata?: boolean
 }
 
 export const StreamingSearchResultsList: React.FunctionComponent<
@@ -95,9 +106,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     settingsCascade,
     telemetryService,
     isSourcegraphDotCom,
-    enableOwnershipSearch,
     searchContextsEnabled,
-    assetsRoot,
     platformContext,
     openMatchesInNewTab,
     executedQuery,
@@ -109,7 +118,13 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     queryState,
     setQueryState,
     buildSearchURLQueryFromQueryState,
+    searchMode,
+    setSearchMode,
+    submitSearch,
+    caseSensitive,
+    searchQueryFromURL,
     logSearchResultClicked,
+    enableRepositoryMetadata,
 }) => {
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
@@ -122,7 +137,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 switch (result.type) {
                     case 'content':
                     case 'symbol':
-                    case 'path':
+                    case 'path': {
                         return (
                             <PrefetchableFile
                                 isPrefetchEnabled={prefetchFileEnabled}
@@ -178,7 +193,8 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 )}
                             </PrefetchableFile>
                         )
-                    case 'commit':
+                    }
+                    case 'commit': {
                         return (
                             <CommitSearchResult
                                 index={index}
@@ -190,18 +206,23 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 as="li"
                             />
                         )
-                    case 'repo':
+                    }
+                    case 'repo': {
                         return (
                             <RepoSearchResult
                                 index={index}
                                 result={result}
                                 onSelect={() => logSearchResultClicked?.(index, 'repo')}
                                 containerClassName={resultClassName}
+                                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                                queryState={queryState}
+                                enableRepositoryMetadata={enableRepositoryMetadata}
                                 as="li"
                             />
                         )
+                    }
                     case 'person':
-                    case 'team':
+                    case 'team': {
                         return (
                             <OwnerSearchResult
                                 index={index}
@@ -214,6 +235,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                                 buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
                             />
                         )
+                    }
                 }
             }
 
@@ -241,6 +263,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             resultClassName,
             platformContext,
             queryState,
+            enableRepositoryMetadata,
             buildSearchURLQueryFromQueryState,
             logSearchResultClicked,
         ]
@@ -274,18 +297,21 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             </div>
 
             {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results} telemetryService={telemetryService}>
+                <StreamingSearchResultFooter results={results}>
                     <>
                         {results?.state === 'complete' && resultsNumber === 0 && (
                             <NoResultsPage
                                 searchContextsEnabled={searchContextsEnabled}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
-                                enableOwnershipSearch={enableOwnershipSearch}
                                 telemetryService={telemetryService}
                                 showSearchContext={searchContextsEnabled}
-                                assetsRoot={assetsRoot}
                                 showQueryExamples={showQueryExamplesOnNoResultsPage}
                                 setQueryState={setQueryState}
+                                searchMode={searchMode}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={searchQueryFromURL}
                             />
                         )}
                     </>

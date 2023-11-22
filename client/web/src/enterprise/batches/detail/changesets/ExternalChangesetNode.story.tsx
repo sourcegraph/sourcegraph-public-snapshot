@@ -1,4 +1,4 @@
-import { Story, Meta, DecoratorFn } from '@storybook/react'
+import type { StoryFn, Meta, Decorator } from '@storybook/react'
 import classNames from 'classnames'
 import { addHours } from 'date-fns'
 import { of } from 'rxjs'
@@ -15,7 +15,7 @@ import { ExternalChangesetNode } from './ExternalChangesetNode'
 
 import gridStyles from './BatchChangeChangesets.module.scss'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className={classNames(gridStyles.batchChangeChangesetsGrid, 'p-3 container')}>{story()}</div>
 )
 
@@ -25,14 +25,24 @@ const config: Meta = {
     argTypes: {
         viewerCanAdminister: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+        labeled: {
+            control: { type: 'boolean' },
+        },
+        commitsSigned: {
+            control: { type: 'boolean' },
+        },
+    },
+    args: {
+        viewerCanAdminister: true,
+        labeled: true,
+        commitsSigned: true,
     },
 }
 
 export default config
 
-export const AllStates: Story = args => {
+export const AllStates: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -56,6 +66,7 @@ export const AllStates: Story = args => {
                                     body: 'This changeset does the following things:\nIs awesome\nIs useful',
                                     checkState: ChangesetCheckState.PENDING,
                                     createdAt: now.toISOString(),
+                                    commitVerification: args.commitsSigned ? { verified: true } : null,
                                     externalID: '123',
                                     externalURL: {
                                         url: 'http://test.test/pr/123',
@@ -66,14 +77,16 @@ export const AllStates: Story = args => {
                                         added: 30,
                                         deleted: 28,
                                     },
-                                    labels: [
-                                        {
-                                            __typename: 'ChangesetLabel',
-                                            color: '93ba13',
-                                            description: 'Very awesome description',
-                                            text: 'Some label',
-                                        },
-                                    ],
+                                    labels: args.labeled
+                                        ? [
+                                              {
+                                                  __typename: 'ChangesetLabel',
+                                                  color: '93ba13',
+                                                  description: 'Very awesome description',
+                                                  text: 'Some label',
+                                              },
+                                          ]
+                                        : [],
                                     repository: {
                                         id: 'repoid',
                                         name: 'github.com/sourcegraph/sourcegraph',
@@ -123,7 +136,7 @@ export const AllStates: Story = args => {
 
 AllStates.storyName = 'All states'
 
-export const Unpublished: Story = args => {
+export const Unpublished: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -142,6 +155,7 @@ export const Unpublished: Story = args => {
                         body: 'This changeset does the following things:\nIs awesome\nIs useful',
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: null,
                         externalURL: null,
                         forkNamespace: null,
@@ -197,7 +211,7 @@ export const Unpublished: Story = args => {
     )
 }
 
-export const Importing: Story = args => {
+export const Importing: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -217,6 +231,7 @@ export const Importing: Story = args => {
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: '12345',
                         externalURL: null,
                         forkNamespace: null,
@@ -259,7 +274,7 @@ export const Importing: Story = args => {
     )
 }
 
-export const ImportingFailed: Story = args => {
+export const ImportingFailed: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -279,6 +294,7 @@ export const ImportingFailed: Story = args => {
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: '99999',
                         externalURL: null,
                         forkNamespace: null,
@@ -313,7 +329,7 @@ export const ImportingFailed: Story = args => {
 
 ImportingFailed.storyName = 'Importing failed'
 
-export const SyncFailed: Story = args => {
+export const SyncFailed: StoryFn = args => {
     const now = new Date()
     return (
         <WebStory>
@@ -333,6 +349,7 @@ export const SyncFailed: Story = args => {
                         body: null,
                         checkState: null,
                         createdAt: now.toISOString(),
+                        commitVerification: null,
                         externalID: '99999',
                         externalURL: null,
                         forkNamespace: null,

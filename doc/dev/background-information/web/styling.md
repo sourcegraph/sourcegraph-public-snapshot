@@ -76,7 +76,7 @@ To use this approach, colocate a SCSS stylesheet with the React component and us
 Example:
 
 - `PageSelector.tsx` component would have a `PageSelector.module.scss` file next to it.
-- Use `pnpm watch-generate` to generate a Typescript type declaration file: `PageSelector.module.scss.d.ts` in the same folder.
+- Use `pnpm generate` to generate a TypeScript type declaration file: `PageSelector.module.scss.d.ts` in the same folder.
 - After that, it's possible to type-safely use class names from the CSS module.
 
 ```tsx

@@ -1,11 +1,11 @@
-import { FC, useCallback } from 'react'
+import { type FC, useCallback } from 'react'
 
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Button, Checkbox, ErrorAlert, H3, Label, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import {
+import type {
     OutboundWebhookEventTypeFields,
     OutboundWebhookEventTypesResult,
     OutboundWebhookEventTypesVariables,

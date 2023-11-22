@@ -1,12 +1,12 @@
 import { first, identity } from 'lodash'
-import { Observable, zip, of } from 'rxjs'
+import { type Observable, zip, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { map, switchMap } from 'rxjs/operators'
 
 import { memoizeObservable } from '@sourcegraph/common'
 import { checkOk } from '@sourcegraph/http-client'
 
-import { GitLabInfo } from './scrape'
+import type { GitLabInfo } from './scrape'
 
 /**
  * Significant revisions for a merge request.

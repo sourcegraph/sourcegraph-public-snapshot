@@ -1,6 +1,7 @@
 package dependencies
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -8,11 +9,13 @@ import (
 	"net/url"
 	"os"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/grafana/regexp"
 	"github.com/jackc/pgx/v4"
 
 	"github.com/sourcegraph/run"
@@ -52,15 +55,6 @@ func enableOnlyInSourcegraphRepo() check.EnableFunc[CheckArgs] {
 	return func(ctx context.Context, args CheckArgs) error {
 		_, err := root.RepositoryRoot()
 		return err
-	}
-}
-
-func enableForTeammatesOnly() check.EnableFunc[CheckArgs] {
-	return func(ctx context.Context, args CheckArgs) error {
-		if !args.Teammate {
-			return errors.New("disabled if not a Sourcegraph teammate")
-		}
-		return nil
 	}
 }
 
@@ -187,7 +181,7 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 	dsn := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Soucegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
+		return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
 	}
 	defer conn.Close(ctx)
 	for {
@@ -425,4 +419,120 @@ func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error
 		return nil
 	}
 	return errors.Wrap(err, "asdf plugin-add")
+}
+
+func checkPythonVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
+	if err := check.InPath("python")(ctx); err != nil {
+		return err
+	}
+
+	cmd := "python -V"
+	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
+	if err != nil {
+		return errors.Wrapf(err, "failed to run %q", cmd)
+	}
+	parts := strings.Split(strings.TrimSpace(data), " ")
+	if len(parts) == 0 {
+		return errors.Newf("no output from %q", cmd)
+	}
+	if len(parts) < 2 {
+		return errors.Newf("unexpected output from %q: %q", cmd, data)
+	}
+
+	return check.Version("python", parts[1], "~3")
+}
+
+// pgUtilsPathRe is the regexp used to check what value user.bazelrc defines for
+// the PG_UTILS_PATH env var.
+var pgUtilsPathRe = regexp.MustCompile(`build --action_env=PG_UTILS_PATH=(.*)$`)
+
+// userBazelRcPath is the path to a git ignored file that contains Bazel flags
+// specific to the current machine that are required in certain cases.
+var userBazelRcPath = ".aspect/bazelrc/user.bazelrc"
+
+// checkPGUtilsPath ensures that a PG_UTILS_PATH is being defined in .aspect/bazelrc/user.bazelrc
+// if it's needed. For example, on Linux hosts, it's usually located in /usr/bin, which is
+// perfectly fine. But on Mac machines, it's either in the homebrew PATH or on a different
+// location if the user installed Posgres through the Postgresql desktop app.
+func checkPGUtilsPath(ctx context.Context, out *std.Output, args CheckArgs) error {
+	// Check for standard PATH location, that is available inside Bazel when
+	// inheriting the shell environment. That is just /usr/bin, not /usr/local/bin.
+	_, err := os.Stat("/usr/bin/createdb")
+	if err == nil {
+		// If we have createdb in /usr/bin/, nothing to do, it will work outside the box.
+		return nil
+	}
+
+	// Check for the presence of git ignored user.bazelrc, that is specific to local
+	// environment. Because createdb is not under /usr/bin, we have to create that file
+	// and define the PG_UTILS_PATH for migration rules.
+	_, err = os.Stat(userBazelRcPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errors.Wrapf(err, "%s doesn't exist", userBazelRcPath)
+		}
+		return errors.Wrapf(err, "unexpected error with %s", userBazelRcPath)
+	}
+
+	// If it exists, we check if the injected PATH actually contains createdb as intended.
+	// If not, we'll raise an error for sg setup to correct.
+	f, err := os.Open(userBazelRcPath)
+	if err != nil {
+		return errors.Wrapf(err, "can't open %s", userBazelRcPath)
+	}
+	defer f.Close()
+
+	err, pgUtilsPath := parsePgUtilsPathInUserBazelrc(f)
+	if err != nil {
+		return errors.Wrapf(err, "can't parse %s", userBazelRcPath)
+	}
+
+	// If the file exists, but doesn't reference PG_UTILS_PATH, that's an error as well.
+	if pgUtilsPath == "" {
+		return errors.Newf("none on the content in %s matched %q", userBazelRcPath, pgUtilsPathRe.String())
+	}
+
+	// Check that this path contains createdb as expected.
+	if err := checkPgUtilsPathIncludesBinaries(pgUtilsPath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// parsePgUtilsPathInUserBazelrc extracts the defined path to the createdb postgresql
+// utilities that are used in a the Bazel migration rules.
+func parsePgUtilsPathInUserBazelrc(r io.Reader) (error, string) {
+	scanner := bufio.NewScanner(r)
+	for scanner.Scan() {
+		line := scanner.Text()
+		matches := pgUtilsPathRe.FindStringSubmatch(line)
+		if len(matches) > 1 {
+			return nil, matches[1]
+		}
+	}
+	return scanner.Err(), ""
+}
+
+// checkPgUtilsPathIncludesBinaries ensures that the given path contains createdb as expected.
+func checkPgUtilsPathIncludesBinaries(pgUtilsPath string) error {
+	_, err := os.Stat(path.Join(pgUtilsPath, "createdb"))
+	if err != nil {
+		if os.IsNotExist(err) {
+			return errors.Wrap(err, "currently defined PG_UTILS_PATH doesn't include createdb")
+		}
+		return errors.Wrap(err, "currently defined PG_UTILS_PATH is incorrect")
+	}
+	return nil
+}
+
+// guessPgUtilsPath infers from the environment where the createdb binary
+// is located and returns its parent folder, so it can be used to extend
+// PATH for the migrations Bazel rules.
+func guessPgUtilsPath(ctx context.Context) (error, string) {
+	str, err := usershell.Run(ctx, "which", "createdb").String()
+	if err != nil {
+		return err, ""
+	}
+	return nil, filepath.Dir(str)
 }

@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -11,7 +11,7 @@ import { mockRoles, mockPermissionsMap } from '../mock'
 
 import { RoleNode } from './RoleNode'
 
-const decorator: DecoratorFn = story => <div className="p-3 container list-unstyled">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container list-unstyled">{story()}</div>
 
 const config: Meta = {
     title: 'web/src/site-admin/rbac/RoleNode',
@@ -41,7 +41,7 @@ const mocks = new WildcardMockLink([
 
 const [systemRole, nonSystemRole] = mockRoles.roles.nodes
 
-export const SystemRole: Story = () => (
+export const SystemRole: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>
@@ -53,7 +53,7 @@ export const SystemRole: Story = () => (
 
 SystemRole.storyName = 'System role'
 
-export const NonSystemRole: Story = () => (
+export const NonSystemRole: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>

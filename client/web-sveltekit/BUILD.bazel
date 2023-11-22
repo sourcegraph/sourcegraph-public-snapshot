@@ -1,0 +1,143 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("@aspect_rules_js//js:defs.bzl", "js_run_binary", "js_run_devserver")
+load("@npm//:vite/package_json.bzl", vite_bin = "bin")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+
+# gazelle:ignore
+
+js_library(
+    name = "graphql_operations_files",
+    # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
+    srcs = glob(
+        ["src/**/*.ts"],
+        [
+            # TODO: Ignore legacy build generated file as it conflicts with the Bazel
+            # build. This can be removed after the migration.
+            "src/lib/graphql-operations.ts",
+        ],
+    ),
+    visibility = ["//visibility:private"],
+)
+
+generate_graphql_operations(
+    name = "graphql_operations_ts",
+    srcs = [
+        ":graphql_operations_files",
+    ],
+    out = "src/lib/graphql-operations.ts",
+    interface_name = "SvelteKitGraphQlOperations",
+    visibility = ["//visibility:private"],
+)
+
+SRCS = [
+    "package.json",
+    "vite.config.ts",
+    "svelte.config.js",
+    "tsconfig.json",
+    ".eslintignore",
+    ".eslintrc.cjs",
+    ".prettierignore",
+    ".env",
+    ".env.dotcom",
+    "//client/wildcard:sass-breakpoints",
+    "//client/wildcard:global-style-sources",
+    "//client/web/dist/img:copy",
+] + glob(
+    ["src/" + d for d in [
+        "**/*.scss",
+        "**/*.svg",
+        "**/*.ts",
+        "**/*.svelte",
+        "**/*.html",
+        "**/*.tsx",
+    ]],
+    [
+        "src/lib/graphql-operations.ts",
+    ],
+)
+
+BUILD_DEPS = [
+    ":graphql_operations_ts",
+    ":node_modules/@faker-js/faker",
+    ":node_modules/@melt-ui/svelte",
+    ":node_modules/@popperjs/core",
+    ":node_modules/@remix-run/router",
+    ":node_modules/@sourcegraph/branded",
+    ":node_modules/@sourcegraph/common",
+    ":node_modules/@sourcegraph/http-client",
+    ":node_modules/@sourcegraph/shared",
+    ":node_modules/@sourcegraph/web",
+    ":node_modules/@sourcegraph/wildcard",
+    ":node_modules/@storybook/svelte",
+    ":node_modules/@sveltejs/adapter-static",
+    ":node_modules/@sveltejs/kit",
+    ":node_modules/@types/prismjs",
+    ":node_modules/lodash-es",
+    ":node_modules/prismjs",
+    ":node_modules/react",
+    ":node_modules/svelte",
+    ":node_modules/ts-key-enum",
+    ":node_modules/vite",
+    ":node_modules/vite-plugin-inspect",
+    "//:node_modules/@apollo/client",
+    "//:node_modules/@codemirror/autocomplete",
+    "//:node_modules/@codemirror/commands",
+    "//:node_modules/@codemirror/state",
+    "//:node_modules/@codemirror/view",
+    "//:node_modules/@mdi/js",
+    "//:node_modules/@reach/combobox",
+    "//:node_modules/@reach/menu-button",
+    "//:node_modules/@types/lodash",
+    "//:node_modules/@types/node",
+    "//:node_modules/@types/react",
+    "//:node_modules/classnames",
+    "//:node_modules/date-fns",
+    "//:node_modules/highlight.js",
+    "//:node_modules/lodash",
+    "//:node_modules/open-color",
+    "//:node_modules/path-browserify",
+    "//:node_modules/react-dom",
+    "//:node_modules/react-resizable",
+    "//:node_modules/react-router-dom",
+    "//:node_modules/rxjs",
+    "//:node_modules/uuid",
+]
+
+CONFIGS = [
+    "//client/branded:tsconfig",
+    "//client/common:tsconfig",
+    "//client/http-client:tsconfig",
+    "//client/shared:tsconfig",
+    "//client/web:tsconfig",
+    "//client/wildcard:tsconfig",
+    "//:tsconfig",
+    "//:postcss_config_js",
+]
+
+npm_link_all_packages(name = "node_modules")
+
+vite_bin.vite(
+    name = "web-sveltekit",
+    srcs = SRCS + BUILD_DEPS + CONFIGS,
+    args = [
+        "build",
+        "--force",
+        "-c vite.config.ts",
+    ],
+    chdir = package_name(),
+    env = {
+        "BAZEL": "1",
+    },
+    out_dirs = ["build"],
+    visibility = ["//client/web/dist:__pkg__"],
+    # silent_on_success = False,
+)
+
+# TODO: remove this once we have some tests.
+build_test(
+    name = "vite_build_test",
+    targets = [":web-sveltekit"],
+)

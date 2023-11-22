@@ -1,11 +1,11 @@
 import gql from 'tagged-template-noop'
 
-import * as sourcegraph from '../api'
-import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
+import type * as sourcegraph from '../api'
+import { queryGraphQL as sgQueryGraphQL, type QueryGraphQLFn } from '../util/graphql'
 import { concat } from '../util/ix'
 
-import { queryLSIF, GenericLSIFResponse } from './api'
-import { nodeToLocation, LocationConnectionNode, getQueryPage, LocationCursor } from './locations'
+import { queryLSIF, type GenericLSIFResponse } from './api'
+import { nodeToLocation, type LocationConnectionNode, getQueryPage, type LocationCursor } from './locations'
 
 /**
  * The maximum number of chained GraphQL requests to make for a single

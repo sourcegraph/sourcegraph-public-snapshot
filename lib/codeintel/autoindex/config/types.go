@@ -20,7 +20,7 @@ func (j IndexJob) GetRoot() string {
 	return j.Root
 }
 
-// getIndexer Name removes the prefix "sourcegraph/"" and the suffix "@sha256:..."
+// GetIndexerName removes the prefix "sourcegraph/"" and the suffix "@sha256:..."
 // from the indexer name.
 // Example:
 // sourcegraph/lsif-go@sha256:... => lsif-go
@@ -32,28 +32,6 @@ type DockerStep struct {
 	Root     string   `json:"root" yaml:"root"`
 	Image    string   `json:"image" yaml:"image"`
 	Commands []string `json:"commands" yaml:"commands"`
-}
-
-type HintConfidence int
-
-const (
-	HintConfidenceUnknown HintConfidence = iota
-	HintConfidenceLanguageSupport
-	HintConfidenceProjectStructureSupported
-)
-
-type IndexJobHint struct {
-	Root           string
-	Indexer        string
-	HintConfidence HintConfidence
-}
-
-func (j IndexJobHint) GetRoot() string {
-	return j.Root
-}
-
-func (j IndexJobHint) GetIndexerName() string {
-	return extractIndexerName(j.Indexer)
 }
 
 // extractIndexerName Name removes the prefix "sourcegraph/"" and the suffix "@sha256:..."

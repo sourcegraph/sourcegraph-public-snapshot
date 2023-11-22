@@ -2,18 +2,23 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
-import * as H from 'history'
-import { Observable } from 'rxjs'
+import type * as H from 'history'
+import type { Observable } from 'rxjs'
 
 import { isErrorLike, pluralize } from '@sourcegraph/common'
-import { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
+import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import type { AggregableBadge } from '@sourcegraph/shared/src/codeintel/legacy-extensions/api'
 import { LineRanking } from '@sourcegraph/shared/src/components/ranking/LineRanking'
-import { MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
+import type { MatchItem } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { ZoektRanking } from '@sourcegraph/shared/src/components/ranking/ZoektRanking'
-import { ContentMatch, getFileMatchUrl, getRepositoryUrl, getRevision } from '@sourcegraph/shared/src/search/stream'
-import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import {
+    type ContentMatch,
+    getFileMatchUrl,
+    getRepositoryUrl,
+    getRevision,
+} from '@sourcegraph/shared/src/search/stream'
+import { isSettingsValid, type SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon, Badge } from '@sourcegraph/wildcard'
 
 import { CopyPathAction } from './CopyPathAction'
@@ -105,9 +110,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         if (location?.pathname === '/search') {
             // Check if search.contextLines is configured in settings.
             const contextLinesSetting =
-                isSettingsValid(settingsCascade) &&
-                settingsCascade.final &&
-                settingsCascade.final['search.contextLines']
+                isSettingsValid(settingsCascade) && settingsCascade.final?.['search.contextLines']
 
             if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
                 return contextLinesSetting
@@ -128,7 +131,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                       })),
                       content: match.content,
                       startLine: match.contentStart.line,
-                      endLine: match.ranges[match.ranges.length - 1].end.line,
+                      endLine: match.ranges.at(-1)!.end.line,
                       aggregableBadges: match.aggregableBadges,
                   })) ||
                   result.lineMatches?.map(match => ({
@@ -211,7 +214,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                             : undefined
                     }
-                    className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
+                    className={styles.titleInner}
                 />
                 <CopyPathAction
                     className={styles.copyButton}
@@ -257,6 +260,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             resultClassName={resultContainerStyles.highlightResult}
             rankingDebug={result.debug}
             ref={rootRef}
+            repoLastFetched={result.repoLastFetched}
         >
             <div data-testid="file-search-result" data-expanded={expanded}>
                 <FileMatchChildren

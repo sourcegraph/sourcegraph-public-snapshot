@@ -5,7 +5,7 @@ set -euf -o pipefail
 pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 # Update DOCSITE_VERSION everywhere in all places (including outside this repo)
-version=v1.9.1
+version=v1.9.4
 suffix="${version}_$(go env GOOS)_$(go env GOARCH)"
 url="https://github.com/sourcegraph/docsite/releases/download/${version}/docsite_${suffix}"
 

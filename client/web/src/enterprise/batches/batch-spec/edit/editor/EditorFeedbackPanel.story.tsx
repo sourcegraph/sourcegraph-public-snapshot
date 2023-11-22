@@ -1,10 +1,10 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
 
 import { EditorFeedbackPanel } from './EditorFeedbackPanel'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/edit/editor/EditorFeedbackPanel',
@@ -13,34 +13,36 @@ const config: Meta = {
         actions: {
             name: 'Actions',
             control: { type: 'text' },
-            defaultValue: '',
         },
         execute: {
             name: 'Execute',
             control: { type: 'text' },
-            defaultValue: '',
         },
         preview: {
             name: 'Preview',
             control: { type: 'text' },
-            defaultValue: '',
         },
         codeUpdate: {
             name: 'Code Update',
             control: { type: 'text' },
-            defaultValue: '',
         },
         codeValidation: {
             name: 'codeValidation',
             control: { type: 'text' },
-            defaultValue: 'The entered spec is invalid:\n  * name must match pattern "^my-batch-change$"',
         },
+    },
+    args: {
+        actions: '',
+        execute: '',
+        preview: '',
+        codeUpdate: '',
+        codeValidation: 'The entered spec is invalid:\n  * name must match pattern "^my-batch-change$"',
     },
 }
 
 export default config
 
-export const EditorFeedbackPanelStory: Story = args => (
+export const EditorFeedbackPanelStory: StoryFn = args => (
     <WebStory>
         {props => (
             <EditorFeedbackPanel

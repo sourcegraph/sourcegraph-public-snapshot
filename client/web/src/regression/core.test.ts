@@ -8,11 +8,11 @@ import { logger } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { getUser, setTosAccepted } from './util/api'
-import { GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
+import { type GraphQLClient, createGraphQLClient } from './util/GraphQlClient'
 import { ensureSignedInOrCreateTestUser, getGlobalSettings } from './util/helpers'
 import { getTestTools } from './util/init'
 import { ScreenshotVerifier } from './util/ScreenshotVerifier'
@@ -87,7 +87,7 @@ describe.skip('Core functionality regression test suite', () => {
             await driver.page.waitForSelector('.test-settings-file .monaco-editor .view-lines')
             return driver.page.evaluate(() => {
                 const editor = document.querySelector('.test-settings-file .monaco-editor .view-lines') as HTMLElement
-                // eslint-disable-next-line unicorn/prefer-text-content
+
                 return editor ? editor.innerText : null
             })
         }

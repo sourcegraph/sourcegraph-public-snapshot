@@ -1,9 +1,9 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import classNames from 'classnames'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { Button, ButtonProps, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, type ButtonProps, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { CodeInsightsJobFragment } from '../../query'
 
@@ -114,7 +114,8 @@ function getMultipleRetryMutation(jobIds: string[]): string {
     return gql`
         ${CodeInsightsJobFragment}
         mutation RetryCodeInsightsJobs {
-         ${mutations}
+            __typename
+            ${mutations}
         }
     `
 }
@@ -139,7 +140,8 @@ function getMultipleMovetoFrontMutation(jobIds: string[]): string {
     return gql`
         ${CodeInsightsJobFragment}
         mutation MoveToFrontCodeInsightsJobs {
-         ${mutations}
+            __typename
+            ${mutations}
         }
     `
 }
@@ -164,7 +166,8 @@ function getMultipleMovetoBackMutation(jobIds: string[]): string {
     return gql`
         ${CodeInsightsJobFragment}
         mutation MoveToBackCodeInsighsJobs {
-         ${mutations}
+            __typename
+            ${mutations}
         }
     `
 }

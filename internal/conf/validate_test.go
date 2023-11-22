@@ -296,6 +296,55 @@ func TestRedactConfSecrets(t *testing.T) {
 	}
 }
 
+func TestReturnSafeConfig(t *testing.T) {
+	conf := `{
+  "executors.frontendURL": "http://host.docker.internal:3082",
+  "batchChanges.rolloutWindows": [{"rate": "unlimited"}]
+}`
+
+	want := `{"batchChanges.rolloutWindows":[{"rate":"unlimited"}]}`
+
+	redacted, err := ReturnSafeConfigs(conftypes.RawUnified{Site: conf})
+	require.NoError(t, err)
+
+	assert.Equal(t, want, redacted.Site)
+}
+
+func TestRedactConfSecretsWithCommentedOutSecret(t *testing.T) {
+	conf := `{
+  // "executors.accessToken": "supersecret",
+  "executors.frontendURL": "http://host.docker.internal:3082"
+}`
+
+	want := `{
+  // "executors.accessToken": "supersecret",
+  "executors.frontendURL": "http://host.docker.internal:3082"
+}`
+
+	testCases := []struct {
+		name        string
+		hashSecrets bool
+	}{
+		{
+			name:        "hashSecrets true",
+			hashSecrets: true,
+		},
+		{
+			name:        "hashSecrets false",
+			hashSecrets: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets)
+			require.NoError(t, err)
+
+			assert.Equal(t, want, redacted.Site)
+		})
+	}
+}
+
 func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
 	const cfgWithoutAuthProviders = `{
   "executors.accessToken": "%s"
@@ -468,7 +517,6 @@ func getTestSiteWithSecrets(testSecrets testSecrets, optionalEdit ...string) str
 		email = optionalEdit[0]
 	}
 	return fmt.Sprintf(`{
-  "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,
   "email.address": "%s",
   "executors.accessToken": "%s",
@@ -549,5 +597,4 @@ func getTestSiteWithSecrets(testSecrets testSecrets, optionalEdit ...string) str
 		testSecrets.dotcomSrcCliVersionCacheGitHubWebhookSecret,
 		testSecrets.authUnlockAccountLinkSigningKey,
 	)
-
 }

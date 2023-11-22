@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useCallback, useRef, useSyncExternalStore, useMemo } from 'react'
+import { type Dispatch, type SetStateAction, useCallback, useRef, useSyncExternalStore, useMemo } from 'react'
 
 import { isEqual } from 'lodash'
 

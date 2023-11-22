@@ -1,15 +1,16 @@
 import assert from 'assert'
 
 import { subDays } from 'date-fns'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { UserSettingsAreaUserFields } from '../graphql-operations'
+import type { UserSettingsAreaUserFields } from '../graphql-operations'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { percySnapshotWithVariants } from './utils'
 
@@ -30,7 +31,6 @@ const USER: UserSettingsAreaUserFields = {
     createdAt: subDays(now, 732).toISOString(),
     emails: [{ email: 'test@example.com', verified: true, isPrimary: true }],
     organizations: { nodes: [] },
-    tags: [],
     scimControlled: false,
     roles: {
         __typename: 'RoleConnection',
@@ -153,7 +153,6 @@ describe('User Different Settings Page', () => {
                     avatarURL: null,
                     viewerCanAdminister: true,
                     builtinAuth: true,
-                    tags: [],
                     createdAt: '2020-03-02T11:52:15Z',
                     roles: {
                         __typename: 'RoleConnection',
@@ -178,7 +177,6 @@ describe('User Different Settings Page', () => {
                     emails: [{ email: 'test@sourcegraph.test', verified: true, isPrimary: true }],
                     organizations: { nodes: [] },
                     permissionsInfo: null,
-                    tags: [],
                     scimControlled: false,
                     roles: {
                         __typename: 'RoleConnection',

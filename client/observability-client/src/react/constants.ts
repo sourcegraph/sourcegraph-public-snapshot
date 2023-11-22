@@ -1,6 +1,6 @@
-import { createContext, MutableRefObject } from 'react'
+import { createContext, type MutableRefObject } from 'react'
 
-import { Context, ROOT_CONTEXT, trace } from '@opentelemetry/api'
+import { type Context, ROOT_CONTEXT, trace } from '@opentelemetry/api'
 
 // Store trace context in React ref to avoid re-rendering wrapped components on trace context change.
 export type TraceContextRef = MutableRefObject<{ context: Context }>

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "debugproxies",
@@ -10,9 +11,9 @@ go_library(
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/internal/app/errorutil",
+        "//internal/actor",
         "//internal/auth",
         "//internal/database",
-        "//internal/env",
         "//internal/errcode",
         "//lib/errors",
         "@com_github_gorilla_mux//:mux",
@@ -36,10 +37,13 @@ go_test(
     deps = [
         "//cmd/frontend/internal/app/router",
         "//internal/actor",
-        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/featureflag",
+        "//internal/types",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_gorilla_mux//:mux",
+        "@com_github_stretchr_testify//assert",
         "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_client_go//kubernetes/fake",

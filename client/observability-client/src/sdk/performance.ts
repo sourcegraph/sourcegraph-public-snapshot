@@ -1,6 +1,6 @@
-import { Span } from '@opentelemetry/api'
+import type { Span } from '@opentelemetry/api'
 import { otperformance } from '@opentelemetry/core'
-import { hasKey, PerformanceEntries, PerformanceTimingNames } from '@opentelemetry/sdk-trace-web'
+import { hasKey, type PerformanceEntries, PerformanceTimingNames } from '@opentelemetry/sdk-trace-web'
 import { camelCase } from 'lodash'
 
 /**

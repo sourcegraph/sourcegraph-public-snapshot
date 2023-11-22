@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { scanPredicate, resolveAccess, PREDICATES } from './predicates'
 
 expect.addSnapshotSerializer({
@@ -60,7 +62,7 @@ describe('scanPredicate', () => {
 describe('resolveAccess', () => {
     test('resolves partial access tree', () => {
         expect(resolveAccess(['repo'], PREDICATES)).toMatchInlineSnapshot(
-            '[{"name":"contains","fields":[{"name":"file"},{"name":"path"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]}]},{"name":"has","fields":[{"name":"file"},{"name":"path"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]},{"name":"description"},{"name":"tag"},{"name":"key"},{"name":"topic"}]}]'
+            '[{"name":"contains","fields":[{"name":"file"},{"name":"path"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]}]},{"name":"has","fields":[{"name":"file"},{"name":"path"},{"name":"content"},{"name":"commit","fields":[{"name":"after"}]},{"name":"description"},{"name":"tag"},{"name":"key"},{"name":"meta"},{"name":"topic"}]}]'
         )
     })
 

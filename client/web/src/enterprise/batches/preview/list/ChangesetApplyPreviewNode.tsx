@@ -1,9 +1,9 @@
 import React from 'react'
 
-import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
-import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+import type { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import type { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 
-import { queryChangesetSpecFileDiffs } from './backend'
+import type { queryChangesetSpecFileDiffs } from './backend'
 import { HiddenChangesetApplyPreviewNode } from './HiddenChangesetApplyPreviewNode'
 import { VisibleChangesetApplyPreviewNode } from './VisibleChangesetApplyPreviewNode'
 

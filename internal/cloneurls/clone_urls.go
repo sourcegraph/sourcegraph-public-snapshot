@@ -10,10 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // RepoSourceCloneURLToRepoName maps a Git clone URL (format documented here:
@@ -23,8 +24,8 @@ import (
 // error if a matching code host could not be found. This function does not actually check the code
 // host to see if the repository actually exists.
 func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (repoName api.RepoName, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "RepoSourceCloneURLToRepoName") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+	tr, ctx := trace.New(ctx, "RepoSourceCloneURLToRepoName", attribute.String("cloneURL", cloneURL))
+	defer tr.EndWithErr(&err)
 
 	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
 		return repoName, nil
@@ -102,11 +103,11 @@ func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 	return rs.CloneURLToRepoName(cloneURL)
 }
 
-func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (api.RepoName, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "getRepoNameFromService") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
-	span.SetTag("ExternalService.ID", svc.ID)
-	span.SetTag("ExternalService.Kind", svc.Kind)
+func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (_ api.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "getRepoNameFromService",
+		attribute.Int64("externalService.ID", svc.ID),
+		attribute.String("externalService.Kind", svc.Kind))
+	defer tr.EndWithErr(&err)
 
 	cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {

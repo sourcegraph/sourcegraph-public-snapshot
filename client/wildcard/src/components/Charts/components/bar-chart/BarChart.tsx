@@ -1,11 +1,11 @@
-import { ReactElement, SVGProps, useMemo, MouseEvent } from 'react'
+import { type ReactElement, type SVGProps, useMemo, type MouseEvent } from 'react'
 
 import { scaleBand, scaleLinear } from '@visx/scale'
-import { ScaleBand } from 'd3-scale'
+import type { ScaleBand } from 'd3-scale'
 
 import { SvgAxisBottom, SvgAxisLeft, SvgContent, SvgRoot } from '../../core'
-import { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
-import { CategoricalLikeChart } from '../../types'
+import type { GetScaleTicksOptions } from '../../core/components/axis/tick-formatters'
+import type { CategoricalLikeChart } from '../../types'
 
 import { BarChartContent } from './BarChartContent'
 import { getGroupedCategories } from './utils/get-grouped-categories'
@@ -29,6 +29,12 @@ export interface BarChartProps<Datum> extends CategoricalLikeChart<Datum>, SVGPr
     getTruncatedXTick?: (formattedTick: string) => string
     getCategory?: (datum: Datum) => string | undefined
     getDatumFadeColor?: (datum: Datum) => string
+    // Provides a lower bound for stretching the Y-axis scale of the chart.
+    // By default, when this value is not defined, the chart stretches to the max
+    // value of the preseted data. When this value is provided, and higher than
+    // any data point, the chart will stretch its scale to this specified value,
+    // instead of the highest data point.
+    maxValueLowerBound?: number
 
     onDatumHover?: (datum: Datum) => void
     getDatumHoverValueLabel?: (datum: Datum) => string
@@ -54,6 +60,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         getDatumValue,
         getDatumColor,
         getDatumFadeColor,
+        maxValueLowerBound,
         getDatumHoverValueLabel,
         getDatumLink = DEFAULT_LINK_GETTER,
         getCategory = getDatumName,
@@ -79,9 +86,15 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
     const yScale = useMemo(
         () =>
             scaleLinear<number>({
-                domain: [0, Math.max(...categories.map(category => category.maxValue))],
+                domain: [
+                    0,
+                    categories.reduce(
+                        (max, category) => Math.max(max, category.maxValue),
+                        maxValueLowerBound ?? -Infinity
+                    ),
+                ],
             }),
-        [categories]
+        [categories, maxValueLowerBound]
     )
 
     const handleBarClick = (event: MouseEvent, datum: Datum, index: number): void => {

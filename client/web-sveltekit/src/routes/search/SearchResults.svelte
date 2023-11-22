@@ -5,9 +5,20 @@
     }
     const cache = new Map<string, Cache>()
 
-    export interface Context {
+    export interface SearchResultsContext {
         isExpanded(match: SearchMatch): boolean
         setExpanded(match: SearchMatch, expanded: boolean): void
+        queryState: QueryStateStore
+    }
+
+    const CONTEXT_KEY = 'search-result'
+
+    export function getSearchResultsContext(): SearchResultsContext {
+        return getContext(CONTEXT_KEY)
+    }
+
+    export function setSearchResultsContext(context: SearchResultsContext): SearchResultsContext {
+        return setContext(CONTEXT_KEY, context)
     }
 
     const DEFAULT_INITIAL_ITEMS_TO_SHOW = 15
@@ -16,23 +27,21 @@
 
 <script lang="ts">
     import type { Observable } from 'rxjs'
-    import { setContext, tick } from 'svelte'
+    import { getContext, setContext, tick } from 'svelte'
 
     import { beforeNavigate } from '$app/navigation'
-    import { SearchSidebarSectionID, type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
     import { preserveScrollPosition } from '$lib/app'
     import { observeIntersection } from '$lib/intersection-observer'
-    import SearchBox from '$lib/search/SearchBox.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { submitSearch, type QueryStateStore } from '$lib/search/state'
+    import SearchBox from '$lib/search/SearchBox.svelte'
     import { searchTypes } from '$lib/search/sidebar'
+    import { submitSearch, type QueryStateStore } from '$lib/search/state'
     import type { SidebarFilter } from '$lib/search/utils'
+    import { SearchSidebarSectionID, type AggregateStreamingSearchResults, type SearchMatch } from '$lib/shared'
 
     import Section from './SidebarSection.svelte'
-    import SymbolSearchResult from './SymbolSearchResult.svelte'
     import StreamingProgress from './StreamingProgress.svelte'
-    import FileSearchResult from './FileSearchResult.svelte'
-    import RepoSearchResult from './RepoSearchResult.svelte'
+    import { getSearchResultComponent } from './searchResultFactory'
 
     export let stream: Observable<AggregateStreamingSearchResults | undefined>
     export let queryFromURL: string
@@ -58,6 +67,7 @@
     $: count = cacheEntry?.count ?? DEFAULT_INITIAL_ITEMS_TO_SHOW
     $: resultsToShow = results ? results.slice(0, count) : null
     $: expandedSet = cacheEntry?.expanded || new Set<SearchMatch>()
+
     let scrollTop: number = 0
     preserveScrollPosition(
         position => (scrollTop = position ?? 0),
@@ -66,7 +76,7 @@
     $: if (resultContainer) {
         resultContainer.scrollTop = scrollTop ?? 0
     }
-    setContext<Context>('search-results', {
+    setSearchResultsContext({
         isExpanded(match: SearchMatch): boolean {
             return expandedSet.has(match)
         },
@@ -77,6 +87,7 @@
                 expandedSet.delete(match)
             }
         },
+        queryState,
     })
     beforeNavigate(() => {
         cache.set(queryFromURL, { count, expanded: expandedSet })
@@ -134,15 +145,8 @@
                     </aside>
                     <ol>
                         {#each resultsToShow as result}
-                            <li>
-                                {#if result.type === 'content'}
-                                    <FileSearchResult {result} />
-                                {:else if result.type === 'repo'}
-                                    <RepoSearchResult {result} />
-                                {:else if result.type === 'symbol'}
-                                    <SymbolSearchResult {result} />
-                                {/if}
-                            </li>
+                            {@const component = getSearchResultComponent(result)}
+                            <li><svelte:component this={component} {result} /></li>
                         {/each}
                         <div use:observeIntersection on:intersecting={loadMore} />
                     </ol>
@@ -205,6 +209,10 @@
         padding: 0;
         margin: 0;
         list-style: none;
+
+        li {
+            margin-bottom: 1rem;
+        }
     }
 
     .main {

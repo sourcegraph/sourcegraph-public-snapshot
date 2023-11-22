@@ -4,6 +4,7 @@ export enum PageRoutes {
     SearchConsole = '/search/console',
     SignIn = '/sign-in',
     SignUp = '/sign-up',
+    PostSignUp = '/post-sign-up',
     UnlockAccount = '/unlock-account/:token',
     Welcome = '/welcome',
     Settings = '/settings',
@@ -20,15 +21,13 @@ export enum PageRoutes {
     Debug = '/-/debug/*',
     RepoContainer = '/*',
     SetupWizard = '/setup',
-    InstallGitHubAppSuccess = '/install-github-app-success',
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
-}
-
-export enum EnterprisePageRoutes {
+    GetCody = '/get-cody',
     BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',
+    SearchJobs = '/search-jobs/*',
     Contexts = '/contexts',
     CreateContext = '/contexts/new',
     EditContext = '/contexts/:specOrOrg/:spec?/edit',
@@ -37,8 +36,9 @@ export enum EnterprisePageRoutes {
     Notebook = '/notebooks/:id',
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
-    Cody = '/cody/*',
+    CodySearch = '/search/cody',
+    Cody = '/cody/chat',
     Own = '/own',
-    AppComingSoon = '/app/coming-soon',
     AppAuthCallback = '/app/auth/callback',
+    AppSetup = '/app-setup',
 }

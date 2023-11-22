@@ -7,26 +7,27 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -95,7 +96,7 @@ func combyChunkMatchesToFileMatch(combyMatch *comby.FileMatchWithChunks) protoco
 		}
 
 		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
-			Content: cm.Content,
+			Content: strings.ToValidUTF8(cm.Content, "�"),
 			ContentStart: protocol.Location{
 				Offset: int32(cm.Start.Offset),
 				Line:   int32(cm.Start.Line) - 1,
@@ -189,7 +190,7 @@ func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
 			// NOTE: we must copy the content here because the reference
 			// must not outlive the backing mmap, which may be cleaned
 			// up before the match is serialized for the network.
-			Content: string(buf[firstLineStart:lastLineEnd]),
+			Content: string(bytes.ToValidUTF8(buf[firstLineStart:lastLineEnd], []byte("�"))),
 			ContentStart: protocol.Location{
 				Offset: firstLineStart,
 				Line:   chunk.cover.Start.Line,
@@ -292,7 +293,7 @@ func lookupMatcher(language string) string {
 	return ".generic"
 }
 
-func structuralSearchWithZoekt(ctx context.Context, indexed zoekt.Streamer, p *protocol.Request, sender matchSender) (err error) {
+func structuralSearchWithZoekt(ctx context.Context, logger log.Logger, indexed zoekt.Streamer, p *protocol.Request, sender matchSender) (err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -314,7 +315,7 @@ func structuralSearchWithZoekt(ctx context.Context, indexed zoekt.Streamer, p *p
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	err = zoektSearch(ctx, indexed, patternInfo, branchRepos, time.Since, p.Repo, sender)
+	err = zoektSearch(ctx, logger, indexed, patternInfo, branchRepos, time.Since, p.Repo, sender)
 	if err != nil {
 		return err
 	}
@@ -323,7 +324,7 @@ func structuralSearchWithZoekt(ctx context.Context, indexed zoekt.Streamer, p *p
 }
 
 // filteredStructuralSearch filters the list of files with a regex search before passing the zip to comby
-func filteredStructuralSearch(ctx context.Context, zipPath string, zf *zipFile, p *protocol.PatternInfo, repo api.RepoName, sender matchSender) error {
+func filteredStructuralSearch(ctx context.Context, logger log.Logger, zipPath string, zf *zipFile, p *protocol.PatternInfo, repo api.RepoName, sender matchSender) error {
 	// Make a copy of the pattern info to modify it to work for a regex search
 	rp := *p
 	rp.Pattern = comby.StructuralPatToRegexpQuery(p.Pattern, false)
@@ -352,7 +353,7 @@ func filteredStructuralSearch(ctx context.Context, zipPath string, zf *zipFile, 
 		extensionHint = filepath.Ext(matchedPaths[0])
 	}
 
-	return structuralSearch(ctx, comby.ZipPath(zipPath), subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, sender)
+	return structuralSearch(ctx, logger, comby.ZipPath(zipPath), subset(matchedPaths), extensionHint, p.Pattern, p.CombyRule, p.Languages, repo, sender)
 }
 
 // toMatcher returns the matcher that parameterizes structural search. It
@@ -391,20 +392,13 @@ var all universalSet = struct{}{}
 
 var mockStructuralSearch func(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error = nil
 
-func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
+func structuralSearch(ctx context.Context, logger log.Logger, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) (err error) {
 	if mockStructuralSearch != nil {
 		return mockStructuralSearch(ctx, inputType, paths, extensionHint, pattern, rule, languages, repo, sender)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch") //nolint:staticcheck // OT is deprecated
-	span.SetTag("repo", repo)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "structuralSearch", repo.Attr())
+	defer tr.EndWithErr(&err)
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
@@ -415,7 +409,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 	if v, ok := paths.(subset); ok {
 		filePatterns = v
 	}
-	span.LogFields(otlog.Int("paths", len(filePatterns)))
+	tr.AddEvent("calculated paths", attribute.Int("paths", len(filePatterns)))
 
 	args := comby.Args{
 		Input:         inputType,
@@ -429,9 +423,9 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 
 	switch combyInput := inputType.(type) {
 	case comby.Tar:
-		return runCombyAgainstTar(ctx, args, combyInput, sender)
+		return runCombyAgainstTar(ctx, logger, args, combyInput, sender)
 	case comby.ZipPath:
-		return runCombyAgainstZip(ctx, args, combyInput, sender)
+		return runCombyAgainstZip(ctx, logger, args, combyInput, sender)
 	}
 
 	return errors.New("comby input must be either -tar or -zip for structural search")
@@ -440,7 +434,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 // runCombyAgainstTar runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
 // chunks as part of matches that it finds. Data is streamed into stdin from the channel on tarInput and out from stdout
 // to the result stream.
-func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) error {
+func runCombyAgainstTar(ctx context.Context, logger log.Logger, args comby.Args, tarInput comby.Tar, sender matchSender) error {
 	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
@@ -486,17 +480,23 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 	})
 
 	if err := cmd.Start(); err != nil {
+		// Help cleanup pool resources.
+		_ = stdin.Close()
+		_ = stdout.Close()
+
 		return errors.Wrap(err, "start comby")
 	}
 
 	// Wait for readers and writers to complete before calling Wait
 	// because Wait closes the pipes.
 	if err := p.Wait(); err != nil {
+		// Cleanup process since we called Start.
+		go killAndWait(cmd)
 		return err
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return comby.InterpretCombyError(err, stderr)
+		return comby.InterpretCombyError(err, logger, stderr)
 	}
 
 	return nil
@@ -504,7 +504,7 @@ func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar
 
 // runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
 // attempts to convert each to a protocol.FileMatch, sending it to the result stream if successful.
-func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
+func runCombyAgainstZip(ctx context.Context, logger log.Logger, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
 	cmd, stdin, stdout, stderr, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
@@ -546,20 +546,38 @@ func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipP
 	})
 
 	if err := cmd.Start(); err != nil {
+		// Help cleanup pool resources.
+		_ = stdin.Close()
+		_ = stdout.Close()
+
 		return errors.Wrap(err, "start comby")
 	}
 
 	// Wait for readers and writers to complete before calling Wait
 	// because Wait closes the pipes.
 	if err := p.Wait(); err != nil {
+		// Cleanup process since we called Start.
+		go killAndWait(cmd)
 		return err
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return comby.InterpretCombyError(err, stderr)
+		return comby.InterpretCombyError(err, logger, stderr)
 	}
 
 	return nil
+}
+
+// killAndWait is a helper to kill a started cmd and release its resources.
+// This is used when returning from a function after calling Start but before
+// calling Wait. This can be called in a goroutine.
+func killAndWait(cmd *exec.Cmd) {
+	proc := cmd.Process
+	if proc == nil {
+		return
+	}
+	_ = proc.Kill()
+	_ = cmd.Wait()
 }
 
 var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{

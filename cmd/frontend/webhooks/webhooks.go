@@ -92,7 +92,7 @@ func NewHandler(logger log.Logger, db database.DB, gh *Router) http.Handler {
 type Handler func(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error
 
 func handler(logger log.Logger, db database.DB, wh *Router) http.HandlerFunc {
-	logger = logger.Scoped("webhooks.handler", "handler used to route webhooks")
+	logger = logger.Scoped("webhooks.handler")
 	return func(w http.ResponseWriter, r *http.Request) {
 		uuidString := mux.Vars(r)["webhook_uuid"]
 		if uuidString == "" {

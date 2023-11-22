@@ -1,12 +1,12 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { subDays, subHours } from 'date-fns'
 
 import { WebStory } from '../../../components/WebStory'
-import { ExecutorSecretFields, ExecutorSecretScope } from '../../../graphql-operations'
+import { type ExecutorSecretFields, ExecutorSecretScope } from '../../../graphql-operations'
 
 import { ExecutorSecretNode } from './ExecutorSecretNode'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/executors/secrets/ExecutorSecretNode',
@@ -34,7 +34,7 @@ const secret: ExecutorSecretFields = {
     updatedAt: subHours(new Date(), 12).toISOString(),
 }
 
-export const Overview: Story = () => (
+export const Overview: StoryFn = () => (
     <WebStory>
         {props => <ExecutorSecretNode {...props} namespaceID={null} node={secret} refetchAll={() => {}} />}
     </WebStory>
@@ -63,7 +63,7 @@ const overwrittenSecret: ExecutorSecretFields = {
     updatedAt: subHours(new Date(), 12).toISOString(),
 }
 
-export const OverwritesGlobal: Story = () => (
+export const OverwritesGlobal: StoryFn = () => (
     <WebStory>
         {props => <ExecutorSecretNode {...props} namespaceID={null} node={overwrittenSecret} refetchAll={() => {}} />}
     </WebStory>

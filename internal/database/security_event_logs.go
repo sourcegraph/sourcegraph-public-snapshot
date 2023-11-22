@@ -11,6 +11,7 @@ import (
 
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -110,7 +111,7 @@ type securityEventLogsStore struct {
 // SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
 // using the other store handle, and a scoped sub-logger of the passed base logger.
 func SecurityEventLogsWith(baseLogger log.Logger, other basestore.ShareableStore) SecurityEventLogsStore {
-	logger := baseLogger.Scoped("SecurityEvents", "Security events store")
+	logger := baseLogger.Scoped("SecurityEvents")
 	return &securityEventLogsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 
@@ -119,6 +120,12 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEven
 }
 
 func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*SecurityEvent) error {
+	cfg := conf.SiteConfig()
+	loc := audit.SecurityEventLocation(cfg)
+	if loc == audit.None {
+		return nil
+	}
+
 	actor := sgactor.FromContext(ctx)
 	vals := make([]*sqlf.Query, len(events))
 	for index, event := range events {
@@ -142,6 +149,10 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 		// "internal".
 		noUser := event.UserID == 0 && event.AnonymousUserID == ""
 		if actor.IsInternal() && noUser {
+			// only log internal access if we are explicitly configured to do so
+			if !audit.IsEnabled(cfg, audit.InternalTraffic) {
+				return nil
+			}
 			event.AnonymousUserID = "internal"
 		}
 
@@ -157,28 +168,32 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 			event.Timestamp.UTC(),
 		)
 	}
-	query := sqlf.Sprintf("INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES %s", sqlf.Join(vals, ","))
 
-	if _, err := s.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		return errors.Wrap(err, "INSERT")
+	if loc == audit.Database || loc == audit.All {
+		query := sqlf.Sprintf("INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES %s", sqlf.Join(vals, ","))
+
+		if _, err := s.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			return errors.Wrap(err, "INSERT")
+		}
 	}
-
-	for _, event := range events {
-		audit.Log(ctx, s.logger, audit.Record{
-			Entity: "security events",
-			Action: string(event.Name),
-			Fields: []log.Field{
-				log.Object("event",
-					log.String("URL", event.URL),
-					log.Uint32("UserID", event.UserID),
-					log.String("AnonymousUserID", event.AnonymousUserID),
-					log.String("source", event.Source),
-					log.String("argument", event.marshalArgumentAsJSON()),
-					log.String("version", version.Version()),
-					log.String("timestamp", event.Timestamp.UTC().String()),
-				),
-			},
-		})
+	if loc == audit.AuditLog || loc == audit.All {
+		for _, event := range events {
+			audit.Log(ctx, s.logger, audit.Record{
+				Entity: "security events",
+				Action: string(event.Name),
+				Fields: []log.Field{
+					log.Object("event",
+						log.String("URL", event.URL),
+						log.Uint32("UserID", event.UserID),
+						log.String("AnonymousUserID", event.AnonymousUserID),
+						log.String("source", event.Source),
+						log.String("argument", event.marshalArgumentAsJSON()),
+						log.String("version", version.Version()),
+						log.String("timestamp", event.Timestamp.UTC().String()),
+					),
+				},
+			})
+		}
 	}
 	return nil
 }

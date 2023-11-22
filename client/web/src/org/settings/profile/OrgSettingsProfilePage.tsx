@@ -7,7 +7,7 @@ import { Container, PageHeader, Button, LoadingSpinner, Input, Text, ErrorAlert,
 import { ORG_DISPLAY_NAME_MAX_LENGTH } from '../..'
 import { PageTitle } from '../../../components/PageTitle'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { OrgAreaRouteContext } from '../../area/OrgArea'
+import type { OrgAreaRouteContext } from '../../area/OrgArea'
 import { updateOrganization } from '../../backend'
 
 interface Props extends Pick<OrgAreaRouteContext, 'org' | 'onOrganizationUpdate'> {}
@@ -29,7 +29,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
     }, [])
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
     const [updated, setIsUpdated] = useState<boolean>(false)
-    const [updateResetTimer, setUpdateResetTimer] = useState<NodeJS.Timer>()
+    const [updateResetTimer, setUpdateResetTimer] = useState<number>()
 
     useEffect(
         () => () => {
@@ -51,7 +51,7 @@ export const OrgSettingsProfilePage: React.FunctionComponent<React.PropsWithChil
                 setIsLoading(false)
                 setIsUpdated(true)
                 setUpdateResetTimer(
-                    setTimeout(() => {
+                    window.setTimeout(() => {
                         // Hide "updated" text again after 1s
                         setIsUpdated(false)
                     }, 1000)

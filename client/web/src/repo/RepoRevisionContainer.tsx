@@ -1,40 +1,46 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { type FC, useCallback, useMemo, useState } from 'react'
 
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 
-import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/branded'
+import type { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SearchContextProps } from '@sourcegraph/shared/src/search'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, LoadingSpinner, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import {
+    Button,
+    Flipping,
+    LoadingSpinner,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+} from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
-import { BatchChangesProps } from '../batches'
-import { CodeIntelligenceProps } from '../codeintel'
-import { BreadcrumbSetters } from '../components/Breadcrumbs'
-import { RepositoryFields } from '../graphql-operations'
-import { CodeInsightsProps } from '../insights/types'
-import { NotebookProps } from '../notebooks'
-import { OwnConfigProps } from '../own/OwnConfigProps'
-import { SearchStreamingProps } from '../search'
-import { eventLogger } from '../tracking/eventLogger'
-import { RouteV6Descriptor } from '../util/contributions'
-import { parseBrowserRepoURL } from '../util/url'
+import type { AuthenticatedUser } from '../auth'
+import type { BatchChangesProps } from '../batches'
+import type { CodeIntelligenceProps } from '../codeintel'
+import type { BreadcrumbSetters } from '../components/Breadcrumbs'
+import type { RepositoryFields } from '../graphql-operations'
+import type { CodeInsightsProps } from '../insights/types'
+import type { NotebookProps } from '../notebooks'
+import type { OwnConfigProps } from '../own/OwnConfigProps'
+import type { SearchStreamingProps } from '../search'
+import type { RouteV6Descriptor } from '../util/contributions'
 
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
-import { ResolvedRevision } from './backend'
+import type { ResolvedRevision } from './backend'
 import { RepoRevisionChevronDownIcon, RepoRevisionWrapper } from './components/RepoRevision'
 import { isPackageServiceType } from './packages/isPackageServiceType'
-import { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
-import { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
+import type { HoverThresholdProps, RepoContainerContext } from './RepoContainer'
+import type { RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
 import { RevisionsPopover } from './RevisionsPopover'
-import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
-import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
+import type { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
+import type { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 
 import styles from './RepoRevisionContainer.module.scss'
 
@@ -141,6 +147,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
             </PopoverTrigger>
             <PopoverContent
                 position={Position.bottomStart}
+                flipping={Flipping.opposite}
                 className="pt-0 pb-0"
                 aria-labelledby="repo-revision-popover"
             >
@@ -167,7 +174,6 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
  */
 export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
     const { useBreadcrumb, resolvedRevision, revision, repo, repoName, routes } = props
-    const location = useLocation()
 
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
@@ -201,8 +207,6 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
         resolvedRevision,
     }
 
-    const { filePath } = parseBrowserRepoURL(location.pathname)
-
     return (
         <RepoRevisionWrapper className="px-3">
             <Routes>
@@ -213,15 +217,6 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                         )
                 )}
             </Routes>
-            <RepoHeaderContributionPortal
-                position="left"
-                id="copy-path"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {() => (
-                    <CopyPathAction telemetryService={eventLogger} filePath={filePath || repoName} key="copy-path" />
-                )}
-            </RepoHeaderContributionPortal>
             {resolvedRevision && !isPackage && (
                 <RepoHeaderContributionPortal
                     position="right"

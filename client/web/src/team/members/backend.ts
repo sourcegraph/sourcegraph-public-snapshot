@@ -1,12 +1,12 @@
-import { MutationTuple } from '@apollo/client'
+import type { MutationTuple } from '@apollo/client'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
 import {
     useShowMorePagination,
-    UseShowMorePaginationResult,
+    type UseShowMorePaginationResult,
 } from '../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
+import type {
     AddTeamMembersResult,
     AddTeamMembersVariables,
     ListTeamMemberFields,
@@ -30,7 +30,7 @@ const LIST_TEAM_MEMBER_FIELDS = gql`
     }
 `
 
-const LIST_TEAM_MEMBERS = gql`
+export const LIST_TEAM_MEMBERS = gql`
     query ListTeamMembers($first: Int, $after: String, $search: String, $teamName: String!) {
         team(name: $teamName) {
             id

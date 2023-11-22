@@ -2,10 +2,10 @@
     import { mdiClose, mdiCodeBrackets, mdiFormatLetterCase, mdiLightningBolt, mdiMagnify, mdiRegex } from '@mdi/js'
 
     import { invalidate } from '$app/navigation'
+    import { SearchPatternType } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
-    import { SearchPatternType } from '$lib/graphql-operations'
 
     import CodeMirrorQueryInput from './CodeMirrorQueryInput.svelte'
     import { SearchMode, submitSearch, type QueryStateStore } from './state'
@@ -95,7 +95,7 @@
                 <Icon svgPath={mdiLightningBolt} inline />
             </button>
         </Tooltip>
-        <div slot="content" class="popover-content">
+        <div slot="content" class="popover-content" let:toggle>
             {@const delayedClose = () => setTimeout(() => toggle(false), 100)}
             <div class="d-flex align-items-center px-3 py-2">
                 <h4 class="m-0 mr-auto">SmartSearch</h4>

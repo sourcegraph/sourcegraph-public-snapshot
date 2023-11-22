@@ -22,7 +22,7 @@ Code Insights will find all matches, and then automatically generate a data seri
 
 Capture groups will automatically create new data series for new matches as they appear in your codebase. You do not need to update or manually re-create the insights to track newly added versions or patterns.
 
-For the above example, this means that if `<java.version>1.9</java.version>` was committed to the codebase in the future, it would appear on the insight without any additoinal action, and you would see a series for `1.9`. 
+For the above example, this means that if `<java.version>1.9</java.version>` was committed to the codebase in the future, it would appear on the insight without any additional action, and you would see a series for `1.9`. 
 
 ## Current limitations 
 

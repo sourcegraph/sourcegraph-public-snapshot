@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
@@ -21,8 +21,8 @@ import (
 type Inserter struct {
 	db                   dbutil.DB
 	numColumns           int
-	maxBatchSize         int
-	batch                []any
+	maxNumValues         int
+	values               []any
 	cumulativeValueSizes []int
 	queryPrefix          string
 	querySuffix          string
@@ -30,7 +30,7 @@ type Inserter struct {
 	returningSuffix      string
 	returningScanner     ReturningScanner
 	operations           *operations
-	commonLogFields      []log.Field
+	commonAttrs          []attribute.KeyValue
 }
 
 type ReturningScanner func(rows dbutil.Scanner) error
@@ -170,30 +170,30 @@ func NewInserterWithReturn(
 	returningScanner ReturningScanner,
 ) *Inserter {
 	numColumns := len(columnNames)
-	maxBatchSize := GetMaxBatchSize(numColumns, maxNumParameters)
+	maxNumValues := int(maxNumParameters/numColumns) * numColumns
 	queryPrefix := makeQueryPrefix(tableName, columnNames)
 	querySuffix := makeQuerySuffix(numColumns, maxNumParameters)
 	onConflictSuffix := makeOnConflictSuffix(onConflictClause)
 	returningSuffix := makeReturningSuffix(returningColumnNames)
-	logger := sglog.Scoped("Inserter", "")
+	logger := sglog.Scoped("Inserter")
 
 	return &Inserter{
 		db:                   db,
 		numColumns:           numColumns,
-		maxBatchSize:         maxBatchSize,
-		batch:                make([]any, 0, maxBatchSize),
-		cumulativeValueSizes: make([]int, 0, maxBatchSize),
+		maxNumValues:         maxNumValues,
+		values:               make([]any, 0, maxNumValues),
+		cumulativeValueSizes: make([]int, 0, maxNumValues),
 		queryPrefix:          queryPrefix,
 		querySuffix:          querySuffix,
 		onConflictSuffix:     onConflictSuffix,
 		returningSuffix:      returningSuffix,
 		returningScanner:     returningScanner,
 		operations:           getOperations(logger),
-		commonLogFields: []log.Field{
-			log.String("tableName", tableName),
-			log.String("columnNames", strings.Join(columnNames, ",")),
-			log.Int("numColumns", numColumns),
-			log.Int("maxBatchSize", maxBatchSize),
+		commonAttrs: []attribute.KeyValue{
+			attribute.String("tableName", tableName),
+			attribute.StringSlice("columnNames", columnNames),
+			attribute.Int("numColumns", numColumns),
+			attribute.Int("maxNumValues", maxNumValues),
 		},
 	}
 }
@@ -224,10 +224,10 @@ func (i *Inserter) Insert(ctx context.Context, values ...any) error {
 		valueSizes = append(valueSizes, currentCumulativeValueSize)
 	}
 
-	i.batch = append(i.batch, values...)
+	i.values = append(i.values, values...)
 	i.cumulativeValueSizes = append(i.cumulativeValueSizes, valueSizes...)
 
-	if len(i.batch) >= i.maxBatchSize {
+	if len(i.values) >= i.maxNumValues {
 		// Flush full batch
 		return i.Flush(ctx)
 	}
@@ -236,7 +236,7 @@ func (i *Inserter) Insert(ctx context.Context, values ...any) error {
 }
 
 // Flush ensures that all queued rows are inserted. This method must be invoked at the end
-// of insertion to ensure that all records are flushed to the underlying Execable.
+// of insertion to ensure that all records are flushed to the underlying db connection.
 func (i *Inserter) Flush(ctx context.Context) (err error) {
 	i.checkInvariants()
 	defer i.checkInvariants()
@@ -246,12 +246,12 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 		return nil
 	}
 
-	operationlogFields := []log.Field{
-		log.Int("batchSize", len(batch)),
-		log.Int("payloadSize", payloadSize),
+	operationAttrs := []attribute.KeyValue{
+		attribute.Int("batchSize", len(batch)),
+		attribute.Int("payloadSize", payloadSize),
 	}
-	combinedLogFields := append(operationlogFields, i.commonLogFields...)
-	ctx, _, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
+	combinedAttrs := append(operationAttrs, i.commonAttrs...)
+	ctx, _, endObservation := i.operations.flush.With(ctx, &err, observation.Args{Attrs: combinedAttrs})
 	defer endObservation(1, observation.Args{})
 
 	// Create a query with enough placeholders to match the current batch size. This should
@@ -278,8 +278,8 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 var checkBatchInserterInvariants = false
 
 func (i *Inserter) checkInvariants() {
-	if checkBatchInserterInvariants && len(i.batch) != len(i.cumulativeValueSizes) {
-		panic(fmt.Sprintf("broken invariant: len(i.batch) != len(i.cumulativeValueSizes): %d != %d", len(i.batch), len(i.cumulativeValueSizes)))
+	if checkBatchInserterInvariants && len(i.values) != len(i.cumulativeValueSizes) {
+		panic(fmt.Sprintf("broken invariant: len(i.batch) != len(i.cumulativeValueSizes): %d != %d", len(i.values), len(i.cumulativeValueSizes)))
 	}
 }
 
@@ -287,27 +287,27 @@ func (i *Inserter) checkInvariants() {
 // insert statement. The returned values are the oldest values submitted to the batch (in order).
 // This method additionally returns the total (approximate) size of the batch being inserted.
 func (i *Inserter) pop() (batch []any, payloadSize int) {
-	if len(i.batch) == 0 {
+	if len(i.values) == 0 {
 		return nil, 0
 	}
 
-	if len(i.batch) < i.maxBatchSize {
+	if len(i.values) < i.maxNumValues {
 		// Grab size before overwriting it
 		payloadSize = i.cumulativeValueSizes[len(i.cumulativeValueSizes)-1]
 
 		// Use entire batch. This allows us to cleanly reset the sizes we were tracking for value
 		// payloads by just cutting the length of the slice back to zero.
-		batch, i.batch = i.batch, i.batch[:0]
+		batch, i.values = i.values, i.values[:0]
 		i.cumulativeValueSizes = i.cumulativeValueSizes[:0]
 		return batch, payloadSize
 	}
 
 	// Grab size before altering containing slice
-	payloadSize = i.cumulativeValueSizes[i.maxBatchSize-1]
+	payloadSize = i.cumulativeValueSizes[i.maxNumValues-1]
 
-	// Extract partial batch along with the size tracking data for each elemetn
-	batch, i.batch = i.batch[:i.maxBatchSize], i.batch[i.maxBatchSize:]
-	i.cumulativeValueSizes = i.cumulativeValueSizes[i.maxBatchSize:]
+	// Extract partial batch along with the size tracking data for each element
+	batch, i.values = i.values[:i.maxNumValues], i.values[i.maxNumValues:]
+	i.cumulativeValueSizes = i.cumulativeValueSizes[i.maxNumValues:]
 
 	for idx := range i.cumulativeValueSizes {
 		// Remove the size of the batch we've just extracted from every value remaining in the slice.
@@ -342,17 +342,11 @@ func (i *Inserter) makeQuery(numValues int) string {
 
 // MaxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
 // in a single insert statement.
-const MaxNumPostgresParameters = 32767
+const MaxNumPostgresParameters = 65535
 
 // MaxNumSQLiteParameters is the maximum number of placeholder variables allowed by SQLite
 // in a single insert statement.
 const MaxNumSQLiteParameters = 999
-
-// GetMaxBatchSize returns the number of rows that can be inserted into a single table with the
-// given number of columns via a single insert statement.
-func GetMaxBatchSize(numColumns, maxNumParameters int) int {
-	return (maxNumParameters / numColumns) * numColumns
-}
 
 // makeQueryPrefix creates the prefix of the batch insert statement (up to `VALUES `) using the
 // given table and column names.
@@ -375,7 +369,7 @@ var (
 // _full_ rows that can be inserted in one insert statement.
 //
 // If a fewer number of rows should be inserted (due to flushing a partial batch), then the caller
-// slice the appropriate nubmer of rows from the beginning of the string. The suffix constructed
+// slice the appropriate number of rows from the beginning of the string. The suffix constructed
 // here is done so with this use case in mind (each placeholder is 5 digits), so finding the right
 // substring index is efficient.
 //

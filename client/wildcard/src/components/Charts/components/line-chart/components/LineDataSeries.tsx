@@ -1,12 +1,12 @@
-import { ReactElement, SVGProps } from 'react'
+import type { ReactElement, SVGProps } from 'react'
 
 import { Group } from '@visx/group'
 import { LinePath } from '@visx/shape'
-import { ScaleLinear, ScaleTime } from 'd3-scale'
+import type { ScaleLinear, ScaleTime } from 'd3-scale'
 import { timeFormat } from 'd3-time-format'
 
-import { Point } from '../types'
-import { getDatumValue, encodePointId, isDatumWithValidNumber, SeriesDatum } from '../utils'
+import type { Point } from '../types'
+import { getDatumValue, encodePointId, isDatumWithValidNumber, type SeriesDatum } from '../utils'
 
 import { PointGlyph } from './PointGlyph'
 

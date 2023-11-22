@@ -1,8 +1,8 @@
 import { from } from 'rxjs'
 import { take } from 'rxjs/operators'
 
-import { ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
-import { Settings } from '@sourcegraph/shared/src/settings/settings'
+import { type ErrorLike, isErrorLike, isDefined, isNot } from '@sourcegraph/common'
+import type { Settings } from '@sourcegraph/shared/src/settings/settings'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
@@ -71,7 +71,7 @@ export class SearchCommand {
         }
 
         switch (disposition) {
-            case 'currentTab':
+            case 'currentTab': {
                 if (currentTabId) {
                     // Note: this is done in order to blur browser omnibox and set focus on page
                     await browser.tabs
@@ -84,12 +84,15 @@ export class SearchCommand {
 
                 await browser.tabs.update(props)
                 break
-            case 'newForegroundTab':
+            }
+            case 'newForegroundTab': {
                 await browser.tabs.create(props)
                 break
-            case 'newBackgroundTab':
+            }
+            case 'newBackgroundTab': {
                 await browser.tabs.create({ ...props, active: false })
                 break
+            }
         }
     }
 

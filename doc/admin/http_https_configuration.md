@@ -37,7 +37,7 @@ docker container run \
   \
   --volume ~/.sourcegraph/config:/etc/sourcegraph  \
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph  \
-  sourcegraph/server:5.0.0
+  sourcegraph/server:5.2.3
 ```
 
 ### Sourcegraph Cluster (Kubernetes)
@@ -200,6 +200,6 @@ In your [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-
 
 ## Other Sourcegraph clusters (e.g. pure-Docker)
 
-NGINX is not included in the ([pure-Docker deployment](https://github.com/sourcegraph/deploy-sourcegraph-docker) as it's designed to be minimal and not tied to any specific reverse proxy.
+NGINX is not included in the [pure-Docker deployment](https://github.com/sourcegraph/deploy-sourcegraph-docker) as it's designed to be minimal and not tied to any specific reverse proxy.
 
 If NGINX is your preferred reverse proxy, we suggest using [the official NGINX docker images](https://hub.docker.com/_/nginx) and following their instructions for [securing HTTP traffic with a proxied server](https://docs.nginx.com/nginx/admin-guide/security-controls/securing-http-traffic-upstream/).

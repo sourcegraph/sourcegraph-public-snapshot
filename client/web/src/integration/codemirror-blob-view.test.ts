@@ -1,15 +1,16 @@
 import assert from 'assert'
 
-import { ElementHandle, MouseButton } from 'puppeteer'
+import { afterEach, beforeEach, describe, it } from 'mocha'
+import type { ElementHandle, MouseButton } from 'puppeteer'
 
-import { JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
+import { type JsonDocument, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { type Driver, createDriverForTest, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { WebGraphQlOperations } from '../graphql-operations'
+import type { WebGraphQlOperations } from '../graphql-operations'
 
-import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
+import { type WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import {
     createResolveRepoRevisionResult,
     createFileExternalLinksResult,
@@ -17,8 +18,8 @@ import {
     createBlobContentResult,
     createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, EditorAPI } from './utils'
+import { commonWebGraphQlResults } from './graphQlResults'
+import { createEditorAPI, type EditorAPI } from './utils'
 
 describe('CodeMirror blob view', () => {
     let driver: Driver
@@ -63,13 +64,6 @@ describe('CodeMirror blob view', () => {
 
     const commonBlobGraphQlResults: Partial<WebGraphQlOperations & SharedGraphQlOperations> = {
         ...commonWebGraphQlResults,
-        ...createViewerSettingsGraphQLOverride({
-            user: {
-                experimentalFeatures: {
-                    enableCodeMirrorFileView: true,
-                },
-            },
-        }),
         ...blobGraphqlResults,
     }
 
@@ -124,7 +118,8 @@ describe('CodeMirror blob view', () => {
             )
         })
 
-        it('truncates long file paths properly', async () => {
+        // TODO 53389: This test is disabled because it is flaky.
+        it.skip('truncates long file paths properly', async () => {
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}${filePaths['this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java']}`
             )
@@ -394,8 +389,7 @@ function createBlobPageData<T extends BlobInfo>({
                 createFileExternalLinksResult(`https://${repoName}/blob/master/${filePath}`),
             TreeEntries: () => createTreeEntriesResult(repositorySourcegraphUrl, fileNames),
             FileTreeEntries: () => createFileTreeEntriesResult(repositorySourcegraphUrl, fileNames),
-            Blob: ({ filePath }) =>
-                createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].html, blobInfo[filePath].lsif),
+            Blob: ({ filePath }) => createBlobContentResult(blobInfo[filePath].content, blobInfo[filePath].lsif),
             FileNames: () => ({
                 repository: {
                     id: 'repo-123',

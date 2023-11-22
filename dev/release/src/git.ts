@@ -23,6 +23,7 @@ export function getReleaseTags(workdir: string, prefix: string): string[] {
 
 const mainRepoTagPrefix = 'v[0-9]*.[0-9]*.[0-9]*'
 export const srcCliTagPrefix = '[0-9]*.[0-9]*.[0-9]*'
+export const executorTagPrefix = 'v[0-9]*.[0-9]*.[0-9]*'
 
 // Returns the version tagged in the repository previous to a provided input version. If no input version it will
 // simply return the highest version found in the repository.
@@ -37,7 +38,7 @@ export function getPreviousVersion(
         return lowest
     }
     if (!version) {
-        return new SemVer(tags[tags.length - 1])
+        return new SemVer(tags.at(-1))
     }
 
     for (
@@ -56,4 +57,8 @@ export function getPreviousVersion(
 
 export function getPreviousVersionSrcCli(path: string): SemVer {
     return getPreviousVersion(undefined, srcCliTagPrefix, path)
+}
+
+export function getPreviousVersionExecutor(path: string): SemVer {
+    return getPreviousVersion(undefined, executorTagPrefix, path)
 }

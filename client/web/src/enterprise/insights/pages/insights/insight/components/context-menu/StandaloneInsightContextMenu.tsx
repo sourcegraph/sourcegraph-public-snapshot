@@ -6,7 +6,7 @@ import { noop } from 'lodash'
 
 import { Menu, MenuButton, MenuItem, MenuList, Position, Checkbox, Icon } from '@sourcegraph/wildcard'
 
-import { Insight } from '../../../../../core'
+import type { Insight } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks/use-ui-features'
 
 import styles from './StandaloneInsightContextMenu.module.scss'

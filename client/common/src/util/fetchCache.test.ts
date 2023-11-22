@@ -1,7 +1,10 @@
-import fetch from 'jest-fetch-mock'
 import MockDate from 'mockdate'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import createFetchMock from 'vitest-fetch-mock'
 
-import { clearFetchCache, disableFetchCache, enableFetchCache, fetchCache, FetchCacheResponse } from './fetchCache'
+import { clearFetchCache, disableFetchCache, enableFetchCache, fetchCache, type FetchCacheResponse } from './fetchCache'
+
+const fetch = createFetchMock(vi)
 
 const EXPECTED_DATA = { foo: { bar: 'baz' } }
 const TEST_URL = '/test/api'
@@ -19,7 +22,7 @@ describe('fetchCache', () => {
     })
 
     beforeEach(() => {
-        fetch.mockClear()
+        fetch.resetMocks()
         clearFetchCache()
         fetch.mockResponse(JSON.stringify(EXPECTED_DATA))
     })
@@ -65,7 +68,7 @@ describe('fetchCache', () => {
 
     it('makes multiple requests in case of cache expiration', async () => {
         const responseOne = await fetchCache({ cacheMaxAge: 1, url: TEST_URL })
-        await new Promise(resolve => setTimeout(resolve, 3)) // 3 millis passed
+        MockDate.set(Date.now() + 3)
         const responseTwo = await fetchCache({ cacheMaxAge: 1, url: TEST_URL })
 
         expectResponses([responseOne, responseTwo])

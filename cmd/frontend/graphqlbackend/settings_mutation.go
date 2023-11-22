@@ -39,7 +39,7 @@ type settingsMutationGroupInput struct {
 type settingsMutation struct {
 	db      database.DB
 	input   *settingsMutationGroupInput
-	subject *settingsSubject
+	subject *settingsSubjectResolver
 }
 
 type settingsMutationArgs struct {

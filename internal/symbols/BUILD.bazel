@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "symbols",
@@ -9,25 +10,20 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/endpoint",
-        "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/httpcli",
         "//internal/limiter",
-        "//internal/resetonce",
         "//internal/search",
         "//internal/search/result",
         "//internal/symbols/v1:symbols",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//internal/types",
         "//lib/errors",
-        "@com_github_gobwas_glob//:glob",
-        "@com_github_opentracing_contrib_go_stdlib//nethttp",
-        "@com_github_opentracing_opentracing_go//ext",
-        "@com_github_opentracing_opentracing_go//log",
-        "@com_github_sourcegraph_go_ctags//:go-ctags",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",
         "@org_golang_google_grpc//status",

@@ -1,12 +1,14 @@
 package blobstore
 
 import (
-	"fmt"
+	"encoding/xml"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -26,6 +28,10 @@ func (s *Service) serveS3(w http.ResponseWriter, r *http.Request) error {
 			return s.serveListObjectsV2(w, r, bucketName)
 		case "PUT":
 			return s.serveCreateBucket(w, r, bucketName)
+		case "POST":
+			if r.URL.Query().Has("delete") {
+				return s.serveDeleteObjects(w, r, bucketName)
+			}
 		}
 	case 2:
 		bucketName := path[0]
@@ -60,21 +66,26 @@ func (s *Service) serveS3(w http.ResponseWriter, r *http.Request) error {
 
 // GET /<bucket>
 // https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html
-func (s *Service) serveListObjectsV2(w http.ResponseWriter, _ *http.Request, bucketName string) error {
-	// TODO: Actually implement this endpoint, https://github.com/sourcegraph/sourcegraph/issues/45594.
-	// NOTE: We currently always return an empty list of objects to make code intel ExpiredObjects checks not spam with errors.
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`
-<?xml version="1.0" encoding="UTF-8"?>
-<ListBucketResult xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
-    <Name>%s</Name>
-    <Prefix/>
-    <KeyCount>0</KeyCount>
-    <MaxKeys>1000</MaxKeys>
-    <IsTruncated>false</IsTruncated>
-</ListBucketResult>
-`, bucketName)))
-	return nil
+func (s *Service) serveListObjectsV2(w http.ResponseWriter, r *http.Request, bucketName string) error {
+	prefix := r.URL.Query().Get("prefix")
+
+	var contents []s3Object
+	objects, err := s.listObjects(r.Context(), bucketName, prefix)
+	if err != nil {
+		return writeS3Error(w, s3ErrorNoSuchBucket, bucketName, err, http.StatusConflict)
+	}
+	for _, obj := range objects {
+		contents = append(contents, s3Object{
+			Key:          obj.Name,
+			LastModified: obj.LastModified.Format(time.RFC3339Nano),
+		})
+	}
+	return writeXML(w, http.StatusOK, s3ListBucketResult{
+		Name:        bucketName,
+		KeyCount:    len(contents),
+		IsTruncated: false,
+		Contents:    contents,
+	})
 }
 
 // PUT /<bucket>
@@ -274,6 +285,31 @@ func (s *Service) serveDeleteObject(w http.ResponseWriter, r *http.Request, buck
 			return writeS3Error(w, s3ErrorNoSuchKey, bucketName, err, http.StatusNotFound)
 		}
 		return errors.Wrap(err, "deleteObject")
+	}
+	return nil
+}
+
+// POST /<bucket>?delete
+// https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html
+func (s *Service) serveDeleteObjects(_ http.ResponseWriter, r *http.Request, bucketName string) error {
+	var req s3DeleteObjectsRequest
+	defer r.Body.Close()
+	if err := xml.NewDecoder(r.Body).Decode(&req); err != nil {
+		return errors.Wrap(err, "decoding XML request")
+	}
+
+	// TODO(blobstore): technically we should compile a list of errors, and respect req.Quiet in returning
+	// error responses. See the S3 API docs above. But for now we just ignore errors, after all, what would
+	// our client do with that info?
+	for _, obj := range req.Object {
+		objectName := obj.Key
+		if err := s.deleteObject(r.Context(), bucketName, objectName); err != nil {
+			if err == ErrNoSuchKey {
+				continue
+			}
+			s.Log.Warn("error deleting object", sglog.String("key", bucketName+"/"+objectName), sglog.Error(err))
+			continue
+		}
 	}
 	return nil
 }

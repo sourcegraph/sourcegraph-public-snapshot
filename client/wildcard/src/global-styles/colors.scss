@@ -71,6 +71,7 @@ $theme-colors: (
 
     // Other root palette colors.
     --blue: #{$blue};
+    --light-blue: #4393e7;
     --indigo: #0864c6;
     --purple: #{$purple};
     --pink: #d68cf3;
@@ -91,6 +92,7 @@ $theme-colors: (
     --violet-06: #6112a3;
     --violet-07: #270741;
     --violet-08: #160425;
+    --violet-09: #5f3dc4;
 
     // Logo colors
     --logo-orange: #ff5543;
@@ -293,6 +295,18 @@ $theme-colors: (
     --chroma-generic-subheading-fg: #aaaaaa;
     --chroma-generic-traceback-fg: #aa0000;
     --chroma-text-whitespace-fg: #bbbbbb;
+
+    // Blame colors
+    --blame-recency-0: var(--oc-violet-9);
+    --blame-recency-1: var(--oc-violet-8);
+    --blame-recency-2: var(--oc-violet-7);
+    --blame-recency-3: var(--oc-violet-6);
+    --blame-recency-4: var(--oc-violet-5);
+    --blame-recency-5: var(--oc-violet-4);
+    --blame-recency-6: var(--oc-violet-3);
+    --blame-recency-7: var(--oc-violet-2);
+    --blame-recency-8: var(--oc-violet-1);
+    --blame-recency-9: var(--oc-violet-0);
 }
 
 .theme-dark {
@@ -327,17 +341,17 @@ $theme-colors: (
     --merged-4: #1f0a5c;
     --text-muted: var(--gray-06);
     --text-muted-highlighted: #a9b9da; // --text-muted with higher contrast when shown on a --mark-bg background
-    --link-color: #4393e7;
+    --link-color: var(--light-blue);
     --link-color-2: #70b0f3;
     --link-active-color: #489ffa;
     --link-hover-color: #489ffa;
     --border-color: var(--gray-09);
     --border-color-2: var(--gray-08);
-    --border-active-color: #4393e7;
+    --border-active-color: var(--light-blue);
     --border-primary-color: #0f59aa; // = dark variant of primary-2
     // Start query highlighting
     --search-query-text-color: var(--gray-04);
-    --search-filter-keyword-color: #4393e7;
+    --search-filter-keyword-color: var(--light-blue);
     --search-filter-separator-color: var(--oc-gray-5);
     --search-path-separator-color: var(--oc-gray-5);
     --search-keyword-color: var(--pink);
@@ -456,6 +470,18 @@ $theme-colors: (
     --chroma-generic-subheading-fg: #79c0ff;
     --chroma-generic-traceback-fg: #ff7b72;
     --chroma-text-whitespace-fg: #6e7681;
+
+    // Blame colors
+    --blame-recency-0: var(--oc-violet-0);
+    --blame-recency-1: var(--oc-violet-1);
+    --blame-recency-2: var(--oc-violet-2);
+    --blame-recency-3: var(--oc-violet-3);
+    --blame-recency-4: var(--oc-violet-4);
+    --blame-recency-5: var(--oc-violet-5);
+    --blame-recency-6: var(--oc-violet-6);
+    --blame-recency-7: var(--oc-violet-7);
+    --blame-recency-8: var(--oc-violet-8);
+    --blame-recency-9: var(--oc-violet-9);
 }
 
 // Additional colors global colors.

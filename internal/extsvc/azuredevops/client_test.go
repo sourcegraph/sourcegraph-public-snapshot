@@ -13,13 +13,16 @@ import (
 	"time"
 
 	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/time/rate"
+	"gotest.tools/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
 )
 
 var update = flag.Bool("update", false, "update testdata")
@@ -53,6 +56,8 @@ func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	cli.(*client).internalRateLimiter = ratelimit.NewInstrumentedLimiter("azuredevops", rate.NewLimiter(100, 10))
 
 	return cli, func() {
 		if err := rec.Stop(); err != nil {
@@ -96,6 +101,7 @@ func TestRateLimitRetry(t *testing.T) {
 	}
 
 	for name, tt := range tests {
+		tt := tt
 		t.Run(name, func(t *testing.T) {
 			numRequests := 0
 			succeeded := false
@@ -133,12 +139,13 @@ func TestRateLimitRetry(t *testing.T) {
 				MockVisualStudioAppURL = ""
 			})
 			a := &auth.BasicAuth{Username: "test", Password: "test"}
-			client, err := NewClient("test", srv.URL, a, nil)
+			c, err := NewClient("test", srv.URL, a, nil)
+			c.(*client).internalRateLimiter = ratelimit.NewInstrumentedLimiter("azuredevops", rate.NewLimiter(100, 10))
 			require.NoError(t, err)
-			client.SetWaitForRateLimit(tt.waitForRateLimit)
+			c.SetWaitForRateLimit(tt.waitForRateLimit)
 
 			// We don't care about the result or if it errors, we monitor the server variables
-			_, _ = client.GetAuthorizedProfile(ctx)
+			_, _ = c.GetAuthorizedProfile(ctx)
 
 			assert.Equal(t, tt.succeeded, succeeded)
 			assert.Equal(t, tt.wantNumRequests, numRequests)

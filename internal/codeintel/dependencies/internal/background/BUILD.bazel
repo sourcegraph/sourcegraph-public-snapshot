@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "background",
@@ -13,6 +14,7 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/api",
+        "//internal/byteutils",
         "//internal/codeintel/dependencies/internal/store",
         "//internal/codeintel/dependencies/shared",
         "//internal/conf/reposource",
@@ -49,7 +51,6 @@ go_test(
     ],
     deps = [
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/dependencies/internal/store",
         "//internal/codeintel/dependencies/shared",
         "//internal/conf/reposource",

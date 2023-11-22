@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
 	"golang.org/x/oauth2"
 
@@ -60,7 +60,6 @@ func main() {
 	flag.StringVar(&historyFlags.resultsCsvPath, "csv", "", "path for CSV results exports")
 	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
 	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
-	flag.StringVar(&historyFlags.okayHQToken, "okayhq.token", "", "okayhq API token")
 	flag.StringVar(&historyFlags.slackReportWebHook, "slack.report-webhook", "", "Slack Webhook URL to post weekly report on ")
 
 	flags.Parse()
@@ -211,7 +210,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		bkc := buildkite.NewClient(config.Client())
 
 		// Paginate results
-		var nextPage = 1
+		nextPage := 1
 		var pages int
 		log.Printf("request paging progress:")
 		for nextPage > 0 {
@@ -299,9 +298,6 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	if historyFlags.honeycombDataset != "" {
 		reporters = append(reporters, reportToHoneycomb)
 	}
-	if historyFlags.okayHQToken != "" {
-		reporters = append(reporters, reportToOkayHQ)
-	}
 	if historyFlags.slackReportWebHook != "" {
 		reporters = append(reporters, reportToSlack)
 	}
@@ -310,7 +306,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	log.Printf("sending reports to %d reporters", len(reporters))
 	var mErrs error
 	for _, report := range reporters {
-		errors.Append(mErrs, report(ctx, *historyFlags, totals, incidents, flakes))
+		mErrs = errors.Append(mErrs, report(ctx, *historyFlags, totals, incidents, flakes))
 	}
 
 	log.Println("done!")

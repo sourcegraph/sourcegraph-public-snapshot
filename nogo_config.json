@@ -4,9 +4,14 @@
     "exclude_files": {
       "rules_go.*/*": "ignore rules_go working directory",
       "external/*": "no need to vet third party code",
+      "schema/schema.go": "ignore generated code",
       ".*_generated\\.go$": "ignore generated code",
       ".*_pb\\.go$": "ignore protobuff generated code",
-      "docker-images/*": "ignore all code under docker-images"
+      "docker-images/*": "ignore all code under docker-images",
+      "main.go": "ignore main",
+      ".*_test\\.go$": "ignore test code",
+      "internal/batches/testing/*": "ignore batches testing code",
+      "internal/gitserver/mock.go": "ignore deprecation warning of P4Exec"
     }
   },
   "bodyclose": {
@@ -25,7 +30,7 @@
       "external/": "no need to vet third party code",
       "schema/schema.go": "ignore generated code",
       "errors/cockroach.go": "ignore generated code",
-      ".*_test\\.go$": "ignore generated code",
+      ".*_test\\.go$": "ignore test code",
       ".*_generated\\.go$": "ignore generated code",
       ".*_pb\\.go$": "ignore protobuff generated code",
       "main.go": "ignore main files"

@@ -1,45 +1,22 @@
+include: ./sourcegraph-base.yaml
+
 contents:
-  keyring:
-    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
-  repositories:
-    - https://packages.wolfi.dev/os
-    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main/'
   packages:
-    ## Base set of packages
-    - wolfi-baselayout # replaces alpine-baselayout-data
-    - ca-certificates-bundle
-    - tzdata
     # Included by existing SG base image
     - tini
     - mailcap
-    # Dev tools - may not be required in production
-    - busybox
-    - curl
-    - wget
-    # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
 
     ## symbols packages
     - ca-certificates
-    - jansson                    # TODO: Need to add in ctags build environment
-    - libstdc++                  # TODO: For tree-sitter. Not an apk dependency
+    - jansson
+    - libstdc++ # Used by tree-sitter, which is not packaged
     - ctags@sourcegraph
 
-accounts:
-  groups:
-    - groupname: sourcegraph
-      gid: 101
-  users:
-    - username: sourcegraph
-      uid: 100
-      gid: 101
+paths:
+  - path: /mnt/cache/symbols
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
 
-# NOTE: This is ignored (see build output)
-# To force amd64, first run `docker pull --platform linux/arm64 cgr.dev/chainguard/apko`
-archs:
- - amd64
-
-annotations:
-  org.opencontainers.image.url: https://sourcegraph.com/
-  org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
-  org.opencontainers.image.documentation: https://docs.sourcegraph.com/
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

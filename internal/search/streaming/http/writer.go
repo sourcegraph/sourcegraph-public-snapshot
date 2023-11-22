@@ -23,6 +23,15 @@ type Writer struct {
 	StatHook func(WriterStat)
 }
 
+// NewWriter creates a text/event-stream writer that sets a bunch of appropriate
+// headers for this use case. Note that once used, users should only interact
+// with *Writer directly - for example, using (http.ResponseWriter).WriteHeader
+// after NewWriter is used on it is invalid, raising internal errors in net/http:
+//
+//	http: WriteHeader called with both Transfer-Encoding of "chunked" and a Content-Length of ...
+//
+// In the WriteHeader case, it will also cause all further calls to (*Writer).Event
+// and friends to return an error as well.
 func NewWriter(w http.ResponseWriter) (*Writer, error) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {

@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react'
+import { describe, expect, test } from 'vitest'
 
-import { SignatureFields } from '../../graphql-operations'
+import type { SignatureFields } from '../../graphql-operations'
 
 import { GitCommitNodeByline } from './GitCommitNodeByline'
 

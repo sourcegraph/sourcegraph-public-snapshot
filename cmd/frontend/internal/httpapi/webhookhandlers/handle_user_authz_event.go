@@ -5,18 +5,15 @@ import (
 	"fmt"
 	"strconv"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,13 +22,6 @@ import (
 // scheduling it for a perms update in repo-updater
 func handleGitHubUserAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions) webhooks.Handler {
 	return func(ctx context.Context, db database.DB, _ extsvc.CodeHostBaseURL, payload any) error {
-		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
-			return nil
-		}
-		if globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions {
-			return nil
-		}
-
 		logger.Debug("handleGitHubUserAuthzEvent: Got github event", log.String("type", fmt.Sprintf("%T", payload)))
 
 		var user *gh.User
@@ -83,7 +73,7 @@ func scheduleUserUpdate(ctx context.Context, logger log.Logger, db database.DB, 
 
 	logger.Debug("scheduleUserUpdate: Dispatching permissions update", log.Int32s("users", ids))
 
-	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, logger, db, permssync.ScheduleSyncOpts{
 		UserIDs: ids,
 		Options: opts,
 		Reason:  database.ReasonGitHubUserEvent,

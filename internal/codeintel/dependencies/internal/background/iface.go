@@ -15,7 +15,7 @@ type ExternalServiceStore interface {
 }
 
 type AutoIndexingService interface {
-	QueueIndexesForPackage(ctx context.Context, pkg shared.MinimialVersionedPackageRepo, assumeSynced bool) (err error)
+	QueueIndexesForPackage(ctx context.Context, pkg shared.MinimialVersionedPackageRepo) (err error)
 }
 
 type DependenciesService interface {

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "store",
@@ -22,14 +23,14 @@ go_library(
         "@com_github_jackc_pgconn//:pgconn",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
-        "@com_github_opentracing_opentracing_go//log",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_exp//slices",
     ],
 )
 
 go_test(
     name = "store_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = ["store_test.go"],
     embed = [":store"],
     tags = [

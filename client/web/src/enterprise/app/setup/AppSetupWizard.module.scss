@@ -1,0 +1,18 @@
+.root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+}
+
+.content {
+    flex-grow: 1;
+    background: radial-gradient(116.94% 133.26% at 52.08% 100%, #6112a3 0.41%, #270741 54.04%, #1e0632 94.78%);
+    align-self: baseline;
+    position: relative;
+    max-width: 100%;
+}
+
+.footer {
+    flex-shrink: 0;
+}

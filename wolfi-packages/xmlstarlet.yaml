@@ -1,0 +1,43 @@
+package:
+  name: xmlstarlet
+  version: 1.6.1
+  epoch: 1
+  description: ""
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      attestation: 'Copyright (c) 2002 Mikhail Grushinskiy'
+      license: 'MIT License'
+  dependencies:
+    runtime:
+      - libxml2 # Here to update the built-in version
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - wolfi-base
+      - build-base
+      # Build dependencies
+      - libxml2 # Required to update built-in libxml2 version to match libxml2-dev
+      - libxml2-dev
+      - libxslt-dev
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: https://downloads.sourceforge.net/project/xmlstar/xmlstarlet/${{package.version}}/xmlstarlet-${{package.version}}.tar.gz
+      expected-sha256: 15d838c4f3375332fd95554619179b69e4ec91418a3a5296e7c631b7ed19e7ca
+  - runs: |
+      ./configure
+      make
+      make install
+  - runs: |
+      mkdir -p ${{targets.destdir}}/usr/bin/
+      cp /usr/local/bin/xml ${{targets.destdir}}/usr/bin/
+      ln -s /usr/bin/xml ${{targets.destdir}}/usr/bin/xmlstarlet

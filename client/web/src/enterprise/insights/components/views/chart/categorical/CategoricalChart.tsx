@@ -1,6 +1,6 @@
-import React, { SVGProps } from 'react'
+import React, { type SVGProps } from 'react'
 
-import { CategoricalLikeChart, PieChart } from '@sourcegraph/wildcard'
+import { type CategoricalLikeChart, PieChart } from '@sourcegraph/wildcard'
 
 import { LockedChart } from '../locked/LockedChart'
 

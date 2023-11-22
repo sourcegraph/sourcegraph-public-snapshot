@@ -1,7 +1,7 @@
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { DiffInfo, BlobInfo } from '../shared/codeHost'
+import type { DiffInfo, BlobInfo } from '../shared/codeHost'
 
 import { getBaseCommit, getCommitsForPR } from './api'
 import {

@@ -3,14 +3,14 @@ import React, { useCallback, useMemo } from 'react'
 import { mdiPlus } from '@mdi/js'
 import { Subject } from 'rxjs'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Container, Icon, PageHeader } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { AccessTokenFields } from '../graphql-operations'
-import { AccessTokenNode, AccessTokenNodeProps } from '../settings/tokens/AccessTokenNode'
+import type { AccessTokenFields } from '../graphql-operations'
+import { AccessTokenNode, type AccessTokenNodeProps } from '../settings/tokens/AccessTokenNode'
 
 import { queryAccessTokens } from './backend'
 

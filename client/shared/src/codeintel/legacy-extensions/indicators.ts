@@ -1,6 +1,6 @@
 import { Base64 } from 'js-base64'
 
-import * as sourcegraph from './api'
+import type * as sourcegraph from './api'
 
 export const linkURL = 'https://docs.sourcegraph.com/code_intelligence/explanations/precise_code_intelligence'
 

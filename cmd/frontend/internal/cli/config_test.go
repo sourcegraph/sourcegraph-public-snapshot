@@ -18,23 +18,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestServiceConnections(t *testing.T) {
-	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
+	t.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
 
 	// We override the URLs so service discovery doesn't try and talk to k8s
 	searcherKey := "SEARCHER_URL"
-	oldSearcherURL := os.Getenv(searcherKey)
-	t.Cleanup(func() { os.Setenv(searcherKey, oldSearcherURL) })
-	os.Setenv(searcherKey, "http://searcher:3181")
+	t.Setenv(searcherKey, "http://searcher:3181")
 
 	indexedKey := "INDEXED_SEARCH_SERVERS"
-	oldIndexedSearchServers := os.Getenv(indexedKey)
-	t.Cleanup(func() { os.Setenv(indexedKey, oldIndexedSearchServers) })
-	os.Setenv(indexedKey, "http://indexed-search:6070")
+	t.Setenv(indexedKey, "http://indexed-search:6070")
 
 	// We only test that we get something non-empty back.
 	sc := serviceConnections(logtest.Scoped(t))
@@ -44,8 +41,8 @@ func TestServiceConnections(t *testing.T) {
 }
 
 func TestWriteSiteConfig(t *testing.T) {
-	db := database.NewMockDB()
-	confStore := database.NewMockConfStore()
+	db := dbmocks.NewMockDB()
+	confStore := dbmocks.NewMockConfStore()
 	conf := &database.SiteConfig{ID: 1}
 	confStore.SiteGetLatestFunc.SetDefaultReturn(
 		conf,
@@ -68,7 +65,7 @@ func TestWriteSiteConfig(t *testing.T) {
 
 func TestOverrideSiteConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	conf := db.Conf()
 	ctx := context.Background()
 

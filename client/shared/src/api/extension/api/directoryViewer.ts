@@ -1,9 +1,9 @@
-import { ProxyMarked, proxyMarker } from 'comlink'
+import { type ProxyMarked, proxyMarker } from 'comlink'
 
-import type { DirectoryViewer, Directory } from '../../../codeintel/legacy-extensions/api'
-import { DirectoryViewerData, ViewerId } from '../../viewerTypes'
+import type { Directory } from '../../../codeintel/legacy-extensions/api'
+import type { DirectoryViewerData, ViewerId } from '../../viewerTypes'
 
-export class ExtensionDirectoryViewer implements DirectoryViewer, ProxyMarked {
+export class ExtensionDirectoryViewer implements ProxyMarked {
     public readonly [proxyMarker] = true
     public readonly viewerId: string
     public readonly type = 'DirectoryViewer'

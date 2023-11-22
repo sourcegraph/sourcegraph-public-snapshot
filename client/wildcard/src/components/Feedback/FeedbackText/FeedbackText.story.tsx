@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { H1, Text } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
@@ -20,7 +20,7 @@ const config: Meta = {
 
 export default config
 
-export const FeedbackTextExample: Story = () => (
+export const FeedbackTextExample: StoryFn = () => (
     <>
         <H1>FeedbackText</H1>
         <Text>This is an example of a feedback with a header</Text>

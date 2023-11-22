@@ -1,7 +1,7 @@
 import { RangeSetBuilder } from '@codemirror/state'
 import { Decoration, EditorView } from '@codemirror/view'
 
-import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
+import { type DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 
 import { decoratedTokens } from './parsedQuery'
 

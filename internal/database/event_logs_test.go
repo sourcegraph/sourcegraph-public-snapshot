@@ -24,9 +24,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -36,9 +39,9 @@ func TestSanitizeEventURL(t *testing.T) {
 		externalURL string
 		output      string
 	}{{
-		input:       "https://about.sourcegraph.com/test", //CI:URL_OK
+		input:       "https://about.sourcegraph.com/test", // CI:URL_OK
 		externalURL: "https://sourcegraph.com",
-		output:      "https://about.sourcegraph.com/test", //CI:URL_OK
+		output:      "https://about.sourcegraph.com/test", // CI:URL_OK
 	}, {
 		input:       "https://test.sourcegraph.com/test",
 		externalURL: "https://sourcegraph.com",
@@ -84,10 +87,10 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
-	var testCases = []struct {
+	testCases := []struct {
 		name  string
 		event *Event
 		err   string // Stringified error
@@ -130,7 +133,7 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	usersStore := db.Users()
@@ -199,7 +202,7 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Several of the events will belong to Sourcegraph employee admin user and Sourcegraph Operator user account
@@ -207,16 +210,16 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	require.NoError(t, err)
 	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
 	require.NoError(t, err)
-	soLoganID, err := db.UserExternalAccounts().CreateUserAndSave(
+	soLoganID, err := db.Users().CreateWithExternalAccount(
 		ctx,
 		NewUser{
 			Username: "sourcegraph-operator-logan",
 		},
-		extsvc.AccountSpec{
-			ServiceType: "sourcegraph-operator",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "sourcegraph-operator",
+			},
+		})
 	require.NoError(t, err)
 
 	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
@@ -278,7 +281,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -336,7 +339,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -449,7 +452,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -462,16 +465,16 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	require.NoError(t, err)
 	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
 	require.NoError(t, err)
-	soLogan, err := db.UserExternalAccounts().CreateUserAndSave(
+	soLogan, err := db.Users().CreateWithExternalAccount(
 		ctx,
 		NewUser{
 			Username: "sourcegraph-operator-logan",
 		},
-		extsvc.AccountSpec{
-			ServiceType: "sourcegraph-operator",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "sourcegraph-operator",
+			},
+		})
 	require.NoError(t, err)
 
 	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
@@ -594,7 +597,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences", "unknown event"}
@@ -658,7 +661,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	now := time.Now()
 
@@ -801,7 +804,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{
@@ -870,7 +873,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
@@ -950,7 +953,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -1002,7 +1005,7 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{
@@ -1010,7 +1013,8 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 		"CodeIntelligenceIndexerSetupInvestigated", // duplicate
 		"CodeIntelligenceUploadErrorInvestigated",
 		"CodeIntelligenceIndexErrorInvestigated",
-		"unknown event"}
+		"unknown event",
+	}
 	users := []uint32{1, 2}
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -1079,7 +1083,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -1139,7 +1143,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{"search.latencies.literal", "search.latencies.structural", "unknown event"}
@@ -1300,13 +1304,112 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	}
 }
 
+func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	t.Parallel()
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
+	// be a consistent value so that the tests don't fail when someone runs it at some particular
+	// time that falls too near the edge of a week.
+	now := time.Unix(1589581800, 0).UTC()
+
+	codyEventNames := []string{
+		"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
+		"CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+	}
+	users := []uint32{1, 2}
+
+	days := []time.Time{
+		now,                          // Today
+		now.Add(-time.Hour * 24 * 3), // This week
+		now.Add(-time.Hour * 24 * 4), // This week
+		now.Add(-time.Hour * 24 * 6), // This month
+	}
+
+	g, gctx := errgroup.WithContext(ctx)
+
+	// add some Cody events
+	for _, user := range users {
+		for _, name := range codyEventNames {
+			for _, day := range days {
+				for i := 0; i < 25; i++ {
+					e := &Event{
+						UserID: user,
+						Name:   name,
+						URL:    "http://sourcegraph.com",
+						Source: "test",
+						// Jitter current time +/- 30 minutes
+						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60)-30)),
+					}
+
+					g.Go(func() error {
+						return db.EventLogs().Insert(gctx, e)
+					})
+				}
+			}
+		}
+	}
+
+	if err := g.Wait(); err != nil {
+		t.Fatal(err)
+	}
+
+	events, err := db.EventLogs().AggregatedCodyEvents(ctx, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedEvents := []types.CodyAggregatedEvent{
+		{
+			Name:               "CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+			Month:              time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:               now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Day:                now.Truncate(time.Hour * 24),
+			TotalMonth:         200,
+			TotalWeek:          150,
+			TotalDay:           50,
+			UniquesMonth:       2,
+			UniquesWeek:        2,
+			UniquesDay:         2,
+			CodeGenerationWeek: 150,
+			CodeGenerationDay:  0,
+			ExplanationMonth:   200,
+			ExplanationWeek:    150,
+			ExplanationDay:     50,
+		},
+		{
+			Name:                "CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
+			Month:               time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+			Week:                now.Truncate(time.Hour * 24).Add(-time.Hour * 24 * 5),
+			Day:                 now.Truncate(time.Hour * 24),
+			TotalMonth:          200,
+			TotalWeek:           150,
+			TotalDay:            50,
+			UniquesMonth:        2,
+			UniquesWeek:         2,
+			UniquesDay:          2,
+			CodeGenerationMonth: 200,
+			CodeGenerationDay:   50,
+		},
+	}
+
+	if diff := cmp.Diff(expectedEvents, events); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
 func TestEventLogs_ListAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -1320,7 +1423,8 @@ func TestEventLogs_ListAll(t *testing.T) {
 			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
-		}, {
+		},
+		{
 			UserID:    2,
 			Name:      "codeintel",
 			URL:       "http://sourcegraph.com",
@@ -1328,19 +1432,26 @@ func TestEventLogs_ListAll(t *testing.T) {
 			Timestamp: startDate,
 		},
 		{
-			UserID:    2,
+			UserID:    42,
 			Name:      "ViewRepository",
 			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
 		},
 		{
-			UserID:    2,
+			UserID:    3,
 			Name:      "SearchResultsQueried",
 			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
-		}}
+		},
+	}
+
+	// Run all the inserts under a mock trace so we can test trace data being
+	// attached
+	tracetest.ConfigureStaticTracerProvider(t)
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, t.Name())
 
 	for _, event := range events {
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
@@ -1348,17 +1459,46 @@ func TestEventLogs_ListAll(t *testing.T) {
 		}
 	}
 
-	searchResultQueriedEvent := "SearchResultsQueried"
-	have, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{EventName: &searchResultQueriedEvent})
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("listed all SearchResultsQueried events", func(t *testing.T) {
+		have, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{EventName: pointers.Ptr("SearchResultsQueried")})
+		require.NoError(t, err)
+		assert.Len(t, have, 2)
+	})
 
-	want := 2
+	t.Run("listed one ViewRepository event", func(t *testing.T) {
+		opts := EventLogsListOptions{EventName: pointers.Ptr("ViewRepository"), LimitOffset: &LimitOffset{Limit: 1}}
+		have, err := db.EventLogs().ListAll(ctx, opts)
+		require.NoError(t, err)
+		assert.Len(t, have, 1)
+		assert.Equal(t, uint32(42), have[0].UserID)
+	})
 
-	if diff := cmp.Diff(want, len(have)); diff != "" {
-		t.Error(diff)
-	}
+	t.Run("listed zero events because of after parameter", func(t *testing.T) {
+		opts := EventLogsListOptions{EventName: pointers.Ptr("ViewRepository"), AfterID: 3}
+		have, err := db.EventLogs().ListAll(ctx, opts)
+		require.NoError(t, err)
+		require.Empty(t, have)
+	})
+
+	t.Run("listed one SearchResultsQueried event because of after parameter", func(t *testing.T) {
+		opts := EventLogsListOptions{EventName: pointers.Ptr("SearchResultsQueried"), AfterID: 1}
+		have, err := db.EventLogs().ListAll(ctx, opts)
+		require.NoError(t, err)
+		assert.Len(t, have, 1)
+		assert.Equal(t, uint32(3), have[0].UserID)
+	})
+
+	t.Run("all events have trace context", func(t *testing.T) {
+		got, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{})
+		require.NoError(t, err)
+		assert.Len(t, got, len(events))
+		for _, e := range got {
+			args := make(map[string]any)
+			require.NoError(t, json.Unmarshal(e.PublicArgument, &args))
+			assert.NotEmpty(t, args["interaction.trace_id"])
+			assert.Equal(t, tr.SpanContext().TraceID().String(), args["interaction.trace_id"])
+		}
+	})
 }
 
 func TestEventLogs_LatestPing(t *testing.T) {
@@ -1367,7 +1507,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("with no pings in database", func(t *testing.T) {
 		ctx := context.Background()
@@ -1379,10 +1519,6 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			t.Fatalf("have err %+v, expected no rows error", err)
 		}
 	})
-
-	ptr := func(s string) *string {
-		return &s
-	}
 
 	t.Run("with existing pings in database", func(t *testing.T) {
 		userID := int32(0)
@@ -1398,8 +1534,9 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				Source:          "test",
 				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value1"}`),
-				DeviceID:        ptr("device-id"),
-				InsertID:        ptr("insert-id"),
+				PublicArgument:  json.RawMessage("{}"),
+				DeviceID:        pointers.Ptr("device-id"),
+				InsertID:        pointers.Ptr("insert-id"),
 			}, {
 				UserID:          0,
 				Name:            "ping",
@@ -1408,8 +1545,9 @@ func TestEventLogs_LatestPing(t *testing.T) {
 				Source:          "test",
 				Timestamp:       timestamp,
 				Argument:        json.RawMessage(`{"key": "value2"}`),
-				DeviceID:        ptr("device-id"),
-				InsertID:        ptr("insert-id"),
+				PublicArgument:  json.RawMessage("{}"),
+				DeviceID:        pointers.Ptr("device-id"),
+				InsertID:        pointers.Ptr("insert-id"),
 			},
 		}
 		for _, event := range events {
@@ -1430,11 +1568,12 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			AnonymousUserID: events[1].AnonymousUserID,
 			Version:         version.Version(),
 			Argument:        events[1].Argument,
+			PublicArgument:  events[1].PublicArgument,
 			Source:          events[1].Source,
 			Timestamp:       timestamp,
 		}
-		expectedPing.DeviceID = ptr("device-id")
-		expectedPing.InsertID = ptr("insert-id") // set these values for test determinism
+		expectedPing.DeviceID = pointers.Ptr("device-id")
+		expectedPing.InsertID = pointers.Ptr("insert-id") // set these values for test determinism
 		if diff := cmp.Diff(gotPing, expectedPing); diff != "" {
 			t.Fatal(diff)
 		}
@@ -1480,7 +1619,7 @@ func TestEventLogs_RequestsByLanguage(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	if _, err := db.Handle().ExecContext(ctx, `
@@ -1533,7 +1672,6 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 		t.Skip()
 	}
 	t.Parallel()
-	ptr := func(i int32) *int32 { return &i }
 	for name, testCase := range map[string]struct {
 		now             time.Time
 		events          []*Event
@@ -1559,9 +1697,9 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(2),
-					WAU: ptr(2),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(2)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 			},
 		},
@@ -1584,9 +1722,9 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(0),
-					WAU: ptr(2),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 			},
 		},
@@ -1609,9 +1747,9 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(0),
-					WAU: ptr(0),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(0)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 			},
 		},
@@ -1634,9 +1772,9 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(0),
-					WAU: ptr(2),
-					MAU: ptr(0),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(0)),
 				},
 			},
 		},
@@ -1683,14 +1821,14 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"cat", "dog"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"cat": {
-					DAU: ptr(0),
-					WAU: ptr(0),
-					MAU: ptr(0),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(0)),
+					MAU: pointers.Ptr(int32(0)),
 				},
 				"dog": {
-					DAU: ptr(0),
-					WAU: ptr(0),
-					MAU: ptr(0),
+					DAU: pointers.Ptr(int32(0)),
+					WAU: pointers.Ptr(int32(0)),
+					MAU: pointers.Ptr(int32(0)),
 				},
 			},
 		},
@@ -1737,21 +1875,21 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			queryEventNames: []string{"horse", "ram"},
 			stats: map[string]*types.OwnershipUsageStatisticsActiveUsers{
 				"horse": {
-					DAU: ptr(2),
-					WAU: ptr(2),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(2)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 				"ram": {
-					DAU: ptr(2),
-					WAU: ptr(2),
-					MAU: ptr(2),
+					DAU: pointers.Ptr(int32(2)),
+					WAU: pointers.Ptr(int32(2)),
+					MAU: pointers.Ptr(int32(2)),
 				},
 			},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
 			logger := logtest.Scoped(t)
-			db := NewDB(logger, dbtest.NewDB(logger, t))
+			db := NewDB(logger, dbtest.NewDB(t))
 			ctx := context.Background()
 			for _, e := range testCase.events {
 				if err := db.EventLogs().Insert(ctx, e); err != nil {
@@ -1765,6 +1903,224 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			if diff := cmp.Diff(testCase.stats, stats); diff != "" {
 				t.Errorf("unexpected statistics returned:\n%s", diff)
 			}
+		})
+	}
+}
+
+func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	now := time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC)
+	events := []*Event{
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: time.Date(now.Year(), now.Month(), now.Day()-1, now.Hour(), 0, 0, 0, time.UTC),
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataUpdated",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataDeleted",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "SearchSubmitted",
+			Argument:  json.RawMessage(`{"query": "repo:has(some:meta)"}`),
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+	}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+	for _, e := range events {
+		if err := db.EventLogs().Insert(ctx, e); err != nil {
+			t.Fatalf("failed inserting test data: %s", err)
+		}
+	}
+
+	for name, testCase := range map[string]struct {
+		now    time.Time
+		period PeriodType
+		stats  *types.RepoMetadataAggregatedEvents
+	}{
+		"daily": {
+			now:    now,
+			period: Daily,
+			stats: &types.RepoMetadataAggregatedEvents{
+				StartTime: time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC),
+				CreateRepoMetadata: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(2)),
+				},
+				UpdateRepoMetadata: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
+				},
+				DeleteRepoMetadata: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
+				},
+				SearchFilterUsage: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
+				},
+			},
+		},
+		"weekly": {
+			now:    now,
+			period: Weekly,
+			stats: &types.RepoMetadataAggregatedEvents{
+				StartTime: time.Date(now.Year(), now.Month(), now.Day()-int(now.Weekday()), 0, 0, 0, 0, time.UTC),
+				CreateRepoMetadata: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(3)),
+				},
+				UpdateRepoMetadata: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
+				},
+				DeleteRepoMetadata: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
+				},
+				SearchFilterUsage: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
+				},
+			},
+		},
+		"monthly": {
+			now:    now,
+			period: Monthly,
+			stats: &types.RepoMetadataAggregatedEvents{
+				StartTime: time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+				CreateRepoMetadata: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(3)),
+				},
+				UpdateRepoMetadata: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
+				},
+				DeleteRepoMetadata: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
+				},
+				SearchFilterUsage: &types.EventStats{
+					UsersCount:  pointers.Ptr(int32(1)),
+					EventsCount: pointers.Ptr(int32(1)),
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			stats, err := db.EventLogs().AggregatedRepoMetadataEvents(ctx, testCase.now, testCase.period)
+			if err != nil {
+				t.Fatalf("querying activity failed: %s", err)
+			}
+			if diff := cmp.Diff(testCase.stats, stats); diff != "" {
+				t.Errorf("unexpected statistics returned:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestMakeDateTruncExpression(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping long test")
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	cases := []struct {
+		name     string
+		unit     string
+		expr     string
+		expected string
+	}{
+		{
+			name:     "truncates to beginning of day in UTC",
+			unit:     "day",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-02-14T00:00:00Z",
+		},
+		{
+			name:     "truncates to beginning of day in UTC, regardless of input timezone",
+			unit:     "day",
+			expr:     "'2023-02-14T20:53:24-09:00'",
+			expected: "2023-02-15T00:00:00Z",
+		},
+		{
+			name:     "truncates to beginning of week in UTC, starting with Sunday",
+			unit:     "week",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-02-12T00:00:00Z",
+		},
+		{
+			name:     "truncates to beginning of month in UTC",
+			unit:     "month",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-02-01T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, if month has 30 days",
+			unit:     "rolling_month",
+			expr:     "'2023-04-20T20:53:24Z'",
+			expected: "2023-03-20T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, even if March has 31 days",
+			unit:     "rolling_month",
+			expr:     "'2023-03-14T20:53:24Z'",
+			expected: "2023-02-14T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, even if Feb only has 28 days",
+			unit:     "rolling_month",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-01-14T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, even for leap year February",
+			unit:     "rolling_month",
+			expr:     "'2024-02-29T20:53:24Z'",
+			expected: "2024-01-29T00:00:00Z",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			format := fmt.Sprintf("SELECT %s AS date", makeDateTruncExpression(tc.unit, tc.expr))
+			q := sqlf.Sprintf(format)
+			date, _, err := basestore.ScanFirstTime(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expected, date.Format(time.RFC3339))
 		})
 	}
 }

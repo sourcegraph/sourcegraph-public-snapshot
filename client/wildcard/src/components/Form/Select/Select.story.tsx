@@ -1,12 +1,12 @@
 import React, { useCallback } from 'react'
 
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { H1, H2 } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
 import { Grid } from '../../Grid/Grid'
 
-import { Select, SelectProps } from './Select'
+import { Select, type SelectProps } from './Select'
 
 const config: Meta = {
     title: 'wildcard/Select',
@@ -36,6 +36,7 @@ const BaseSelect = (props: { id: string } & Pick<SelectProps, 'isCustomStyle' | 
         <Select
             label="What is your favorite fruit?"
             message="I am a message"
+            description="I am a description"
             value={selected}
             onChange={handleChange}
             {...props}
@@ -72,7 +73,7 @@ const SelectVariants = ({ isCustomStyle }: Pick<SelectProps, 'isCustomStyle'>) =
     )
 }
 
-export const SelectExamples: Story = () => (
+export const SelectExamples: StoryFn = () => (
     <>
         <H1>Select</H1>
         <H2>Native</H2>

@@ -7,7 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cockroachdb/errors/errbase"
 	"github.com/google/go-cmp/cmp"
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
@@ -22,7 +24,7 @@ func TestExecutorsList(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
@@ -145,7 +147,7 @@ func TestExecutorsGetByID(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
@@ -209,7 +211,7 @@ func TestExecutorsGetByHostname(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
@@ -275,12 +277,12 @@ func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Executors().(*executorStore)
 	ctx := context.Background()
 
 	for i := 0; i < 10; i++ {
-		db.Executors().UpsertHeartbeat(ctx, types.Executor{Hostname: fmt.Sprintf("h%02d", i+1)})
+		db.Executors().UpsertHeartbeat(ctx, types.Executor{Hostname: fmt.Sprintf("h%02d", i+1), QueueName: "q1"})
 	}
 
 	now := time.Unix(1587396557, 0).UTC()
@@ -314,5 +316,56 @@ func TestExecutorsDeleteInactiveHeartbeats(t *testing.T) {
 		t.Fatalf("unexpected error counting executors: %s", err)
 	} else if totalCount != 5 {
 		t.Fatalf("unexpected total count. want=%d have=%d", 5, totalCount)
+	}
+}
+
+func TestExecutorsUpsertHeartbeat(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	tests := []struct {
+		name                 string
+		executor             types.Executor
+		expectedErrorMessage string
+	}{
+		{
+			name:     "Single queue defined",
+			executor: types.Executor{Hostname: "happy_single_queue", QueueName: "single", OS: "win", Architecture: "amd", DockerVersion: "d1", ExecutorVersion: "e1", GitVersion: "g1", IgniteVersion: "i1", SrcCliVersion: "s1"},
+		},
+		{
+			name:     "Multiple queues defined",
+			executor: types.Executor{Hostname: "happy_multi_queue", QueueNames: []string{"multi1", "multi2"}, OS: "win", Architecture: "amd", DockerVersion: "d1", ExecutorVersion: "e1", GitVersion: "g1", IgniteVersion: "i1", SrcCliVersion: "s1"},
+		},
+		{
+			name:                 "Both single queue and multiple queues defined",
+			executor:             types.Executor{Hostname: "sad_both_defined", QueueName: "single", QueueNames: []string{"multi1", "multi2"}, OS: "win", Architecture: "amd", DockerVersion: "d1", ExecutorVersion: "e1", GitVersion: "g1", IgniteVersion: "i1", SrcCliVersion: "s1"},
+			expectedErrorMessage: `new row for relation "executor_heartbeats" violates check constraint "one_of_queue_name_queue_names"`,
+		},
+		{
+			name:                 "No queues defined",
+			executor:             types.Executor{Hostname: "sad_none_defined", OS: "win", Architecture: "amd", DockerVersion: "d1", ExecutorVersion: "e1", GitVersion: "g1", IgniteVersion: "i1", SrcCliVersion: "s1"},
+			expectedErrorMessage: `new row for relation "executor_heartbeats" violates check constraint "one_of_queue_name_queue_names"`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := db.Executors().UpsertHeartbeat(ctx, test.executor)
+			if err != nil {
+				err = errbase.UnwrapAll(err)
+				pgErr, ok := err.(*pgconn.PgError)
+				if !ok {
+					t.Fatalf("unexpected error while upserting heartbeat: %s", err)
+				}
+				if pgErr.Message != test.expectedErrorMessage {
+					t.Errorf("Unexpected error while upserting heartbeat. expected=%s actual=%s", test.expectedErrorMessage, pgErr.Message)
+				}
+			}
+		})
 	}
 }

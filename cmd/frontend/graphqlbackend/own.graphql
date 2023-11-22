@@ -41,6 +41,69 @@ extend type GitBlob implements Ownable {
     ): OwnershipConnection!
 }
 
+extend type GitTree {
+    """
+    Owners of the directory at revision.
+    """
+    ownership(
+        """
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): OwnershipConnection!
+
+    """
+    Ownership statistics for all the files (deeply) contained in this tree.
+    """
+    ownershipStats: OwnershipStats!
+}
+
+extend type GitCommit {
+    """
+    Owners of the repository at this commit.
+    """
+    ownership(
+        """
+        Returns the first n ownership records from the list.
+        """
+        first: Int
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): OwnershipConnection!
+}
+
+"""
+Statistics about code ownership computed for given context (usually a repository or directory).
+"""
+type OwnershipStats {
+    """
+    Total files considered for ownership statistics (owned + unowned).
+    """
+    totalFiles: Int!
+    """
+    Total files with ownership stemming from CODEOWNERS files.
+    """
+    totalCodeownedFiles: Int!
+    """
+    Total files with any ownership defined (both CODEOWNERS and assigned).
+    """
+    totalOwnedFiles: Int!
+    """
+    Total files with assigned ownership.
+    """
+    totalAssignedOwnershipFiles: Int!
+    """
+    When statistics were last updated.
+    """
+    updatedAt: DateTime
+}
+
 """
 A list of ownership entries.
 """
@@ -49,6 +112,11 @@ type OwnershipConnection {
     The total count of items in the connection.
     """
     totalCount: Int!
+    """
+    The total number of owners in this connection.
+    Here an owner is as opposed to an ownership inference signal.
+    """
+    totalOwners: Int!
     """
     The pagination info for the connection.
     """
@@ -84,15 +152,72 @@ The only way we can recognize ownership at this point is through CODEOWNERS file
 """
 enum OwnershipReasonType {
     CODEOWNERS_FILE_ENTRY
+    ASSIGNED_OWNER
+    RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL
+    RECENT_VIEW_OWNERSHIP_SIGNAL
 }
-"""
-Union of all possible types of ownership reasons. Use the individual subtypes to
-get more details on the ownership determination.
-"""
-union OwnershipReason = CodeownersFileEntry
 
 """
-The entity is an owner because they were mentioned on a codeowners file.
+A union of all the different ownership reasons.
+"""
+union OwnershipReason =
+      CodeownersFileEntry
+    | RecentContributorOwnershipSignal
+    | RecentViewOwnershipSignal
+    | AssignedOwner
+
+"""
+A signal derived from recent code contributors.
+"""
+type RecentContributorOwnershipSignal {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
+    title: String!
+
+    """
+    More detailed description to display in the UI for the determination.
+    """
+    description: String!
+}
+
+"""
+A signal derived from recent code file views.
+"""
+type RecentViewOwnershipSignal {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
+    title: String!
+
+    """
+    More detailed description to display in the UI for the determination.
+    """
+    description: String!
+}
+
+"""
+Manually assigned owner.
+"""
+type AssignedOwner {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
+    title: String!
+
+    """
+    More detailed description to display in the UI for the determination.
+    """
+    description: String!
+
+    """
+    Whether or not this rule matches a path directly, or is inherited from a parent path.
+    """
+    isDirectMatch: Boolean!
+}
+
+"""
+The entity is an owner because they were manually assigned as an owner.
 """
 type CodeownersFileEntry {
     """
@@ -153,6 +278,26 @@ extend type Mutation {
     deleteCodeownersFiles deletes any existing Codeowners file for the given repositories.
     """
     deleteCodeownersFiles(repositories: [DeleteCodeownersFilesInput!]!): EmptyResponse
+    """
+    updateOwnSignalConfigurations updates any configurations keyed by name. It will do nothing if the key doesn't exist.
+    """
+    updateOwnSignalConfigurations(input: UpdateSignalConfigurationsInput!): [OwnSignalConfiguration!]!
+    """
+    assignOwner creates a new assigned owner.
+    """
+    assignOwner(input: AssignOwnerOrTeamInput!): EmptyResponse
+    """
+    removeAssignedOwner removes an assigned owner.
+    """
+    removeAssignedOwner(input: AssignOwnerOrTeamInput!): EmptyResponse
+    """
+    assignTeam creates a new assigned team.
+    """
+    assignTeam(input: AssignOwnerOrTeamInput!): EmptyResponse
+    """
+    removeAssignedTeam removes an assigned owner.
+    """
+    removeAssignedTeam(input: AssignOwnerOrTeamInput!): EmptyResponse
 }
 
 """
@@ -193,6 +338,84 @@ extend type Query {
     codeownersIngestedFiles returns all existing manually ingested codeowners files.
     """
     codeownersIngestedFiles(first: Int, after: Int): CodeownersIngestedFileConnection!
+
+    """
+    List all ownership signal configurations
+    """
+    ownSignalConfigurations: [OwnSignalConfiguration!]!
+
+    """
+    Returns ownership stats for the whole Sourcegraph instance
+    """
+    instanceOwnershipStats: OwnershipStats!
+}
+
+"""
+OwnSignalConfiguration represents the configuration for an ownership signal.
+"""
+type OwnSignalConfiguration {
+    """
+    The name of the signal configuration, this serves as the primary key.
+    """
+    name: String!
+    """
+    The description of the signal configuration.
+    """
+    description: String!
+    """
+    Whether or not the signal configuration is enabled.
+    """
+    isEnabled: Boolean!
+    """
+    A list of repository name patterns to exclude from the signal.
+    """
+    excludedRepoPatterns: [String!]!
+}
+
+"""
+OwnSignalConfigurationUpdate represents an update to an OwnSignalConfiguration.
+"""
+input OwnSignalConfigurationUpdate {
+    """
+    A list of repository name patterns to exclude from the signal.
+    """
+    excludedRepoPatterns: [String!]!
+    """
+    Whether or not the signal configuration should be enabled.
+    """
+    enabled: Boolean!
+    """
+    The new name for the signal configuration.
+    """
+    name: String!
+}
+
+"""
+UpdateSignalConfigurationsInput represents the input for updating multiple signal configurations.
+"""
+input UpdateSignalConfigurationsInput {
+    """
+    The signal configuration updates.
+    """
+    configs: [OwnSignalConfigurationUpdate!]!
+}
+
+"""
+AssignOwnerOrTeamInput represents the input for assigning or deleting an owner team or person.
+"""
+input AssignOwnerOrTeamInput {
+    """
+    ID of an assigned owner or team.
+    """
+    assignedOwnerID: ID!
+    """
+    ID of a repo, which (or which directory/file) is assigned for ownership.
+    """
+    repoID: ID!
+    """
+    Path of the file/directory or a root path of the repo, which is assigned for ownership.
+    """
+    absolutePath: String!
 }
 
 """

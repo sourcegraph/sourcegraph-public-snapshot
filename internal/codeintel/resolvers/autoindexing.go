@@ -4,9 +4,6 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type AutoindexingServiceResolver interface {
@@ -19,14 +16,8 @@ type AutoindexingServiceResolver interface {
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 
 	// Inference
-	InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) ([]AutoIndexJobDescriptionResolver, error)
+	InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (InferAutoIndexJobsResultResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]PreciseIndexResolver, error)
-
-	// Coverage
-	CodeIntelSummary(ctx context.Context) (CodeIntelSummaryResolver, error)
-	RepositorySummary(ctx context.Context, id graphql.ID) (CodeIntelRepositorySummaryResolver, error)
-	GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitBlobCodeIntelSupportResolver, error)
-	GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (GitTreeCodeIntelSupportResolver, error)
 }
 
 type UpdateCodeIntelligenceInferenceScriptArgs struct {
@@ -50,12 +41,6 @@ type QueueAutoIndexJobsForRepoArgs struct {
 	Configuration *string
 }
 
-type GitTreeEntryCodeIntelInfoArgs struct {
-	Repo   *types.Repo
-	Path   string
-	Commit string
-}
-
 type IndexConfigurationResolver interface {
 	Configuration(ctx context.Context) (*string, error)
 	ParsedConfiguration(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
@@ -68,10 +53,9 @@ type InferredConfigurationResolver interface {
 	LimitError() *string
 }
 
-type CodeIntelSummaryResolver interface {
-	NumRepositoriesWithCodeIntelligence(ctx context.Context) (int32, error)
-	RepositoriesWithErrors(ctx context.Context, args *RepositoriesWithErrorsArgs) (CodeIntelRepositoryWithErrorConnectionResolver, error)
-	RepositoriesWithConfiguration(ctx context.Context, args *RepositoriesWithConfigurationArgs) (CodeIntelRepositoryWithConfigurationConnectionResolver, error)
+type InferAutoIndexJobsResultResolver interface {
+	Jobs() []AutoIndexJobDescriptionResolver
+	InferenceOutput() string
 }
 
 type (
@@ -94,58 +78,4 @@ type CodeIntelRepositoryWithConfigurationResolver interface {
 type IndexerWithCountResolver interface {
 	Indexer() CodeIntelIndexerResolver
 	Count() int32
-}
-
-type CodeIntelRepositorySummaryResolver interface {
-	RecentActivity(ctx context.Context) ([]PreciseIndexResolver, error)
-	LastUploadRetentionScan() *gqlutil.DateTime
-	LastIndexScan() *gqlutil.DateTime
-	AvailableIndexers() []InferredAvailableIndexersResolver
-	LimitError() *string
-}
-
-type InferredAvailableIndexersResolver interface {
-	Indexer() CodeIntelIndexerResolver
-	Roots() []string
-	RootsWithKeys() []RootsWithKeyResolver
-}
-
-type RootsWithKeyResolver interface {
-	Root() string
-	ComparisonKey() string
-}
-
-type GitBlobCodeIntelSupportResolver interface {
-	SearchBasedSupport(context.Context) (SearchBasedSupportResolver, error)
-	PreciseSupport(context.Context) (PreciseSupportResolver, error)
-}
-
-type SearchBasedSupportResolver interface {
-	SupportLevel() string
-	Language() string
-}
-
-type PreciseSupportResolver interface {
-	SupportLevel() string
-	Indexers() *[]CodeIntelIndexerResolver
-}
-
-type GitTreeCodeIntelSupportResolver interface {
-	SearchBasedSupport(context.Context) (*[]GitTreeSearchBasedCoverage, error)
-	PreciseSupport(context.Context) (GitTreePreciseCoverageErrorResolver, error)
-}
-
-type GitTreeSearchBasedCoverage interface {
-	CoveredPaths() []string
-	Support() SearchBasedSupportResolver
-}
-
-type GitTreePreciseCoverageErrorResolver interface {
-	Coverage() []GitTreePreciseCoverage
-	LimitError() *string
-}
-
-type GitTreePreciseCoverage interface {
-	Support() PreciseSupportResolver
-	Confidence() string
 }

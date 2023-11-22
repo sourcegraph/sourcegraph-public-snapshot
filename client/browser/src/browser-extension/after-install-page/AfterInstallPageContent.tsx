@@ -1,4 +1,4 @@
-import React, { VideoHTMLAttributes } from 'react'
+import React, { type VideoHTMLAttributes } from 'react'
 
 import { mdiOpenInNew, mdiGithub, mdiCheck, mdiGitlab, mdiBitbucket, mdiLock, mdiBookOpenPageVariant } from '@mdi/js'
 import classNames from 'classnames'

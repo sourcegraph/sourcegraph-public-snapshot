@@ -8,8 +8,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/symbols/v1";
 
 service SymbolsService {
   rpc Search(SearchRequest) returns (SearchResponse) {}
-  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (LocalCodeIntelResponse) {}
-  rpc ListLanguages(ListLanguagesRequest) returns (ListLanguagesResponse) {}
+  rpc LocalCodeIntel(LocalCodeIntelRequest) returns (stream LocalCodeIntelResponse) {}
   rpc SymbolInfo(SymbolInfoRequest) returns (SymbolInfoResponse) {}
   rpc Healthz(HealthzRequest) returns (HealthzResponse) {}
 }
@@ -27,8 +26,8 @@ message SearchRequest {
   // is_reg_exp, if true, will treat the Pattern as a regular expression
   bool is_reg_exp = 4;
 
-  // is_case_sensitive, if false, will ignore the case of query and file pattern when
-  // finding matches
+  // is_case_sensitive, if false, will ignore the case of query and file pattern
+  // when finding matches
   bool is_case_sensitive = 5;
 
   // include_patterns is a list of regexes that symbol's file paths
@@ -79,8 +78,8 @@ message SearchResponse {
     // signature is the signature of the symbol (TODO@ggilmore - what is this?)
     string signature = 9;
 
-    // file_limited indicates that the search ran into the limit set by "first" in the request, and so the result
-    // set may be incomplete.
+    // file_limited indicates that the search ran into the limit set by "first"
+    // in the request, and so the result set may be incomplete.
     bool file_limited = 10;
   }
 
@@ -115,26 +114,9 @@ message LocalCodeIntelResponse {
   repeated Symbol symbols = 1;
 }
 
-// ListLanguagesRequest is the request to the ListLanguages method.
-message ListLanguagesRequest {
-  // All fields are empty.
-}
-
-// ListLanguagesResponse is the response from the ListLanguages method.
-message ListLanguagesResponse {
-  message GlobFilePatterns {
-    repeated string patterns = 1;
-  }
-
-  // language_file_name_map is a of map of language names to
-  // glob patterns that match files of that language.
-  //
-  // Example: "Ruby" -> ["*.rb", "*.ruby"]
-  map<string, GlobFilePatterns> language_file_name_map = 1;
-}
-
 message SymbolInfoRequest {
-  // repo_commit_path is the repo, commit, and path to the file to get symbol information for
+  // repo_commit_path is the repo, commit, and path to the file to get symbol
+  // information for
   RepoCommitPath repo_commit_path = 1;
 
   // point is the point in the file to get symbol information for
@@ -144,7 +126,8 @@ message SymbolInfoRequest {
 // SymbolInfoResponse is the response from the SymbolInfo method.
 message SymbolInfoResponse {
   message Definition {
-    // repo_commit_path is the repository name, commit, and file path for the symbol's definition.
+    // repo_commit_path is the repository name, commit, and file path for the
+    // symbol's definition.
     RepoCommitPath repo_commit_path = 1;
 
     // range is the range of the symbol's definition, if it is known.
@@ -152,15 +135,16 @@ message SymbolInfoResponse {
   }
 
   message DefinitionResult {
-    // definition is the information associated with the location of the symbol's definition.
+    // definition is the information associated with the location of the
+    // symbol's definition.
     Definition definition = 1;
 
     // hover is the hover text associated with the symbol
     optional string hover = 2;
   }
 
-  // result is the definition / hover information  for the symbol at the given point in the file,
-  // if available.
+  // result is the definition / hover information  for the symbol at the given
+  // point in the file, if available.
   optional DefinitionResult result = 1;
 }
 
@@ -195,10 +179,14 @@ message Point {
   int32 column = 2;
 }
 
-// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
-// See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should
+// use instead of this. See
+// https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more
+// information.
 message HealthzRequest {}
 
-// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should use instead of this.
-// See https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more information.
+// TODO@ggilmore: Note - GRPC has its own healthchecking protocol that we should
+// use instead of this. See
+// https://github.com/grpc/grpc/blob/master/doc/health-checking.md for more
+// information.
 message HealthzResponse {}

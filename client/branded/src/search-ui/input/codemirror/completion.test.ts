@@ -1,10 +1,11 @@
-import { Completion } from '@codemirror/autocomplete'
+import type { Completion } from '@codemirror/autocomplete'
+import { describe, expect, test } from 'vitest'
 
 import { SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
 import { POPULAR_LANGUAGES } from '@sourcegraph/shared/src/search/query/languageFilter'
-import { ScanResult, scanSearchQuery, ScanSuccess } from '@sourcegraph/shared/src/search/query/scanner'
-import { Token } from '@sourcegraph/shared/src/search/query/token'
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import { type ScanResult, scanSearchQuery, type ScanSuccess } from '@sourcegraph/shared/src/search/query/scanner'
+import type { Token } from '@sourcegraph/shared/src/search/query/token'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
 import { createDefaultSuggestionSources, FILTER_SHORTHAND_SUGGESTIONS, suggestionTypeFromTokens } from './completion'
 
@@ -102,7 +103,7 @@ describe('codmirror completions', () => {
                 'type',
                 'visibility',
                 ...shorthandSuggestions,
-                'RepoRoutes',
+                'variable RepoRoutes',
             ].filter(label => label.toLowerCase().includes('re'))
         )
     })
@@ -333,7 +334,7 @@ describe('codmirror completions', () => {
     test('inserts file: prefix for global suggestions', async () => {
         const query = 'repo:x local'
         const tokens = getTokens(query)
-        const lastToken = tokens[tokens.length - 1]
+        const lastToken = tokens.at(-1)!
         expect(
             (
                 await getCompletionItems(
@@ -359,7 +360,7 @@ describe('codmirror completions', () => {
         `)
     })
 
-    const suggestionType = (query: string): string => suggestionTypeFromTokens(getTokens(query), { applyOnEnter: true })
+    const suggestionType = (query: string): string => suggestionTypeFromTokens(getTokens(query))
     test('suggests repos for global queries', async () => {
         expect(suggestionType('sourcegraph')).toStrictEqual('repo')
     })

@@ -3,8 +3,8 @@ package database
 import (
 	"context"
 	"testing"
-	"time"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -19,7 +19,7 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	if _, err := db.Users().Create(ctx, NewUser{
@@ -110,7 +110,6 @@ func TestUsers_BuiltinAuth(t *testing.T) {
 	if err.Error() != want {
 		t.Fatalf("Want %q, got %q", want, err.Error())
 	}
-
 }
 
 func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
@@ -119,7 +118,7 @@ func TestUsers_BuiltinAuth_VerifiedEmail(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, NewUser{
@@ -146,7 +145,7 @@ func TestUsers_BuiltinAuthPasswordResetRateLimit(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	oldPasswordResetRateLimit := passwordResetRateLimit
@@ -187,7 +186,7 @@ func TestUsers_UpdatePassword(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	usr, err := db.Users().Create(ctx, NewUser{
@@ -236,7 +235,7 @@ func TestUsers_CreatePassword(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// User without a password
@@ -271,23 +270,24 @@ func TestUsers_CreatePassword(t *testing.T) {
 	}
 
 	// A new user with an external account should be able to create a password
-	newUser, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{
+	newUser, err := db.Users().CreateWithExternalAccount(ctx, NewUser{
 		Email:                 "usr3@bar.com",
 		Username:              "usr3",
 		Password:              "",
 		EmailVerificationCode: "c",
 	},
-		extsvc.AccountSpec{
-			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "123",
-			ClientID:    "456",
-			AccountID:   "789",
-		},
-		extsvc.AccountData{
-			AuthData: nil,
-			Data:     nil,
-		},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: extsvc.TypeGitHub,
+				ServiceID:   "123",
+				ClientID:    "456",
+				AccountID:   "789",
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: nil,
+				Data:     nil,
+			},
+		})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -301,12 +301,21 @@ func TestUsers_PasswordResetExpiry(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
-	user, err := db.Users().Create(ctx, NewUser{
+	// We setup the configuration so that password reset links are valid for 60s
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			AuthPasswordResetLinkExpiry: 60,
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
+
+	users := db.Users()
+	user, err := users.Create(ctx, NewUser{
 		Email:                 "foo@bar.com",
 		Username:              "foo",
 		Password:              "right-password",
@@ -316,45 +325,37 @@ func TestUsers_PasswordResetExpiry(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	resetCode, err := db.Users().RenewPasswordResetCode(ctx, user.ID)
+	resetCode, err := users.RenewPasswordResetCode(ctx, user.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(time.Second) // the lowest expiry is 1 second
 
-	t.Run("expired link", func(t *testing.T) {
-		// This flaked with a data race in https://buildkite.com/sourcegraph/sourcegraph/builds/193660#0185bb03-890a-486f-a119-e5e80dd2c29e
-		t.Skip()
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthPasswordResetLinkExpiry: 1,
-			},
-		})
-		defer conf.Mock(nil)
+	// Reset the passwd_reset_time to be 5min in the past, so that it's expired
+	_, err = users.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_time = now()-'5 minutes'::interval WHERE users.id = %s", user.ID))
+	if err != nil {
+		t.Fatalf("failed to update reset time: %s", err)
+	}
 
-		success, err := db.Users().SetPassword(ctx, user.ID, resetCode, "new-password")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if success {
-			t.Fatal("accepted an expired password reset")
-		}
-	})
+	// This should fail, because it has been reset 5min ago, but link is only valid 60s
+	success, err := users.SetPassword(ctx, user.ID, resetCode, "new-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if success {
+		t.Fatal("accepted an expired password reset")
+	}
 
-	t.Run("valid link", func(t *testing.T) {
-		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthPasswordResetLinkExpiry: 3600,
-			},
-		})
-		defer conf.Mock(nil)
+	// Now we want the link to be fresh by setting passwd_reset_time to now
+	_, err = users.ExecResult(ctx, sqlf.Sprintf("UPDATE users SET passwd_reset_time = now() WHERE users.id = %s", user.ID))
+	if err != nil {
+		t.Fatalf("failed to update reset time: %s", err)
+	}
 
-		success, err := db.Users().SetPassword(ctx, user.ID, resetCode, "new-password")
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !success {
-			t.Fatal("did not accept a valid password reset")
-		}
-	})
+	success, err = users.SetPassword(ctx, user.ID, resetCode, "new-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !success {
+		t.Fatal("did not accept a valid password reset")
+	}
 }

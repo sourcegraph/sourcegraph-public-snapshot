@@ -24,7 +24,7 @@ func TestIDEExtensionsUsageStatistics(t *testing.T) {
 	now := time.Date(2022, 2, 9, 12, 55, 0, 0, time.UTC) // Feb 16 2022, Wednesday
 	mockTimeNow(now)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	_, err := db.ExecContext(ctx, `
 		INSERT INTO event_logs

@@ -1,7 +1,5 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { Prec } from '@codemirror/state'
-import { keymap } from '@codemirror/view'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BehaviorSubject, of } from 'rxjs'
@@ -9,31 +7,27 @@ import { debounceTime } from 'rxjs/operators'
 
 import {
     StreamingSearchResultsList,
-    StreamingSearchResultsListProps,
+    type StreamingSearchResultsListProps,
     CodeMirrorQueryInput,
     createDefaultSuggestions,
-    changeListener,
 } from '@sourcegraph/branded'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { LoadingSpinner, Button, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../graphql-operations'
-import { OwnConfigProps } from '../own/OwnConfigProps'
+import type { OwnConfigProps } from '../own/OwnConfigProps'
+import { setSearchMode, useNavbarQueryState } from '../stores'
 
-import { parseSearchURLQuery, parseSearchURLPatternType, SearchStreamingProps } from '.'
+import { parseSearchURLQuery, parseSearchURLPatternType, type SearchStreamingProps } from '.'
+import { submitSearch } from './helpers'
 
 import styles from './SearchConsolePage.module.scss'
 
 interface SearchConsolePageProps
     extends SearchStreamingProps,
-        Omit<
-            StreamingSearchResultsListProps,
-            'allExpanded' | 'executedQuery' | 'showSearchContext' | 'enableOwnershipSearch'
-        >,
+        Omit<StreamingSearchResultsListProps, 'allExpanded' | 'executedQuery' | 'showSearchContext'>,
         OwnConfigProps {
     isMacPlatform: boolean
 }
@@ -41,13 +35,7 @@ interface SearchConsolePageProps
 export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<SearchConsolePageProps>> = props => {
     const location = useLocation()
     const navigate = useNavigate()
-    const { streamSearch, isSourcegraphDotCom, ownEnabled } = props
-    const { applySuggestionsOnEnter } = useExperimentalFeatures(features => ({
-        applySuggestionsOnEnter: features.applySearchQuerySuggestionOnEnter ?? true,
-    }))
-    const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
-    const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
-
+    const { streamSearch, isSourcegraphDotCom } = props
     const searchQuery = useMemo(
         () => new BehaviorSubject<string>(parseSearchURLQuery(location.search) ?? ''),
         [location.search]
@@ -57,6 +45,10 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         () => parseSearchURLPatternType(location.search) || SearchPatternType.structural,
         [location.search]
     )
+
+    const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+    const searchMode = useNavbarQueryState(state => state.searchMode)
+    const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
 
     const triggerSearch = useCallback(() => {
         navigate('/search/console?q=' + encodeURIComponent(searchQuery.value))
@@ -74,18 +66,20 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
             createDefaultSuggestions({
                 fetchSuggestions: query => fetchStreamSuggestions(query),
                 isSourcegraphDotCom,
-                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [isSourcegraphDotCom, applySuggestionsOnEnter]
+        [isSourcegraphDotCom]
     )
 
-    const extensions = useMemo(
-        () => [
-            Prec.highest(keymap.of([{ key: 'Mod-Enter', run: () => (triggerSearch(), true) }])),
-            changeListener(value => searchQuery.next(value)),
-            autocompletion,
-        ],
-        [searchQuery, triggerSearch, autocompletion]
+    const onEnter = useCallback(() => {
+        triggerSearch()
+        return true
+    }, [triggerSearch])
+
+    const onChange = useCallback(
+        (value: string) => {
+            searchQuery.next(value)
+        },
+        [searchQuery]
     )
 
     // Fetch search results when the `q` URL query parameter changes
@@ -113,7 +107,10 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                             patternType={patternType}
                             interpretComments={true}
                             value={searchQuery.value}
-                            extensions={extensions}
+                            multiLine={true}
+                            extension={autocompletion}
+                            onEnter={onEnter}
+                            onChange={onChange}
                         />
                     </div>
                     <Button className="mt-2" onClick={triggerSearch} variant="primary">
@@ -127,11 +124,14 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                         ) : (
                             <StreamingSearchResultsList
                                 {...props}
-                                enableOwnershipSearch={enableOwnershipSearch}
                                 allExpanded={false}
                                 results={results}
-                                assetsRoot={window.context?.assetsRoot || ''}
                                 executedQuery={location.search}
+                                searchMode={searchMode}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={submittedURLQuery}
                             />
                         ))}
                 </div>

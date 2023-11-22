@@ -4,19 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -24,13 +21,6 @@ import (
 // field, and enqueues the contained repo for permissions synchronisation.
 func handleGitHubRepoAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions) webhooks.Handler {
 	return func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-		if !conf.ExperimentalFeatures().EnablePermissionsWebhooks {
-			return nil
-		}
-		if globals.PermissionsUserMapping().Enabled && !conf.ExperimentalFeatures().UnifiedPermissions {
-			return nil
-		}
-
 		logger.Debug("handleGitHubRepoAuthzEvent: Got github event", log.String("type", fmt.Sprintf("%T", payload)))
 
 		e, ok := payload.(repoGetter)
@@ -64,7 +54,7 @@ func scheduleRepoUpdate(ctx context.Context, logger log.Logger, db database.DB, 
 
 	logger.Debug("scheduleRepoUpdate: Dispatching permissions update", log.String("repo", repo.GetFullName()))
 
-	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, logger, db, permssync.ScheduleSyncOpts{
 		RepoIDs: []api.RepoID{r.ID},
 		Options: opts,
 		Reason:  database.ReasonGitHubRepoEvent,

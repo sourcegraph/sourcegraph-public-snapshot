@@ -14,6 +14,7 @@ type RootResolver interface {
 	PoliciesServiceResolver
 	SentinelServiceResolver
 	UploadsServiceResolver
+	RankingServiceResolver
 }
 
 type Resolver struct {
@@ -22,6 +23,7 @@ type Resolver struct {
 	policiesRootResolver     PoliciesServiceResolver
 	uploadsRootResolver      UploadsServiceResolver
 	sentinelRootResolver     SentinelServiceResolver
+	rankingServiceResolver   RankingServiceResolver
 }
 
 func NewCodeIntelResolver(
@@ -30,6 +32,7 @@ func NewCodeIntelResolver(
 	policiesRootResolver PoliciesServiceResolver,
 	uploadsRootResolver UploadsServiceResolver,
 	sentinelRootResolver SentinelServiceResolver,
+	rankingServiceResolver RankingServiceResolver,
 ) *Resolver {
 	return &Resolver{
 		autoIndexingRootResolver: autoIndexingRootResolver,
@@ -37,6 +40,7 @@ func NewCodeIntelResolver(
 		policiesRootResolver:     policiesRootResolver,
 		uploadsRootResolver:      uploadsRootResolver,
 		sentinelRootResolver:     sentinelRootResolver,
+		rankingServiceResolver:   rankingServiceResolver,
 	}
 }
 
@@ -101,6 +105,14 @@ func (r *Resolver) VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_
 	return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
 }
 
+func (r *Resolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ VulnerabilityMatchesSummaryCountResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchesSummaryCounts(ctx)
+}
+
+func (r *Resolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args GetVulnerabilityMatchCountByRepositoryArgs) (_ VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
+	return r.sentinelRootResolver.VulnerabilityMatchesCountByRepository(ctx, args)
+}
+
 func (r *Resolver) IndexerKeys(ctx context.Context, opts *IndexerKeyQueryArgs) (_ []string, err error) {
 	return r.uploadsRootResolver.IndexerKeys(ctx, opts)
 }
@@ -137,20 +149,12 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAut
 	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
 }
 
-func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ []AutoIndexJobDescriptionResolver, err error) {
+func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ InferAutoIndexJobsResultResolver, err error) {
 	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
 }
 
 func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (_ GitBlobLSIFDataResolver, err error) {
 	return r.codenavResolver.GitBlobLSIFData(ctx, args)
-}
-
-func (r *Resolver) GitBlobCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (_ GitBlobCodeIntelSupportResolver, err error) {
-	return r.autoIndexingRootResolver.GitBlobCodeIntelInfo(ctx, args)
-}
-
-func (r *Resolver) GitTreeCodeIntelInfo(ctx context.Context, args *GitTreeEntryCodeIntelInfoArgs) (resolver GitTreeCodeIntelSupportResolver, err error) {
-	return r.autoIndexingRootResolver.GitTreeCodeIntelInfo(ctx, args)
 }
 
 func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ CodeIntelligenceConfigurationPolicyResolver, err error) {
@@ -174,11 +178,11 @@ func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context
 }
 
 func (r *Resolver) CodeIntelSummary(ctx context.Context) (_ CodeIntelSummaryResolver, err error) {
-	return r.autoIndexingRootResolver.CodeIntelSummary(ctx)
+	return r.uploadsRootResolver.CodeIntelSummary(ctx)
 }
 
 func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ CodeIntelRepositorySummaryResolver, err error) {
-	return r.autoIndexingRootResolver.RepositorySummary(ctx, id)
+	return r.uploadsRootResolver.RepositorySummary(ctx, id)
 }
 
 func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ IndexConfigurationResolver, err error) {
@@ -203,4 +207,16 @@ func (r *Resolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, ar
 
 func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) (_ GitObjectFilterPreviewResolver, err error) {
 	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, args)
+}
+
+func (r *Resolver) RankingSummary(ctx context.Context) (_ GlobalRankingSummaryResolver, err error) {
+	return r.rankingServiceResolver.RankingSummary(ctx)
+}
+
+func (r *Resolver) BumpDerivativeGraphKey(ctx context.Context) (_ *EmptyResponse, err error) {
+	return r.rankingServiceResolver.BumpDerivativeGraphKey(ctx)
+}
+
+func (r *Resolver) DeleteRankingProgress(ctx context.Context, args *DeleteRankingProgressArgs) (_ *EmptyResponse, err error) {
+	return r.rankingServiceResolver.DeleteRankingProgress(ctx, args)
 }

@@ -1,9 +1,9 @@
 import React from 'react'
 
 import classNames from 'classnames'
-import { MdiReactIconComponentType } from 'mdi-react'
+import type { MdiReactIconComponentType } from 'mdi-react'
 
-import { CodeHostIcon } from '@sourcegraph/branded'
+import { CodeHostIcon, isValidCodeHost } from '@sourcegraph/branded'
 import { Icon } from '@sourcegraph/wildcard'
 
 import styles from './SearchResultLayout.module.scss'
@@ -31,8 +31,12 @@ export const SearchResultLayout: React.FunctionComponent<Props> = ({
             {iconColumn !== undefined ? (
                 <>
                     <Icon aria-label="File" size="sm" as={iconColumn.icon} />
-                    <div className={classNames('mx-1', styles.divider)} />
-                    <CodeHostIcon repoName={iconColumn.repoName} />
+                    {isValidCodeHost(iconColumn.repoName) ? (
+                        <>
+                            <div className={classNames('mx-1', styles.divider)} />
+                            <CodeHostIcon repoName={iconColumn.repoName} />
+                        </>
+                    ) : null}
                 </>
             ) : null}
         </div>

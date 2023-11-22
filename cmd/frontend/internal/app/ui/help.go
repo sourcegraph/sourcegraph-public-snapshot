@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"net/url"
 	"path"
-	"runtime"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -22,7 +23,19 @@ import (
 func serveHelp(w http.ResponseWriter, r *http.Request) {
 	page := strings.TrimPrefix(r.URL.Path, "/help")
 	versionStr := version.Version()
-	sourcegraphAppMode := deploy.IsApp()
+
+	logger := sglog.Scoped("serveHelp")
+	logger.Info("redirecting to docs", sglog.String("page", page), sglog.String("versionStr", versionStr))
+
+	// For Cody App, help links are handled in the frontend. We should never get here.
+	if deploy.IsApp() {
+		// This should never happen, but if it does, we want to know about it.
+		logger.Error("help link was clicked in App and handled in the backend, this should never happer")
+
+		// Redirect back to the homepage. We don't want App to ever leave the locally-hosted frontend.
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		return
+	}
 
 	// For release builds, use the version string. Otherwise, don't use any
 	// version string because:
@@ -30,10 +43,8 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	// - For unreleased dev builds, we serve the contents from the working tree.
 	// - Sourcegraph.com users probably want the latest docs on the default
 	//   branch.
-	// - For Sourcegraph App users we also want to show the latest docs,
-	//   but we add the app version as a query param.
 	var docRevPrefix string
-	if !version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() && !sourcegraphAppMode {
+	if !version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
 		v, err := semver.NewVersion(versionStr)
 		if err != nil {
 			// If not a semver, just use the version string and hope for the best
@@ -50,31 +61,12 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	dest := &url.URL{
 		Path: path.Join("/", docRevPrefix, page),
 	}
-	if version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() && !sourcegraphAppMode {
+	if version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
 		dest.Scheme = "http"
 		dest.Host = "localhost:5080" // local documentation server (defined in Procfile) -- CI:LOCALHOST_OK
 	} else {
 		dest.Scheme = "https"
 		dest.Host = "docs.sourcegraph.com"
-	}
-
-	// For App, add UTM parameters to the docs url.
-	if sourcegraphAppMode {
-		q := dest.Query()
-		q.Set("utm_source", "sg_app")
-		q.Set("utm_medium", "referral")
-
-		// App OS and version
-		os := runtime.GOOS
-		if os == "darwin" {
-			// Use a more common name for mac because it'll be used for analytics.
-			os = "mac"
-		}
-
-		q.Set("app_os", os)
-		q.Set("app_version", versionStr)
-
-		dest.RawQuery = q.Encode()
 	}
 
 	// Use temporary, not permanent, redirect, because the destination URL changes (depending on the

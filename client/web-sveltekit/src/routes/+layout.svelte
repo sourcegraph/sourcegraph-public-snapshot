@@ -1,39 +1,26 @@
 <script lang="ts">
-    import { onMount, setContext } from 'svelte'
-    import { readable, writable, type Readable } from 'svelte/store'
+    import { setContext } from 'svelte'
+    import { readable, writable } from 'svelte/store'
 
     import { browser } from '$app/environment'
-    import { KEY, type SourcegraphContext } from '$lib/stores'
     import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
+    import { isLightTheme, KEY, scrollAll, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
 
     import Header from './Header.svelte'
+
     import './styles.scss'
-    import type { LayoutData, Snapshot } from './$types'
-    import { setExperimentalFeaturesFromSettings } from '$lib/web'
+
     import { beforeNavigate } from '$app/navigation'
+
+    import type { LayoutData, Snapshot } from './$types'
+    import { createFeatureFlagStore, fetchEvaluatedFeatureFlags } from '$lib/featureflags'
 
     export let data: LayoutData
 
-    function createLightThemeStore(): Readable<boolean> {
-        if (browser) {
-            const matchMedia = window.matchMedia('(prefers-color-scheme: dark)')
-            return readable(!matchMedia.matches, set => {
-                const listener = (event: MediaQueryListEventMap['change']) => {
-                    set(!event.matches)
-                }
-                matchMedia.addEventListener('change', listener)
-                return () => matchMedia.removeEventListener('change', listener)
-            })
-        }
-        return readable(true)
-    }
-
     const user = writable(data.user ?? null)
     const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
-    const platformContext = writable(data.platformContext)
-    const isLightTheme = createLightThemeStore()
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
     const temporarySettingsStorage = createTemporarySettingsStorage(
@@ -43,25 +30,14 @@
     setContext<SourcegraphContext>(KEY, {
         user,
         settings,
-        platformContext,
-        isLightTheme,
         temporarySettingsStorage,
+        featureFlags: createFeatureFlagStore(data.featureFlags, fetchEvaluatedFeatureFlags),
+        client: readable(data.graphqlClient),
     })
 
-    onMount(() => {
-        // Settings can change over time. This ensures that the store is always
-        // up-to-date.
-        const settingsSubscription = data.platformContext?.settings.subscribe(newSettings => {
-            settings.set(isErrorLike(newSettings.final) ? null : newSettings.final)
-        })
-        return () => settingsSubscription?.unsubscribe()
-    })
-
+    // Update stores when data changes
     $: $user = data.user ?? null
     $: $settings = isErrorLike(data.settings) ? null : data.settings.final
-    $: $platformContext = data.platformContext
-    // Sync React stores
-    $: setExperimentalFeaturesFromSettings(data.settings)
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
@@ -103,7 +79,7 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<div class="app">
+<div class="app" class:overflowHidden={!$scrollAll}>
     <Header authenticatedUser={$user} />
 
     <main bind:this={main}>
@@ -116,7 +92,15 @@
         display: flex;
         flex-direction: column;
         height: 100vh;
-        overflow: hidden;
+        overflow-y: auto;
+
+        &.overflowHidden {
+            overflow: hidden;
+
+            main {
+                overflow-y: auto;
+            }
+        }
     }
 
     main {
@@ -124,6 +108,5 @@
         display: flex;
         flex-direction: column;
         box-sizing: border-box;
-        overflow: auto;
     }
 </style>

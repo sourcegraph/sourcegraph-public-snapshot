@@ -1,4 +1,4 @@
-import { Lexer, Operator, TemplateLexer, Token, TokenType } from './lexer'
+import { Lexer, type Operator, TemplateLexer, type Token, TokenType } from './lexer'
 
 export type ExpressionNode =
     | { FunctionCall: { name: string; args: ExpressionNode[] } }

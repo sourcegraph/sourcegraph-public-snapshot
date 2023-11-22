@@ -15,21 +15,22 @@ type pathAPI struct{}
 
 func (api pathAPI) LuaAPI() map[string]lua.LGFunction {
 	return map[string]lua.LGFunction{
+		// type: (string) -> array[string]
 		"ancestors": util.WrapLuaFunction(func(state *lua.LState) error {
 			state.Push(luar.New(state, ancestorDirs(state.CheckString(1))))
 			return nil
 		}),
-
+		// type: (string) -> string
 		"basename": util.WrapLuaFunction(func(state *lua.LState) error {
 			state.Push(luar.New(state, filepath.Base(state.CheckString(1))))
 			return nil
 		}),
-
+		// type: (string) -> string
 		"dirname": util.WrapLuaFunction(func(state *lua.LState) error {
 			state.Push(luar.New(state, dirWithoutDot(state.CheckString(1))))
 			return nil
 		}),
-
+		// type: (string, string) -> string
 		"join": util.WrapLuaFunction(func(state *lua.LState) error {
 			state.Push(luar.New(state, filepath.Join(state.CheckString(1), state.CheckString(2))))
 			return nil
@@ -41,10 +42,15 @@ func (api pathAPI) LuaAPI() map[string]lua.LGFunction {
 // this function will return an empty string (instead of a `.`) to indicate an empty
 // directory name.
 func dirWithoutDot(path string) string {
-	if dir := filepath.Dir(path); dir != "." {
-		return dir
+	dir := filepath.Dir(path)
+	if dir == "." {
+		return ""
 	}
-	return ""
+	if len(dir) > 0 && dir[0] == '/' {
+		return dir[1:]
+	}
+
+	return dir
 }
 
 // ancestorDirs returns all ancestor dirnames of the given path. The last element of

@@ -1,17 +1,17 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { WebStory } from '../../components/WebStory'
-import { ListNotebooksResult } from '../../graphql-operations'
+import type { ListNotebooksResult } from '../../graphql-operations'
 
 import { NotebooksListPage } from './NotebooksListPage'
 
 const now = new Date()
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/search/notebooks/listPage/NotebooksListPage',
@@ -64,14 +64,13 @@ const fetchNotebooks = (): Observable<ListNotebooksResult['notebooks']> =>
         pageInfo: { hasNextPage: false, endCursor: null },
     })
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {props => (
             <NotebooksListPage
                 {...props}
                 telemetryService={NOOP_TELEMETRY_SERVICE}
                 authenticatedUser={null}
-                isSourcegraphApp={false}
                 fetchNotebooks={fetchNotebooks}
             />
         )}

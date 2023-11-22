@@ -134,6 +134,24 @@ func TestOverrides(t *testing.T) {
 			"feat-true":  true,
 			"feat-false": false,
 		},
+	}, {
+		Name:     "query-client-only-unset",
+		RawQuery: "feat=~foo,bar,-baz",
+		Want: map[string]bool{
+			"feat-true":  true,
+			"feat-false": false,
+			"bar":        true,
+			"baz":        false,
+		},
+	}, {
+		Name:   "header-client-only-unset",
+		Header: []string{"~foo", "bar", "-baz"},
+		Want: map[string]bool{
+			"feat-true":  true,
+			"feat-false": false,
+			"bar":        true,
+			"baz":        false,
+		},
 	}}
 
 	for _, tc := range cases {

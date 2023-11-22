@@ -12,8 +12,6 @@ import (
 	"github.com/cockroachdb/redact"
 	"github.com/felixge/httpsnoop"
 	"github.com/gorilla/mux"
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -21,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -111,36 +108,27 @@ var (
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
-	logger = logger.Scoped("http", "http tracing middleware")
-	return loggingRecoverer(logger, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+func HTTPMiddleware(l log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
+	l = l.Scoped("http")
+	return loggingRecoverer(l, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		// extract propagated span
-		wireContext, err := ot.GetTracer(ctx).Extract( //nolint:staticcheck // OT is deprecated
-			opentracing.HTTPHeaders,
-			opentracing.HTTPHeadersCarrier(r.Header))
-		if err != nil && err != opentracing.ErrSpanContextNotFound {
-			logger.Warn("extracting parent span failed", log.Error(err))
-		}
+		// logger is a copy of l. Add fields to this logger and what not, instead of l.
+		// This ensures each request is handled with a copy of the original logger instead
+		// of the previous one.
+		logger := l
 
-		// start new span
-		span, ctx := ot.StartSpanFromContext(ctx, "", ext.RPCServerOption(wireContext)) //nolint:staticcheck // OT is deprecated
-		ext.HTTPUrl.Set(span, r.URL.String())
-		ext.HTTPMethod.Set(span, r.Method)
-		span.SetTag("http.referer", r.Header.Get("referer"))
-		defer span.Finish()
-
-		// get trace ID
+		// get trace ID and attach it to the request logger
 		trace := Context(ctx)
 		var traceURL string
 		if trace.TraceID != "" {
+			// We set X-Trace-URL to a configured URL template for traces.
+			// X-Trace for the trace ID is set in instrumentation.HTTPMiddleware,
+			// which is a more bare-bones OpenTelemetry handler.
 			traceURL = URL(trace.TraceID, siteConfig)
-			rw.Header().Set("X-Trace", traceURL)
+			rw.Header().Set("X-Trace-URL", traceURL)
 			logger = logger.WithTrace(trace)
 		}
-
-		ctx = opentracing.ContextWithSpan(ctx, span)
 
 		// route name is only known after the request has been handled
 		routeName := "unknown"
@@ -170,10 +158,6 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 				fullRouteTitle = "graphql: unknown"
 			}
 		}
-		span.SetOperationName("Serve: " + fullRouteTitle)
-		span.SetTag("Route", routeName)
-
-		ext.HTTPStatusCode.Set(span, uint16(m.Code))
 
 		labels := prometheus.Labels{
 			"route":  routeName, // do not use full route title to reduce cardinality
@@ -182,15 +166,6 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		}
 		requestDuration.With(labels).Observe(m.Duration.Seconds())
 		requestHeartbeat.With(labels).Set(float64(time.Now().Unix()))
-
-		// if it's not a graphql request, then this includes graphql_error=false in the log entry
-		gqlErr := false
-		span.Context().ForeachBaggageItem(func(k, v string) bool {
-			if k == "graphql.error" {
-				gqlErr = true
-			}
-			return !gqlErr
-		})
 
 		if customDuration, ok := slowPaths[r.URL.Path]; ok {
 			minDuration = customDuration
@@ -222,9 +197,6 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 				fields = append(fields, log.Int("user", int(userID)))
 			}
 
-			if gqlErr {
-				fields = append(fields, log.Bool("graphql_error", gqlErr))
-			}
 			var parts []string
 			if m.Duration >= minDuration {
 				parts = append(parts, "slow http request")
@@ -280,6 +252,14 @@ func loggingRecoverer(logger log.Logger, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if r := recover(); r != nil {
+				// ErrAbortHandler is a sentinal error which is used to stop an
+				// http handler but not report the error. In practice we have only
+				// seen this used by httputil.ReverseProxy when the server goes
+				// down.
+				if r == http.ErrAbortHandler {
+					return
+				}
+
 				err := errors.Errorf("handler panic: %v", redact.Safe(r))
 				logger.Error("handler panic", log.Error(err), log.String("stacktrace", string(debug.Stack())))
 				w.WriteHeader(http.StatusInternalServerError)
@@ -316,7 +296,8 @@ func User(ctx context.Context, userID int32) {
 
 // SetRequestErrorCause will set the error for the request to err. This is
 // used in the reporting layer to inspect the error for richer reporting to
-// Sentry.
+// Sentry. The error gets logged by internal/trace.HTTPMiddleware, so there
+// is no need to log this error independently.
 func SetRequestErrorCause(ctx context.Context, err error) {
 	if p, ok := ctx.Value(requestErrorCauseKey).(*error); ok {
 		*p = err

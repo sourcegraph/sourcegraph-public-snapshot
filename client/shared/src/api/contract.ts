@@ -1,23 +1,28 @@
-import { Remote, ProxyMarked } from 'comlink'
-import { Unsubscribable } from 'rxjs'
-import { DocumentHighlight } from 'sourcegraph'
+import type { Remote, ProxyMarked } from 'comlink'
+import type { Unsubscribable } from 'rxjs'
+import type { DocumentHighlight } from 'sourcegraph'
 
-import { Contributions, Evaluated, Raw, TextDocumentPositionParameters, HoverMerged } from '@sourcegraph/client-api'
-import { MaybeLoadingResult } from '@sourcegraph/codeintellify'
-import { DeepReplace } from '@sourcegraph/common'
-import * as clientType from '@sourcegraph/extension-api-types'
-import { GraphQLResult } from '@sourcegraph/http-client'
+import type {
+    Contributions,
+    Evaluated,
+    Raw,
+    TextDocumentPositionParameters,
+    HoverMerged,
+} from '@sourcegraph/client-api'
+import type { MaybeLoadingResult } from '@sourcegraph/codeintellify'
+import type * as clientType from '@sourcegraph/extension-api-types'
+import type { GraphQLResult } from '@sourcegraph/http-client'
 
 import type { ReferenceContext } from '../codeintel/legacy-extensions/api'
-import { Occurrence } from '../codeintel/scip'
-import { ConfiguredExtension } from '../extensions/extension'
-import { SettingsCascade } from '../settings/settings'
+import type { Occurrence } from '../codeintel/scip'
+import type { ConfiguredExtension } from '../extensions/extension'
+import type { SettingsCascade } from '../settings/settings'
 
-import { SettingsEdit } from './client/services/settings'
-import { ExecutableExtension } from './extension/activation'
-import { ProxySubscribable } from './extension/api/common'
-import { ViewContexts, PanelViewData, ViewProviderResult, ContributionOptions } from './extension/extensionHostApi'
-import { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
+import type { SettingsEdit } from './client/services/settings'
+import type { ExecutableExtension } from './extension/activation'
+import type { ProxySubscribable } from './extension/api/common'
+import type { ContributionOptions } from './extension/extensionHostApi'
+import type { ExtensionViewer, TextDocumentData, ViewerData, ViewerId, ViewerUpdate } from './viewerTypes'
 
 export interface ScipParameters {
     referenceOccurrence: Occurrence
@@ -131,29 +136,6 @@ export interface FlatExtensionHostAPI {
      * @param viewer The viewer to remove.
      */
     removeViewer(viewer: ViewerId): void
-
-    // Views
-    getPanelViews: () => ProxySubscribable<PanelViewData[]>
-
-    // Insight page
-    getInsightViewById: (id: string, context: ViewContexts['insightsPage']) => ProxySubscribable<ViewProviderResult>
-    getInsightsViews: (
-        context: ViewContexts['insightsPage'],
-        // Resolve only insights that were included in that
-        // ids list. Used for the insights dashboard functionality.
-        insightIds?: string[]
-    ) => ProxySubscribable<ViewProviderResult[]>
-
-    // Home (search) page
-    getHomepageViews: (context: ViewContexts['homepage']) => ProxySubscribable<ViewProviderResult[]>
-
-    // Directory page
-    getDirectoryViews: (
-        // Construct URL object on host from string provided by main thread
-        context: DeepReplace<ViewContexts['directory'], URL, string>
-    ) => ProxySubscribable<ViewProviderResult[]>
-
-    getGlobalPageViews: (context: ViewContexts['global/page']) => ProxySubscribable<ViewProviderResult[]>
 
     /**
      * Emits true when the initial batch of extensions have been loaded.

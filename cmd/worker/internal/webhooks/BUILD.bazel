@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "webhooks",
@@ -27,7 +28,7 @@ go_test(
     srcs = ["handler_test.go"],
     embed = [":webhooks"],
     deps = [
-        "//internal/database",
+        "//internal/database/dbmocks",
         "//lib/errors",
         "@com_github_derision_test_go_mockgen//testutil/assert",
         "@com_github_stretchr_testify//assert",

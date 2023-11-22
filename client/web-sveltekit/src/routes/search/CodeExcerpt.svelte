@@ -1,23 +1,22 @@
 <script lang="ts">
-    import '@sourcegraph/wildcard/src/global-styles/highlight.scss'
+    import '$lib/highlight.scss'
 
     import range from 'lodash/range'
-    import { of, type Observable } from 'rxjs'
-    import { catchError } from 'rxjs/operators'
 
-    import { asError, isErrorLike, highlightNodeMultiline } from '$lib/common'
-    import type { MatchGroupMatch } from '$lib/shared'
+    import { highlightNodeMultiline } from '$lib/common'
     import { observeIntersection } from '$lib/intersection-observer'
+    import type { MatchGroupMatch } from '$lib/shared'
 
     export let startLine: number
     export let endLine: number
-    export let fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
-    export let blobLines: string[] | undefined = undefined
+    /**
+     * Gets called when the code excerpt is visible in the viewport, to delay potentially expensive
+     * highlighting operations until necessary.
+     */
+    export let fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Promise<string[]>
     export let matches: MatchGroupMatch[] = []
 
-    let blobLinesOrError: string[] | Error | undefined = undefined
-
-    function highlightRanges(node: HTMLElement, matches: MatchGroupMatch[]) {
+    function highlightMatches(node: HTMLElement, matches: MatchGroupMatch[]) {
         const visibleRows = node.querySelectorAll<HTMLTableRowElement>('tr')
         for (const highlight of matches) {
             // Select the HTML rows in the excerpt that correspond to the first and last line to be highlighted.
@@ -47,36 +46,33 @@
     let isVisible = false
 
     function onIntersection(event: { detail: boolean }) {
-        isVisible = event.detail
-    }
-
-    $: if (isVisible) {
-        const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
-        observable.pipe(catchError(error => [asError(error)])).subscribe(_blobLinesOrError => {
-            blobLinesOrError = _blobLinesOrError
-        })
+        // The component stays marked as "visible" if it was once to avoid
+        // refetching highlighted lines and matches
+        isVisible = isVisible || event.detail
     }
 </script>
 
 <code use:observeIntersection on:intersecting={onIntersection}>
-    {#if blobLinesOrError && !isErrorLike(blobLinesOrError)}
-        {#key blobLinesOrError}
-            <table use:highlightRanges={matches}>
-                {@html blobLinesOrError.join('')}
+    {#if isVisible}
+        {#await fetchHighlightedFileRangeLines(startLine, endLine)}
+            <!--create empty space to fill viewport to avoid layout shifts -->
+            <table>
+                <tbody>
+                    {#each range(startLine, endLine) as index}
+                        <tr>
+                            <td class="line" data-line={index + 1} />
+                            <td class="code" />
+                        </tr>
+                    {/each}
+                </tbody>
             </table>
-        {/key}
-    {:else if !blobLinesOrError}
-        <table>
-            <tbody>
-                {#each range(startLine, endLine) as index}
-                    <tr>
-                        <td class="line" data-line={index + 1} />
-                        <!--create empty space to fill viewport (as if the blob content were already fetched, otherwise we'll overfetch) -->
-                        <td class="code" />
-                    </tr>
-                {/each}
-            </tbody>
-        </table>
+        {:then blobLines}
+            {#key matches}
+                <table use:highlightMatches={matches}>
+                    {@html blobLines.join('')}
+                </table>
+            {/key}
+        {/await}
     {/if}
 </code>
 

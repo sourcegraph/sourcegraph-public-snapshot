@@ -1,6 +1,8 @@
+use std::collections::HashSet;
+
 use tree_sitter::Language;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BundledParser {
     C,
     Cpp,
@@ -10,6 +12,8 @@ pub enum BundledParser {
     Java,
     Javascript,
     Jsonnet,
+    Kotlin,
+    Matlab,
     Nickel,
     Perl,
     Pod,
@@ -19,6 +23,7 @@ pub enum BundledParser {
     Scala,
     Sql,
     Xlsg,
+    Zig,
 
     // These two are special cases
     Typescript,
@@ -26,7 +31,7 @@ pub enum BundledParser {
 }
 
 impl BundledParser {
-    pub fn get_language(&self) -> Language {
+    pub fn get_language(self) -> Language {
         match self {
             BundledParser::C => tree_sitter_c::language(),
             BundledParser::Cpp => tree_sitter_cpp::language(),
@@ -35,6 +40,8 @@ impl BundledParser {
             BundledParser::Java => tree_sitter_java::language(),
             BundledParser::Javascript => tree_sitter_javascript::language(),
             BundledParser::Jsonnet => tree_sitter_jsonnet::language(),
+            BundledParser::Kotlin => tree_sitter_kotlin::language(),
+            BundledParser::Matlab => tree_sitter_matlab::language(),
             BundledParser::Nickel => tree_sitter_nickel::language(),
             BundledParser::Perl => tree_sitter_perl::language(),
             BundledParser::Pod => tree_sitter_pod::language(),
@@ -46,6 +53,7 @@ impl BundledParser {
             BundledParser::Typescript => tree_sitter_typescript::language_typescript(),
             BundledParser::Tsx => tree_sitter_typescript::language_tsx(),
             BundledParser::Xlsg => tree_sitter_xlsg::language(),
+            BundledParser::Zig => tree_sitter_zig::language(),
         }
     }
 
@@ -58,6 +66,8 @@ impl BundledParser {
             "java" => Some(BundledParser::Java),
             "javascript" => Some(BundledParser::Javascript),
             "jsonnet" => Some(BundledParser::Jsonnet),
+            "kotlin" => Some(BundledParser::Kotlin),
+            "matlab" => Some(BundledParser::Matlab),
             "nickel" => Some(BundledParser::Nickel),
             "perl" => Some(BundledParser::Perl),
             "pod" => Some(BundledParser::Pod),
@@ -69,6 +79,76 @@ impl BundledParser {
             "typescript" => Some(BundledParser::Typescript),
             "tsx" => Some(BundledParser::Tsx),
             "xlsg" => Some(BundledParser::Xlsg),
+            "zig" => Some(BundledParser::Zig),
+            _ => None,
+        }
+    }
+
+    pub fn get_language_name(&self) -> &str {
+        match self {
+            BundledParser::C => "c",
+            BundledParser::Cpp => "cpp",
+            BundledParser::C_Sharp => "c_sharp",
+            BundledParser::Go => "go",
+            BundledParser::Java => "java",
+            BundledParser::Javascript => "javascript",
+            BundledParser::Jsonnet => "jsonnet",
+            BundledParser::Kotlin => "kotlin",
+            BundledParser::Matlab => "matlab",
+            BundledParser::Nickel => "nickel",
+            BundledParser::Perl => "perl",
+            BundledParser::Pod => "pod",
+            BundledParser::Python => "python",
+            BundledParser::Ruby => "ruby",
+            BundledParser::Rust => "rust",
+            BundledParser::Scala => "scala",
+            BundledParser::Sql => "sql",
+            BundledParser::Typescript => "typescript",
+            BundledParser::Tsx => "tsx",
+            BundledParser::Xlsg => "xlsg",
+            BundledParser::Zig => "zig",
+        }
+    }
+
+    pub fn get_language_extensions(&self) -> HashSet<&str> {
+        let ar = {
+            match self {
+                BundledParser::Go => vec!["go"],
+                BundledParser::Java => vec!["java"],
+                BundledParser::Javascript => vec!["js"],
+                BundledParser::Typescript => vec!["ts"],
+                BundledParser::Python => vec!["py"],
+                _ => vec![],
+            }
+        };
+
+        HashSet::from_iter(ar)
+    }
+
+    // TODO(SuperAuguste): language detection library
+    pub fn get_parser_from_extension(name: &str) -> Option<Self> {
+        match name {
+            "c" => Some(BundledParser::C),
+            "cpp" => Some(BundledParser::Cpp),
+            "cs" => Some(BundledParser::C_Sharp),
+            "go" => Some(BundledParser::Go),
+            "java" => Some(BundledParser::Java),
+            "js" => Some(BundledParser::Javascript),
+            "jsonnet" => Some(BundledParser::Jsonnet),
+            "m" => Some(BundledParser::Matlab),
+            "kt" => Some(BundledParser::Kotlin),
+            "ncl" => Some(BundledParser::Nickel),
+            "pl" => Some(BundledParser::Perl),
+            "pod" => Some(BundledParser::Pod),
+            "py" => Some(BundledParser::Python),
+            "rb" => Some(BundledParser::Ruby),
+            "rs" => Some(BundledParser::Rust),
+            "scala" => Some(BundledParser::Scala),
+            "sql" => Some(BundledParser::Sql),
+            "ts" => Some(BundledParser::Typescript),
+            "tsx" => Some(BundledParser::Tsx),
+            "xlsg" => Some(BundledParser::Xlsg),
+            "zig" => Some(BundledParser::Zig),
             _ => None,
         }
     }

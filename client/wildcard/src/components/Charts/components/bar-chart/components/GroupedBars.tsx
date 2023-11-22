@@ -1,14 +1,14 @@
-import { ComponentProps, MouseEvent, ReactElement, useMemo, useRef } from 'react'
+import { type ComponentProps, type MouseEvent, type ReactElement, useMemo, useRef } from 'react'
 
 import { Group } from '@visx/group'
 import { scaleBand } from '@visx/scale'
-import { ScaleBand, ScaleLinear } from 'd3-scale'
+import type { ScaleBand, ScaleLinear } from 'd3-scale'
 
 import { getBrowserName } from '@sourcegraph/common'
 
 import { MaybeLink } from '../../../core'
-import { ActiveSegment } from '../types'
-import { Category } from '../utils/get-grouped-categories'
+import type { ActiveSegment } from '../types'
+import type { Category } from '../utils/get-grouped-categories'
 
 import styles from './GroupedBars.module.scss'
 
@@ -218,9 +218,5 @@ function getActiveBar<Datum>(input: GetActiveBarInput<Datum>): ActiveBarTuple<Da
 }
 
 function getBarId(categoryId: string, datumName: string): string {
-    if (categoryId === datumName) {
-        return categoryId
-    }
-
-    return `${categoryId}${datumName}`
+    return encodeURIComponent(`${categoryId}${datumName}`)
 }

@@ -1,0 +1,67 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: dumped
+---
+  class MyClass {
+//      ^^^^^^^ definition(Class) scip-ctags MyClass#
+      public_field: number
+//    ^^^^^^^^^^^^ definition(Property) scip-ctags MyClass#public_field.
+      #private_field: number
+//    ^^^^^^^^^^^^^^ definition(Property) scip-ctags MyClass#`#private_field`.
+      private also_private_field: number
+//            ^^^^^^^^^^^^^^^^^^ definition(Property) scip-ctags MyClass#also_private_field.
+  
+      public_method() {}
+//    ^^^^^^^^^^^^^ definition(Method) scip-ctags MyClass#public_method().
+      #private_method() {}
+//    ^^^^^^^^^^^^^^^ definition(Method) scip-ctags MyClass#`#private_method`().
+      private also_private_method() {}
+//            ^^^^^^^^^^^^^^^^^^^ definition(Method) scip-ctags MyClass#also_private_method().
+  }
+  
+  interface MyInterface {
+//          ^^^^^^^^^^^ definition(Interface) scip-ctags MyInterface#
+      bruh: number,
+//    ^^^^ definition(Property) scip-ctags MyInterface#bruh.
+      sayBruh(): void,
+//    ^^^^^^^ definition(Method) scip-ctags MyInterface#sayBruh().
+  }
+  
+  enum MyEnum {
+//     ^^^^^^ definition(Enum) scip-ctags MyEnum#
+      zig,
+//    ^^^ definition(Property) scip-ctags MyEnum#zig.
+      rust,
+//    ^^^^ definition(Property) scip-ctags MyEnum#rust.
+      go,
+//    ^^ definition(Property) scip-ctags MyEnum#go.
+  }
+  
+  var global1 = 0;
+//    ^^^^^^^ definition(Variable) scip-ctags global1.
+  var global2;
+//    ^^^^^^^ definition(Variable) scip-ctags global2.
+  
+  function func() {
+//         ^^^^ definition(Function) scip-ctags func().
+      var c;
+      function inAnotherFunc() {
+          var b;
+          function inAnother() {
+              var a;
+          }
+      }
+  }
+  
+  var myObject = {
+//    ^^^^^^^^ definition(Variable) scip-ctags myObject.
+    myProperty: "value",
+//  ^^^^^^^^^^ definition(Property) scip-ctags myObject.myProperty.
+  
+    myMethod: function() {},
+//  ^^^^^^^^ definition(Function) scip-ctags myObject.myMethod().
+    myArrow: () => {},
+//  ^^^^^^^ definition(Function) scip-ctags myObject.myArrow().
+  };
+  
+

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Alert, Badge, BadgeVariantType, Tooltip } from '@sourcegraph/wildcard'
+import { Alert, Badge, type BadgeVariantType, Tooltip } from '@sourcegraph/wildcard'
 
 const getBadgeVariant = (tag: string): BadgeVariantType => {
     if (isUnknownTag(tag)) {
@@ -33,8 +33,10 @@ export const isUnknownTag = (tag: string): boolean =>
 
 export const hasUnknownTags = (tags: string[]): boolean => tags.some(isUnknownTag)
 
-export const UnknownTagWarning: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <Alert className="mt-3 mb-3" variant="warning">
+export const UnknownTagWarning: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+    className,
+}) => (
+    <Alert className={className} variant="danger">
         License tags contain unknown values (marked red), please check if the tags are correct.
     </Alert>
 )
@@ -42,12 +44,13 @@ export const UnknownTagWarning: React.FunctionComponent<React.PropsWithChildren<
 export const ProductLicenseTags: React.FunctionComponent<
     React.PropsWithChildren<{
         tags: string[]
+        small?: boolean
     }>
-> = ({ tags }) => (
+> = ({ tags, small }) => (
     <>
         {tags.map(tag => (
             <Tooltip key={tag} content={getTagDescription(tag)}>
-                <Badge variant={getBadgeVariant(tag)} className="mr-1" as="div">
+                <Badge variant={getBadgeVariant(tag)} className="mr-1" small={small}>
                     {tag}
                 </Badge>
             </Tooltip>

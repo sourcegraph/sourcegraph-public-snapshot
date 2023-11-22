@@ -8,7 +8,7 @@ import (
 	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -19,7 +19,7 @@ func TestEnqueueWebhook(t *testing.T) {
 
 	t.Run("store error", func(t *testing.T) {
 		want := errors.New("mock error")
-		store := database.NewMockOutboundWebhookJobStore()
+		store := dbmocks.NewMockOutboundWebhookJobStore()
 		store.CreateFunc.SetDefaultReturn(nil, want)
 		svc := &outboundWebhookService{store}
 
@@ -29,7 +29,7 @@ func TestEnqueueWebhook(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		store := database.NewMockOutboundWebhookJobStore()
+		store := dbmocks.NewMockOutboundWebhookJobStore()
 		store.CreateFunc.SetDefaultReturn(&types.OutboundWebhookJob{}, nil)
 		svc := &outboundWebhookService{store}
 

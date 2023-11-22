@@ -18,7 +18,7 @@
     "128": "img/icon-128.png"
   },
   "background": {
-    "scripts": ["js/background.bundle.js"]
+    "scripts": ["js/backgroundPage.main.bundle.js"]
   },
   "options_ui": {
     "page": "options.html",

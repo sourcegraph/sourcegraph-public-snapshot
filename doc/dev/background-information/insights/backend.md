@@ -41,7 +41,7 @@ The following architecture diagram shows how the backend fits into the two Sourc
 ## Feature Flags 
 Code Insights ships with an "escape hatch" feature flag that will completely disable the dependency on the Code Insights DB (named `codeinsights-db`). This feature flag is implemented as an environment variable that if set true `DISABLE_CODE_INSIGHTS=true` will disable the dependency and will not start the Code Insights background workers or GraphQL resolvers. This variable must be set on both the `worker` and `frontend` services to remove the dependency. If the flag is not set on both services, the `codeinsights-db` dependency will be required.
 
-Implementation of this environment variable can be found in the [`frontend`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/insights.go+DISABLE_CODE_INSIGHTS+&patternType=lucky) and [`worker`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background+DISABLE_CODE_INSIGHTS+&patternType=lucky) services.
+Implementation of this environment variable can be found in the [`frontend`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/insights/insights.go+DISABLE_CODE_INSIGHTS+&patternType=lucky) and [`worker`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/insights/background+DISABLE_CODE_INSIGHTS+&patternType=lucky) services.
 
 This flag should be used judiciously and should generally be considered a last resort for Sourcegraph installations that need to disable Code Insights or remove the database dependency.
 
@@ -56,16 +56,9 @@ Code Insights is currently enabled by default on customer instances 3.32 and lat
   },
 ```
 
-## Database
-Historically, Code Insights used a [TimescaleDB](https://www.timescale.com) database running on the OSS license. The original intention was to use
-some of the timeseries query features, as well as the hypertable. Many of these are behind a proprietary license that would have required non-trivial
-work to bundle with Sourcegraph.
-
-As of Sourcegraph 3.38, Code Insights no longer uses TimescaleDB and has moved to a standard vanilla Postgres image. 
-
 ## Insight Metadata
 Code Insights data is stored entirely in the `codeinsights-db` database, and exposed through a GraphQL API. Settings are deprecated as a storage
-option, although the text in the settings will persist unless deleted. In this release Code Insights shipped an [out of band migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b098cc6/-/blob/enterprise/internal/insights/migration/migration.go) that automatically migrates
+option, although the text in the settings will persist unless deleted. In this release Code Insights shipped an [out of band migration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b098cc6/-/blob/internal/insights/migration/migration.go) that automatically migrates
 all data from settings to the database for the last time. 3.35 also disabled the previously running sync jobs by default, which can be re-enabled using an environment variable feature flag `ENABLE_CODE_INSIGHTS_SETTINGS_STORAGE` on the `worker` and `frontend` services. This flag is not meant to be used and is only provided as a last resort option for any users unable to use Code Insights.
 
 ## Life of an insight
@@ -82,7 +75,7 @@ At the moment we support four types of insights:
 These can all be created from the UI and get resolved through the [GraphQL API](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:graphqlbackend/insights+createLineChartSearchInsight&patternType=lucky).
 
 #### Unique ID
-An Insight View is defined to have a globally unique referenceable ID. Each ID is [generated when the view is created](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/resolvers/insight_view_resolvers%5C.go+UniqueID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
+An Insight View is defined to have a globally unique referenceable ID. Each ID is [generated when the view is created](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Einternal/insights/resolvers/insight_view_resolvers%5C.go+UniqueID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
 
 [Read more about Insight Views](./insight_view.md)
 
@@ -91,12 +84,12 @@ An Insight View is defined to have a globally unique referenceable ID. Each ID i
 Data series defined with a repository scope used to be executed just-in-time, with no data recorded on the database, whereas any series missing a repository scope were be assumed to be global and were recorded in the background.
 As of Sourcegraph 3.42, all data series behave the same, in that they are all recorded in the background.
 
-Data series are [uniquely identified by a randomly generated unique ID](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/resolvers/insight_view_resolvers%5C.go+SeriesID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
-Data series are also identified by a [compound key](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/store/insight_store%5C.go+MatchSeriesArgs&patternType=lucky) that is used to preserve data series that have already been calculated. This will effectively share this data series among all users if the compound key matches.  Series data sharing only applies to series run over all repositories.
+Data series are [uniquely identified by a randomly generated unique ID](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Einternal/insights/resolvers/insight_view_resolvers%5C.go+SeriesID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
+Data series are also identified by a [compound key](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Einternal/insights/store/insight_store%5C.go+MatchSeriesArgs&patternType=lucky) that is used to preserve data series that have already been calculated. This will effectively share this data series among all users if the compound key matches.  Series data sharing only applies to series run over all repositories.
 
-Data series are defined with a [recording interval](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/types/types%5C.go+SampleInterval&patternType=lucky) that will define the frequency of samples that are taken for the series.
+Data series are defined with a [recording interval](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Einternal/insights/types/types%5C.go+SampleInterval&patternType=lucky) that will define the frequency of samples that are taken for the series.
 
-Data series are also given a field that describes how the series can be populated, called [generation_method](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/types/types.go?L106-110#tab=references).
+Data series are also given a field that describes how the series can be populated, called [generation_method](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/insights/types/types.go?L106-110#tab=references).
 These `generation_method` types will allow the insights backend to select different behaviors depending on the series definition, for example, to execute a `compute` query instead of a standard search.
 
 #### A note about capture group insight series
@@ -108,7 +101,7 @@ one for each unique result.
 
 If we only record data starting when the series were created, it would take months or longer for users to get any value out of insights. This introduces the need for us to backfill data by running search queries that answer "how many results existed in the past?" so we can populate historical data.
 
-Backfilling relies on two background goroutines _[New Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/enterprise/internal/insights/scheduler/backfill_state_new_handler.go?L88:96&popover=pinned#tab=references)_  and _[In Progress Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/enterprise/internal/insights/scheduler/backfill_state_inprogress_handler.go?L123:29&popover=pinned#tab=references)_. 
+Backfilling relies on two background goroutines _[New Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/internal/insights/scheduler/backfill_state_new_handler.go?L88:96&popover=pinned#tab=references)_  and _[In Progress Backfill](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/internal/insights/scheduler/backfill_state_inprogress_handler.go?L123:29&popover=pinned#tab=references)_. 
 
 When an insight is created a new Backfill record is created for each series in the `new` state.
 
@@ -146,7 +139,7 @@ One important piece of information that needs to be surfaced to users is the ans
 
 ### (2) The _insight enqueuer_ (indexed recorder) detects existing insights that need new data
 
-The _insight enqueuer_ is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
+The _insight enqueuer_ is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/internal/insights/background/insight_enqueuer.go?L27:6)), which runs all background goroutines for Sourcegraph - so long as `DISABLE_CODE_INSIGHTS=true` is not set on the `worker` container/process.
 
 Its job is to periodically schedule a recording of 'current' values for Insights by enqueuing a recording using a global query. This only requires a single global query per insight regardless of the number of repositories,
 and will return results for all the matched repositories. Each matched repository will still be recorded individually. 
@@ -159,10 +152,10 @@ with an interval definition of 1 day, the next recording will be scheduled for `
 
 ### (3) The queryrunner worker gets work and runs the search query
 
-The queryrunner ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/queryrunner/worker.go)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?L42:6)), it is responsible for:
+The queryrunner ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/internal/insights/background/queryrunner/worker.go)) is a background goroutine running in the `worker` service of Sourcegraph ([code](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be9054a2609e06a1d916cc2f782827421dd2a3/-/blob/internal/insights/background/queryrunner/worker.go?L42:6)), it is responsible for:
 
 1. Dequeueing search queries that have been queued by the `insight_enqueuer`. Queries are stored with a `priority` field that 
-   [dequeues](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be905/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?L134) queries in ascending priority order (0 is higher priority than 100).
+   [dequeues](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@55be905/-/blob/internal/insights/background/queryrunner/worker.go?L134) queries in ascending priority order (0 is higher priority than 100).
 2. Executing a search against Sourcegraph with the provided query. These queries are executed against the `internal` API, meaning they are *unauthorized* and can see all results. This allows us to build global results and filter based on user permissions at query time.
 3. Aggregating the search results, per repository and storing them in the `series_points` table.
 
@@ -181,7 +174,7 @@ installations `Searcher` service.  This rate limit is shared with `In Progress B
 The webapp frontend invokes a GraphQL API which is served by the Sourcegraph `frontend` monolith backend service in order to query information about backend insights. ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+lang:go+InsightConnectionResolver&patternType=literal))
 
 1. A GraphQL resolver `insightViewResolver` returns all the distinct data series in a single insight (UI panel) ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+type+insightViewResolver+struct&patternType=literal))
-2. A [resolver is selected](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L141:31&popover=pinned) depending on the type of series, and whether or not dynamic search results need to be expanded.
+2. A [resolver is selected](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@175655dc14f60fb2e6387ec65e13ac8662114cec/-/blob/internal/insights/resolvers/insight_view_resolvers.go?L141:31&popover=pinned) depending on the type of series, and whether or not dynamic search results need to be expanded.
 3. A GraphQL resolver ultimately provides data points for a single series of data ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:resolver+lang:go+Points%28&patternType=literal))
 4. The _series points resolver_ merely queries the _insights store_ for the data points it needs, and the store itself merely runs SQL queries against the database to get the data points ([code](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/+file:store+lang:go+SeriesPoints%28&patternType=literal))
 
@@ -307,4 +300,4 @@ UNION
 
 `migrations/codeinsights` in the root of this repository contains the migrations for the Code Insights database, they are executed when the frontend starts up (as is the same with e.g. codeintel DB migrations.)
 
-Migrations can be created using [`sg`](../sg/reference.md#sg-migration-add) 
+Migrations can be created using [`sg`](../sg/index.md).

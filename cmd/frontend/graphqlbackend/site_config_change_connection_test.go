@@ -8,10 +8,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type siteConfigStubs struct {
@@ -28,7 +30,7 @@ func toStringPtr(n int) *string {
 
 func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 	logger := log.NoOp()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	usersToCreate := []database.NewUser{
@@ -90,7 +92,7 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 		},
 		// ID: 6
 		{
-			AuthorUserID: 1,
+			AuthorUserID: 3, // This user no longer exists
 			// Existing line is removed.
 			Contents: `{
   "auth.Providers": []
@@ -102,7 +104,7 @@ func setupSiteConfigStubs(t *testing.T) *siteConfigStubs {
 	// This will create 5 entries, because the first time conf.SiteCreateIfupToDate is called it
 	// will create two entries in the DB.
 	for _, input := range siteConfigsToCreate {
-		siteConfig, err := conf.SiteCreateIfUpToDate(ctx, int32Ptr(lastID), input.AuthorUserID, input.Contents, false)
+		siteConfig, err := conf.SiteCreateIfUpToDate(ctx, pointers.Ptr(lastID), input.AuthorUserID, input.Contents, false)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -231,7 +233,6 @@ func TestSiteConfigConnection(t *testing.T) {
 								  username,
 								  displayName
 							  }
-							  reproducedDiff
 							  diff
 						  }
 						  pageInfo {
@@ -252,16 +253,11 @@ func TestSiteConfigConnection(t *testing.T) {
 					"configuration": {
 						"id": 6,
 						"history": {
-							"totalCount": 6,
+							"totalCount": 5,
 							"nodes": [
 								{
 									"id": %[1]q,
-									"author": {
-										"id": "VXNlcjox",
-										"username": "foo",
-										"displayName": "foo user"
-									},
-									"reproducedDiff": true,
+									"author": null,
 									"diff": %[3]q
 								},
 								{
@@ -271,7 +267,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-									"reproducedDiff": true,
 									"diff": %[4]q
 								}
 							],
@@ -306,7 +301,6 @@ func TestSiteConfigConnection(t *testing.T) {
 											username,
 											displayName
 										}
-										reproducedDiff
 										diff
 									}
 									pageInfo {
@@ -327,7 +321,7 @@ func TestSiteConfigConnection(t *testing.T) {
 							"configuration": {
 								"id": 6,
 								"history": {
-									"totalCount": 6,
+									"totalCount": 5,
 									"nodes": [
 										{
 											"id": %[1]q,
@@ -336,19 +330,19 @@ func TestSiteConfigConnection(t *testing.T) {
 												"username": "bar",
 												"displayName": "bar user"
 											},
-											"reproducedDiff": true,
+
 											"diff": %[4]q
 										},
 										{
 											"id": %[2]q,
 											"author": null,
-											"reproducedDiff": true,
+
 											"diff": %[5]q
 										},
 										{
 											"id": %[3]q,
 											"author": null,
-											"reproducedDiff": true,
+
 											"diff": %[6]q
 										}
 									],
@@ -385,7 +379,6 @@ func TestSiteConfigConnection(t *testing.T) {
 									username,
 									displayName
 								}
-								reproducedDiff
 								diff
 							}
 							pageInfo {
@@ -406,7 +399,7 @@ func TestSiteConfigConnection(t *testing.T) {
 					"configuration": {
 						"id": 6,
 						"history": {
-							"totalCount": 6,
+							"totalCount": 5,
 							"nodes": [
 								{
 									"id": %[1]q,
@@ -415,7 +408,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-									"reproducedDiff": true,
 									"diff": %[3]q
 								},
 								{
@@ -425,7 +417,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "bar",
 										"displayName": "bar user"
 									},
-									"reproducedDiff": true,
 									"diff": %[4]q
 								}
 							],
@@ -460,7 +451,6 @@ func TestSiteConfigConnection(t *testing.T) {
 									username,
 									displayName
 								}
-								reproducedDiff
 								diff
 							}
 							pageInfo {
@@ -481,16 +471,11 @@ func TestSiteConfigConnection(t *testing.T) {
 					"configuration": {
 						"id": 6,
 						"history": {
-							"totalCount": 6,
+							"totalCount": 5,
 							"nodes": [
 								{
 									"id": %[1]q,
-									"author": {
-										"id": "VXNlcjox",
-										"username": "foo",
-										"displayName": "foo user"
-									},
-									"reproducedDiff": true,
+									"author": null,
 									"diff": %[3]q
 								},
 								{
@@ -500,7 +485,6 @@ func TestSiteConfigConnection(t *testing.T) {
 										"username": "foo",
 										"displayName": "foo user"
 									},
-									"reproducedDiff": true,
 									"diff": %[4]q
 								}
 							],
@@ -539,7 +523,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "first: 2",
 			paginationArgs: &database.PaginationArgs{
-				First: intPtr(2),
+				First: pointers.Ptr(2),
 			},
 			// 5 is skipped because it is the same as 4.
 			expectedSiteConfigIDs:         []int32{6, 4},
@@ -548,7 +532,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "first: 6 (exact number of items that exist in the database)",
 			paginationArgs: &database.PaginationArgs{
-				First: intPtr(6),
+				First: pointers.Ptr(6),
 			},
 			expectedSiteConfigIDs:         []int32{6, 4, 3, 2, 1},
 			expectedPreviousSiteConfigIDs: []int32{4, 3, 2, 1, 0},
@@ -556,7 +540,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "first: 20 (more items than what exists in the database)",
 			paginationArgs: &database.PaginationArgs{
-				First: intPtr(20),
+				First: pointers.Ptr(20),
 			},
 			expectedSiteConfigIDs:         []int32{6, 4, 3, 2, 1},
 			expectedPreviousSiteConfigIDs: []int32{4, 3, 2, 1, 0},
@@ -564,7 +548,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "last: 2",
 			paginationArgs: &database.PaginationArgs{
-				Last: intPtr(2),
+				Last: pointers.Ptr(2),
 			},
 			expectedSiteConfigIDs:         []int32{1, 2},
 			expectedPreviousSiteConfigIDs: []int32{0, 1},
@@ -572,7 +556,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "last: 6 (exact number of items that exist in the database)",
 			paginationArgs: &database.PaginationArgs{
-				Last: intPtr(6),
+				Last: pointers.Ptr(6),
 			},
 			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 6},
 			expectedPreviousSiteConfigIDs: []int32{0, 1, 2, 3, 4},
@@ -580,7 +564,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "last: 20 (more items than what exists in the database)",
 			paginationArgs: &database.PaginationArgs{
-				Last: intPtr(20),
+				Last: pointers.Ptr(20),
 			},
 			expectedSiteConfigIDs:         []int32{1, 2, 3, 4, 6},
 			expectedPreviousSiteConfigIDs: []int32{0, 1, 2, 3, 4},
@@ -588,7 +572,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "first: 2, after: 6",
 			paginationArgs: &database.PaginationArgs{
-				First: intPtr(2),
+				First: pointers.Ptr(2),
 				After: toStringPtr(6),
 			},
 			expectedSiteConfigIDs:         []int32{4, 3},
@@ -597,7 +581,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "first: 10, after: 6",
 			paginationArgs: &database.PaginationArgs{
-				First: intPtr(10),
+				First: pointers.Ptr(10),
 				After: toStringPtr(6),
 			},
 			expectedSiteConfigIDs:         []int32{4, 3, 2, 1},
@@ -606,7 +590,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "first: 2, after: 1",
 			paginationArgs: &database.PaginationArgs{
-				First: intPtr(2),
+				First: pointers.Ptr(2),
 				After: toStringPtr(1),
 			},
 			expectedSiteConfigIDs:         []int32{},
@@ -615,7 +599,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "last: 2, before: 2",
 			paginationArgs: &database.PaginationArgs{
-				Last:   intPtr(2),
+				Last:   pointers.Ptr(2),
 				Before: toStringPtr(2),
 			},
 			expectedSiteConfigIDs:         []int32{3, 4},
@@ -624,7 +608,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "last: 10, before: 2",
 			paginationArgs: &database.PaginationArgs{
-				Last:   intPtr(10),
+				Last:   pointers.Ptr(10),
 				Before: toStringPtr(2),
 			},
 			expectedSiteConfigIDs:         []int32{3, 4, 6},
@@ -633,7 +617,7 @@ func TestSiteConfigurationChangeConnectionStoreComputeNodes(t *testing.T) {
 		{
 			name: "last: 2, before: 6",
 			paginationArgs: &database.PaginationArgs{
-				Last:   intPtr(2),
+				Last:   pointers.Ptr(2),
 				Before: toStringPtr(6),
 			},
 			expectedSiteConfigIDs:         []int32{},
@@ -692,38 +676,38 @@ func TestModifyArgs(t *testing.T) {
 	}{
 		{
 			name:             "first: 5 (first page)",
-			args:             &database.PaginationArgs{First: intPtr(5)},
-			expectedArgs:     &database.PaginationArgs{First: intPtr(6)},
+			args:             &database.PaginationArgs{First: pointers.Ptr(5)},
+			expectedArgs:     &database.PaginationArgs{First: pointers.Ptr(6)},
 			expectedModified: true,
 		},
 		{
 			name:             "first: 5, after: 10 (next page)",
-			args:             &database.PaginationArgs{First: intPtr(5), After: toStringPtr(10)},
-			expectedArgs:     &database.PaginationArgs{First: intPtr(6), After: toStringPtr(10)},
+			args:             &database.PaginationArgs{First: pointers.Ptr(5), After: toStringPtr(10)},
+			expectedArgs:     &database.PaginationArgs{First: pointers.Ptr(6), After: toStringPtr(10)},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5 (last page)",
-			args:             &database.PaginationArgs{Last: intPtr(5)},
-			expectedArgs:     &database.PaginationArgs{Last: intPtr(5)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5)},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(5)},
 			expectedModified: false,
 		},
 		{
 			name:             "last: 5, before: 10 (previous page)",
-			args:             &database.PaginationArgs{Last: intPtr(5), Before: toStringPtr(10)},
-			expectedArgs:     &database.PaginationArgs{Last: intPtr(6), Before: toStringPtr(9)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(10)},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(9)},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 1 (edge case)",
-			args:             &database.PaginationArgs{Last: intPtr(5), Before: toStringPtr(1)},
-			expectedArgs:     &database.PaginationArgs{Last: intPtr(6), Before: toStringPtr(0)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(1)},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(6), Before: toStringPtr(0)},
 			expectedModified: true,
 		},
 		{
 			name:             "last: 5, before: 0 (same as last page but a mathematical  edge case)",
-			args:             &database.PaginationArgs{Last: intPtr(5), Before: toStringPtr(0)},
-			expectedArgs:     &database.PaginationArgs{Last: intPtr(5), Before: toStringPtr(0)},
+			args:             &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
+			expectedArgs:     &database.PaginationArgs{Last: pointers.Ptr(5), Before: toStringPtr(0)},
 			expectedModified: false,
 		},
 	}

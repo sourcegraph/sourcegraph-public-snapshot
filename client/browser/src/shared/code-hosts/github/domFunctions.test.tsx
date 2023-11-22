@@ -1,9 +1,11 @@
 import { startCase } from 'lodash'
-import { Omit } from 'utility-types'
+import type { Omit } from 'utility-types'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { DOMFunctionsTest, getFixtureBody, testDOMFunctions } from '../shared/codeHostTestUtils'
+import { type DOMFunctionsTest, getFixtureBody, testDOMFunctions } from '../shared/codeHostTestUtils'
 
 import { diffDomFunctions, isDomSplitDiff, singleFileDOMFunctions } from './domFunctions'
+import { windowLocation__testingOnly } from './util'
 
 type GitHubVersion = 'github.com' | 'ghe-2.14.11'
 
@@ -130,12 +132,14 @@ describe('GitHub DOM functions', () => {
                 ]
                 for (const { view, url } of views) {
                     describe(`${startCase(view)} page`, () => {
-                        beforeEach(() => {
-                            // TODO ideally DOM functions would not look at global state like the URL.
-                            jsdom.reconfigure({ url })
-                        })
                         for (const extension of ['vanilla', 'refined-github']) {
                             describe(startCase(extension), () => {
+                                beforeEach(() => {
+                                    windowLocation__testingOnly.value = new URL(url)
+                                })
+                                afterEach(() => {
+                                    windowLocation__testingOnly.value = null
+                                })
                                 if (view === 'pull-request-discussion') {
                                     it('should return false', async () => {
                                         const codeViewElement = await getFixtureBody({

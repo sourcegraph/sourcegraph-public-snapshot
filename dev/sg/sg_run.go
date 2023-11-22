@@ -11,6 +11,8 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/conc/pool"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
@@ -53,11 +55,15 @@ sg run gitserver frontend repo-updater
 # View configuration for a command
 sg run -describe jaeger
 `,
-	Category: CategoryDev,
+	Category: category.Dev,
 	Flags: []cli.Flag{
 		&cli.BoolFlag{
 			Name:  "describe",
 			Usage: "Print details about selected run target",
+		},
+		&cli.BoolFlag{
+			Name:  "legacy",
+			Usage: "Force run to pick the non-bazel variant of the command",
 		},
 	},
 	Action: runExec,
@@ -78,6 +84,7 @@ func runExec(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
+	legacy := ctx.Bool("legacy")
 
 	args := ctx.Args().Slice()
 	if len(args) == 0 {
@@ -88,7 +95,7 @@ func runExec(ctx *cli.Context) error {
 	var cmds []run.Command
 	var bcmds []run.BazelCommand
 	for _, arg := range args {
-		if bazelCmd, okB := config.BazelCommands[arg]; okB {
+		if bazelCmd, okB := config.BazelCommands[arg]; okB && !legacy {
 			bcmds = append(bcmds, bazelCmd)
 		} else {
 			cmd, okC := config.Commands[arg]
@@ -113,9 +120,11 @@ func runExec(ctx *cli.Context) error {
 		return nil
 	}
 
-	// First we build everything once, to ensure all binaries are present.
-	if err := run.BazelBuild(ctx.Context, bcmds...); err != nil {
-		return err
+	if !legacy {
+		// First we build everything once, to ensure all binaries are present.
+		if err := run.BazelBuild(ctx.Context, bcmds...); err != nil {
+			return err
+		}
 	}
 
 	p := pool.New().WithContext(ctx.Context).WithCancelOnError()

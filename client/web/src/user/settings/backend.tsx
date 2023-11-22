@@ -1,12 +1,12 @@
-import { EMPTY, Observable, Subject } from 'rxjs'
+import { EMPTY, type Observable, Subject } from 'rxjs'
 import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { EventSource, type Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from '../../backend/graphql'
-import {
+import type {
     SetUserEmailVerifiedResult,
     SetUserEmailVerifiedVariables,
     UpdatePasswordResult,
@@ -38,6 +38,7 @@ export const userExternalAccountFragment = gql`
         id
         serviceID
         serviceType
+        clientID
         publicAccountData {
             displayName
             login
@@ -54,6 +55,7 @@ export const USER_EXTERNAL_ACCOUNTS = gql`
                     id
                     serviceID
                     serviceType
+                    clientID
                     publicAccountData {
                         displayName
                         login
@@ -157,6 +159,9 @@ batchedEvents
  *
  * When invoked on a non-Sourcegraph.com instance, this data is stored in the
  * instance's database, and not sent to Sourcegraph.com.
+ *
+ * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+ * src/telemetry instead.
  */
 export function logEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): void {
     batchedEvents.next(createEvent(event, eventProperties, publicArgument))
@@ -168,6 +173,9 @@ export function logEvent(event: string, eventProperties?: unknown, publicArgumen
  * used only when low event latency is necessary (e.g., on an external link).
  *
  * See logEvent for additional details.
+ *
+ * @deprecated Use a TelemetryRecorder or TelemetryRecorderProvider from
+ * src/telemetry instead.
  */
 export function logEventSynchronously(
     event: string,
@@ -180,21 +188,24 @@ export function logEventSynchronously(
 function createEvent(event: string, eventProperties?: unknown, publicArgument?: unknown): Event {
     return {
         event,
-        userCookieID: eventLogger.getAnonymousUserID(),
-        cohortID: eventLogger.getCohortID() || null,
-        firstSourceURL: eventLogger.getFirstSourceURL(),
-        lastSourceURL: eventLogger.getLastSourceURL(),
-        referrer: eventLogger.getReferrer(),
-        originalReferrer: eventLogger.getOriginalReferrer(),
-        sessionReferrer: eventLogger.getSessionReferrer(),
-        sessionFirstURL: eventLogger.getSessionFirstURL(),
-        deviceSessionID: eventLogger.getDeviceSessionID(),
+        userCookieID: eventLogger.user.anonymousUserID,
+        cohortID: eventLogger.user.cohortID || null,
+        firstSourceURL: eventLogger.session.getFirstSourceURL(),
+        lastSourceURL: eventLogger.session.getLastSourceURL(),
+        referrer: eventLogger.session.getReferrer(),
+        originalReferrer: eventLogger.session.getOriginalReferrer(),
+        sessionReferrer: eventLogger.session.getSessionReferrer(),
+        sessionFirstURL: eventLogger.session.getSessionFirstURL(),
+        deviceSessionID: eventLogger.user.deviceSessionID,
         url: window.location.href,
         source: EventSource.WEB,
         argument: eventProperties ? JSON.stringify(eventProperties) : null,
         publicArgument: publicArgument ? JSON.stringify(publicArgument) : null,
-        deviceID: eventLogger.getDeviceID(),
+        deviceID: eventLogger.user.deviceID,
         eventID: eventLogger.getEventID(),
         insertID: eventLogger.getInsertID(),
+        client: eventLogger.getClient(),
+        connectedSiteID: window.context?.siteID,
+        hashedLicenseKey: window.context?.hashedLicenseKey,
     }
 }

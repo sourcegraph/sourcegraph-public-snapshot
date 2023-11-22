@@ -1,4 +1,4 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode } from '@sourcegraph/shared/src/search'
@@ -11,7 +11,7 @@ import { NOOP_PLATFORM_CONTEXT } from '@sourcegraph/shared/src/testing/searchTes
 import { H2 } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { SearchBox, SearchBoxProps } from './SearchBox'
+import { SearchBox, type SearchBoxProps } from './SearchBox'
 
 const config: Meta = {
     title: 'branded/search-ui/input/SearchBox',
@@ -24,10 +24,6 @@ export default config
 
 const defaultProps: SearchBoxProps = {
     telemetryService: NOOP_TELEMETRY_SERVICE,
-    settingsCascade: {
-        final: null,
-        subjects: null,
-    },
     queryState: { query: 'hello repo:test' },
     isSourcegraphDotCom: false,
     patternType: SearchPatternType.standard,
@@ -49,7 +45,7 @@ const defaultProps: SearchBoxProps = {
     platformContext: NOOP_PLATFORM_CONTEXT,
 }
 
-export const SearchBoxStory: Story = () => (
+export const SearchBoxStory: StoryFn = () => (
     <BrandedStory>
         {props => (
             <div>

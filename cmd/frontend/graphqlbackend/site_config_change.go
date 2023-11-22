@@ -7,6 +7,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 
 	"github.com/hexops/gotextdiff"
@@ -31,6 +32,10 @@ func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResol
 	}
 
 	user, err := UserByIDInt32(ctx, r.db, r.siteConfig.AuthorUserID)
+	if errcode.IsNotFound(err) {
+		// User no longer exists, which could be expected.
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -38,30 +43,7 @@ func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResol
 	return user, nil
 }
 
-func (r SiteConfigurationChangeResolver) ReproducedDiff() bool {
-	// If we were able to redact contents for both siteConfig and previousSiteConfig and store it in
-	// the DB, then we can generate a diff.
-	if r.siteConfig != nil {
-		// As a special case, if previousSiteConfig is nil (first entry in the DB) and we also have
-		// redactedContents available for this siteConfig, we can generate a diff (it will be all
-		// lines added).
-		if r.previousSiteConfig == nil && r.siteConfig.RedactedContents != "" {
-			return true
-		}
-
-		if r.siteConfig.RedactedContents != "" && r.previousSiteConfig.RedactedContents != "" {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (r SiteConfigurationChangeResolver) Diff() *string {
-	if !r.ReproducedDiff() {
-		return nil
-	}
-
+func (r SiteConfigurationChangeResolver) Diff() string {
 	var prevID int32
 	var prevRedactedContents string
 	if r.previousSiteConfig != nil {
@@ -79,7 +61,7 @@ func (r SiteConfigurationChangeResolver) Diff() *string {
 	edits := myers.ComputeEdits("", prevRedactedContents, r.siteConfig.RedactedContents)
 	diff := fmt.Sprint(gotextdiff.ToUnified(prettyID(prevID), prettyID(r.siteConfig.ID), prevRedactedContents, edits))
 
-	return &diff
+	return diff
 }
 
 func (r SiteConfigurationChangeResolver) CreatedAt() gqlutil.DateTime {

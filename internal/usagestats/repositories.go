@@ -6,10 +6,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 )
 
@@ -41,18 +39,13 @@ type Repositories struct {
 func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error) {
 	var total Repositories
 
-	// Since this hits gitserver, we should use an internal actor.
-	stats, err := gitserver.NewClient().ReposStats(actor.WithInternalActor(ctx))
+	gitDirSize, err := db.GitserverRepos().GetGitserverGitDirSize(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for _, stat := range stats {
-		// In the rare case we haven't yet computed the stat (UpdatedAt ==
-		// 0), we undercount the size.
-		total.GitDirBytes += uint64(stat.GitDirBytes)
-	}
+	total.GitDirBytes = uint64(gitDirSize)
 
-	repos, err := search.ListAllIndexed(ctx)
+	repos, err := search.ListAllIndexed(ctx, search.Indexed())
 	if err != nil {
 		return nil, err
 	}

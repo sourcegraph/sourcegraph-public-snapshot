@@ -1,0 +1,33 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resolvers",
+    srcs = ["resolvers.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/compute/resolvers",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//internal/compute",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/search/result",
+        "//internal/types",
+        "@com_github_inconshreveable_log15//:log15",
+        "@com_github_sourcegraph_go_langserver//pkg/lsp",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "resolvers_test",
+    timeout = "short",
+    srcs = ["resolvers_test.go"],
+    embed = [":resolvers"],
+    deps = [
+        "//internal/compute",
+        "//internal/database/dbmocks",
+        "//internal/search/result",
+        "@com_github_hexops_autogold_v2//:autogold",
+    ],
+)

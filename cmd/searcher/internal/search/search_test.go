@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -50,6 +52,7 @@ func TestSearch(t *testing.T) {
 
 Hello world example in go`, typeFile},
 		"file++.plus": {`filename contains regex metachars`, typeFile},
+		"nonutf8.txt": {"file contains invalid utf8 \xC0 characters", typeFile},
 		"main.go": {`package main
 
 import "fmt"
@@ -255,6 +258,7 @@ filename contains regex metachars
 abc.txt
 file++.plus
 milton.png
+nonutf8.txt
 symlink
 `},
 
@@ -263,6 +267,7 @@ abc.txt
 file++.plus
 main.go
 milton.png
+nonutf8.txt
 symlink
 `},
 
@@ -271,6 +276,7 @@ README.md
 abc.txt
 file++.plus
 milton.png
+nonutf8.txt
 symlink
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true}, `
@@ -285,8 +291,13 @@ abc.txt
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: false}, `
 abc.txt
 `},
+		{protocol.PatternInfo{Pattern: "utf8", PatternMatchesPath: false, PatternMatchesContent: true}, `
+nonutf8.txt:1:1:
+file contains invalid utf8 � characters
+`},
 	}
 
+	zoektURL := newZoekt(t, &zoekt.Repository{}, nil)
 	s := newStore(t, files)
 	s.FilterTar = func(_ context.Context, _ gitserver.Client, _ api.RepoName, _ api.CommitID) (search.FilterFunc, error) {
 		return func(hdr *tar.Header) bool {
@@ -294,8 +305,9 @@ abc.txt
 		}, nil
 	}
 	ts := httptest.NewServer(&search.Service{
-		Store: s,
-		Log:   s.Log,
+		Store:   s,
+		Log:     s.Log,
+		Indexed: backend.ZoektDial(zoektURL),
 	})
 	defer ts.Close()
 
@@ -567,6 +579,7 @@ func newStore(t *testing.T, files map[string]struct {
 	}
 
 	return &search.Store{
+		GitserverClient: gitserver.NewTestClient(t),
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			r, w := io.Pipe()
 			go func() {

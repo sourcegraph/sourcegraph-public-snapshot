@@ -1,11 +1,11 @@
-import { Remote, proxyMarker, releaseProxy, ProxyMethods, ProxyOrClone } from 'comlink'
+import { type Remote, proxyMarker, releaseProxy, type ProxyMethods, type ProxyOrClone } from 'comlink'
 import { noop } from 'lodash'
-import { from, Observable, observable as symbolObservable, Subscription, Subscribable } from 'rxjs'
+import { from, type Observable, observable as symbolObservable, Subscription, type Subscribable } from 'rxjs'
 import { mergeMap, finalize } from 'rxjs/operators'
 
 import { asError, logger } from '@sourcegraph/common'
 
-import { ProxySubscribable } from '../../extension/api/common'
+import type { ProxySubscribable } from '../../extension/api/common'
 import { isPromiseLike, syncRemoteSubscription } from '../../util'
 
 // We subclass because rxjs checks instanceof Subscription.
@@ -104,7 +104,7 @@ export const wrapRemoteObservable = <T>(
  * Must be used as the first parameter to `pipe()`, because the source must be a `RemoteObservable`.
  */
 // needed for the type parameter
-// eslint-disable-next-line unicorn/consistent-function-scoping
+
 export const finallyReleaseProxy =
     <T>() =>
     (source: Observable<T> & Partial<ProxySubscribed>): Observable<T> => {

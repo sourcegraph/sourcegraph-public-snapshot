@@ -135,7 +135,7 @@ func setZoektIndexed(t *testing.T, db DB, name api.RepoName) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+	err = db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
 		uint32(repo.ID): {},
 	})
 	if err != nil {
@@ -288,7 +288,7 @@ func TestRepos_createRepo_dupe(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Add a repo.
@@ -306,7 +306,7 @@ func TestRepos_createRepo(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	// Add a repo.
@@ -335,7 +335,7 @@ func TestRepos_Get(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
@@ -397,7 +397,7 @@ func TestRepos_GetByIDs(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	want := mustCreate(ctx, t, db, &types.Repo{
@@ -429,7 +429,7 @@ func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	repos, err := db.Repos().GetByIDs(ctx, []api.RepoID{}...)
@@ -445,7 +445,7 @@ func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
 func TestRepos_GetRepoDescriptionsByIDs(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	created := mustCreate(ctx, t, db, &types.Repo{
@@ -481,7 +481,7 @@ func TestRepos_List(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
@@ -543,7 +543,7 @@ func TestRepos_List_fork(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false})
@@ -573,7 +573,7 @@ func TestRepos_List_FailedSync(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	assertCount := func(t *testing.T, opts ReposListOptions, want int) {
@@ -604,7 +604,7 @@ func TestRepos_List_OnlyCorrupted(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	assertCount := func(t *testing.T, opts ReposListOptions, want int) {
@@ -635,7 +635,7 @@ func TestRepos_List_cloned(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	var repos []*types.Repo
@@ -687,7 +687,7 @@ func TestRepos_List_indexed(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	var repos []*types.Repo
@@ -734,7 +734,7 @@ func TestRepos_List_LastChanged(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	repos := db.Repos()
@@ -758,8 +758,20 @@ func TestRepos_List_LastChanged(t *testing.T) {
 	setGitserverRepoCloneStatus(t, db, r3.Name, types.CloneStatusCloned)
 	setGitserverRepoLastChanged(t, db, r3.Name, now.Add(-time.Hour))
 	{
-		_, err := db.Handle().ExecContext(ctx, `INSERT INTO codeintel_path_ranks (repository_id, updated_at, payload) VALUES ($1, $2, '{}'::jsonb)`, r3.ID, now)
-		if err != nil {
+		if _, err := db.Handle().ExecContext(ctx, `
+			INSERT INTO codeintel_path_ranks(graph_key, repository_id, updated_at, payload)
+			VALUES ('test', $1, NOW() + '1 day'::interval, '{}'::jsonb)
+		`,
+			r3.ID,
+		); err != nil {
+			t.Fatal(err)
+		}
+
+		if _, err := db.Handle().ExecContext(ctx, `
+			INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
+			VALUES ('test', 1000, NOW(), $1)
+		`, now,
+		); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -859,7 +871,7 @@ func TestRepos_List_ids(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := types.Repos{mustCreate(ctx, t, db, typestest.MakeGithubRepo())}
@@ -896,7 +908,7 @@ func TestRepos_List_pagination(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -945,7 +957,7 @@ func TestRepos_List_query1(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -995,7 +1007,7 @@ func TestRepos_List_correct_ranking(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1043,7 +1055,7 @@ func TestRepos_List_sort(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	reposAndSizes := []*repoAndSize{
@@ -1122,7 +1134,7 @@ func TestRepos_List_patterns(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1189,7 +1201,7 @@ func TestRepos_List_queryAndPatternsMutuallyExclusive(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
 		_, err := db.Repos().List(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
@@ -1213,7 +1225,7 @@ func TestRepos_List_useOr(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	archived := mustCreate(ctx, t, db, types.Repos{typestest.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })[0])
@@ -1253,7 +1265,7 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -1304,7 +1316,7 @@ func TestRepos_List_externalServiceID(t *testing.T) {
 func TestRepos_List_topics(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 
@@ -1380,7 +1392,7 @@ func TestRepos_ListMinimalRepos(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	now := time.Now()
@@ -1424,7 +1436,7 @@ func TestRepos_ListMinimalRepos_fork(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := repoNamesFromRepos([]*types.Repo{mustCreate(ctx, t, db, &types.Repo{Name: "a/r", Fork: false})})
@@ -1467,7 +1479,7 @@ func TestRepos_ListMinimalRepos_cloned(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := repoNamesFromRepos([]*types.Repo{mustCreate(ctx, t, db, &types.Repo{Name: "a/r"})})
@@ -1504,7 +1516,7 @@ func TestRepos_ListMinimalRepos_ids(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	mine := types.Repos{mustCreate(ctx, t, db, typestest.MakeGithubRepo())}
@@ -1541,7 +1553,7 @@ func TestRepos_ListMinimalRepos_pagination(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1590,7 +1602,7 @@ func TestRepos_ListMinimalRepos_correctFiltering(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1630,7 +1642,7 @@ func TestRepos_ListMinimalRepos_query2(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1673,7 +1685,7 @@ func TestRepos_ListMinimalRepos_sort(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1744,7 +1756,7 @@ func TestRepos_ListMinimalRepos_patterns(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	createdRepos := []*types.Repo{
@@ -1799,7 +1811,7 @@ func TestRepos_ListMinimalRepos_queryAndPatternsMutuallyExclusive(t *testing.T) 
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Run("Query and IncludePatterns", func(t *testing.T) {
 		_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{Query: "x", IncludePatterns: []string{"y"}})
 		if err == nil || !strings.Contains(err.Error(), wantErr) {
@@ -1815,14 +1827,14 @@ func TestRepos_ListMinimalRepos_queryAndPatternsMutuallyExclusive(t *testing.T) 
 	})
 }
 
-func TestRepos_ListMinimalRepos_UserIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
+func TestRepos_ListMinimalRepos_SearchContextIDAndExternalServiceIDsMutuallyExclusive(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
-	wantErr := "options ExternalServiceIDs, UserID and OrgID are mutually exclusive"
+	wantErr := "options ExternalServiceIDs and SearchContextID are mutually exclusive"
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{UserID: 1, ExternalServiceIDs: []int64{2}})
+	db := NewDB(logger, dbtest.NewDB(t))
+	_, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{SearchContextID: 1, ExternalServiceIDs: []int64{2}})
 	if err == nil || !strings.Contains(err.Error(), wantErr) {
 		t.Fatalf("got error %v, want it to contain %q", err, wantErr)
 	}
@@ -1835,7 +1847,7 @@ func TestRepos_ListMinimalRepos_useOr(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	archived := mustCreate(ctx, t, db, types.Repos{typestest.MakeGitlabRepo()}.With(func(r *types.Repo) { r.Archived = true })[0])
@@ -1875,7 +1887,7 @@ func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -1932,7 +1944,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -2257,7 +2269,7 @@ func TestGetFirstRepoNamesByCloneURL(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := actor.WithInternalActor(context.Background())
 
 	confGet := func() *conf.Unified {
@@ -2368,8 +2380,8 @@ func TestParseIncludePattern(t *testing.T) {
 		`\s`: {regexp: `\s`},
 	}
 
-	tr, _ := trace.New(context.Background(), "", "")
-	defer tr.Finish()
+	tr, _ := trace.New(context.Background(), "")
+	defer tr.End()
 
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)
@@ -2415,7 +2427,7 @@ func TestRepos_Count(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -2468,7 +2480,7 @@ func TestRepos_Delete(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -2503,7 +2515,7 @@ func TestRepos_DeleteReconcilesName(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 	repo := mustCreate(ctx, t, db, &types.Repo{Name: "myrepo"})
@@ -2542,7 +2554,7 @@ func TestRepos_MultipleDeletesKeepTheSameTombstoneData(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 	repo := mustCreate(ctx, t, db, &types.Repo{Name: "myrepo"})
@@ -2591,7 +2603,7 @@ func TestRepos_Upsert(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -2675,7 +2687,7 @@ func TestRepos_UpsertForkAndArchivedFields(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -2710,7 +2722,7 @@ func TestRepos_Create(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1, Internal: true})
 
@@ -2761,7 +2773,7 @@ func TestListSourcegraphDotComIndexableRepos(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	reposToAdd := []types.Repo{
 		{
@@ -2877,7 +2889,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 

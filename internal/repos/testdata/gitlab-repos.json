@@ -7,7 +7,9 @@
     "http_url_to_repo": "https://gitlab.com/gitlab-org/gitaly.git",
     "ssh_url_to_repo": "git@gitlab.com:gitlab-org/gitaly.git",
     "visibility": "public",
-    "archived": false
+    "archived": false,
+    "default_branch": "main",
+    "topics": ["topic1", "topic2"]
   },
   {
     "id": 2,
@@ -17,7 +19,9 @@
     "http_url_to_repo": "https://gitlab.com/gitlab-org/gitaly-2.git",
     "ssh_url_to_repo": "git@gitlab.com:gitlab-org/gitaly-2.git",
     "visibility": "internal",
-    "archived": false
+    "archived": false,
+    "default_branch": "main",
+    "topics": ["topic1", "topic2"]
   },
   {
     "id": 3,
@@ -27,6 +31,8 @@
     "http_url_to_repo": "https://gitlab.com/gitlab-org/gitaly-3.git",
     "ssh_url_to_repo": "git@gitlab.com:gitlab-org/gitaly-3.git",
     "visibility": "private",
-    "archived": false
+    "archived": false,
+    "default_branch": "main",
+    "topics": ["topic1", "topic2"]
   }
 ]

@@ -3,8 +3,8 @@
 
 package:
   name: coursier
-  version: 2.0.13
-  epoch: 0
+  version: 2.0.13 # IMPORTANT: Coursier uses a non-standard release model, so updating this version alone will not update the package
+  epoch: 1
   description: "Java dependency resolver"
   target-architecture:
     - x86_64
@@ -25,7 +25,7 @@ environment:
       - wolfi-base
 
 pipeline:
-  # Download specific release from git commit
+  # Download specific release from git commit - does NOT use ${{package.version}}
   - uses: fetch
     with:
       uri: https://github.com/coursier/launchers/raw/34ff76b7e1b41a9b633809028faa2d3fee6c8f86/cs-x86_64-pc-linux

@@ -1,8 +1,9 @@
 import { escapeRegExp } from 'lodash'
 // We're using marked import here to access the `marked` package type definitions.
+
 // eslint-disable-next-line no-restricted-imports
-import { marked, Renderer } from 'marked'
-import { Observable, forkJoin, of } from 'rxjs'
+import { type marked, Renderer } from 'marked'
+import { type Observable, forkJoin, of } from 'rxjs'
 import { startWith, catchError, mapTo, map, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
@@ -11,12 +12,12 @@ import {
     aggregateStreamingSearch,
     emptyAggregateResults,
     LATEST_VERSION,
-    SymbolMatch,
+    type SymbolMatch,
 } from '@sourcegraph/shared/src/search/stream'
-import { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
+import type { UIRangeSpec } from '@sourcegraph/shared/src/util/url'
 
-import { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
-import { NotebookFields, SearchPatternType } from '../../graphql-operations'
+import type { Block, BlockInit, BlockDependencies, BlockInput, BlockDirection, SymbolBlockInput } from '..'
+import { type NotebookFields, SearchPatternType } from '../../graphql-operations'
 import { parseBrowserRepoURL } from '../../util/url'
 import { createNotebook } from '../backend'
 import { fetchSuggestions } from '../blocks/suggestions/suggestions'
@@ -144,7 +145,7 @@ export class Notebook {
             return
         }
         switch (block.type) {
-            case 'md':
+            case 'md': {
                 this.blocks.set(block.id, {
                     ...block,
                     output: renderMarkdown(block.input.text, {
@@ -153,9 +154,10 @@ export class Notebook {
                     }),
                 })
                 break
+            }
             case 'query': {
                 // Removes comments
-                const query = block.input.query.replace(/\/\/.*/g, '')
+                const query = block.input.query.replaceAll(/\/\/.*/g, '')
                 this.blocks.set(block.id, {
                     ...block,
                     output: aggregateStreamingSearch(of(query), {
@@ -168,7 +170,7 @@ export class Notebook {
                 })
                 break
             }
-            case 'file':
+            case 'file': {
                 this.blocks.set(block.id, {
                     ...block,
                     output: this.dependencies
@@ -187,6 +189,7 @@ export class Notebook {
                         ),
                 })
                 break
+            }
             case 'symbol': {
                 // Start by searching for the symbol at the latest HEAD (main) revision.
                 const output = findSymbolAtRevision(block.input, 'HEAD').pipe(
@@ -319,7 +322,7 @@ export class Notebook {
     }
 
     public getLastBlockId(): string | null {
-        return this.blockOrder.length > 0 ? this.blockOrder[this.blockOrder.length - 1] : null
+        return this.blockOrder.length > 0 ? this.blockOrder.at(-1)! : null
     }
 
     public getPreviousBlockId(id: string): string | null {

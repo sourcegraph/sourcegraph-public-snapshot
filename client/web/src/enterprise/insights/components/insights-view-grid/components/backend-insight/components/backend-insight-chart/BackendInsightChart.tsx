@@ -1,4 +1,4 @@
-import React, { FC, MouseEvent, useMemo } from 'react'
+import React, { type FC, type MouseEvent, useMemo } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -6,8 +6,8 @@ import useResizeObserver from 'use-resize-observer'
 
 import { Button, BarChart, LegendItem, LegendList, LegendItemPoint, ScrollBox } from '@sourcegraph/wildcard'
 
-import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData, BackendInsightSeries, InsightContent } from '../../../../../../core'
+import type { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
+import type { BackendInsightData, BackendInsightSeries, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay, InsightSeriesIncompleteAlert } from '../backend-insight-alerts/BackendInsightAlerts'

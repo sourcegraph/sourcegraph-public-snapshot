@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "live",
@@ -15,14 +16,17 @@ go_library(
         "//internal/database/migration/runner",
         "//internal/database/migration/schemas",
         "//internal/database/migration/store",
+        "//internal/env",
         "//internal/observation",
         "//lib/errors",
+        "//lib/output",
         "@com_github_sourcegraph_log//:log",
     ],
 )
 
 go_test(
     name = "live_test",
+    timeout = "moderate",
     srcs = ["migration_test.go"],
     embed = [":live"],
     tags = [
@@ -31,8 +35,10 @@ go_test(
     ],
     deps = [
         "//internal/database/dbtest",
+        "//internal/database/migration/drift",
         "//internal/database/migration/runner",
         "//internal/database/migration/schemas",
+        "//internal/database/migration/store",
         "//internal/observation",
         "//lib/errors",
         "@com_github_jackc_pgconn//:pgconn",

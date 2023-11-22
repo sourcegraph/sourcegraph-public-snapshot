@@ -1,11 +1,12 @@
 import { renderHook, act } from '@testing-library/react'
-import { Observable, ObservableInput, of } from 'rxjs'
+import { type Observable, type ObservableInput, of } from 'rxjs'
 import { delay, map, switchMap, tap } from 'rxjs/operators'
 import sinon from 'sinon'
+import { vi, beforeEach, describe, expect, it } from 'vitest'
 
-import { createUseParallelRequestsHook, FetchResult } from './use-parallel-request'
+import { createUseParallelRequestsHook, type FetchResult } from './use-parallel-request'
 
-jest.useFakeTimers()
+vi.useFakeTimers()
 
 describe('useParallelRequests', () => {
     let useParallelRequests: <D>(request: () => ObservableInput<D>) => FetchResult<D>
@@ -29,7 +30,7 @@ describe('useParallelRequests', () => {
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                jest.runAllTimers()
+                vi.runAllTimers()
             })
 
             expect(result.current.loading).toBe(false)
@@ -46,7 +47,7 @@ describe('useParallelRequests', () => {
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                jest.runAllTimers()
+                vi.runAllTimers()
             })
 
             expect(result.current).toStrictEqual({
@@ -72,7 +73,7 @@ describe('useParallelRequests', () => {
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                jest.runAllTimers()
+                vi.runAllTimers()
             })
 
             sinon.assert.notCalled(request)
@@ -105,7 +106,7 @@ describe('useParallelRequests', () => {
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                jest.runOnlyPendingTimers()
+                vi.runOnlyPendingTimers()
             })
 
             // The First level stream was resolved
@@ -116,7 +117,7 @@ describe('useParallelRequests', () => {
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                jest.runOnlyPendingTimers()
+                vi.runOnlyPendingTimers()
             })
 
             // The second level wasn't resolved in fact it was cancelled
@@ -150,7 +151,7 @@ describe('useParallelRequests', () => {
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                jest.runAllTimers()
+                vi.runAllTimers()
             })
 
             expect(result1.current).toStrictEqual({
@@ -167,7 +168,7 @@ describe('useParallelRequests', () => {
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                jest.runAllTimers()
+                vi.runAllTimers()
             })
 
             expect(result2.current).toStrictEqual({
@@ -204,7 +205,7 @@ describe('useParallelRequests', () => {
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                jest.runAllTimers()
+                vi.runAllTimers()
             })
 
             sinon.assert.calledOnce(firstRequest)
@@ -212,7 +213,7 @@ describe('useParallelRequests', () => {
 
             // eslint-disable-next-line @typescript-eslint/require-await
             await act(async () => {
-                jest.runAllTimers()
+                vi.runAllTimers()
             })
 
             sinon.assert.notCalled(secondRequest)

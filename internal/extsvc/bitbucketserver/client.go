@@ -18,15 +18,16 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/segmentio/fasthash/fnv1"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -105,7 +106,7 @@ func newClient(urn string, config *schema.BitbucketServerConnection, httpClient 
 		httpClient: httpClient,
 		URL:        u,
 		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit: ratelimit.DefaultRegistry.Get(urn),
+		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketServerClient"), urn)),
 	}, nil
 }
 
@@ -474,9 +475,10 @@ type UpdatePullRequestInput struct {
 	PullRequestID string `json:"-"`
 	Version       int    `json:"version"`
 
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	ToRef       Ref    `json:"toRef"`
+	Title       string     `json:"title"`
+	Description string     `json:"description"`
+	ToRef       Ref        `json:"toRef"`
+	Reviewers   []Reviewer `json:"reviewers"`
 }
 
 func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
@@ -579,8 +581,13 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		pr.ToRef.Repository.Slug,
 	)
 
-	_, err = c.send(ctx, "POST", path, nil, payload, pr)
+	resp, err := c.send(ctx, "POST", path, nil, payload, pr)
+
 	if err != nil {
+		var code int
+		if resp != nil {
+			code = resp.StatusCode
+		}
 		if IsDuplicatePullRequest(err) {
 			pr, extractErr := ExtractExistingPullRequest(err)
 			if extractErr != nil {
@@ -590,7 +597,7 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 				Existing: pr,
 			}
 		}
-		return err
+		return errcode.MaybeMakeNonRetryable(code, err)
 	}
 	return nil
 }
@@ -688,6 +695,33 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
 
 	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	return err
+}
+
+type DeleteBranchInput struct {
+	// Don't actually delete the ref name, just do a dry run
+	DryRun bool `json:"dryRun,omitempty"`
+	// Commit ID that the provided ref name is expected to point to. Should the ref point
+	// to a different commit ID, a 400 response will be returned with appropriate error
+	// details.
+	EndPoint *string `json:"endPoint,omitempty"`
+	// Name of the ref to be deleted
+	Name string `json:"name,omitempty"`
+}
+
+// DeleteBranch deletes a branch on the given repo.
+func (c *Client) DeleteBranch(ctx context.Context, projectKey, repoSlug string, input DeleteBranchInput) error {
+	path := fmt.Sprintf(
+		"rest/branch-utils/latest/projects/%s/repos/%s/branches",
+		projectKey,
+		repoSlug,
+	)
+
+	resp, err := c.send(ctx, "DELETE", path, nil, input, nil)
+	if resp != nil && resp.StatusCode != http.StatusNoContent {
+		return errors.Newf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	return err
 }
 
@@ -942,8 +976,11 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	return c.do(ctx, req, result)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
-	var err error
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (_ *http.Response, err error) {
+	tr, ctx := trace.New(ctx, "BitbucketServer.do")
+	defer tr.EndWithErr(&err)
+	req = req.WithContext(ctx)
+
 	req.URL.Path, err = url.JoinPath(c.URL.Path, req.URL.Path) // First join paths so that base path is kept
 	if err != nil {
 		return nil, err
@@ -953,12 +990,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
-
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
-		req.WithContext(ctx),
-		nethttp.OperationName("Bitbucket Server"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
 
 	if err := c.Auth.Authenticate(req); err != nil {
 		return nil, err
@@ -970,18 +1001,18 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	defer resp.Body.Close()
 
 	bs, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return resp, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.WithStack(&httpError{
+		return resp, errors.WithStack(&httpError{
 			URL:        req.URL,
 			StatusCode: resp.StatusCode,
 			Body:       bs,

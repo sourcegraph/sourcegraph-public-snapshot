@@ -1,13 +1,14 @@
 import assert from 'assert'
 
 import { startCase } from 'lodash'
-import { Target, Page } from 'puppeteer'
+import { describe, it } from 'mocha'
+import type { Target, Page } from 'puppeteer'
 import { fromEvent } from 'rxjs'
 import { first, filter, timeout, mergeMap } from 'rxjs/operators'
 
 import { isDefined } from '@sourcegraph/common'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
+import { type Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 import { retry } from '@sourcegraph/shared/src/testing/utils'
 
@@ -42,7 +43,8 @@ describe('Sourcegraph browser extension on github.com', function () {
         repoName: 'github.com/sourcegraph/jsonrpc2',
         commitID: '6864d8cc6d35a79f50745f8990cb4d594a8036f4',
         sourcegraphBaseUrl,
-        getLineSelector: lineNumber => `#LC${lineNumber}`,
+        // Hovercards are broken on the new GitHub file page
+        // getLineSelector: lineNumber => `#LC${lineNumber}`,
         goToDefinitionURL:
             'https://github.com/sourcegraph/jsonrpc2/blob/6864d8cc6d35a79f50745f8990cb4d594a8036f4/call_opt.go#L5:6',
     })

@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "nogo")
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
@@ -6,9 +7,14 @@ load("@bazel_gazelle//:def.bzl", "gazelle", "gazelle_binary")
 load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
 load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
+load("@npm//:eslint/package_json.bzl", eslint_bin = "bin")
+load("//:stamp_tags.bzl", "stamp_tags")
+load("//dev:eslint.bzl", "eslint_test_with_types")
 
 # Gazelle config
 #
+# Tell gazelle what is our main module
 # gazelle:prefix github.com/sourcegraph/sourcegraph
 # gazelle:build_file_name BUILD.bazel
 # Disable some by default, only include configured BUILDs
@@ -17,11 +23,20 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 # gazelle:js_npm_package_target_name {dirname}_pkg
 
 # Enable: Aspect javascript, standard go
-# gazelle:lang js,go,protobuf
+# gazelle:lang js,go,proto
+
+# Enable race detection for all go_test rules.
+# gazelle:map_kind go_test go_test //dev:go_defs.bzl
 
 package(default_visibility = ["//visibility:public"])
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_bin.eslint_binary(
+    name = "eslint",
+    testonly = True,
+    visibility = ["//visibility:public"],
+)
 
 js_library(
     name = "prettier_config_js",
@@ -40,6 +55,133 @@ ts_config(
     ],
 )
 
+ts_config(
+    name = "tsconfig-all",
+    src = "tsconfig.json",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tsconfig",
+    ],
+)
+
+js_library(
+    name = "postcss_config_js",
+    srcs = ["postcss.config.js"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:node_modules/autoprefixer",
+        "//:node_modules/postcss-custom-media",
+        "//:node_modules/postcss-focus-visible",
+        "//:node_modules/postcss-inset",
+    ],
+)
+
+copy_to_bin(
+    name = "package_json",
+    srcs = ["package.json"],
+    visibility = ["//visibility:public"],
+)
+
+js_library(
+    name = "vitest_config",
+    testonly = True,
+    srcs = [
+        "vitest.shared.ts",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//:node_modules/@testing-library/jest-dom",
+        "//:node_modules/abort-controller",
+        "//:node_modules/core-js",
+        "//:node_modules/identity-obj-proxy",
+        "//:node_modules/message-port-polyfill",
+        "//:node_modules/regenerator-runtime",
+        "//client/testing:testing_lib",
+    ],
+)
+
+js_library(
+    name = "mocha_config",
+    testonly = True,
+    srcs = [
+        ".mocharc.js",
+    ],
+    deps = [
+        "//:node_modules/abort-controller",
+        "//client/shared/dev:mocha-reporter",
+        "//client/shared/dev:suppress-polly-errors",
+        "//client/testing:fetch-mock",
+    ],
+)
+
+js_library(
+    name = "graphql_schema_config",
+    srcs = [
+        ".graphqlrc.yml",
+        "graphql-schema-linter.config.js",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+js_library(
+    name = "eslint-relative-formatter",
+    srcs = [
+        "eslint-relative-formatter.js",
+    ],
+    deps = [
+        ":node_modules/chalk",
+        ":node_modules/strip-ansi",
+        ":node_modules/text-table",
+    ],
+)
+
+js_library(
+    name = "eslint_config",
+    testonly = True,
+    srcs = [
+        ".eslintrc.js",
+    ],
+    data = [
+        "package.json",
+        ":eslint-relative-formatter",
+    ],
+    deps = [
+        ":node_modules/@sourcegraph/eslint-config",
+        ":node_modules/@sourcegraph/eslint-plugin-sourcegraph",
+        ":node_modules/@sourcegraph/eslint-plugin-wildcard",
+        ":node_modules/@typescript-eslint/eslint-plugin",
+        ":node_modules/eslint-config-prettier",
+        ":node_modules/eslint-import-resolver-node",
+        ":node_modules/eslint-plugin-ban",
+        ":node_modules/eslint-plugin-etc",
+        ":node_modules/eslint-plugin-import",
+        ":node_modules/eslint-plugin-jest-dom",
+        ":node_modules/eslint-plugin-jsdoc",
+        ":node_modules/eslint-plugin-jsx-a11y",
+        ":node_modules/eslint-plugin-monorepo",
+        ":node_modules/eslint-plugin-react",
+        ":node_modules/eslint-plugin-react-hooks",
+        ":node_modules/eslint-plugin-rxjs",
+        ":node_modules/eslint-plugin-storybook",
+        ":node_modules/eslint-plugin-unicorn",
+        ":node_modules/eslint-plugin-unused-imports",
+        ":node_modules/react",  # required to resolve the react version for eslint-plugin-react
+        ":tsconfig-all",
+        "//:node_modules/tslib",
+    ],
+)
+
+eslint_test_with_types(
+    name = "eslint_test",
+    srcs = glob(["*.js"]),
+    config = ":eslint_config",
+    deps = [
+        ":node_modules/@types/node",
+    ],
+)
+
+# Go
+
 gazelle_binary(
     name = "gazelle-buf",
     languages = [
@@ -53,12 +195,6 @@ gazelle_binary(
         # NOTE: This needs to be loaded after the proto language
     ],
 )
-
-# Tell gazelle what is our main module
-# gazelle:prefix github.com/sourcegraph/sourcegraph
-
-# Specify which protoc compilers we want when we detect GRPC service definitions.
-# gazelle:go_grpc_compilers //:gen-go-grpc,@io_bazel_rules_go//proto:go_proto
 
 gazelle(
     name = "gazelle",
@@ -87,6 +223,8 @@ gazelle(
 
 # Because the current implementation of rules_go uses the old protoc grpc compiler, we have to declare our own, and declare it manually in the build files.
 # See https://github.com/bazelbuild/rules_go/issues/3022
+
+# gazelle:go_grpc_compilers //:gen-go-grpc,@io_bazel_rules_go//proto:go_proto
 go_proto_compiler(
     name = "gen-go-grpc",
     plugin = "@org_golang_google_grpc_cmd_protoc_gen_go_grpc//:protoc-gen-go-grpc",
@@ -100,119 +238,81 @@ go_proto_compiler(
     ],
 )
 
-js_library(
-    name = "postcss_config_js",
-    srcs = ["postcss.config.js"],
-    deps = [
-        "//:node_modules/autoprefixer",
-        "//:node_modules/postcss-custom-media",
-        "//:node_modules/postcss-focus-visible",
-        "//:node_modules/postcss-inset",
-    ],
+# darwin_docker config
+#
+# To be able to run e2e tests locally, we need to simultaneously be able to build linux/amd64 container images
+# and to build go test runners targeting the local machine architecture and OS. Unless you're working on a linux machine
+# these two won't be the same. So we use this flag to indicate that this particular runner should target darwin/arm64 if we see
+# that we have this build setting enabled.
+#
+# This is part of the `--config darwin-docker` configuration alias, that you can find in .bazelrc.
+bool_flag(
+    name = "darwin_docker",
+    build_setting_default = False,
 )
 
-copy_to_bin(
-    name = "browserslist",
-    srcs = [".browserslistrc"],
-    visibility = ["//visibility:public"],
+config_setting(
+    name = "darwin_docker_e2e_go",
+    flag_values = {":darwin_docker": "true"},
 )
-
-copy_to_bin(
-    name = "package_json",
-    srcs = ["package.json"],
-    visibility = ["//visibility:public"],
-)
-
-js_library(
-    name = "jest_config",
-    testonly = True,
-    srcs = [
-        "jest.config.base.js",
-    ],
-    data = [
-        "jest.snapshot-resolver.js",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":babel_config_jest",
-        "//:node_modules/@testing-library/jest-dom",
-        "//:node_modules/abort-controller",
-        "//:node_modules/babel-jest",
-        "//:node_modules/core-js",
-        "//:node_modules/identity-obj-proxy",
-        "//:node_modules/message-port-polyfill",
-        "//:node_modules/regenerator-runtime",
-        "//client/shared/dev:mock",
-    ],
-)
-
-js_library(
-    name = "babel_config_jest",
-    testonly = True,
-    srcs = [
-        "babel.config.jest.js",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@babel/preset-env",
-        "//:node_modules/signale",
-    ],
-)
-
-js_library(
-    name = "babel_config",
-    srcs = [
-        "babel.config.js",
-    ],
-    data = [
-        ":package_json",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@babel/plugin-transform-typescript",
-        "//:node_modules/@babel/preset-env",
-        "//:node_modules/@babel/preset-react",
-        "//:node_modules/@babel/preset-typescript",
-        "//:node_modules/babel-plugin-lodash",
-        "//:node_modules/babel-plugin-webpack-chunkname",
-        "//:node_modules/semver",
-        "//:node_modules/signale",
-    ],
-)
-
-js_library(
-    name = "mocha_config",
-    testonly = True,
-    srcs = [
-        ".mocharc.js",
-    ],
-    deps = [
-        "//:node_modules/abort-controller",
-        "//client/shared/dev:fetch-mock",
-        "//client/shared/dev:mocha-reporter",
-        "//client/shared/dev:suppress-polly-errors",
-    ],
-)
-
-# Go
 
 # nogo config
 #
 # For nogo to be able to run a linter, it needs to have `var Analyzer analysis.Analyzer` defined in the main package.
 # some of the linters do not have that, so we need to define that ourselves. The linters where we have defined can
 # be found at dev/linters. Finally, the nogo configuration can be found at the root of the repository in `nogo_config.json`
+bool_flag(
+    name = "disable_nogo",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "nogo_disabled",
+    flag_values = {":disable_nogo": "true"},
+)
+
 nogo(
     name = "sg_nogo",
     config = ":nogo_config.json",
     vet = True,
     visibility = ["//visibility:public"],  # must have public visibility
-    deps = [
-        "//dev/linters/bodyclose",
-        "//dev/linters/exportloopref",
-        "//dev/linters/forbidigo",
-        "//dev/linters/gocritic",
-        "//dev/linters/ineffassign",
-    ],
+    deps = select({
+        "//:nogo_disabled": [],
+        "//conditions:default": [
+            "//dev/linters/bodyclose",
+            "//dev/linters/depguard",
+            "//dev/linters/exportloopref",
+            "//dev/linters/forbidigo",
+            "//dev/linters/gocheckcompilerdirectives",
+            "//dev/linters/gocritic",
+            "//dev/linters/ineffassign",
+            "//dev/linters/unparam",
+            # Disabled because we currently have a lot of unused code
+            # "//dev/linters/unused",
+        ] + STATIC_CHECK_ANALYZERS,
+    }),
 )
 
-exports_files(["go.mod"])
+exports_files([
+    "go.mod",
+    "sg.config.yaml",
+    # Used for when copy_to_directory might reference an empty filegroup
+    # under certain conditions. See //ui/assets/...
+    "CONTRIBUTING.md",
+    ".swcrc",
+])
+
+# sg msp settings
+
+bool_flag(
+    name = "sg_msp",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "sg_msp_flag",
+    flag_values = {
+        "//:sg_msp": "True",
+    },
+)

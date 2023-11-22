@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Button, ButtonGroup, Input } from '@sourcegraph/wildcard'
 
-import { DiffMode } from './RepositoryCommitPage'
+import type { DiffMode } from './RepositoryCommitPage'
 
 import styles from './DiffModeSelector.module.scss'
 

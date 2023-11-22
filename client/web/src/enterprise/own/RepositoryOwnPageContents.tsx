@@ -4,7 +4,7 @@ import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { H3, Text, Code, Card, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
-import {
+import type {
     GetIngestedCodeownersResult,
     GetIngestedCodeownersVariables,
     IngestedCodeowners,
@@ -14,7 +14,7 @@ import {
 import { DeleteFileButton } from './DeleteFileButton'
 import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
 import { IngestedFileViewer } from './IngestedFileViewer'
-import { RepositoryOwnAreaPageProps } from './RepositoryOwnPage'
+import type { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 import { UploadFileButton } from './UploadFileButton'
 
 import styles from './RepositoryOwnPageContents.module.scss'
@@ -95,8 +95,8 @@ export const RepositoryOwnPageContents: React.FunctionComponent<
                     {codeownersIngestedFile && (
                         <Text className={styles.commitWarning}>
                             <em>
-                                Any commited CODEOWNERS file in this repository will be ignored unless the uploaded file
-                                is deleted.
+                                Any committed CODEOWNERS file in this repository will be ignored unless the uploaded
+                                file is deleted.
                             </em>
                         </Text>
                     )}
@@ -124,11 +124,14 @@ const getCodeHostName = (repo: RepositoryFields): string => {
     const externalServiceKind = repo.externalURLs[0]?.serviceKind
 
     switch (externalServiceKind) {
-        case 'GITHUB':
+        case 'GITHUB': {
             return 'GitHub'
-        case 'GITLAB':
+        }
+        case 'GITLAB': {
             return 'GitLab'
-        default:
+        }
+        default: {
             return 'code host'
+        }
     }
 }

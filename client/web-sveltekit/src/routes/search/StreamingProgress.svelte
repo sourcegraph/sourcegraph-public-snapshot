@@ -1,11 +1,11 @@
 <script lang="ts">
     import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 
+    import { limitHit, sortBySeverity } from '$lib/branded'
     import { renderMarkdown, pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import Popover from '$lib/Popover.svelte'
     import SyntaxHighlightedQuery from '$lib/search/SyntaxHighlightedQuery.svelte'
-    import { limitHit, sortBySeverity } from '$lib/branded'
     import type { Progress, Skipped } from '$lib/shared'
     import { Button } from '$lib/wildcard'
 
@@ -44,7 +44,7 @@
             <Icon svgPath={mdiChevronDown} inline />
         </button>
     </Button>
-    <div slot="content" class="popover">
+    <div slot="content" class="streaming-popover">
         <p>
             Found {limitHit(progress) ? 'more than ' : ''}
             {progress.matchCount}
@@ -112,7 +112,7 @@
 </Popover>
 
 <style lang="scss">
-    div.popover {
+    div.streaming-popover {
         width: 20rem;
 
         p,

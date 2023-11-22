@@ -1,5 +1,5 @@
 import { useMemo } from '@storybook/addons'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn, StoryObj } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -9,11 +9,15 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { BatchChangeByNamespaceResult, BatchChangeFields, ExternalServiceKind } from '../../../graphql-operations'
+import {
+    type BatchChangeByNamespaceResult,
+    type BatchChangeFields,
+    ExternalServiceKind,
+} from '../../../graphql-operations'
 
 import {
-    queryExternalChangesetWithFileDiffs,
-    queryAllChangesetIDs as _queryAllChangesetIDs,
+    type queryExternalChangesetWithFileDiffs,
+    type queryAllChangesetIDs as _queryAllChangesetIDs,
     BATCH_CHANGE_BY_NAMESPACE,
     BULK_OPERATIONS,
     CHANGESETS,
@@ -27,8 +31,8 @@ import {
 } from './BatchChangeDetailsPage.mock'
 import { CHANGESET_COUNTS_OVER_TIME_MOCK } from './testdata'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-const config: Meta = {
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
+const config: Meta<Args> = {
     title: 'web/batches/details/BatchChangeDetailsPage',
     decorators: [decorator],
     parameters: {
@@ -46,12 +50,14 @@ const config: Meta = {
         },
         viewerCanAdminister: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
         isClosed: {
             control: { type: 'boolean' },
-            defaultValue: false,
         },
+    },
+    args: {
+        viewerCanAdminister: true,
+        isClosed: false,
     },
 }
 
@@ -80,13 +86,15 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof queryExternalChangesetWit
 
 const deleteBatchChange = () => Promise.resolve(undefined)
 
-const Template: Story<{
+interface Args {
     url: string
     supersedingBatchSpec?: boolean
     currentBatchSpec?: BatchChangeFields['currentSpec']
     viewerCanAdminister: boolean
     isClosed?: boolean
-}> = ({ url, supersedingBatchSpec, currentBatchSpec, viewerCanAdminister, isClosed }) => {
+}
+
+const Template: StoryFn<Args> = ({ url, supersedingBatchSpec, currentBatchSpec, viewerCanAdminister, isClosed }) => {
     const batchChange: BatchChangeFields = useMemo(() => {
         const currentSpec = currentBatchSpec ?? MOCK_BATCH_CHANGE.currentSpec
 
@@ -156,64 +164,60 @@ const Template: Story<{
     )
 }
 
-export const Overview = Template.bind({})
-Overview.args = { url: '/users/alice/batch-changes/awesome-batch-change' }
+type Story = StoryObj<typeof config>
+
+export const Overview: Story = Template.bind({})
+Overview.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersedingBatchSpec: false }
 Overview.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
 }
 
-export const BurndownChart = Template.bind({})
-BurndownChart.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart' }
+export const BurndownChart: Story = Template.bind({})
+BurndownChart.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=chart', supersedingBatchSpec: false }
 BurndownChart.storyName = 'Burndown chart'
 BurndownChart.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
 }
 
-export const SpecFile = Template.bind({})
-SpecFile.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=spec' }
+export const SpecFile: Story = Template.bind({})
+SpecFile.args = {
+    url: '/users/alice/batch-changes/awesome-batch-change?tab=spec',
+    supersedingBatchSpec: false,
+    viewerCanAdminister: false,
+}
 SpecFile.storyName = 'Spec file'
 SpecFile.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
-    viewerCanAdminister: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
+    viewerCanAdminister: {},
 }
 
-export const Archived = Template.bind({})
-Archived.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived' }
+export const Archived: Story = Template.bind({})
+Archived.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=archived', supersedingBatchSpec: false }
 Archived.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
 }
 
-export const BulkOperations = Template.bind({})
-BulkOperations.args = { url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations' }
+export const BulkOperations: Story = Template.bind({})
+BulkOperations.args = {
+    url: '/users/alice/batch-changes/awesome-batch-change?tab=bulkoperations',
+    supersedingBatchSpec: false,
+}
 BulkOperations.storyName = 'Bulk operations'
 BulkOperations.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: false,
-    },
+    supersedingBatchSpec: {},
 }
 
-export const SupersededBatchSpec = Template.bind({})
+export const SupersededBatchSpec: Story = Template.bind({})
 SupersededBatchSpec.args = { url: '/users/alice/batch-changes/awesome-batch-change', supersedingBatchSpec: true }
 SupersededBatchSpec.storyName = 'Superseded batch-spec'
 SupersededBatchSpec.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: true,
-    },
+    supersedingBatchSpec: {},
 }
 
-export const UnpublishableBatchSpec = Template.bind({})
+export const UnpublishableBatchSpec: Story = Template.bind({})
 UnpublishableBatchSpec.args = {
     url: '/users/alice/batch-changes/awesome-batch-change',
+    supersedingBatchSpec: true,
     currentBatchSpec: {
         ...MOCK_BATCH_CHANGE.currentSpec,
         viewerBatchChangesCodeHosts: {
@@ -230,12 +234,10 @@ UnpublishableBatchSpec.args = {
 }
 UnpublishableBatchSpec.storyName = 'Batch spec with unpublishable changesets'
 UnpublishableBatchSpec.argTypes = {
-    supersedingBatchSpec: {
-        defaultValue: true,
-    },
+    supersedingBatchSpec: {},
 }
 
-export const EmptyChangesets: Story = args => {
+export const EmptyChangesets: StoryFn = args => {
     const mocks = new WildcardMockLink([
         {
             request: {

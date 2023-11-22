@@ -7,16 +7,20 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestGetOwnershipUsageStatsReposCount(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	if err := db.Repos().Create(ctx, &types.Repo{Name: "does-not-have-codeowners"}); err != nil {
 		t.Fatalf("failed to create test repo: %s", err)
@@ -41,10 +45,9 @@ func TestGetOwnershipUsageStatsReposCount(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
-	iptr := func(i int32) *int32 { return &i }
 	want := &types.OwnershipUsageReposCounts{
-		Total:                 iptr(2),
-		WithIngestedOwnership: iptr(1),
+		Total:                 pointers.Ptr(int32(2)),
+		WithIngestedOwnership: pointers.Ptr(int32(1)),
 	}
 	if diff := cmp.Diff(want, stats.ReposCount); diff != "" {
 		t.Errorf("GetOwnershipUsageStates.ReposCount, +want,-got:\n%s", diff)
@@ -54,7 +57,7 @@ func TestGetOwnershipUsageStatsReposCount(t *testing.T) {
 func TestGetOwnershipUsageStatsReposCountNoCodeowners(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	if err := db.Repos().Create(ctx, &types.Repo{Name: "does-not-have-codeowners"}); err != nil {
 		t.Fatalf("failed to create test repo: %s", err)
@@ -66,10 +69,9 @@ func TestGetOwnershipUsageStatsReposCountNoCodeowners(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
-	iptr := func(i int32) *int32 { return &i }
 	want := &types.OwnershipUsageReposCounts{
-		Total:                 iptr(1),
-		WithIngestedOwnership: iptr(0),
+		Total:                 pointers.Ptr(int32(1)),
+		WithIngestedOwnership: pointers.Ptr(int32(0)),
 	}
 	if diff := cmp.Diff(want, stats.ReposCount); diff != "" {
 		t.Errorf("GetOwnershipUsageStates.ReposCount, +want,-got:\n%s", diff)
@@ -79,7 +81,7 @@ func TestGetOwnershipUsageStatsReposCountNoCodeowners(t *testing.T) {
 func TestGetOwnershipUsageStatsReposCountNoRepos(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	if err := db.RepoStatistics().CompactRepoStatistics(ctx); err != nil {
 		t.Fatalf("failed to compact repo stats: %s", err)
@@ -91,10 +93,9 @@ func TestGetOwnershipUsageStatsReposCountNoRepos(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
-	iptr := func(i int32) *int32 { return &i }
 	want := &types.OwnershipUsageReposCounts{
-		Total:                 iptr(0),
-		WithIngestedOwnership: iptr(0),
+		Total:                 pointers.Ptr(int32(0)),
+		WithIngestedOwnership: pointers.Ptr(int32(0)),
 	}
 	if diff := cmp.Diff(want, stats.ReposCount); diff != "" {
 		t.Errorf("GetOwnershipUsageStates.ReposCount, -want+got:\n%s", diff)
@@ -104,7 +105,7 @@ func TestGetOwnershipUsageStatsReposCountNoRepos(t *testing.T) {
 func TestGetOwnershipUsageStatsReposCountStatsNotCompacted(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	if err := db.Repos().Create(ctx, &types.Repo{Name: "does-not-have-codeowners"}); err != nil {
 		t.Fatalf("failed to create test repo: %s", err)
@@ -127,65 +128,13 @@ func TestGetOwnershipUsageStatsReposCountStatsNotCompacted(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetOwnershipUsageStats err: %s", err)
 	}
-	iptr := func(i int32) *int32 { return &i }
 	want := &types.OwnershipUsageReposCounts{
 		// Can have zero repos and one ingested ownership then.
-		Total:                 iptr(2),
-		WithIngestedOwnership: iptr(1),
+		Total:                 pointers.Ptr(int32(2)),
+		WithIngestedOwnership: pointers.Ptr(int32(1)),
 	}
 	if diff := cmp.Diff(want, stats.ReposCount); diff != "" {
 		t.Errorf("GetOwnershipUsageStates.ReposCount, -want,+got:\n%s", diff)
-	}
-}
-
-func TestGetOwnershipUsageStatsFeatureFlagOn(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	if _, err := db.FeatureFlags().CreateBool(ctx, "search-ownership", true); err != nil {
-		t.Fatal(err)
-	}
-	stats, err := GetOwnershipUsageStats(ctx, db)
-	if err != nil {
-		t.Fatalf("GetOwnershipUsageStats err: %s", err)
-	}
-	want := true
-	if diff := cmp.Diff(&want, stats.FeatureFlagOn); diff != "" {
-		t.Errorf("GetOwnershipFeatureFlagOn, -want+got: %s", diff)
-	}
-}
-
-func TestGetOwnershipUsageStatsFeatureFlagOff(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	if _, err := db.FeatureFlags().CreateBool(ctx, "search-ownership", false); err != nil {
-		t.Fatal(err)
-	}
-	stats, err := GetOwnershipUsageStats(ctx, db)
-	if err != nil {
-		t.Fatalf("GetOwnershipUsageStats err: %s", err)
-	}
-	want := false
-	if diff := cmp.Diff(&want, stats.FeatureFlagOn); diff != "" {
-		t.Errorf("GetOwnershipFeatureFlagOn, -want+got: %s", diff)
-	}
-}
-
-func TestGetOwnershipUsageStatsFeatureFlagAbsent(t *testing.T) {
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	stats, err := GetOwnershipUsageStats(ctx, db)
-	if err != nil {
-		t.Fatalf("GetOwnershipUsageStats err: %s", err)
-	}
-	want := false
-	if diff := cmp.Diff(&want, stats.FeatureFlagOn); diff != "" {
-		t.Errorf("GetOwnershipFeatureFlagOn, -want+got: %s", diff)
 	}
 }
 
@@ -210,7 +159,7 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 	} {
 		t.Run(eventName, func(t *testing.T) {
 			t.Parallel()
-			db := database.NewDB(logger, dbtest.NewDB(logger, t))
+			db := database.NewDB(logger, dbtest.NewDB(t))
 			ctx := context.Background()
 			if err := db.EventLogs().Insert(ctx, &database.Event{
 				UserID: 1,
@@ -234,15 +183,38 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 			if err != nil {
 				t.Fatalf("GetOwnershipUsageStats err: %s", err)
 			}
-			ptr := func(i int32) *int32 { return &i }
 			want := &types.OwnershipUsageStatisticsActiveUsers{
-				MAU: ptr(2),
-				WAU: ptr(1),
-				DAU: ptr(0),
+				MAU: pointers.Ptr(int32(2)),
+				WAU: pointers.Ptr(int32(1)),
+				DAU: pointers.Ptr(int32(0)),
 			}
 			if diff := cmp.Diff(want, lens(stats)); diff != "" {
 				t.Errorf("GetOwnershipUsageStats().%s -want+got: %s", eventName, diff)
 			}
 		})
 	}
+}
+
+func TestGetOwnershipUsageStatsAssignedOwnersCount(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+	var repoID api.RepoID = 1
+	require.NoError(t, db.Repos().Create(ctx, &types.Repo{
+		ID:   repoID,
+		Name: "github.com/sourcegraph/sourcegraph",
+	}))
+	user, err := db.Users().Create(ctx, database.NewUser{Username: "foo"})
+	require.NoError(t, err)
+	paths := []string{"src", "test", "docs/README.md"}
+	for _, p := range paths {
+		require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, p, user.ID))
+	}
+	stats, err := GetOwnershipUsageStats(ctx, db)
+	if err != nil {
+		t.Fatalf("GetOwnershipUsageStats err: %s", err)
+	}
+	wantCount := int32(len(paths))
+	assert.Equal(t, &wantCount, stats.AssignedOwnersCount)
 }

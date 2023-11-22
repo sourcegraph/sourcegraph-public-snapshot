@@ -4,17 +4,17 @@ import { mdiChevronRight, mdiCircleOffOutline } from '@mdi/js'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge, Container, ErrorAlert, H3, Icon, Link, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
-import {
+import type {
     DashboardRepoFields,
     GlobalCodeIntelStatusResult,
     CodeIntelIndexerFields,
 } from '../../../../graphql-operations'
 import { ExternalRepositoryIcon } from '../../../../site-admin/components/ExternalRepositoryIcon'
 import { globalCodeIntelStatusQuery } from '../backend'
-import { DataSummary, DataSummaryItem } from '../components/DataSummary'
+import { DataSummary, type DataSummaryItem } from '../components/DataSummary'
 
 import { buildParamsFromFilterState } from './RepoDashboardPage'
 

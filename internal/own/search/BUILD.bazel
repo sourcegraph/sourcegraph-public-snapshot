@@ -1,0 +1,53 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "search",
+    srcs = [
+        "filter_job.go",
+        "rules_cache.go",
+        "select_job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/own/search",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/own",
+        "//internal/own/codeowners",
+        "//internal/own/codeowners/v1:codeowners",
+        "//internal/search",
+        "//internal/search/job",
+        "//internal/search/result",
+        "//internal/search/streaming",
+        "//internal/types",
+        "//lib/errors",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "search_test",
+    timeout = "short",
+    srcs = [
+        "filter_job_test.go",
+        "select_job_test.go",
+    ],
+    embed = [":search"],
+    deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/dbmocks",
+        "//internal/gitserver",
+        "//internal/own",
+        "//internal/search",
+        "//internal/search/job",
+        "//internal/search/job/mockjob",
+        "//internal/search/result",
+        "//internal/search/streaming",
+        "//internal/types",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

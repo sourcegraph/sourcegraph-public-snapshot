@@ -3,19 +3,19 @@ package workerutil
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/derision-test/glock"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -47,6 +47,10 @@ type Worker[T Record] struct {
 type dummyType struct{}
 
 func (d dummyType) RecordID() int { return 0 }
+
+func (d dummyType) RecordUID() string {
+	return strconv.Itoa(0)
+}
 
 var _ recorder.Recordable = &Worker[dummyType]{}
 
@@ -111,7 +115,7 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 
 	// Initialize the logger
 	if options.Metrics.logger == nil {
-		options.Metrics.logger = log.Scoped("worker."+options.Name, "a worker process for "+options.WorkerHostname)
+		options.Metrics.logger = log.Scoped("worker." + options.Name)
 	}
 	options.Metrics.logger = options.Metrics.logger.With(log.String("name", options.Name))
 
@@ -161,12 +165,12 @@ func (w *Worker[T]) Start() {
 			knownIDs, canceledIDs, err := w.store.Heartbeat(w.rootCtx, ids)
 			if err != nil {
 				w.options.Metrics.logger.Error("Failed to refresh heartbeats",
-					log.Ints("ids", ids),
+					log.Strings("ids", ids),
 					log.Error(err))
 				// Bail out and restart the for loop.
 				continue
 			}
-			knownIDsMap := map[int]struct{}{}
+			knownIDsMap := map[string]struct{}{}
 			for _, id := range knownIDs {
 				knownIDsMap[id] = struct{}{}
 			}
@@ -175,13 +179,13 @@ func (w *Worker[T]) Start() {
 				if _, ok := knownIDsMap[id]; !ok {
 					if w.runningIDSet.Remove(id) {
 						w.options.Metrics.logger.Error("Removed unknown job from running set",
-							log.Int("id", id))
+							log.String("id", id))
 					}
 				}
 			}
 
 			if len(canceledIDs) > 0 {
-				w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceledIDs))
+				w.options.Metrics.logger.Info("Found jobs to cancel", log.Strings("IDs", canceledIDs))
 			}
 
 			for _, id := range canceledIDs {
@@ -306,7 +310,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext( //nolint:staticcheck // OT is deprecated
+	workerSpan, workerCtxWithSpan := trace.New(
 		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
 		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
 		w.options.Name,
@@ -315,17 +319,16 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 
 	// Register the record as running so it is included in heartbeat updates.
-	if !w.runningIDSet.Add(record.RecordID(), cancel) {
-		workerSpan.LogFields(otlog.Error(ErrJobAlreadyExists))
-		workerSpan.Finish()
+	if !w.runningIDSet.Add(record.RecordUID(), cancel) {
+		workerSpan.EndWithErr(&ErrJobAlreadyExists)
 		return false, ErrJobAlreadyExists
 	}
 
 	// Set up observability
 	w.options.Metrics.numJobs.Inc()
-	processLog.Info("Dequeued record for processing", log.Int("id", record.RecordID()))
+	processLog.Info("Dequeued record for processing", log.String("id", record.RecordUID()))
 	processArgs := observation.Args{
-		LogFields: []otlog.Field{otlog.Int("record.id", record.RecordID())},
+		Attrs: []attribute.KeyValue{attribute.String("record.id", record.RecordUID())},
 	}
 
 	if hook, ok := w.handler.(WithHooks[T]); ok {
@@ -352,11 +355,11 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 
 			// Remove the record from the set of running jobs, so it is not included
 			// in heartbeat updates anymore.
-			defer w.runningIDSet.Remove(record.RecordID())
+			defer w.runningIDSet.Remove(record.RecordUID())
 			w.options.Metrics.numJobs.Dec()
 			w.handlerSemaphore <- struct{}{}
 			w.wg.Done()
-			workerSpan.Finish()
+			workerSpan.End()
 		}()
 
 		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {
@@ -399,7 +402,7 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 		go w.recorder.LogRun(w, duration, handleErr)
 	}
 
-	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
+	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordUID(), handleErr, ctx.Err()) {
 		if marked, markErr := w.store.MarkFailed(workerContext, record, handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
@@ -426,7 +429,7 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 // isJobCanceled returns true if the job has been canceled through the Cancel interface.
 // If the context is canceled, and the job is still part of the running ID set,
 // we know that it has been canceled for that reason.
-func (w *Worker[T]) isJobCanceled(id int, handleErr, ctxErr error) bool {
+func (w *Worker[T]) isJobCanceled(id string, handleErr, ctxErr error) bool {
 	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id) && !errors.Is(handleErr, context.DeadlineExceeded)
 }
 

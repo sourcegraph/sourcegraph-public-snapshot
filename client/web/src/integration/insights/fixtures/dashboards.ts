@@ -1,12 +1,12 @@
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
 import {
-    GetDashboardInsightsResult,
-    GetInsightViewResult,
+    type GetDashboardInsightsResult,
+    type GetInsightViewResult,
     GroupByField,
-    InsightsDashboardNode,
-    InsightsDashboardsResult,
-    InsightViewNode,
+    type InsightsDashboardNode,
+    type InsightsDashboardsResult,
+    type InsightViewNode,
     SeriesSortDirection,
     SeriesSortMode,
     TimeIntervalStepUnit,

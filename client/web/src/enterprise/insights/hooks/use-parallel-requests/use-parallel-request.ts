@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { of, from, Subject, ObservableInput, Observable, asyncScheduler, scheduled, Unsubscribable } from 'rxjs'
+import {
+    of,
+    from,
+    Subject,
+    type ObservableInput,
+    type Observable,
+    asyncScheduler,
+    scheduled,
+    type Unsubscribable,
+} from 'rxjs'
 import { mergeMap, map, takeUntil, take, catchError, takeWhile, switchMap, publish, refCount } from 'rxjs/operators'
 
-import { ErrorLike, asError, isErrorLike } from '@sourcegraph/common'
+import { type ErrorLike, asError, isErrorLike } from '@sourcegraph/common'
 
 interface Request<T> {
     /**
@@ -59,7 +68,7 @@ const MAX_PARALLEL_QUERIES = 3
  * these hooks unit tests.
  */
 /* eslint-disable react-hooks/rules-of-hooks */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type,@typescript-eslint/explicit-module-boundary-types
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function createUseParallelRequestsHook<T>({ maxRequests } = { maxRequests: MAX_PARALLEL_QUERIES }) {
     const requests = new Subject<Request<T>>()
     const cancelledRequests = new Set<Request<T>>()

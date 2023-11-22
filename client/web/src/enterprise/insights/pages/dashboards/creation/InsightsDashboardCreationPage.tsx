@@ -3,7 +3,7 @@ import React, { useContext, useMemo } from 'react'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, Container, Button, LoadingSpinner, useObservable, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../components/LoaderButton'
@@ -13,15 +13,13 @@ import { CodeInsightsBackendContext } from '../../../core'
 import { useUiFeatures } from '../../../hooks'
 
 import {
-    DashboardCreationFields,
+    type DashboardCreationFields,
     InsightsDashboardCreationContent,
 } from './components/InsightsDashboardCreationContent'
 
 import styles from './InsightsDashboardCreationPage.module.scss'
 
-interface InsightsDashboardCreationPageProps extends TelemetryProps {
-    isSourcegraphApp: boolean
-}
+interface InsightsDashboardCreationPageProps extends TelemetryProps {}
 
 export const InsightsDashboardCreationPage: React.FunctionComponent<
     React.PropsWithChildren<InsightsDashboardCreationPageProps>
@@ -58,7 +56,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
     }
 
     return (
-        <CodeInsightsPage className={classNames('col-8', styles.page)} isSourcegraphApp={props.isSourcegraphApp}>
+        <CodeInsightsPage className={classNames('col-8', styles.page)}>
             <PageTitle title="Add dashboard - Code Insights" />
 
             <PageHeader path={[{ icon: CodeInsightsIcon }, { text: 'Add new dashboard' }]} />
@@ -71,11 +69,7 @@ export const InsightsDashboardCreationPage: React.FunctionComponent<
             </span>
 
             <Container className="mt-4">
-                <InsightsDashboardCreationContent
-                    owners={owners}
-                    onSubmit={handleSubmit}
-                    isSourcegraphApp={props.isSourcegraphApp}
-                >
+                <InsightsDashboardCreationContent owners={owners} onSubmit={handleSubmit}>
                     {formAPI => (
                         <>
                             <Button

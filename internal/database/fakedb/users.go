@@ -60,7 +60,7 @@ func (users *Users) GetByCurrentAuthUser(ctx context.Context) (*types.User, erro
 	return a.User(ctx, users)
 }
 
-func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
+func (users *Users) List(_ context.Context, opts *database.UsersListOptions) ([]*types.User, error) {
 	if len(opts.UserIDs) == 0 {
 		return nil, errors.New("not implemented")
 	}
@@ -76,6 +76,6 @@ func (users *Users) List(ctx context.Context, opts *database.UsersListOptions) (
 	return ret, nil
 }
 
-func (users *Users) GetByVerifiedEmail(_ context.Context, email string) (*types.User, error) {
+func (users *Users) GetByVerifiedEmail(_ context.Context, _ string) (*types.User, error) {
 	return nil, nil
 }

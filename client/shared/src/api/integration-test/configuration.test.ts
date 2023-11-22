@@ -1,8 +1,9 @@
 import { BehaviorSubject, of } from 'rxjs'
+import { describe, expect, test } from 'vitest'
 
-import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '../../settings/settings'
+import { EMPTY_SETTINGS_CASCADE, type SettingsCascadeOrError } from '../../settings/settings'
 import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
-import { SettingsEdit } from '../client/services/settings'
+import type { SettingsEdit } from '../client/services/settings'
 
 describe('Configuration (integration)', () => {
     test('is synchronously available', async () => {

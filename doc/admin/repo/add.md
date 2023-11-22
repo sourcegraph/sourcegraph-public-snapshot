@@ -27,4 +27,4 @@ If nothing informative is visible there, check for error messages related to com
 
 If your repositories are showing up but are not cloning or updating from the original Git repository:
 
-- Go to the repository's **Mirroring** settings page and inspect the **Check connection** logs.
+- Follow the instructions for [troubleshooting a repository that is not being updated](../../admin/how-to/repo-not-updated.md)

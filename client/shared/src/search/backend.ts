@@ -1,37 +1,37 @@
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError, memoizeObservable } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors, isErrorGraphQLResult } from '@sourcegraph/http-client'
 
-import { AuthenticatedUser } from '../auth'
+import type { AuthenticatedUser } from '../auth'
 import {
-    EventLogsDataResult,
-    EventLogsDataVariables,
-    ListSearchContextsResult,
-    ListSearchContextsVariables,
-    IsSearchContextAvailableResult,
-    IsSearchContextAvailableVariables,
-    Scalars,
-    FetchSearchContextResult,
-    FetchSearchContextVariables,
-    CreateSearchContextResult,
-    CreateSearchContextVariables,
-    UpdateSearchContextVariables,
-    UpdateSearchContextResult,
-    DeleteSearchContextVariables,
-    DeleteSearchContextResult,
-    Maybe,
-    FetchSearchContextBySpecResult,
-    FetchSearchContextBySpecVariables,
-    highlightCodeResult,
-    highlightCodeVariables,
+    type EventLogsDataResult,
+    type EventLogsDataVariables,
+    type ListSearchContextsResult,
+    type ListSearchContextsVariables,
+    type IsSearchContextAvailableResult,
+    type IsSearchContextAvailableVariables,
+    type Scalars,
+    type FetchSearchContextResult,
+    type FetchSearchContextVariables,
+    type CreateSearchContextResult,
+    type CreateSearchContextVariables,
+    type UpdateSearchContextVariables,
+    type UpdateSearchContextResult,
+    type DeleteSearchContextVariables,
+    type DeleteSearchContextResult,
+    type Maybe,
+    type FetchSearchContextBySpecResult,
+    type FetchSearchContextBySpecVariables,
+    type highlightCodeResult,
+    type highlightCodeVariables,
     SearchContextsOrderBy,
-    SearchContextFields,
-    DefaultSearchContextSpecResult,
-    DefaultSearchContextSpecVariables,
+    type SearchContextFields,
+    type DefaultSearchContextSpecResult,
+    type DefaultSearchContextSpecVariables,
 } from '../graphql-operations'
-import { PlatformContext } from '../platform/context'
+import type { PlatformContext } from '../platform/context'
 
 const searchContextFragment = gql`
     fragment SearchContextFields on SearchContext {

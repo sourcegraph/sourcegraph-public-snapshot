@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { ForwardReferenceComponent } from '../../../types'
+import type { ForwardReferenceComponent } from '../../../types'
 import { Link } from '../Link/Link'
 
 type LinkOrSpanProps = React.PropsWithChildren<
@@ -14,7 +14,6 @@ type LinkOrSpanProps = React.PropsWithChildren<
  * The LinkOrSpan component renders a <Link> if the "to" property is a non-empty string; otherwise it renders the
  * text in a <span> (with no link).
  */
-// eslint-disable-next-line react/display-name
 const LinkOrSpan = React.forwardRef(({ to, className = '', children, ...otherProps }: LinkOrSpanProps, reference) => {
     if (to) {
         return (

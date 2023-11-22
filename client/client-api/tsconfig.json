@@ -6,10 +6,6 @@
     "sourceRoot": "src",
     "rootDir": ".",
     "outDir": "./out",
-    "baseUrl": "./src",
-    "paths": {
-      "*": ["../common/src/types/*"],
-    },
   },
   "references": [
     {
@@ -22,5 +18,5 @@
       "path": "../template-parser",
     },
   ],
-  "include": ["./src/**/*", "./*.ts"],
+  "include": ["src"],
 }

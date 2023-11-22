@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
+exports[`StreamingProgressSkippedPopover > should render correctly 1`] = `
 <DocumentFragment>
   <p
     class="mx-3 mt-3"
@@ -13,7 +13,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     Some results skipped:
   </h3>
   <div
-    class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
+    class="streamingSkippedItem streamingSkippedItemWarn"
   >
     <button
       aria-disabled="false"
@@ -67,8 +67,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <p>
           There was a network error retrieving search results. Check your Internet connection and try again.
         </p>
-        
-
       </div>
     </div>
     <div
@@ -76,7 +74,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     />
   </div>
   <div
-    class="pt-2 w-100 streamingSkippedItem streamingSkippedItemWarn"
+    class="streamingSkippedItem streamingSkippedItemWarn"
   >
     <button
       aria-disabled="false"
@@ -130,8 +128,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <p>
           Search timed out
         </p>
-        
-
       </div>
     </div>
     <div
@@ -139,7 +135,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     />
   </div>
   <div
-    class="pt-2 w-100 streamingSkippedItem"
+    class="streamingSkippedItem"
   >
     <button
       aria-disabled="false"
@@ -193,8 +189,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <p>
           10k forked repositories excluded
         </p>
-        
-
       </div>
     </div>
     <div
@@ -202,7 +196,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     />
   </div>
   <div
-    class="pt-2 w-100 streamingSkippedItem"
+    class="streamingSkippedItem"
   >
     <button
       aria-disabled="false"
@@ -256,8 +250,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         <p>
           60k archived repositories excluded
         </p>
-        
-
       </div>
     </div>
     <div
@@ -265,7 +257,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     />
   </div>
   <div
-    class="pt-2 w-100 streamingSkippedItem"
+    class="streamingSkippedItem"
   >
     <button
       aria-disabled="false"
@@ -323,8 +315,6 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           </code>
            in your query.
         </p>
-        
-
       </div>
     </div>
     <div
@@ -332,7 +322,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     />
   </div>
   <form
-    class="pb-3 px-3"
+    class="px-3 pb-3"
     data-testid="popover-form"
   >
     <div

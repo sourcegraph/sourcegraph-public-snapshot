@@ -1,9 +1,9 @@
-import { FC, useCallback } from 'react'
+import { type FC, useCallback } from 'react'
 
 import { useNavigate } from 'react-router-dom'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
-import {
+import type {
     HiddenBatchSpecWorkspaceListFields,
     Scalars,
     VisibleBatchSpecWorkspaceListFields,

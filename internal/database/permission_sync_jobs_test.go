@@ -11,13 +11,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
@@ -25,11 +25,9 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		t.Skip()
 	}
 
-	clock := timeutil.NewFakeClock(time.Now(), 0)
-
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
 
@@ -45,45 +43,48 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 
 	// Create repos.
 	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
-	err = reposStore.Create(ctx, &repo1)
-	require.NoError(t, err)
+	require.NoError(t, reposStore.Create(ctx, &repo1))
 	repo2 := types.Repo{Name: "test-repo-2", ID: 201}
-	err = reposStore.Create(ctx, &repo2)
-	require.NoError(t, err)
+	require.NoError(t, reposStore.Create(ctx, &repo2))
+	repo3 := types.Repo{Name: "test-repo-3", ID: 303}
+	require.NoError(t, reposStore.Create(ctx, &repo3))
 
 	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 	require.Len(t, jobs, 0, "jobs returned even though database is empty")
 
 	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonUserNoPermissions, NoPerms: true, TriggeredByUserID: user.ID}
-	err = store.CreateRepoSyncJob(ctx, repo1.ID, opts)
-	require.NoError(t, err)
+	require.NoError(t, store.CreateRepoSyncJob(ctx, repo1.ID, opts))
 
-	processAfter := clock.Now().Add(5 * time.Minute)
-	opts = PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonManualUserSync}
-	err = store.CreateUserSyncJob(ctx, user1.ID, opts)
-	require.NoError(t, err)
+	opts = PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonManualUserSync}
+	require.NoError(t, store.CreateUserSyncJob(ctx, user1.ID, opts))
 
-	processAfter = clock.Now().Add(5 * time.Minute)
-	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: ReasonUserEmailVerified}
-	err = store.CreateUserSyncJob(ctx, user2.ID, opts)
-	require.NoError(t, err)
+	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonUserEmailVerified}
+	require.NoError(t, store.CreateUserSyncJob(ctx, user2.ID, opts))
 
-	processAfter = clock.Now().Add(5 * time.Minute)
-	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}
-	err = store.CreateRepoSyncJob(ctx, repo2.ID, opts)
-	require.NoError(t, err)
+	// Adding 1 failed and 1 partially successful job for repoID = 2.
+	require.NoError(t, store.CreateRepoSyncJob(ctx, repo2.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}))
 	codeHostStates := getSampleCodeHostStates()
-	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET code_host_states=array["+
-		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"SUCCESS\",\"message\":\"successful success\"}',"+
-		"'{\"provider_id\":\"ID\",\"provider_type\":\"Type\",\"status\":\"ERROR\",\"message\":\"unsuccessful unsuccess :(\"}'"+
-		"]::json[], state='failed', cancellation_reason='i tried to cancel but it already failed', failure_message='imma failure' WHERE id=4")
+	clock := timeutil.NewFakeClock(time.Now(), 0)
+	finishedTime := clock.Now()
+	finishSyncJobWithState(t, db, ctx, 4, finishedTime, PermissionsSyncJobStateFailed, codeHostStates[1:])
+	// Adding a reason and a message.
+	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET cancellation_reason='i tried to cancel but it already failed', failure_message='imma failure' WHERE id=4")
 	require.NoError(t, err)
+
+	// Partial success (one of `codeHostStates` failed).
+	require.NoError(t, store.CreateRepoSyncJob(ctx, repo2.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}))
+	finishSyncJobWithState(t, db, ctx, 5, finishedTime, PermissionsSyncJobStateCompleted, codeHostStates)
+
+	// Creating a sync job for repoID = 3 and marking it as completed.
+	require.NoError(t, store.CreateRepoSyncJob(ctx, repo3.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}))
+	// Success.
+	finishSyncJobWithState(t, db, ctx, 6, finishedTime, PermissionsSyncJobStateCompleted, codeHostStates[:1])
 
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 
-	require.Len(t, jobs, 4, "wrong number of jobs returned")
+	require.Len(t, jobs, 6, "wrong number of jobs returned")
 
 	wantJobs := []*PermissionSyncJob{
 		{
@@ -102,7 +103,6 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			UserID:           int(user1.ID),
 			Priority:         MediumPriorityPermissionsSync,
 			InvalidateCaches: true,
-			ProcessAfter:     processAfter,
 			Reason:           ReasonManualUserSync,
 		},
 		{
@@ -111,7 +111,6 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			UserID:           int(user2.ID),
 			Priority:         LowPriorityPermissionsSync,
 			InvalidateCaches: true,
-			ProcessAfter:     processAfter,
 			Reason:           ReasonUserEmailVerified,
 		},
 		{
@@ -120,9 +119,31 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			RepositoryID:       int(repo2.ID),
 			Priority:           LowPriorityPermissionsSync,
 			Reason:             ReasonGitHubRepoEvent,
-			CodeHostStates:     codeHostStates,
-			FailureMessage:     pointer.String("imma failure"),
-			CancellationReason: pointer.String("i tried to cancel but it already failed"),
+			FinishedAt:         finishedTime,
+			CodeHostStates:     codeHostStates[1:],
+			FailureMessage:     pointers.Ptr("imma failure"),
+			CancellationReason: pointers.Ptr("i tried to cancel but it already failed"),
+			IsPartialSuccess:   false,
+		},
+		{
+			ID:               jobs[4].ID,
+			State:            PermissionsSyncJobStateCompleted,
+			RepositoryID:     int(repo2.ID),
+			Priority:         LowPriorityPermissionsSync,
+			Reason:           ReasonGitHubRepoEvent,
+			FinishedAt:       finishedTime,
+			CodeHostStates:   codeHostStates,
+			IsPartialSuccess: true,
+		},
+		{
+			ID:               jobs[5].ID,
+			State:            PermissionsSyncJobStateCompleted,
+			RepositoryID:     int(repo3.ID),
+			Priority:         LowPriorityPermissionsSync,
+			Reason:           ReasonGitHubRepoEvent,
+			FinishedAt:       finishedTime,
+			CodeHostStates:   codeHostStates[:1],
+			IsPartialSuccess: false,
 		},
 	}
 	if diff := cmp.Diff(jobs, wantJobs, cmpopts.IgnoreFields(PermissionSyncJob{}, "QueuedAt")); diff != "" {
@@ -163,9 +184,24 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 			wantJobs: jobs[:3],
 		},
 		{
+			name:     "State=completed (partially successful shouldn't be included)",
+			opts:     ListPermissionSyncJobOpts{State: PermissionsSyncJobStateCompleted},
+			wantJobs: jobs[5:6],
+		},
+		{
 			name:     "State=failed",
 			opts:     ListPermissionSyncJobOpts{State: PermissionsSyncJobStateFailed},
-			wantJobs: jobs[3:],
+			wantJobs: jobs[3:4],
+		},
+		{
+			name:     "Partial success",
+			opts:     ListPermissionSyncJobOpts{PartialSuccess: true},
+			wantJobs: jobs[4:5],
+		},
+		{
+			name:     "Partial success overrides provided state",
+			opts:     ListPermissionSyncJobOpts{State: PermissionsSyncJobStateFailed, PartialSuccess: true},
+			wantJobs: jobs[4:5],
 		},
 		{
 			name:     "Reason filtering",
@@ -195,12 +231,12 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		{
 			name:     "SearchType alone works as a filter by sync job subject (repository)",
 			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo},
-			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
+			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3], jobs[4], jobs[5]},
 		},
 		{
 			name:     "Repo name search, case-insensitivity",
 			opts:     ListPermissionSyncJobOpts{Query: "TeST", SearchType: PermissionsSyncSearchTypeRepo},
-			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3]},
+			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3], jobs[4], jobs[5]},
 		},
 		{
 			name:     "Repo name search",
@@ -224,7 +260,7 @@ func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
 		},
 		{
 			name:     "User name search with pagination",
-			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: intPtr(1)}},
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: pointers.Ptr(1)}},
 			wantJobs: jobs[2:3],
 		},
 		{
@@ -257,7 +293,7 @@ func TestPermissionSyncJobs_GetLatestSyncJob(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	store := PermissionSyncJobsWith(logger, db)
 	usersStore := UsersWith(logger, db)
@@ -360,7 +396,7 @@ func TestPermissionSyncJobs_Deduplication(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user1, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
 
@@ -517,7 +553,7 @@ func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -566,7 +602,7 @@ func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -591,7 +627,7 @@ func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
 	require.NoError(t, err)
 
 	// Saving result should be successful.
-	err = store.SaveSyncResult(ctx, 1, &result, codeHostStates)
+	err = store.SaveSyncResult(ctx, 1, true, &result, codeHostStates)
 	require.NoError(t, err)
 
 	// Checking that all the results are set.
@@ -603,9 +639,10 @@ func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
 	require.Equal(t, 2, theJob.PermissionsRemoved)
 	require.Equal(t, 5, theJob.PermissionsFound)
 	require.Equal(t, codeHostStates, theJob.CodeHostStates)
+	require.True(t, theJob.IsPartialSuccess)
 
 	// Saving nil result (in case of errors from code host) should be also successful.
-	err = store.SaveSyncResult(ctx, 1, nil, codeHostStates[1:])
+	err = store.SaveSyncResult(ctx, 1, false, nil, codeHostStates[1:])
 	require.NoError(t, err)
 
 	// Checking that all the results are set.
@@ -617,6 +654,7 @@ func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
 	require.Equal(t, 0, theJob.PermissionsRemoved)
 	require.Equal(t, 0, theJob.PermissionsFound)
 	require.Equal(t, codeHostStates[1:], theJob.CodeHostStates)
+	require.False(t, theJob.IsPartialSuccess)
 }
 
 func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
@@ -625,7 +663,7 @@ func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -661,7 +699,7 @@ func TestPermissionSyncJobs_CascadeOnUserDelete(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := PermissionSyncJobsWith(logger, db)
@@ -697,7 +735,7 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
 
@@ -716,17 +754,17 @@ func TestPermissionSyncJobs_Pagination(t *testing.T) {
 	}{
 		{
 			name:           "After",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: strptr("1")},
+			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: pointers.Ptr("1")},
 			wantJobs:       []*PermissionSyncJob{},
 		},
 		{
 			name:           "Before",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: strptr("2")},
+			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: pointers.Ptr("2")},
 			wantJobs:       jobs,
 		},
 		{
 			name:           "First",
-			paginationArgs: PaginationArgs{Ascending: true, First: intPtr(5)},
+			paginationArgs: PaginationArgs{Ascending: true, First: pointers.Ptr(5)},
 			wantJobs:       jobs[:5],
 		},
 		{
@@ -759,7 +797,7 @@ func TestPermissionSyncJobs_Count(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
 	require.NoError(t, err)
 
@@ -803,7 +841,7 @@ func TestPermissionSyncJobs_CountUsersWithFailingSyncJob(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	store := PermissionSyncJobsWith(logger, db)
 	usersStore := UsersWith(logger, db)
@@ -877,7 +915,7 @@ func TestPermissionSyncJobs_CountReposWithFailingSyncJob(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	store := PermissionSyncJobsWith(logger, db)
 	reposStore := ReposWith(logger, db)
@@ -973,6 +1011,18 @@ func createSyncJob(t *testing.T, store PermissionSyncJobStore, ctx context.Conte
 		err := store.CreateRepoSyncJob(ctx, repoID, opts)
 		require.NoError(t, err)
 	}
+}
+
+func finishSyncJobWithState(t *testing.T, db DB, ctx context.Context, id int, finishedAt time.Time, state PermissionsSyncJobState, statuses CodeHostStatusesSet) {
+	t.Helper()
+
+	query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s WHERE id = %d", finishedAt, state, id)
+
+	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	require.NoError(t, err)
+
+	err = db.PermissionSyncJobs().SaveSyncResult(ctx, id, state == PermissionsSyncJobStateCompleted, nil, statuses)
+	require.NoError(t, err)
 }
 
 func finishSyncJobWithFailure(t *testing.T, db DB, ctx context.Context, id int, finishedAt time.Time) {

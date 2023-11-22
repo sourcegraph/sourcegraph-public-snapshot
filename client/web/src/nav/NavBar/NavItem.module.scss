@@ -3,12 +3,15 @@
 .item {
     display: flex;
     align-items: stretch;
+
     &:first-child {
         margin-left: 0;
     }
+
     &:last-child {
         margin-right: 0;
     }
+
     @media (--xs-breakpoint-down) {
         margin: 0;
     }
@@ -26,12 +29,18 @@
                 padding: 0.125rem;
                 margin: -0.125rem;
             }
+
             @media (--xs-breakpoint-down) {
                 margin: 0;
                 border: 0;
             }
         }
     }
+}
+
+.item-focusable-content {
+    display: flex;
+    align-items: center;
 }
 
 .link {
@@ -44,6 +53,8 @@
     border-radius: 0;
     transition: none;
     font-weight: 400;
+    border-bottom: 2px solid transparent; // To prevent jumping when active/hovered
+    border-top: 2px solid transparent; // To center the text vertically
 
     &:hover {
         text-decoration: none;
@@ -51,15 +62,14 @@
 
     @extend .item-focusable;
 
-    &:hover:not(.active) {
+    &:hover:not(.active):not([aria-disabled='true']) {
         border-bottom: 2px solid var(--border-color-2);
-        .link-content {
-            margin-bottom: -0.125rem;
-        }
+
         @media (--xs-breakpoint-down) {
             margin: 0;
             border: 0;
             background-color: var(--link-color);
+
             .link-content {
                 margin-bottom: 0;
             }
@@ -69,10 +79,12 @@
             }
         }
     }
+
     .link-content {
         display: inline-flex;
         align-items: center;
     }
+
     @media (--xs-breakpoint-down) {
         padding: 0.75rem 0.625rem;
         flex: 1;
@@ -83,22 +95,19 @@
 
 .active {
     border-bottom: 2px solid var(--brand-secondary);
+
     &:focus-visible {
         margin-top: 0.125rem;
         @media (--xs-breakpoint-down) {
             margin-top: 0;
         }
     }
-    .link-content {
-        margin-bottom: -0.125rem;
-    }
+
     @media (--xs-breakpoint-down) {
-        .link-content {
-            margin-bottom: 0;
-        }
         border: 0;
         background-color: var(--link-color);
     }
+
     .text,
     .icon {
         @media (--xs-breakpoint-down) {
@@ -110,27 +119,23 @@
 .icon {
     color: var(--header-icon-color);
     border-radius: 3px;
+
     @media (--md-breakpoint-down) {
         color: var(--icon-color);
     }
+
     @media (--xs-breakpoint-down) {
         color: var(--body-color);
     }
 }
 
 .icon-included {
-    margin-left: 0.25rem;
     display: inline-flex;
+    margin-left: 0.25rem;
+    white-space: nowrap;
+
     &.is-compact {
-        @media (--md-breakpoint-up) {
-            display: none;
-        }
-    }
-    @media (--md-breakpoint-down) {
         display: none;
-    }
-    @media (--xs-breakpoint-down) {
-        display: inline-flex;
     }
 }
 

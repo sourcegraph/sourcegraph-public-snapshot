@@ -1,18 +1,19 @@
 import React from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { within } from '@testing-library/dom'
 import { act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
-import { RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import {
+import type {
     FindInsightsBySearchTermResult,
     GetDashboardInsightsResult,
     GetInsightsResult,
@@ -35,7 +36,7 @@ type UserEvent = typeof userEvent
 
 const mockCopyURL = sinon.spy()
 
-jest.mock('../../../hooks/use-copy-url-handler', () => ({
+vi.mock('../../../hooks/use-copy-url-handler', () => ({
     useCopyURLHandler: () => [mockCopyURL],
 }))
 
@@ -168,11 +169,7 @@ const renderDashboardsContent = (
     ...renderWithBrandedContext(
         <MockedTestProvider mocks={mocks}>
             <Wrapper>
-                <DashboardsView
-                    dashboardId={dashboardID}
-                    telemetryService={mockTelemetryService}
-                    isSourcegraphApp={false}
-                />
+                <DashboardsView dashboardId={dashboardID} telemetryService={mockTelemetryService} />
             </Wrapper>
         </MockedTestProvider>
     ),
@@ -196,7 +193,7 @@ const triggerDashboardMenuItem = async (
 }
 
 beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     window.IntersectionObserver = MockIntersectionObserver
 })
 

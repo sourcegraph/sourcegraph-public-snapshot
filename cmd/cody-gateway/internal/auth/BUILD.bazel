@@ -1,0 +1,46 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "auth",
+    srcs = ["auth.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/events",
+        "//cmd/cody-gateway/internal/response",
+        "//internal/authbearer",
+        "//internal/codygateway",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = [
+        "auth_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":auth"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/actor/anonymous",
+        "//cmd/cody-gateway/internal/actor/productsubscription",
+        "//cmd/cody-gateway/internal/dotcom",
+        "//cmd/cody-gateway/internal/events",
+        "//internal/codygateway",
+        "//internal/licensing",
+        "//internal/productsubscription",
+        "//lib/errors",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_gregjones_httpcache//:httpcache",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+        "@com_github_vektah_gqlparser_v2//gqlerror",
+    ],
+)

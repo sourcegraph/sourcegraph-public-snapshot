@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -18,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -62,7 +61,8 @@ func (r *schemaResolver) Organization(ctx context.Context, args struct{ Name str
 // org by its graphql.ID instead.
 func (r *schemaResolver) Org(ctx context.Context, args *struct {
 	ID graphql.ID
-}) (*OrgResolver, error) {
+},
+) (*OrgResolver, error) {
 	return OrgByID(ctx, r.db, args.ID)
 }
 
@@ -142,7 +142,8 @@ func (o *OrgResolver) CreatedAt() gqlutil.DateTime { return gqlutil.DateTime{Tim
 func (o *OrgResolver) Members(ctx context.Context, args struct {
 	graphqlutil.ConnectionResolverArgs
 	Query *string
-}) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
+},
+) (*graphqlutil.ConnectionResolver[*UserResolver], error) {
 	// 🚨 SECURITY: Verify listing users is allowed.
 	if err := checkMembersAccess(ctx, o.db); err != nil {
 		return nil, err
@@ -189,7 +190,7 @@ func (s *membersConnectionStore) ComputeNodes(ctx context.Context, args *databas
 
 	var userResolvers []*UserResolver
 	for _, user := range users {
-		userResolvers = append(userResolvers, NewUserResolver(s.db, user))
+		userResolvers = append(userResolvers, NewUserResolver(ctx, s.db, user))
 	}
 
 	return userResolvers, nil
@@ -234,11 +235,11 @@ func (o *OrgResolver) LatestSettings(ctx context.Context) (*settingsResolver, er
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{o.db, &settingsSubject{org: o}, settings, nil}, nil
+	return &settingsResolver{o.db, &settingsSubjectResolver{org: o}, settings, nil}, nil
 }
 
 func (o *OrgResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: o.db, subject: &settingsSubject{org: o}}
+	return &settingsCascade{db: o.db, subject: &settingsSubjectResolver{org: o}}
 }
 
 func (o *OrgResolver) ConfigurationCascade() *settingsCascade { return o.SettingsCascade() }
@@ -297,7 +298,8 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 	Name        string
 	DisplayName *string
 	StatsID     *string
-}) (*OrgResolver, error) {
+},
+) (*OrgResolver, error) {
 	a := sgactor.FromContext(ctx)
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
@@ -332,7 +334,8 @@ func (r *schemaResolver) CreateOrganization(ctx context.Context, args *struct {
 func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 	ID          graphql.ID
 	DisplayName *string
-}) (*OrgResolver, error) {
+},
+) (*OrgResolver, error) {
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.ID, &orgID); err != nil {
 		return nil, err
@@ -355,7 +358,8 @@ func (r *schemaResolver) UpdateOrganization(ctx context.Context, args *struct {
 func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *struct {
 	User         graphql.ID
 	Organization graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	orgID, err := UnmarshalOrgID(args.Organization)
 	if err != nil {
 		return nil, err
@@ -383,7 +387,7 @@ func (r *schemaResolver) RemoveUserFromOrganization(ctx context.Context, args *s
 	}
 
 	// Enqueue a sync job. Internally this will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userID}, Reason: database.ReasonUserRemovedFromOrg})
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{UserIDs: []int32{userID}, Reason: database.ReasonUserRemovedFromOrg})
 
 	return nil, nil
 }
@@ -401,7 +405,8 @@ func (r *schemaResolver) siteAdminSelfRemoving(ctx context.Context, userID int32
 func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 	Username     string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// get the organization ID as an integer first
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
@@ -429,7 +434,7 @@ func (r *schemaResolver) AddUserToOrganization(ctx context.Context, args *struct
 	}
 
 	// Schedule permission sync for newly added user. Internally it will log an error if enqueuing failed.
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{userToInvite.ID}, Reason: database.ReasonUserAddedToOrg})
+	permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{UserIDs: []int32{userToInvite.ID}, Reason: database.ReasonUserAddedToOrg})
 
 	return &EmptyResponse{}, nil
 }

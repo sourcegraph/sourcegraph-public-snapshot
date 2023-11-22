@@ -1,4 +1,4 @@
-import { FunctionComponent } from 'react'
+import type { FunctionComponent } from 'react'
 
 import { mdiAlert, mdiCheck, mdiTimerSand } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,7 +6,7 @@ import { formatDistance, parseISO } from 'date-fns'
 
 import { Badge, Icon, Link, LoadingSpinner, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
-import { PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
+import { type PreciseIndexFields, PreciseIndexState } from '../../../../graphql-operations'
 import { INDEX_TERMINAL_STATES } from '../constants'
 
 import { getIndexerKey } from './tree/util'
@@ -86,28 +86,39 @@ const formatDate = (date: string | null): string => {
 
 const getIndexStateTooltip = (index: PreciseIndexFields): string => {
     switch (index.state) {
-        case PreciseIndexState.COMPLETED:
+        case PreciseIndexState.COMPLETED: {
             return `Indexing completed${formatDate(index.processingFinishedAt)}`
-        case PreciseIndexState.DELETED:
+        }
+        case PreciseIndexState.DELETED: {
             return 'Index deleted'
-        case PreciseIndexState.DELETING:
+        }
+        case PreciseIndexState.DELETING: {
             return 'Deleting index'
-        case PreciseIndexState.INDEXING:
+        }
+        case PreciseIndexState.INDEXING: {
             return `Started indexing${formatDate(index.indexingStartedAt)}`
-        case PreciseIndexState.INDEXING_COMPLETED:
+        }
+        case PreciseIndexState.INDEXING_COMPLETED: {
             return `Finished indexing${formatDate(index.indexingFinishedAt)}`
-        case PreciseIndexState.INDEXING_ERRORED:
+        }
+        case PreciseIndexState.INDEXING_ERRORED: {
             return `Indexing failed${formatDate(index.indexingFinishedAt)}`
-        case PreciseIndexState.PROCESSING:
+        }
+        case PreciseIndexState.PROCESSING: {
             return `Started processing index${formatDate(index.processingStartedAt)}`
-        case PreciseIndexState.PROCESSING_ERRORED:
+        }
+        case PreciseIndexState.PROCESSING_ERRORED: {
             return `Processing failed${formatDate(index.processingFinishedAt)}`
-        case PreciseIndexState.QUEUED_FOR_INDEXING:
+        }
+        case PreciseIndexState.QUEUED_FOR_INDEXING: {
             return `Queued for indexing${formatDate(index.queuedAt)}`
-        case PreciseIndexState.QUEUED_FOR_PROCESSING:
+        }
+        case PreciseIndexState.QUEUED_FOR_PROCESSING: {
             return 'Queued for processing'
-        case PreciseIndexState.UPLOADING_INDEX:
+        }
+        case PreciseIndexState.UPLOADING_INDEX: {
             return 'Uploading index'
+        }
     }
 }
 

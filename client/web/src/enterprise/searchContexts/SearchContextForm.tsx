@@ -2,22 +2,21 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
-import { Observable, of, throwError } from 'rxjs'
+import { type Observable, of, throwError } from 'rxjs'
 import { catchError, map, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { SyntaxHighlightedSearchQuery, LazyQueryInput } from '@sourcegraph/branded'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import {
-    Scalars,
-    SearchContextInput,
-    SearchContextRepositoryRevisionsInput,
+    type Scalars,
+    type SearchContextInput,
+    type SearchContextRepositoryRevisionsInput,
     SearchPatternType,
-    SearchContextFields,
+    type SearchContextFields,
 } from '@sourcegraph/shared/src/graphql-operations'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { QueryState, SearchContextProps } from '@sourcegraph/shared/src/search'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import {
     Container,
@@ -26,14 +25,13 @@ import {
     TextArea,
     useEventObservable,
     Alert,
-    ProductStatusBadge,
     Link,
     Code,
     Input,
     Form,
 } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 import { ALLOW_NAVIGATION, AwayPrompt } from '../../components/AwayPrompt'
 
 import { fetchRepositoriesByNames } from './backend'
@@ -43,8 +41,8 @@ import {
     getSelectedNamespace,
     getSelectedNamespaceFromUser,
     SearchContextOwnerDropdown,
-    SelectedNamespace,
-    SelectedNamespaceType,
+    type SelectedNamespace,
+    type SelectedNamespaceType,
 } from './SearchContextOwnerDropdown'
 import { SearchContextRepositoriesFormArea } from './SearchContextRepositoriesFormArea'
 
@@ -144,8 +142,6 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
         props
     const navigate = useNavigate()
     const isLightTheme = useIsLightTheme()
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
@@ -418,11 +414,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                     <div className="mb-1">Choose repositories and revisions</div>
                     <div className="text-muted mb-3">
                         For a dynamic set of repositories and revisions, such as for project or team repos, use a{' '}
-                        <Link
-                            target="_blank"
-                            rel="noopener"
-                            to="/help/code_search/how-to/search_contexts#beta-query-based-search-contexts"
-                        >
+                        <Link target="_blank" rel="noopener" to="/help/code_search/how-to/search_contexts">
                             search query
                         </Link>
                         . For a static set, use the JSON configuration.
@@ -436,11 +428,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                             checked={contextType === 'dynamic'}
                             required={true}
                             onChange={() => setContextType('dynamic')}
-                            label={
-                                <>
-                                    Search query <ProductStatusBadge status="beta" className="ml-1" />
-                                </>
-                            }
+                            label={<>Search query</>}
                         />
                         <div className={styles.searchContextFormQuery} data-testid="search-context-dynamic-query">
                             <LazyQueryInput
@@ -450,7 +438,6 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                                 queryState={queryState}
                                 onChange={setQueryState}
                                 preventNewLine={false}
-                                applySuggestionsOnEnter={applySuggestionsOnEnter}
                             />
                         </div>
                         <div className={classNames(styles.searchContextFormQueryLabel, 'text-muted')}>

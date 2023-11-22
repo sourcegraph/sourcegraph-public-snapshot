@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent, Icon } from '@sourcegraph/wildcard'
+import { type ForwardReferenceComponent, Icon } from '@sourcegraph/wildcard'
 
-import { Maybe } from '../graphql-operations'
+import type { Maybe } from '../graphql-operations'
 
 import styles from './UserAvatar.module.scss'
 
@@ -79,7 +79,7 @@ export const UserAvatar = React.forwardRef(function UserAvatar(
         const names = fullName.split(' ')
         const initials = names.map(name => name.charAt(0).toLowerCase())
         if (initials.length > 1) {
-            return `${initials[0]}${initials[initials.length - 1]}`
+            return `${initials[0]}${initials.at(-1)}`
         }
         return initials[0]
     }

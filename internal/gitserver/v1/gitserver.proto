@@ -2,19 +2,180 @@ syntax = "proto3";
 
 package gitserver.v1;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
+  rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {}
+  rpc CreateCommitFromPatchBinary(stream CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
+  rpc DiskInfo(DiskInfoRequest) returns (DiskInfoResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
+  rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {}
+  rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
+  rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
+  rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
+  rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {
+    option deprecated = true;
+  }
+  rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
+  rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
+  rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
+  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
+  rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {}
+  rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest) returns (CheckPerforceCredentialsResponse) {}
+  rpc PerforceUsers(PerforceUsersRequest) returns (PerforceUsersResponse) {}
+  rpc PerforceProtectsForUser(PerforceProtectsForUserRequest) returns (PerforceProtectsForUserResponse) {}
+  rpc PerforceProtectsForDepot(PerforceProtectsForDepotRequest) returns (PerforceProtectsForDepotResponse) {}
+  rpc PerforceGroupMembers(PerforceGroupMembersRequest) returns (PerforceGroupMembersResponse) {}
+  rpc IsPerforceSuperUser(IsPerforceSuperUserRequest) returns (IsPerforceSuperUserResponse) {}
+  rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {}
 }
 
+// DiskInfoRequest is a empty request for the DiskInfo RPC.
+message DiskInfoRequest {}
+
+// DiskInfoResponse contains the results of the DiskInfo RPC request.
+message DiskInfoResponse {
+  // free_space is the amount of space avaialable on a gitserver instance.
+  uint64 free_space = 1;
+
+  // total_space is the total amount of space on a gitserver instance.
+  uint64 total_space = 2;
+
+  // percent_used is the percent of disk space used on a gitserver instance.
+  float percent_used = 3;
+}
+
+// BatchLogRequest is a request to execute a `git log` command inside a set of
+// git repositories present on the target shard.
+message BatchLogRequest {
+  // repo_commits is the list of repositories and commits to run the git log
+  // command on.
+  repeated RepoCommit repo_commits = 1;
+  // format is the entire `--format=<format>` argument to git log. This value is
+  // expected to be non-empty.
+  string format = 2;
+}
+
+// BatchLogResponse contains the results of the BatchLog request.
+message BatchLogResponse {
+  // results is the list of results for each repository and commit pair from the
+  // input of a BatchLog request.
+  repeated BatchLogResult results = 1;
+}
+
+// BatchLogResult is the result that associates a repository and commit pair
+// from the input of a BatchLog request with the result of the associated git
+// log command.
+message BatchLogResult {
+  // repo_commit is the repository and commit pair from the input of a BatchLog
+  // request.
+  RepoCommit repo_commit = 1;
+  // command_output is the output of the git log command.
+  string command_output = 2;
+  // command_error is an optional error message if the git log command
+  // encountered an error.
+  optional string command_error = 3;
+}
+
+// RepoCommit is the represention of a repository and commit pair.
+message RepoCommit {
+  string repo = 1;
+  string commit = 2;
+}
+
+message PatchCommitInfo {
+  // messages are the commit messages to be used for the commit
+  repeated string messages = 1;
+  // author_name is the name of the author to be used for the commit
+  string author_name = 2;
+  // author_email is the email of the author to be used for the commit
+  string author_email = 3;
+  // committer_name is the name of the committer to be used for the commit
+  string committer_name = 4;
+  // committer_email is the email of the committer to be used for the commit
+  string committer_email = 5;
+  // author_date is the date of the author to be used for the commit
+  google.protobuf.Timestamp date = 6;
+}
+
+message PushConfig {
+  // remote_url is the git remote URL to which to push the commits.
+  // The URL needs to include HTTP basic auth credentials if no
+  // unauthenticated requests are allowed by the remote host.
+  string remote_url = 1;
+  // private_key is used when the remote URL uses scheme `ssh`. If set,
+  // this value is used as the content of the private key. Needs to be
+  // set in conjunction with a passphrase.
+  string private_key = 2;
+  // passphrase is the passphrase to decrypt the private key. It is required
+  // when passing PrivateKey.
+  string passphrase = 3;
+}
+
+// CreateCommitFromPatchBinaryRequest is the request information needed for
+// creating the simulated staging area git object for a repo.
+message CreateCommitFromPatchBinaryRequest {
+  message Metadata {
+    // repo is the name of the repo to be updated
+    string repo = 1;
+    // base_commit is the revision that the staging area object is based on
+    string base_commit = 2;
+    // target_ref is the ref that will be created for this patch
+    string target_ref = 3;
+    // unique_ref is a boolean that indicates whether a unique number will be
+    // appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+    bool unique_ref = 4;
+    // commit_info is the information to be used for the commit
+    PatchCommitInfo commit_info = 5;
+    // push_config is the configuration to be used for pushing the commit
+    PushConfig push = 6;
+    // git_apply_args are the arguments to be passed to git apply
+    repeated string git_apply_args = 7;
+    // push_ref is the optional override for the ref that is pushed to
+    optional string push_ref = 8;
+  }
+
+  message Patch {
+    // data is the diff contents to be used to create the staging area revision
+    bytes data = 1;
+  }
+
+  oneof payload {
+    Metadata metadata = 1;
+    Patch patch = 2;
+  }
+}
+
+message CreateCommitFromPatchError {
+  // repository_name is the name of the repository that the error occurred on
+  string repository_name = 1;
+  // internal_error is the error that occurred on the server
+  string internal_error = 2;
+  // command is the git command that was attempted
+  string command = 3;
+  // combined_output is the combined stderr and stdout from running the command
+  string combined_output = 4;
+}
+
+// CreateCommitFromPatchBinaryResponse is the response type returned after
+// creating a commit from a patch
+message CreateCommitFromPatchBinaryResponse {
+  reserved 2;
+  reserved "error";
+
+  // rev is the tag that the staging object can be found at
+  string rev = 1;
+  // changelistid is the Perforce changelist id
+  string changelist_id = 3;
+}
 message ExecRequest {
   string repo = 1;
-  string ensure_revision = 2;
-  repeated string args = 3;
+  bytes ensure_revision = 2;
+  repeated bytes args = 3;
   bytes stdin = 4;
   bool no_timeout = 5;
 }
@@ -44,8 +205,8 @@ message SearchRequest {
   // limit is a limit on the number of search results returned. Additional
   // results will be ignored.
   int64 limit = 3;
-  // include_diff specifies whether the full diff should be included on the result messages.
-  // This can be expensive, so is disabled by default.
+  // include_diff specifies whether the full diff should be included on the
+  // result messages. This can be expensive, so is disabled by default.
   bool include_diff = 4;
   // include_modified specifies whether to include the list of modified files
   // in the search results. This can be expensive, so is disabled by default.
@@ -66,26 +227,28 @@ message RevisionSpecifier {
   string exclude_ref_glob = 3;
 }
 
-// AuthorMatchesNode is a predicate that matches if the author's name or email address
-// matches the regex pattern.
+// AuthorMatchesNode is a predicate that matches if the author's name or email
+// address matches the regex pattern.
 message AuthorMatchesNode {
   string expr = 1;
   bool ignore_case = 2;
 }
 
-// CommitterMatchesNode is a predicate that matches if the author's name or email address
-// matches the regex pattern.
+// CommitterMatchesNode is a predicate that matches if the author's name or
+// email address matches the regex pattern.
 message CommitterMatchesNode {
   string expr = 1;
   bool ignore_case = 2;
 }
 
-// CommitBeforeNode is a predicate that matches if the commit is before the given date
+// CommitBeforeNode is a predicate that matches if the commit is before the
+// given date
 message CommitBeforeNode {
   google.protobuf.Timestamp timestamp = 1;
 }
 
-// CommitAfterNode is a predicate that matches if the commit is after the given date
+// CommitAfterNode is a predicate that matches if the commit is after the given
+// date
 message CommitAfterNode {
   google.protobuf.Timestamp timestamp = 1;
 }
@@ -104,8 +267,8 @@ message DiffMatchesNode {
   bool ignore_case = 2;
 }
 
-// DiffModifiesFileNode is a predicate that matches if the commit modifies any files
-// that match the given regex pattern.
+// DiffModifiesFileNode is a predicate that matches if the commit modifies any
+// files that match the given regex pattern.
 message DiffModifiesFileNode {
   string expr = 1;
   bool ignore_case = 2;
@@ -191,4 +354,295 @@ message CommitMatch {
   // to its first parent. May be unset if `include_modified_files` is not
   // specified in the request.
   repeated string modified_files = 9;
+}
+
+// ArchiveRequest is set of parameters for the Archive RPC.
+message ArchiveRequest {
+  // repo is the name of the repo to be archived
+  string repo = 1;
+  // treeish is the tree or commit to produce an archive for
+  string treeish = 2;
+  // format is the format of the resulting archive (usually "tar" or "zip")
+  string format = 3;
+  // pathspecs is the list of pathspecs to include in the archive. If empty, all
+  // pathspecs are included.
+  repeated string pathspecs = 4;
+}
+
+// ArchiveResponse is the response from the Archive RPC that returns a chunk of
+// the archive.
+message ArchiveResponse {
+  bytes data = 1;
+}
+
+// IsRepoCloneableRequest is a request to check if a repository is cloneable.
+message IsRepoCloneableRequest {
+  // repo is the name of the repo to check.
+  string repo = 1;
+}
+
+// IsRepoCloneableResponse is the response from the IsCloneable RPC.
+message IsRepoCloneableResponse {
+  // cloneable is true if the repository is cloneable.
+  bool cloneable = 1;
+  // cloned is true if the repository was cloned in the past.
+  bool cloned = 2;
+  // reason is why the repository is not cloneable.
+  string reason = 3;
+}
+
+// RepoCloneRequest is a request to clone a repository.
+message RepoCloneRequest {
+  // repo is the name of the repo to clone.
+  string repo = 1;
+}
+
+message RepoCloneResponse {
+  // error is the error that occurred during cloning.
+  string error = 1;
+}
+
+// RepoCloneProgressRequest is a request for information about the clone
+// progress of multiple repositories on gitserver.
+message RepoCloneProgressRequest {
+  repeated string repos = 1;
+}
+
+// RepoCloneProgress is information about the clone progress of a repo
+message RepoCloneProgress {
+  // clone_in_progress is whether the repository is currently being cloned
+  bool clone_in_progress = 1;
+  // clone_progress is a progress message from the running clone command.
+  string clone_progress = 2;
+  // cloned is whether the repository has been cloned successfully
+  bool cloned = 3;
+}
+
+// RepoCloneProgressResponse is the response to a repository clone progress
+// request for multiple repositories at the same time.
+message RepoCloneProgressResponse {
+  // results is a map from repository name to clone progress information
+  map<string, RepoCloneProgress> results = 1;
+}
+
+// RepoDeleteRequest is a request to delete a repository.
+message RepoDeleteRequest {
+  // repo is the name of the repo to delete.
+  string repo = 1;
+}
+
+// RepoDeleteResponse is the response from the RepoDelete RPC.
+message RepoDeleteResponse {}
+
+// RepoUpdateRequest is a request to update a repository.
+message RepoUpdateRequest {
+  // RepoUpdateRequest used to have an unused clone_from_shard field.
+  reserved 3;
+  // repo is the name of the repo to update.
+  string repo = 1;
+  // since is the debounce interval for queries, used only with
+  // request-repo-update
+  google.protobuf.Duration since = 2;
+}
+
+// RepoUpdateResponse is the response from the RepoUpdate RPC.
+message RepoUpdateResponse {
+  // last_fetched is the time the repository was last fetched.
+  google.protobuf.Timestamp last_fetched = 1;
+  // last_changed is the time the repository was last changed.
+  google.protobuf.Timestamp last_changed = 2;
+  // error is the error that occurred during the update.
+  string error = 3;
+}
+
+// Do not use: The P4Exec method has been deprecated and will disappear soon!
+message P4ExecRequest {
+  string p4port = 1 [deprecated = true];
+  string p4user = 2 [deprecated = true];
+  string p4passwd = 3 [deprecated = true];
+  repeated bytes args = 4 [deprecated = true];
+}
+
+// Do not use: The P4Exec method has been deprecated and will disappear soon!
+message P4ExecResponse {
+  bytes data = 1 [deprecated = true];
+}
+
+// ListGitoliteRequest is a request to list all repositories in gitolite.
+message ListGitoliteRequest {
+  // host is the hostname of the gitolite instance
+  string gitolite_host = 1;
+}
+
+// GitoliteRepo is a repository in gitolite.
+message GitoliteRepo {
+  // name is the name of the repository
+  string name = 1;
+  // url is the URL of the repository
+  string url = 2;
+}
+
+// ListGitoliteResponse is the response from the ListGitolite RPC.
+message ListGitoliteResponse {
+  // repos is the list of repositories in gitolite
+  repeated GitoliteRepo repos = 1;
+}
+
+// GetObjectRequest is a request to get a git object.
+message GetObjectRequest {
+  // repo is the name of the repo to get the object from.
+  string repo = 1;
+  // object_name is the name of the object to get.
+  string object_name = 2;
+}
+
+// GetObjectResponse is the response from the GetObject RPC.
+message GetObjectResponse {
+  // object is the git object.
+  GitObject object = 1;
+}
+
+// GitObject is a git object.
+message GitObject {
+  enum ObjectType {
+    OBJECT_TYPE_UNSPECIFIED = 0;
+    OBJECT_TYPE_COMMIT = 1;
+    OBJECT_TYPE_TAG = 2;
+    OBJECT_TYPE_TREE = 3;
+    OBJECT_TYPE_BLOB = 4;
+  }
+  // id is the object id.
+  bytes id = 1;
+  // type is the type of the object.
+  ObjectType type = 2;
+}
+
+// IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.
+message IsPerforcePathCloneableRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string depot_path = 2;
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if a Perforce path is cloneable.
+message IsPerforcePathCloneableResponse {}
+
+// CheckPerforceCredentialsRequest is the request to check if given Perforce credentials are valid.
+message CheckPerforceCredentialsRequest {
+  PerforceConnectionDetails connection_details = 1;
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
+message CheckPerforceCredentialsResponse {}
+
+// PerforceConnectionDetails holds all the details required to talk to a Perforce server.
+message PerforceConnectionDetails {
+  string p4port = 1;
+  string p4user = 2;
+  string p4passwd = 3;
+}
+
+// PerforceGetChangelistRequest is used to retrieve information about a specific
+// Perforce changelist.
+message PerforceGetChangelistRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string changelist_id = 2;
+}
+
+// PerforceGetChangelistResponse returns information about the requested changelist.
+message PerforceGetChangelistResponse {
+  PerforceChangelist changelist = 1;
+}
+
+// PerforceChangelist represents a changelist in Perforce.
+message PerforceChangelist {
+  // PerforceChangelistState is the valid state values of a Perforce changelist.
+  enum PerforceChangelistState {
+    PERFORCE_CHANGELIST_STATE_UNSPECIFIED = 0;
+    PERFORCE_CHANGELIST_STATE_SUBMITTED = 1;
+    PERFORCE_CHANGELIST_STATE_PENDING = 2;
+    PERFORCE_CHANGELIST_STATE_SHELVED = 3;
+    // Perforce doesn't actually return a state for closed changelists, so this is
+    // one we use to indicate the changelist is closed.
+    PERFORCE_CHANGELIST_STATE_CLOSED = 4;
+  }
+  string id = 1;
+  google.protobuf.Timestamp creation_date = 2;
+  PerforceChangelistState state = 3;
+  string author = 4;
+  string title = 5;
+  string message = 6;
+}
+
+// IsPerforceSuperUserRequest can be used to check if a given Perforce user is a
+// super user.
+message IsPerforceSuperUserRequest {
+  PerforceConnectionDetails connection_details = 1;
+}
+
+// IsPerforceSuperUserResponse is the response from checking if a given Perforce
+// user is a super user.
+// No fields here, returning an error means "no".
+message IsPerforceSuperUserResponse {}
+
+// PerforceProtectsForDepotRequest requests all the protections that apply to the
+// given depot.
+message PerforceProtectsForDepotRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string depot = 2;
+}
+
+// PerforceProtectsForDepotResponse returns all the protections that apply to the
+// given depot.
+message PerforceProtectsForDepotResponse {
+  repeated PerforceProtect protects = 1;
+}
+
+// PerforceProtectsForUserRequest requests all the protections that apply to the
+// given user.
+message PerforceProtectsForUserRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string username = 2;
+}
+
+// PerforceProtectsForUserResponse returns all the protections that apply to the
+// given user.
+message PerforceProtectsForUserResponse {
+  repeated PerforceProtect protects = 1;
+}
+
+// PerforceProtect is a single line definition of a protection in Perforce.
+message PerforceProtect {
+  string level = 1;
+  string entity_type = 2;
+  string entity_name = 3;
+  string match = 4;
+  bool is_exclusion = 5;
+  string host = 6;
+}
+
+// PerforceGroupMembersRequest requests the members of the given Perforce group.
+message PerforceGroupMembersRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string group = 2;
+}
+
+// PerforceGroupMembersResponse returns the members of the requested Perforce group.
+message PerforceGroupMembersResponse {
+  repeated string usernames = 1;
+}
+
+// PerforceUsersRequest lists all the users known to the Perforce server.
+message PerforceUsersRequest {
+  PerforceConnectionDetails connection_details = 1;
+}
+
+// PerforceUsersResponse contains the list of users known by the server.
+message PerforceUsersResponse {
+  repeated PerforceUser users = 1;
+}
+
+// PerforceUser is a representation of a user account in Perforce.
+message PerforceUser {
+  string username = 1;
+  string email = 2;
 }

@@ -2,11 +2,11 @@ import classNames from 'classnames'
 
 import {
     getAlignmentStyle,
-    GetAlignmentStyleParameters,
+    type GetAlignmentStyleParameters,
     getFontWeightStyle,
-    GetFontWeightStyleParameters,
+    type GetFontWeightStyleParameters,
     getModeStyle,
-    GetModeStyleParameters,
+    type GetModeStyleParameters,
 } from '../utils'
 
 import typographyStyles from '../Typography.module.scss'

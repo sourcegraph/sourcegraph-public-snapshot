@@ -1,20 +1,20 @@
-import { FC, ReactNode, useMemo, useEffect } from 'react'
+import { type FC, type ReactNode, useMemo, useEffect } from 'react'
 
-import { Reference } from '@apollo/client'
+import type { Reference } from '@apollo/client'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { useMutation } from '@sourcegraph/http-client'
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Button, FormChangeEvent, H4, Link, useLocalStorage } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Alert, Button, type FormChangeEvent, H4, Link, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../../../components/externalServices/externalServices'
 import { LoaderButton } from '../../../../../components/LoaderButton'
-import { AddRemoteCodeHostResult, AddRemoteCodeHostVariables } from '../../../../../graphql-operations'
+import type { AddRemoteCodeHostResult, AddRemoteCodeHostVariables } from '../../../../../graphql-operations'
 import { ADD_CODE_HOST, CODE_HOST_FRAGMENT } from '../../../../queries'
 import { getCodeHostKindFromURLParam } from '../../helpers'
 
-import { CodeHostConnectFormFields, CodeHostJSONForm, CodeHostJSONFormState } from './common'
+import { type CodeHostConnectFormFields, CodeHostJSONForm, type CodeHostJSONFormState } from './common'
 import { GithubConnectView } from './github/GithubConnectView'
 import { getRepositoriesSettings } from './github/helpers'
 
@@ -44,7 +44,7 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
         return (
             <Alert variant="warning">
                 <H4>We either couldn't find "{codeHostType}" code host option or we do not support this</H4>
-                Pick one of supported code host option <Link to="/setup/remote-repositories">here</Link>
+                Pick one of supported code host option <Link to="..">here</Link>
             </Alert>
         )
     }
@@ -64,7 +64,7 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
                         loading={state.submitting}
                         disabled={state.submitting}
                     />
-                    <Button as={Link} size="sm" to="/setup/remote-repositories" variant="secondary">
+                    <Button as={Link} size="sm" to=".." variant="secondary">
                         Cancel
                     </Button>
                 </footer>
@@ -172,7 +172,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
 
         // Reset local storage values
         setLocalValues(defaultConnectionValues)
-        navigate('/setup/remote-repositories')
+        navigate('..')
         // TODO show notification UI that code host has been added successfully
     }
 

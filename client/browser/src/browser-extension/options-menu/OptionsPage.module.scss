@@ -35,46 +35,10 @@
     margin-top: 0.75rem;
 }
 
-.icon {
-    display: inline-flex;
-    place-items: center;
-    padding: 0.5rem;
-    border-radius: 100%;
-}
-
-.popover[data-reach-combobox-popover] {
-    margin: 0;
-    padding: 0.25rem 0;
-    background: var(--color-bg-1);
-    border: 1px solid var(--border-color);
-    border-radius: 3px;
-    box-shadow: var(--dropdown-shadow);
-
-    :global(.theme-dark) & {
-        background-color: var(--input-bg);
-    }
-
-    &,
-    [data-suggested-value] {
-        font-size: 0.875rem;
-        font-weight: normal;
-    }
-
-    [data-reach-combobox-list] {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-
-    [data-reach-combobox-option] {
-        list-style: none;
-        margin: 0;
-        padding: 0.5rem 0.75rem;
-        cursor: pointer;
-
-        &:hover,
-        &[aria-selected='true'] {
-            background: var(--color-bg-3);
-        }
+.suggestion-remove-button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    &:hover {
+        background: var(--color-bg-3);
     }
 }

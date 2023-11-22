@@ -1,6 +1,7 @@
 import { render } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
-import { Progress } from '@sourcegraph/shared/src/search/stream'
+import type { Progress } from '@sourcegraph/shared/src/search/stream'
 
 import { StreamingProgressCount } from './StreamingProgressCount'
 

@@ -1,15 +1,15 @@
 import classNames from 'classnames'
 import { map } from 'rxjs/operators'
 
-import { AdjustmentDirection, PositionAdjuster } from '@sourcegraph/codeintellify'
-import { Position } from '@sourcegraph/extension-api-types'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
+import { AdjustmentDirection, type PositionAdjuster } from '@sourcegraph/codeintellify'
+import type { Position } from '@sourcegraph/extension-api-types'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { FileSpec, RepoSpec, ResolvedRevisionSpec, RevisionSpec } from '@sourcegraph/shared/src/util/url'
 
 import { fetchBlobContentLines } from '../../repo/backend'
-import { CodeHost } from '../shared/codeHost'
-import { CodeView, toCodeViewResolver } from '../shared/codeViews'
-import { ViewResolver } from '../shared/views'
+import type { CodeHost } from '../shared/codeHost'
+import { type CodeView, toCodeViewResolver } from '../shared/codeViews'
+import type { ViewResolver } from '../shared/views'
 
 import { convertSpacesToTabs, spacesToTabsAdjustment } from '.'
 import { diffDomFunctions, diffusionDOMFns } from './domFunctions'

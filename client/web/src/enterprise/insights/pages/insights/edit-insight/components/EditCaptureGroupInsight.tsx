@@ -1,13 +1,13 @@
-import { useMemo, FC } from 'react'
+import { useMemo, type FC } from 'react'
 
-import { FORM_ERROR, SubmissionErrors } from '@sourcegraph/wildcard'
+import { FORM_ERROR, type SubmissionErrors } from '@sourcegraph/wildcard'
 
 import { CodeInsightCreationMode, CodeInsightsCreationActions } from '../../../../components'
-import { MinimalCaptureGroupInsightData, CaptureGroupInsight } from '../../../../core'
-import { CaptureGroupFormFields } from '../../creation/capture-group'
+import type { MinimalCaptureGroupInsightData, CaptureGroupInsight } from '../../../../core'
+import type { CaptureGroupFormFields } from '../../creation/capture-group'
 import { CaptureGroupCreationContent } from '../../creation/capture-group/components/CaptureGroupCreationContent'
 import { getSanitizedCaptureGroupInsight } from '../../creation/capture-group/utils/capture-group-insight-sanitizer'
-import { InsightStep } from '../../creation/search-insight'
+import type { InsightStep } from '../../creation/search-insight'
 
 interface EditCaptureGroupInsightProps {
     insight: CaptureGroupInsight

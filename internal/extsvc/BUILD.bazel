@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "extsvc",
@@ -14,7 +15,7 @@ go_library(
         "//internal/jsonc",
         "//lib/errors",
         "//schema",
-        "@com_github_opentracing_opentracing_go//log",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_time//rate",
     ],
 )

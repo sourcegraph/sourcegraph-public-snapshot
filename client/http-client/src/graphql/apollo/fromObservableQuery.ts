@@ -1,4 +1,4 @@
-import { ApolloQueryResult, ObservableQuery, OperationVariables } from '@apollo/client'
+import type { ApolloQueryResult, ObservableQuery, OperationVariables } from '@apollo/client'
 import { Observable } from 'rxjs'
 
 import { logger } from '@sourcegraph/common'

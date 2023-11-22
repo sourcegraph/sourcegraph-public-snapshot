@@ -1,0 +1,55 @@
+# Melange-based replacement for Coursier
+# Previously packaged in the scip-java repo
+
+package:
+  name: jaeger
+  version: 1.45.0 # Keep in sync with version in sg.config.yaml
+  epoch: 5
+  description: "Distributed Tracing Platform"
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      attestation: 'Copyright The Jaeger Authors'
+      license: 'Apache License 2.0'
+  dependencies:
+    runtime:
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - wolfi-base
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: https://github.com/jaegertracing/jaeger/releases/download/v${{package.version}}/jaeger-${{package.version}}-linux-amd64.tar.gz
+      expected-sha256: c139b7ec4b9e5b7ace2e3966e6187e1cb3292325192685793ab038c2c9c5d2e1
+      extract: true
+      strip-components: 0
+
+  - runs: |
+      set -x
+      mkdir -p ${{targets.destdir}}/usr/local/bin/
+      mv jaeger-${{package.version}}-linux-amd64/* ${{targets.destdir}}/usr/local/bin/
+
+subpackages:
+  - name: jaeger-agent
+    description: Jaeger Agent
+    pipeline:
+      - runs: |
+          set -x
+          mkdir -p "${{targets.subpkgdir}}/usr/local/bin/"
+          cp "${{targets.destdir}}/usr/local/bin/jaeger-agent" "${{targets.subpkgdir}}/usr/local/bin/"
+  - name: jaeger-all-in-one
+    description: Jaeger All-In-One
+    pipeline:
+      - runs: |
+          set -x
+          mkdir -p "${{targets.subpkgdir}}/usr/local/bin/"
+          cp "${{targets.destdir}}/usr/local/bin/jaeger-all-in-one" "${{targets.subpkgdir}}/usr/local/bin/"

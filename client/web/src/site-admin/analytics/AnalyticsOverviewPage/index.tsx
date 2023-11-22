@@ -8,7 +8,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { AnchorLink, Card, H2, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../../components/ErrorBoundary'
-import { OverviewStatisticsResult, OverviewStatisticsVariables } from '../../../graphql-operations'
+import type { OverviewStatisticsResult, OverviewStatisticsVariables } from '../../../graphql-operations'
 import { formatRelativeExpirationDate, isProductLicenseExpired } from '../../../productSubscription/helpers'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../../../util/checkRequestAccessAllowed'
@@ -51,11 +51,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
             },
         ]
 
-        const isRequestAccessAllowed = checkRequestAccessAllowed(
-            window.context.sourcegraphDotComMode,
-            window.context.allowSignup,
-            window.context.experimentalFeatures
-        )
+        const isRequestAccessAllowed = checkRequestAccessAllowed(window.context)
 
         if (isRequestAccessAllowed) {
             items.push({ label: 'Pending requests', value: data.pendingAccessRequests.totalCount || 0 })
@@ -200,7 +196,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
 }
 
 function getChangelogUrl(version: string): string | null {
-    const versionAnchor = version.replace(/\./g, '-')
+    const versionAnchor = version.replaceAll('.', '-')
     // Only show changelog link for versions that match the X.Y.Z format.
     // Other versions don't have a changelog entry.
     return version.match(/^\d+-\d+-\d+$/)

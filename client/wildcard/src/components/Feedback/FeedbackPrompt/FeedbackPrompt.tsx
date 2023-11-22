@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
+import React, { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiCheck } from '@mdi/js'
 import classNames from 'classnames'

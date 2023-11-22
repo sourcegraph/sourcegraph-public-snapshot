@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "zoekt",
@@ -13,7 +14,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/search/zoekt",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/envvar",
         "//internal/actor",
         "//internal/api",
         "//internal/conf",
@@ -28,15 +28,11 @@ go_library(
         "//internal/search/result",
         "//internal/search/streaming",
         "//internal/trace",
-        "//internal/trace/ot",
-        "//internal/trace/policy",
         "//internal/types",
+        "//internal/xcontext",
         "//lib/errors",
         "@com_github_go_enry_go_enry_v2//:go-enry",
         "@com_github_grafana_regexp//:regexp",
-        "@com_github_inconshreveable_log15//:log15",
-        "@com_github_opentracing_opentracing_go//:opentracing-go",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_roaringbitmap_roaring//:roaring",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_zoekt//:zoekt",
@@ -56,19 +52,16 @@ go_test(
     embed = [":zoekt"],
     deps = [
         "//internal/api",
-        "//internal/conf",
         "//internal/search",
         "//internal/search/backend",
         "//internal/search/filter",
         "//internal/search/job",
-        "//internal/search/limits",
         "//internal/search/query",
         "//internal/search/result",
         "//internal/search/streaming",
         "//internal/trace",
         "//internal/types",
         "//lib/errors",
-        "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_grafana_regexp//:regexp",

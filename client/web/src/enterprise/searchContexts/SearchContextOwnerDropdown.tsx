@@ -2,10 +2,10 @@ import React, { useMemo } from 'react'
 
 import { mdiMenuDown } from '@mdi/js'
 
-import { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchContextFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../auth'
 
 import styles from './SearchContextOwnerDropdown.module.scss'
 

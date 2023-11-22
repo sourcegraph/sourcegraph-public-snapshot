@@ -7,7 +7,7 @@ import { Subject, Subscription } from 'rxjs'
 import { distinctUntilChanged, distinctUntilKeyChanged, map, startWith } from 'rxjs/operators'
 
 import { MonacoEditor } from '@sourcegraph/shared/src/components/MonacoEditor'
-import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import jsonSchemaMetaSchema from '../../../../schema/json-schema-draft-07.schema.json'
 import settingsSchema from '../../../../schema/settings.schema.json'
@@ -251,8 +251,8 @@ export class MonacoSettingsEditor extends React.PureComponent<Props, State> {
                             column: monacoEdits[0].range.startColumn,
                         },
                         {
-                            lineNumber: monacoEdits[monacoEdits.length - 1].range.endLineNumber,
-                            column: monacoEdits[monacoEdits.length - 1].range.endColumn,
+                            lineNumber: monacoEdits.at(-1)!.range.endLineNumber,
+                            column: monacoEdits.at(-1)!.range.endColumn,
                         }
                     )
                 }
@@ -361,9 +361,8 @@ declare global {
     }
 }
 
-// When using esbuild, we need to manually configure the MonacoEnvironment for the Monaco editor.
-// This is not needed when using Webpack because the monaco-editor-webpack-plugin does this for us.
-if (process.env.DEV_WEB_BUILDER === 'esbuild' && !window.MonacoEnvironment) {
+// Manually configure the MonacoEnvironment for the Monaco editor.
+if (!window.MonacoEnvironment) {
     window.MonacoEnvironment = {
         getWorkerUrl(_moduleId: string, label: string): string {
             if (label === 'json') {

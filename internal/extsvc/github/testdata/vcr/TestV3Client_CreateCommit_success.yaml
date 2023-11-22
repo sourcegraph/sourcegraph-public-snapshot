@@ -1,0 +1,80 @@
+---
+version: 1
+interactions:
+- request:
+    body: '{"message":"I''m a new commit from a VCR test!","tree":"851e666a00cd0cf74f1558ac5664fe431d3b1935","parents":["9d04a0d8733dafbb5d75e594a9ec525c49dfc975"],"author":{"name":"Sourcegraph
+      VCR Test","email":"dev@sourcegraph.com","date":"2023-06-01T12:00:00Z"},"committer":{"name":"Sourcegraph
+      VCR Test","email":"dev@sourcegraph.com","date":"2023-06-01T12:00:00Z"}}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sourcegraph/automation-testing/git/commits
+    method: POST
+  response:
+    body: '{"sha":"9f815d128eae9f1066353ca41c297cdc0ef94662","node_id":"C_kwDODS5xedoAKDlmODE1ZDEyOGVhZTlmMTA2NjM1M2NhNDFjMjk3Y2RjMGVmOTQ2NjI","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/9f815d128eae9f1066353ca41c297cdc0ef94662","html_url":"https://github.com/sourcegraph/automation-testing/commit/9f815d128eae9f1066353ca41c297cdc0ef94662","author":{"name":"Sourcegraph
+      VCR Test","email":"dev@sourcegraph.com","date":"2023-06-01T12:00:00Z"},"committer":{"name":"Sourcegraph
+      VCR Test","email":"dev@sourcegraph.com","date":"2023-06-01T12:00:00Z"},"tree":{"sha":"851e666a00cd0cf74f1558ac5664fe431d3b1935","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/trees/851e666a00cd0cf74f1558ac5664fe431d3b1935"},"message":"I''m
+      a new commit from a VCR test!","parents":[{"sha":"9d04a0d8733dafbb5d75e594a9ec525c49dfc975","url":"https://api.github.com/repos/sourcegraph/automation-testing/git/commits/9d04a0d8733dafbb5d75e594a9ec525c49dfc975","html_url":"https://github.com/sourcegraph/automation-testing/commit/9d04a0d8733dafbb5d75e594a9ec525c49dfc975"}],"verification":{"verified":false,"reason":"unsigned","signature":null,"payload":null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Length:
+      - "1173"
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 02 Jun 2023 00:52:50 GMT
+      Etag:
+      - '"2435b8e0f39290910f74525e227054da3b2f8f42cb251c028290f6dc8c8fec61"'
+      Location:
+      - https://api.github.com/repos/sourcegraph/automation-testing/git/commits/9f815d128eae9f1066353ca41c297cdc0ef94662
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - EA1C:521F:00D2:028C:64793D62
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4949"
+      X-Ratelimit-Reset:
+      - "1685668692"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "51"
+      X-Xss-Protection:
+      - "0"
+    status: 201 Created
+    code: 201
+    duration: ""

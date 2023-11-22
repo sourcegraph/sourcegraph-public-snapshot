@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "insights",
+    srcs = ["insights.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//internal/conf/deploy",
+    ],
+)

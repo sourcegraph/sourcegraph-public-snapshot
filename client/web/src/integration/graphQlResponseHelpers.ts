@@ -1,19 +1,20 @@
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { JsonDocument } from '@sourcegraph/shared/src/codeintel/scip'
-import { TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
+import type { JsonDocument } from '@sourcegraph/shared/src/codeintel/scip'
+import { RepositoryType, type TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import {
-    BlobResult,
+    type BlobResult,
     ExternalServiceKind,
-    FileExternalLinksResult,
-    FileNamesResult,
-    FileTreeEntriesResult,
-    RepoChangesetsStatsResult,
-    ResolveRepoRevResult,
+    type FileExternalLinksResult,
+    type FileNamesResult,
+    type FileTreeEntriesResult,
+    type RepoChangesetsStatsResult,
+    type ResolveRepoRevResult,
 } from '../graphql-operations'
 
 export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): TreeEntriesResult => ({
     repository: {
+        id: `$repo-id-${url}`,
         commit: {
             tree: {
                 isRoot: true,
@@ -24,7 +25,6 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
                     isDirectory: false,
                     url: `${url}/-/blob/${name}`,
                     submodule: null,
-                    isSingleChild: false,
                 })),
             },
         },
@@ -34,13 +34,11 @@ export const createTreeEntriesResult = (url: string, toplevelFiles: string[]): T
 export const createFileTreeEntriesResult = (url: string, toplevelFiles: string[]): FileTreeEntriesResult =>
     createTreeEntriesResult(url, toplevelFiles)
 
-export const createBlobContentResult = (
-    content: string,
-    html: string = `<div style="color:red">${content}<div>`,
-    lsif?: JsonDocument
-): BlobResult => ({
+export const createBlobContentResult = (content: string, lsif?: JsonDocument): BlobResult => ({
     repository: {
         commit: {
+            __typename: 'GitCommit',
+            oid: '1',
             file: {
                 __typename: 'VirtualFile',
                 content,
@@ -48,11 +46,11 @@ export const createBlobContentResult = (
                 totalLines: content.split('\n').length,
                 highlight: {
                     aborted: false,
-                    html,
                     lsif: lsif ? JSON.stringify(lsif) : '',
                 },
             },
         },
+        changelist: null,
     },
 })
 
@@ -85,6 +83,7 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
         id: `RepositoryID:${treeUrl}`,
         name: treeUrl,
         url: `/${encodeURIPathComponent(treeUrl)}`,
+        sourceType: RepositoryType.GIT_REPOSITORY,
         externalURLs: [
             {
                 url: new URL(`https://${encodeURIPathComponent(treeUrl)}`).href,
@@ -97,10 +96,13 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
         defaultBranch: { displayName: 'master', abbrevName: 'master' },
         mirrorInfo: { cloneInProgress: false, cloneProgress: '', cloned: true },
         commit: {
+            __typename: 'GitCommit',
             oid,
             tree: { url: '/' + treeUrl },
         },
+        changelist: null,
         isFork: false,
+        metadata: [],
     },
 })
 
@@ -112,6 +114,7 @@ export const createResolveCloningRepoRevisionResult = (
         id: `RepositoryID:${treeUrl}`,
         name: treeUrl,
         url: `/${encodeURIPathComponent(treeUrl)}`,
+        sourceType: RepositoryType.GIT_REPOSITORY,
         externalURLs: [
             {
                 url: new URL(`https://${encodeURIPathComponent(treeUrl)}`).href,
@@ -128,7 +131,9 @@ export const createResolveCloningRepoRevisionResult = (
             cloned: false,
         },
         commit: null,
+        changelist: null,
         isFork: false,
+        metadata: [],
     },
     errors: [
         {

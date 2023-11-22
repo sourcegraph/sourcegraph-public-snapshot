@@ -1,16 +1,16 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-import { UsersStatisticsResult } from '../../../graphql-operations'
+import type { UsersStatisticsResult } from '../../../graphql-operations'
 
 import { AnalyticsUsersPage } from './index'
 import { USERS_STATISTICS } from './queries'
 
-const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-3 container">{story()}</div>}</WebStory>
+const decorator: Decorator = story => <WebStory>{() => <div className="p-3 container">{story()}</div>}</WebStory>
 
 const config: Meta = {
     title: 'web/site-admin/analytics/AnalyticsUsersPage',
@@ -693,7 +693,7 @@ const USER_ANALYTICS_QUERY_MOCK: MockedResponse<UsersStatisticsResult> = {
     },
 }
 
-export const AnalyticsUsersPageExample: Story = () => (
+export const AnalyticsUsersPageExample: StoryFn = () => (
     <MockedTestProvider mocks={[USER_ANALYTICS_QUERY_MOCK]}>
         <AnalyticsUsersPage />
     </MockedTestProvider>

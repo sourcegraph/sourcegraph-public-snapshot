@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react'
 
-import { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
+import type { ApolloError, WatchQueryFetchPolicy } from '@apollo/client'
 import { useNavigate, useLocation } from 'react-router-dom'
 
-import { GraphQLResult, useQuery } from '@sourcegraph/http-client'
+import { type GraphQLResult, useQuery } from '@sourcegraph/http-client'
 
 import { asGraphQLResult } from '../utils'
 
@@ -92,7 +92,7 @@ export const usePageSwitcherPagination = <TResult, TVariables extends PaginatedC
 
     // TODO(philipp-spiess): Find out why Omit<TVariables, "first" | ...> & { first: number, ... }
     // does not work here and get rid of the any cast.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
     const queryVariables: TVariables = {
         ...variables,
         ...initialPaginationArgs,

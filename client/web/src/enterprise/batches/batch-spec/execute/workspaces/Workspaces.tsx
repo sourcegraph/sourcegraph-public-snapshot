@@ -2,9 +2,9 @@ import React, { useCallback, useState } from 'react'
 
 import { delay, repeatWhen, retryWhen, filter, tap } from 'rxjs/operators'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
 import { ConnectionError } from '../../../../../components/FilteredConnection/ui'
-import {
+import type {
     Scalars,
     VisibleBatchSpecWorkspaceListFields,
     HiddenBatchSpecWorkspaceListFields,
@@ -12,8 +12,8 @@ import {
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { queryWorkspacesList as _queryWorkspacesList } from '../backend'
 
-import { WorkspaceFilterRow, WorkspaceFilters } from './WorkspacesFilterRow'
-import { WorkspacesListItem, WorkspacesListItemProps } from './WorkspacesListItem'
+import { WorkspaceFilterRow, type WorkspaceFilters } from './WorkspacesFilterRow'
+import { WorkspacesListItem, type WorkspacesListItemProps } from './WorkspacesListItem'
 
 import styles from './Workspaces.module.scss'
 

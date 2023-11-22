@@ -14,10 +14,11 @@ import (
 	"syscall"
 
 	"github.com/sourcegraph/log"
-	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -85,7 +86,7 @@ func NewLocalGitCommand(repo api.RepoName, arg ...string) *LocalGitCommand {
 	return &LocalGitCommand{
 		repo:   repo,
 		args:   args,
-		Logger: log.Scoped("local", "local git command logger"),
+		Logger: log.Scoped("local"),
 	}
 }
 
@@ -170,12 +171,14 @@ type RemoteGitCommand struct {
 	noTimeout      bool
 	exitStatus     int
 	execer         execer
+	execOp         *observation.Operation
+	scope          string
 }
 
 type execer interface {
 	httpPost(ctx context.Context, repo api.RepoName, op string, payload any) (resp *http.Response, err error)
-	AddrForRepo(repo api.RepoName) string
-	ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error)
+	AddrForRepo(ctx context.Context, repo api.RepoName) string
+	ClientForRepo(ctx context.Context, repo api.RepoName) (proto.GitserverServiceClient, error)
 }
 
 // DividedOutput runs the command and returns its standard output and standard error.
@@ -202,10 +205,20 @@ func (c *RemoteGitCommand) DividedOutput(ctx context.Context) ([]byte, []byte, e
 	return stdout, nil, nil
 }
 
-// Output runs the command and returns its standard output.
+// Output runs the command and returns its standard output. If the command
+// fails it usually returns CommandStatusError.
 func (c *RemoteGitCommand) Output(ctx context.Context) ([]byte, error) {
-	stdout, _, err := c.DividedOutput(ctx)
-	return stdout, err
+	// Note: we do not use DividedOutput because we don't want its behaviour
+	// where it throws away stderr in the error message. Stderr in error is
+	// useful to us because the client is not asking for it.
+
+	rc, err := c.sendExec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer rc.Close()
+
+	return io.ReadAll(rc)
 }
 
 // CombinedOutput runs the command and returns its combined standard output and standard error.

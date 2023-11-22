@@ -1,6 +1,6 @@
 import * as scip from '../../scip'
-import * as sourcegraph from '../api'
-import { LineMatch, SearchResult, SearchSymbol } from '../util/api'
+import type * as sourcegraph from '../api'
+import type { LineMatch, SearchResult, SearchSymbol } from '../util/api'
 import { isDefined } from '../util/helpers'
 
 /**

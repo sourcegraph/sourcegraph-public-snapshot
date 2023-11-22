@@ -39,12 +39,13 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@types/lodash",
+        "//:node_modules/@types/puppeteer",
         "//:node_modules/jsonc-parser",
         "//:node_modules/lodash",
-        "//:node_modules/puppeteer",  #keep
+        "//:node_modules/puppeteer",
         "//:node_modules/rxjs",
         "//:node_modules/ts-key-enum",
-        "//client/web:graphql_operations",  #keep
+        "//client/web:graphql_operations",
         "//client/web:node_modules/@sourcegraph/common",
         "//client/web:node_modules/@sourcegraph/http-client",
         "//client/web:node_modules/@sourcegraph/shared",

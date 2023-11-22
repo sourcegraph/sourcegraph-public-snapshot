@@ -1,15 +1,20 @@
 import React from 'react'
 
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
-import { SeriesChartContent, SearchBasedInsight, CaptureGroupInsight, InsightType } from '../../../../core'
+import { type GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
+import {
+    type SeriesChartContent,
+    type SearchBasedInsight,
+    type CaptureGroupInsight,
+    InsightType,
+} from '../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
 
@@ -1326,7 +1331,7 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
     },
 }
 
-export const BackendInsightDemoCasesShowcase: Story = () => (
+export const BackendInsightDemoCasesShowcase: StoryFn = () => (
     <div>
         <MockedTestProvider mocks={[BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK]}>
             <BackendInsightView
@@ -1354,7 +1359,7 @@ export const BackendInsightDemoCasesShowcase: Story = () => (
     </div>
 )
 
-export const BackendInsightVitrine: Story = () => (
+export const BackendInsightVitrine: StoryFn = () => (
     <section>
         <article>
             <H2>Card</H2>

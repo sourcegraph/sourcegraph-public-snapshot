@@ -1,7 +1,7 @@
 import React from 'react'
 
 import {
-    HiddenExternalChangesetInfoCellProps,
+    type HiddenExternalChangesetInfoCellProps,
     HiddenExternalChangesetInfoCell,
 } from '../detail/changesets/HiddenExternalChangesetInfoCell'
 

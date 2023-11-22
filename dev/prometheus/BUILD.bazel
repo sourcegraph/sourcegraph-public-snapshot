@@ -1,0 +1,15 @@
+filegroup(
+    name = "prometheus_targets_linux",
+    srcs = [
+        "linux/prometheus_targets.yml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "prometheus_targets_all",
+    srcs = [
+        "all/prometheus_targets.yml",
+    ],
+    visibility = ["//visibility:public"],
+)

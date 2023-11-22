@@ -13,6 +13,12 @@ export const STATUS_AND_REPO_COUNT = gql`
                 message
             }
 
+            ... on NoRepositoriesDetected {
+                __typename
+
+                message
+            }
+
             ... on CloningProgress {
                 __typename
 
@@ -27,6 +33,12 @@ export const STATUS_AND_REPO_COUNT = gql`
             }
 
             ... on SyncError {
+                __typename
+
+                message
+            }
+
+            ... on GitserverDiskThresholdReached {
                 __typename
 
                 message

@@ -1,0 +1,74 @@
+.tab-container {
+    background-color: var(--color-bg-1);
+}
+
+.command-node {
+    padding: 0.75rem 0;
+
+    &:not(:last-child) {
+        border-bottom: 1px solid var(--border-color-2);
+    }
+
+    &__header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    &__duration-group {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    &__log-output {
+        margin: 0.5rem 0 !important;
+
+        code {
+            white-space: break-spaces;
+        }
+    }
+
+    &__log-output-fail-state {
+        background-color: var(--danger);
+    }
+
+    &__footer {
+        display: grid;
+        grid-template-columns: auto 1fr;
+    }
+
+    &__expand-btn {
+        // We add this negative margin because the SVG icon has some extra padding created by the viewbox
+        // which makes it indented a bit. This negative margin brings it back in line.
+        margin-left: -0.3125rem;
+    }
+
+    &__status {
+        width: 1.5rem;
+        height: 1.5rem;
+        margin-right: 0.25rem;
+    }
+
+    &__success-status {
+        fill: var(--success) !important;
+    }
+
+    &__error-status {
+        fill: var(--danger) !important;
+    }
+
+    &__path {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        text-align: right;
+    }
+
+    &__output {
+        margin-top: 0.5rem;
+        grid-column: span 4;
+    }
+}

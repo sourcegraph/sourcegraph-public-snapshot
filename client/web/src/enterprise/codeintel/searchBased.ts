@@ -3,12 +3,12 @@ import { extname } from 'path'
 import escapeRegExp from 'lodash/escapeRegExp'
 
 import { appendLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { Range } from '@sourcegraph/extension-api-types'
-import { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
+import type { Range } from '@sourcegraph/extension-api-types'
+import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 
 import { raceWithDelayOffset } from '../../codeintel/promise'
-import { Result } from '../../codeintel/searchBased'
-import { SettingsGetter } from '../../codeintel/settings'
+import type { Result } from '../../codeintel/searchBased'
+import type { SettingsGetter } from '../../codeintel/settings'
 import { isDefined } from '../../codeintel/util/helpers'
 
 export function definitionQuery({
@@ -104,7 +104,7 @@ export function repositoryKindTerms(
 }
 /** Returns a regular expression matching the given repository. */
 function makeRepositoryPattern(repo: string): string {
-    return `^${repo.replace(/ /g, '\\ ')}$`
+    return `^${repo.replaceAll(' ', '\\ ')}$`
 }
 
 /** The time in ms to delay between unindexed search request and the fallback indexed search request. */

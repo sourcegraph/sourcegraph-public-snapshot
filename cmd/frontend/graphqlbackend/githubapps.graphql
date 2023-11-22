@@ -1,0 +1,156 @@
+extend type Mutation {
+    """
+    Delete a GitHub App. The GitHub App, along with all of its associated code host connections and
+    authentication provider, will be deleted.
+    """
+    deleteGitHubApp(gitHubApp: ID!): EmptyResponse
+}
+
+extend type Query {
+    """
+    All configured GitHub Apps, optionally filtered by the domain in which they are used.
+    """
+    gitHubApps(domain: GitHubAppDomain): GitHubAppConnection!
+    """
+    Looks up a GitHub App by its ID.
+    """
+    gitHubApp(id: ID!): GitHubApp
+    """
+    Looks up a GitHub App by its AppID and BaseURL.
+    """
+    gitHubAppByAppID(appID: Int!, baseURL: String!): GitHubApp
+}
+
+"""
+GitHubAppDomain enumerates the domains in which GitHub Apps can be used.
+"""
+enum GitHubAppDomain {
+    """
+    GitHub Apps that are configured for repository syncing.
+    """
+    REPOS
+    """
+    GitHub Apps that are configured for batch changes commit signing.
+    """
+    BATCHES
+}
+
+"""
+A list of GitHub Apps.
+"""
+type GitHubAppConnection {
+    """
+    A list of GitHub Apps.
+    """
+    nodes: [GitHubApp!]!
+    """
+    The total count of GitHub Apps in the connection.
+    """
+    totalCount: Int!
+}
+
+"""
+A GitHub App configuration.
+"""
+type GitHubApp implements Node {
+    """
+    Unique ID of the GitHub App
+    """
+    id: ID!
+    """
+    The GitHub App ID
+    """
+    appID: Int!
+    """
+    The name of the GitHub App
+    """
+    name: String!
+    """
+    The domain of the GitHub App (e.g. "repos" or "batches")
+    """
+    domain: String!
+    """
+    The slug of the GitHub App
+    """
+    slug: String!
+    """
+    The base URL of the GitHub App
+    """
+    baseURL: String!
+    """
+    The URL of the GitHub App page
+    """
+    appURL: String!
+    """
+    The client ID of the GitHub App
+    """
+    clientID: String!
+    """
+    The client secret of the GitHub App
+    """
+    clientSecret: String!
+    """
+    The logo URL of the GitHub App
+    """
+    logo: String!
+    """
+    The created at timestamp of the GitHub App in our database
+    """
+    createdAt: DateTime!
+    """
+    The updated at timestamp of the GitHub App in our database
+    """
+    updatedAt: DateTime!
+    """
+    Fetches a list of installation IDs for this GitHub App.
+    """
+    installations: [Installation!]!
+    """
+    Fetches the webhook associated with this GitHub App.
+    """
+    webhook: Webhook
+}
+
+"""
+Represents a GitHub account on which the App was installed.
+"""
+type GitHubAccount {
+    """
+    The login username of the account.
+    """
+    login: String!
+    """
+    The avatar URL of the account.
+    """
+    avatarURL: String!
+    """
+    A link to the account on GitHub.
+    """
+    url: String!
+    """
+    The account type.
+    """
+    type: String!
+}
+
+"""
+Represents a single GitHub App installation.
+"""
+type Installation {
+    """
+    The installation ID of the App.
+    """
+    id: Int!
+    """
+    The installation URL.
+    """
+    url: String!
+    """
+    The account on which the App was installed
+    """
+    account: GitHubAccount!
+    """
+    The external services derived from this installation.
+    """
+    externalServices(first: Int): ExternalServiceConnection!
+}

@@ -1,4 +1,6 @@
-import { Series } from '../../../../types'
+import { describe, expect, it } from 'vitest'
+
+import type { Series } from '../../../../types'
 
 import { getSeriesData } from './get-series-data'
 import { SeriesType } from './types'

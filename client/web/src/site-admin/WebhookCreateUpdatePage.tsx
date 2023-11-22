@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo, useState } from 'react'
+import React, { type FC, useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 import { parse as parseJSONC } from 'jsonc-parser'
@@ -12,14 +12,14 @@ import { EXTERNAL_SERVICES } from '../components/externalServices/backend'
 import { defaultExternalServices } from '../components/externalServices/externalServices'
 import { ConnectionLoading } from '../components/FilteredConnection/ui'
 import {
-    CreateWebhookResult,
-    CreateWebhookVariables,
+    type CreateWebhookResult,
+    type CreateWebhookVariables,
     ExternalServiceKind,
-    ExternalServicesResult,
-    ExternalServicesVariables,
-    UpdateWebhookResult,
-    UpdateWebhookVariables,
-    WebhookFields,
+    type ExternalServicesResult,
+    type ExternalServicesVariables,
+    type UpdateWebhookResult,
+    type UpdateWebhookVariables,
+    type WebhookFields,
 } from '../graphql-operations'
 import { generateSecret } from '../util/security'
 
@@ -63,6 +63,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
         variables: {
             first: null,
             after: null,
+            repo: null,
         },
     })
     useMemo(() => {
@@ -203,7 +204,6 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
                                     disabled={loading || !webhook.codeHostKind}
                                 >
                                     {webhook.codeHostKind &&
-                                        kindsToUrls.get(webhook.codeHostKind) &&
                                         kindsToUrls.get(webhook.codeHostKind)?.map(urn => (
                                             <option value={urn} key={urn}>
                                                 {urn}
@@ -287,18 +287,24 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
 
 function supportedExternalServiceKind(kind: ExternalServiceKind): boolean {
     switch (kind) {
-        case ExternalServiceKind.BITBUCKETSERVER:
+        case ExternalServiceKind.BITBUCKETSERVER: {
             return true
-        case ExternalServiceKind.BITBUCKETCLOUD:
+        }
+        case ExternalServiceKind.BITBUCKETCLOUD: {
             return true
-        case ExternalServiceKind.GITHUB:
+        }
+        case ExternalServiceKind.GITHUB: {
             return true
-        case ExternalServiceKind.GITLAB:
+        }
+        case ExternalServiceKind.GITLAB: {
             return true
-        case ExternalServiceKind.AZUREDEVOPS:
+        }
+        case ExternalServiceKind.AZUREDEVOPS: {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 

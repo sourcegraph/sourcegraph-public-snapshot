@@ -1,4 +1,4 @@
-import { FC, HTMLAttributes } from 'react'
+import type { FC, HTMLAttributes } from 'react'
 
 import { useDebounce, useDeepMemo, ErrorAlert } from '@sourcegraph/wildcard'
 
@@ -12,7 +12,7 @@ import {
     LivePreviewLoading,
     LivePreviewUpdateButton,
 } from '../../../../../../components'
-import { CategoricalChartContent } from '../../../../../../core'
+import type { CategoricalChartContent } from '../../../../../../core'
 import { LivePreviewStatus, useLivePreviewLangStatsInsight } from '../../../../../../core/hooks/live-preview-insight'
 
 import { DEFAULT_PREVIEW_MOCK } from './constants'

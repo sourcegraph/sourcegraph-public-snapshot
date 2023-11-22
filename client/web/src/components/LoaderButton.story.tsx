@@ -1,11 +1,11 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { Text } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from './LoaderButton'
 import { WebStory } from './WebStory'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="container mt-3" style={{ width: 800 }}>
         {story()}
     </div>
@@ -18,7 +18,7 @@ const config: Meta = {
 
 export default config
 
-export const Inline: Story = () => (
+export const Inline: StoryFn = () => (
     <WebStory>
         {() => (
             <Text>
@@ -28,11 +28,11 @@ export const Inline: Story = () => (
     </WebStory>
 )
 
-export const Block: Story = () => (
+export const Block: StoryFn = () => (
     <WebStory>{() => <LoaderButton loading={true} label="loader button" display="block" variant="primary" />}</WebStory>
 )
 
-export const WithLabel: Story = () => (
+export const WithLabel: StoryFn = () => (
     <WebStory>
         {() => (
             <LoaderButton

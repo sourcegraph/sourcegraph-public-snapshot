@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -299,8 +300,9 @@ func tarArchive(dir string) (*tar.Reader, error) {
 func tmpStore(t *testing.T) *Store {
 	d := t.TempDir()
 	return &Store{
-		Path: d,
-		Log:  logtest.Scoped(t),
+		GitserverClient: gitserver.NewTestClient(t),
+		Path:            d,
+		Log:             logtest.Scoped(t),
 
 		ObservationCtx: observation.TestContextTB(t),
 	}

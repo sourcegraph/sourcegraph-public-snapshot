@@ -1,11 +1,31 @@
-import type { ResolvedRevision } from '$lib/web'
+import { resolvePath } from '@sveltejs/kit'
 
-export function navFromPath(path: string, repo: string, blobPage: boolean): [string, string][] {
+import type { ResolvedRevision } from '$lib/repo/api/repo'
+
+const TREE_ROUTE_ID = '/[...repo=reporev]/(validrev)/(code)/-/tree/[...path]'
+
+/**
+ * Returns a [segment, url] mapping for every segement in `path`.
+ * The URL for the last segment is empty.
+ *
+ * Example:
+ *   'foo/bar/baz' converts to
+ *   [
+ *     ['foo', '/<repo>/-/tree/foo'],
+ *     ['bar', '/<repo>/-/tree/foo/bar'],
+ *     ['baz', '/<repo>/-/tree/foo/bar/baz'],
+ *   ]
+ *
+ */
+export function navFromPath(path: string, repo: string): [string, string][] {
     const parts = path.split('/')
     return parts
         .slice(0, -1)
-        .map((part, index, all): [string, string] => [part, `/${repo}/-/tree/${all.slice(0, index + 1).join('/')}`])
-        .concat([[parts[parts.length - 1], `/${repo}/-/${blobPage ? 'blob' : 'tree'}/${path}`]])
+        .map((part, index, all): [string, string] => [
+            part,
+            resolvePath(TREE_ROUTE_ID, { repo, path: all.slice(0, index + 1).join('/') }),
+        ])
+        .concat([[parts.at(-1), '']])
 }
 
 export function getRevisionLabel(
@@ -17,4 +37,9 @@ export function getRevisionLabel(
             ? resolvedRevision?.commitID.slice(0, 7)
             : urlRevision?.slice(0, 7)) || resolvedRevision?.defaultBranch
     )
+}
+
+export function getFileURL(repoURL: string, file: { canonicalURL: string }): string {
+    // TODO: Find out whether there is a safer way to do this
+    return repoURL + file.canonicalURL.slice(file.canonicalURL.indexOf('/-/'))
 }

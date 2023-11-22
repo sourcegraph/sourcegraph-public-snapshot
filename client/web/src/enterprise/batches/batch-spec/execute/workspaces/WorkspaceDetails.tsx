@@ -17,7 +17,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import indicator from 'ordinal/indicator'
 
 import { dataOrThrowErrors } from '@sourcegraph/http-client'
-import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
+import type { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import {
     Badge,
     LoadingSpinner,
@@ -46,22 +46,22 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
-import { FileDiffNode, FileDiffNodeProps } from '../../../../../components/diff/FileDiffNode'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
+import { FileDiffNode, type FileDiffNodeProps } from '../../../../../components/diff/FileDiffNode'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../../../../components/FilteredConnection'
 import { useShowMorePagination } from '../../../../../components/FilteredConnection/hooks/useShowMorePagination'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { LogOutput } from '../../../../../components/LogOutput'
 import { Duration } from '../../../../../components/time/Duration'
 import {
-    BatchSpecWorkspaceChangesetSpecFields,
+    type BatchSpecWorkspaceChangesetSpecFields,
     BatchSpecWorkspaceState,
-    BatchSpecWorkspaceStepFields,
-    HiddenBatchSpecWorkspaceFields,
-    Scalars,
-    VisibleBatchSpecWorkspaceFields,
-    FileDiffFields,
-    BatchSpecWorkspaceStepResult,
-    BatchSpecWorkspaceStepVariables,
+    type BatchSpecWorkspaceStepFields,
+    type HiddenBatchSpecWorkspaceFields,
+    type Scalars,
+    type VisibleBatchSpecWorkspaceFields,
+    type FileDiffFields,
+    type BatchSpecWorkspaceStepResult,
+    type BatchSpecWorkspaceStepVariables,
 } from '../../../../../graphql-operations'
 import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
@@ -465,12 +465,15 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
 
 function publishBadgeLabel(state: Scalars['PublishedValue']): string {
     switch (state) {
-        case 'draft':
+        case 'draft': {
             return 'will publish as draft'
-        case false:
+        }
+        case false: {
             return 'will not publish'
-        case true:
+        }
+        case true: {
             return 'will publish'
+        }
     }
 }
 

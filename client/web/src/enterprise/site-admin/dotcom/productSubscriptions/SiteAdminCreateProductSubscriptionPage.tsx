@@ -2,18 +2,18 @@ import React, { useCallback, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
-import { merge, of, Observable } from 'rxjs'
+import { merge, of, type Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { Button, useEventObservable, Link, Alert, Icon, H2, Form } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../../../auth'
+import type { AuthenticatedUser } from '../../../../auth'
 import { mutateGraphQL, queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import {
+import type {
     CreateProductSubscriptionVariables,
     ProductSubscriptionAccountsResult,
     ProductSubscriptionAccountsVariables,

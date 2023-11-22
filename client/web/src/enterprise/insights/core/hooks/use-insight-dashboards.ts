@@ -1,16 +1,16 @@
-import { useQuery, gql, ApolloError } from '@apollo/client'
+import { useQuery, gql, type ApolloError } from '@apollo/client'
 import { groupBy } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'
 
-import {
+import type {
     InsightsDashboardCurrentUser,
     InsightsDashboardNode,
     InsightsDashboardsResult,
 } from '../../../../graphql-operations'
 import {
-    CustomInsightDashboard,
-    InsightsDashboardOwner,
+    type CustomInsightDashboard,
+    type InsightsDashboardOwner,
     InsightsDashboardOwnerType,
     InsightsDashboardType,
 } from '../index'

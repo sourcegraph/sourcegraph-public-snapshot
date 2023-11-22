@@ -1,12 +1,13 @@
 import assert from 'assert'
 
+import { beforeEach, describe, it } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { hasFocus } from '@sourcegraph/shared/src/testing/dom-test-helpers'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../../context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../../context'
 import {
     GET_INSIGHT_VIEW_SEARCH_BASED_INSIGHT,
     LANG_STAT_INSIGHT_CONTENT,

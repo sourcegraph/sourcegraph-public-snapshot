@@ -1,8 +1,8 @@
-import { ApolloError } from '@apollo/client'
+import type { ApolloError } from '@apollo/client'
 
 import { useQuery } from '@sourcegraph/http-client'
 
-import { AutoIndexJobDescriptionFields, IndexConfigurationResult } from '../../../../graphql-operations'
+import type { AutoIndexJobDescriptionFields, IndexConfigurationResult } from '../../../../graphql-operations'
 import { REPOSITORY_CONFIGURATION } from '../backend'
 
 interface UseRepositoryConfigResult {

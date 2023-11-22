@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -81,13 +82,13 @@ func TestOutboundWebhookLogs(t *testing.T) {
 		},
 	}
 
-	jobStore := database.NewMockOutboundWebhookJobStore()
+	jobStore := dbmocks.NewMockOutboundWebhookJobStore()
 	jobStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.OutboundWebhookJob, error) {
 		assert.EqualValues(t, job.ID, id)
 		return job, nil
 	})
 
-	logStore := database.NewMockOutboundWebhookLogStore()
+	logStore := dbmocks.NewMockOutboundWebhookLogStore()
 	logStore.CountsForOutboundWebhookFunc.SetDefaultHook(func(ctx context.Context, id int64) (int64, int64, error) {
 		assert.EqualValues(t, webhook.ID, id)
 		return 4, 2, nil
@@ -99,7 +100,7 @@ func TestOutboundWebhookLogs(t *testing.T) {
 		return logs, nil
 	})
 
-	store := database.NewMockOutboundWebhookStore()
+	store := dbmocks.NewMockOutboundWebhookStore()
 	store.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.OutboundWebhook, error) {
 		assert.EqualValues(t, webhook.ID, id)
 		return webhook, nil
@@ -107,7 +108,7 @@ func TestOutboundWebhookLogs(t *testing.T) {
 	store.ToJobStoreFunc.SetDefaultReturn(jobStore)
 	store.ToLogStoreFunc.SetDefaultReturn(logStore)
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OutboundWebhooksFunc.SetDefaultReturn(store)
 	ctx, _, _ := fakeUser(t, context.Background(), db, true)
 

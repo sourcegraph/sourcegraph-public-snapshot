@@ -16,7 +16,7 @@ import format from 'date-fns/format'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Container,
@@ -32,7 +32,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
-import { BackgroundJobsResult, BackgroundJobsVariables, BackgroundRoutineType } from '../graphql-operations'
+import { type BackgroundJobsResult, type BackgroundJobsVariables, BackgroundRoutineType } from '../graphql-operations'
 import { formatDurationLong } from '../util/time'
 
 import { ValueLegendList } from './analytics/components/ValueLegendList'
@@ -110,7 +110,7 @@ export const SiteAdminBackgroundJobsPage: React.FunctionComponent<
             <Text>Terminology:</Text>
             <ul>
                 <li>
-                    <strong>Job</strong>: a bag of routines, started when the Sourcegraph app is launched
+                    <strong>Job</strong>: a bag of routines, started when the Cody app is launched
                 </li>
                 <li>
                     <strong>Routine</strong>: a background process that repeatedly executes its task indefinitely, using
@@ -283,7 +283,7 @@ const RoutineItem: React.FunctionComponent<{ routine: BackgroundRoutine }> = ({ 
         .filter((host, index, hosts) => hosts.indexOf(host) === index) // deduplicate
     const commonHostName = allHostNames.length === 1 ? allHostNames[0] : undefined
 
-    const routineTypeDisplayableName = routine.type.toLowerCase().replace(/_/g, ' ')
+    const routineTypeDisplayableName = routine.type.toLowerCase().replaceAll('_', ' ')
 
     const recentRunsTooltipContent = (
         <div>
@@ -495,11 +495,14 @@ function categorizeRunDuration(durationMs: number, routineIntervalMs: number | n
 function getRunDurationTextClass(durationMs: number, routineIntervalMs: number | null): string {
     const category = categorizeRunDuration(durationMs, routineIntervalMs)
     switch (category) {
-        case 'dangerous':
+        case 'dangerous': {
             return 'text-danger'
-        case 'long':
+        }
+        case 'long': {
             return 'text-warning'
-        default:
+        }
+        default: {
             return 'text-success'
+        }
     }
 }

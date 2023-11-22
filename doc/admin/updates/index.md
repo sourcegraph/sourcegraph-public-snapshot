@@ -1,57 +1,119 @@
-# Updating Sourcegraph
+# Updating sourcegraph
 
-For product update notes, please refer to the [changelog](../../CHANGELOG.md).
+This page is intended as an entry point into Sourcegraph versioning, upgrades, and the `migrator` service which manages our database schemas. Here we'll cover general concepts and direct you toward relevant operations pages.
 
-## Update policy
+**If you are already familiar with Sourcegraph upgrades [skip to instance specific procedures](#instance-specific-procedures).**
 
-A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) or the site admin updates page to learn about updates. We actively maintain the two most recent monthly releases of Sourcegraph.
+> *Note: For product update notes, please refer to the [changelog](../../CHANGELOG.md).*
 
-## Check the upgrade readiness
+## General concepts
 
-Starting 5.0.0, you are able to check the instance upgrade readiness by navigating to **Site admin > Updates** page, readiness information includes:
+### Upgrading
 
-- Whether there are [schema drifts](../how-to/schema-drift.md)
-- Whether there are pending [out-of-band migrations](../../dev/background-information/oobmigrations.md) but need to complete
+A new Sourcegraph release consists of updated images that incorporate code changes from our [main repository](https://github.com/sourcegraph/sourcegraph). It also includes modifications to deployment manifests in our supporting deployment repositories, such as our [k8s helm repo](https://github.com/sourcegraph/deploy-sourcegraph-helm). 
 
-## Choosing the correct upgrade path
+When upgrading Sourcegraph, it is necessary to update and apply the deployment manifests. However, in addition to the manifest updates, it is crucial to ensure that all underlying database schemas of Sourcegraph are also updated.
 
-We support two upgrade paths: moving one minor version ahead, i.e. `3.42` to `3.43` (standard upgrade), moving many minor versions ahead, i.e `3.36` to `3.43` (multi-version upgrades). It is vital that you choose the correct upgrade path when upgrading your instance. If you attempt to upgrade multiple versions using the standard upgrade process, it will fail. 
+### Release Schedule and versioning
+Sourcegraph releases use semantic versioning, for example: `v5.0.3`
+| Description   | Version |
+|---------------|---------|
+| major         | `5`     |
+| minor         | `0`     |
+| patch         | `3`     |
 
-### Standard upgrades
+To learn more about our release schedule see our [handbook](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#sourcegraph-releases). In general a new minor version of Sourcegraph is released every month, accompanied by weekly patch releases. Major releases are less frequent and represent significant changes in Sourcegraph.You can also check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for more information about the latest release.
 
-A **standard upgrade** moves an instance from *one version to an adjacent minor version*, for example the upgrade `v3.41 -> v3.42`. Note that patch releases do not have to be adopted when moving between minor versions. For example, upgrading from `v3.41.0 -> v3.41.1 -> v3.42.0` has an unnecessary step.
+### Upgrade types
 
-> NOTE: Due to its compatibility with previous versions, we support the upgrade `v3.43 -> v4.0.1` as a one-minor-version "standard" upgrade.
+Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** upgrades.
 
-This upgrade process involves updating only infrastructure: containers must reflect new version tags, additions and removal of services must be addressed, resource allocation may need to be readjusted, etc. For environments that support rolling updates (Kubernetes with or without Helm), a standard upgrade minimizes service disruption as new and old versions of the instance can work with the same database schema for a short period.
+**Standard** 
+- Moves Sourcegraph one version forward (`v5.0.0` to `v5.1.0`), *this is usually one minor version unless the next version released is a major version*.
+- Requires minor downtime in deployments except kubernetes where rolling updates are possible.
 
-**We recommend following this upgrade process and keeping your instance up-to-date**, once it is on the most recent version. If your instance is currently more than one minor version behind the latest release, a single [multi-version upgrade](#multi-version-upgrades) can bring you up to speed.
+**Multiversion**
+- Moves Sourcegraph multiple versions forward (`v5.0.0` to `v5.2.0`).
+- Requires downtime while the database schemas and rewritten and unfinished out-of-band migrations are applied
+- We currently support jumping from version `v3.20` or later to any future version.
+- **AMIs do not yet support multiversion upgrades. We hope to improve this soon.**
 
-Also [check the status out-of-band migrations](../how-to/unfinished_migration.md#checking-progress) prior to upgrading. If there is a warning displayed on this page, then an out-of-band migration is currently in progress and must finish prior to moving off of the current version. The newer version of Sourcegraph will detect that there is unmigrated data and will refuse to start, requiring an unnecessary rollback procedure. Note that multi-version upgrades will complete these migrations as part of the upgrade process, so checking this status prior to a multi-version upgrade is unnecessary.
+> *Note: Patch versions don't determine upgrade type -- you should always upgrade to the latest patch.*
 
-To perform a standard upgrade, check the notes and follow the guide for your specific environment:
+| From Version | To Version | Upgrade Type | Notes                                |
+|--------------|------------|--------------|--------------------------------------|
+| `v5.0.0`     | `v5.1.0`   | Standard     | A minor version                       |
+| `v5.0.0`     | `v5.2.0`   | Multiversion  | Two minor versions                    |
+| `v3.41.0`    | `v3.42.2`  | Standard     | A minor version and patch version     |
+| `v5.1.0`     | `v5.1.3`   | Standard     | Multiple patch versions     |
+| `v3.43.0`    | `v4.0.0`   | Standard     | A major version change but only one absolute version |
+| `v5.0.0`     | `v5.2.2`   | Multiversion  | Two minor versions and patch          |
+| `v3.33.0`    | `v5.2.0`   | Multiversion  | Major and minor                       |
+| `v4.5.0`     | `v5.0.0`   | Standard     | This is a major version but only one version change |
+| `v4.4.2`     | `v5.0.3`   | Multiversion  | Major, minor, and patch               |
 
-- [Sourcegraph with Docker Compose](docker_compose.md#upgrade-procedure)
-- [Sourcegraph with Kubernetes](kubernetes.md#upgrade-procedure)
-- [Single-container Sourcegraph with Docker](server.md#upgrade-procedure)
-- [Pure-docker custom deployments](pure_docker.md)
+> *Note:*
+> - *Our major releases do not occur on a consistent interval, so make sure to check our changelog if you aren't certain about whether a major version is multiple minor versions away from your current version. You can also reach out to our support team [support@sourcegraph.com](mailto:support@sourcegraph.com)*
+> - *Sourcegraph guarantees database backward compatibility to the most recent minor version.*
 
-### Multi-version upgrades
+### Sourcegraph databases & migrator
 
-A **multi-version** upgrade moves an instance *multiple minor versions ahead*. We currently support jumping from version `v3.20` or later to any future version (using a version of the `migrator` at least as new as the target version).
+To facilitate the management of Sourcegraph's databases, we have created the `migrator` service. `migrator` is usually triggered automatically on Sourcegraph startup but can also be interacted with like a cli tool. Migrator's primary purpose is to manage and apply schema migrations. 
+- To learn more about migrations see our [developer docs](https://docs.sourcegraph.com/dev/background-information/sql/migrations_overview). 
+- For a full listing of migrator's command arguments see its [usage docs](./migrator/migrator-operations.md).
 
-This upgrade process involves spinning down the active instance (incurring a definite downtime period), running a migration utility on the database, and spinning up the infrastructure for the new target instance. This migration utility performs both schema migrations, as well as data migrations that generally happen slowly in the background over several versions.
+### Best Practices
+> **Caution:** The upgrade process aggressively mutates the shape and contents of your database, and undiscovered errors in the migration process or unexpected environmental differences may cause an unusable instance or data loss.
 
-To perform a multi-version upgrade, check the notes and follow the guide for your specific environment:
+It is highly recommended to:
+- Take an up-to-date snapshot of your databases prior to starting a multi-version upgrade. 
+- Perform the entire upgrade procedure on an idle clone of the production instance and switch traffic over on success, if possible.
 
-- [Sourcegraph with Docker Compose](docker_compose.md#multi-version-upgrade-procedure)
-- [Sourcegraph with Kubernetes](kubernetes.md#multi-version-upgrade-procedure)
-- [Single-container Sourcegraph with Docker](server.md#multi-version-upgrade-procedure)
-- [Pure-docker custom deployments](pure_docker.md)
+## General upgrade procedure
 
-## Migrating to a new deployment type
+Sourcegraph upgrades take the following general form:
+1. Determine if your instance is ready to Upgrade (check upgrade notes)
+2. Merge the latest Sourcegraph release into your deployment manifests
+3. If updating more than a single minor version, perform an [**automatic multi-version upgrade**](./automatic.md) if targeting **Sourcegraph 5.1 or later**; [manual multi-verison upgrades](./migrator/migrator-operations.md) are required if upgrading to an earlier version, which requires shutting off the instance and invoking the `migrator` container or job to perform the database rewrite and application of unfinished out-of-band migrations
+4. With upstream changes to your manifests merged, start the new instance
 
-See [this page](../deploy/index.md) to get advice on which deployment type you should be running.
+> Note: For more explicit steps, specific to your deployment see the operations guides linked below.
 
-- [Migrate to Docker Compose](../deploy/docker-compose/migrate.md) for improved stability and performance if you are using a single-container `sourcegraph/server` deployment.
-- [Migrate to a Kubernetes cluster](../deploy/kubernetes/index.md) if you exceed the limits of a single machine Docker Compose deployment.
+### Upgrade Readiness
+
+Starting in v5.0.0, as an admin you are able to check instance upgrade readiness by navigating to the `Site admin > Updates` page. Here you'll be notified if your instance has any **schema drift** or unfinished **out of band migrations**.
+
+![Screenshot 2023-05-17 at 1 37 12 PM](https://github.com/sourcegraph/sourcegraph/assets/13024338/185fc3e8-0706-4a23-b9fe-e262f9a9e4b3)
+
+If your instance has schema drift or unfinished oob migrations you may need to address these issues before upgrading. Feel free to reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com).
+
+- [More info on OOB migrations](https://docs.sourcegraph.com/dev/background-information/sql/migrations_overview#out-of-band-migrations)
+- [More info on schema drift](https://docs.sourcegraph.com/admin/how-to/schema-drift)
+
+## Instance Specific Procedures
+
+### Upgrades index
+- **Sourcegraph with Docker Compose**
+  - [Standard Upgrade Operations](../deploy/docker-compose/upgrade.md#standard-upgrades)
+  - [Multiversion Upgrade Operations](../deploy/docker-compose/upgrade.md#multi-version-upgrades)
+  - [Upgrade Notes](docker_compose.md)
+- **Sourcegraph with Kubernetes**
+  - **Kustomize**
+    - [Standard Upgrade Operations](../deploy/kubernetes/upgrade.md#standard-upgrades)
+    - [Multiversion Upgrade Operations](../deploy/kubernetes/upgrade.md#multi-version-upgrades)
+  - **Helm**
+    - [Standard Upgrade Operations](../deploy/kubernetes/helm.md#standard-upgrades)
+    - [Multiversion Upgrade Operations](../deploy/kubernetes/helm.md#multi-version-upgrades)
+  - [Upgrade Notes](kubernetes.md)
+- **Single-container Sourcegraph with Docker**
+  - [Standard Upgrade Operations](../deploy/docker-single-container/index.md#standard-upgrades)
+  - [Multiversion Upgrade Operations](../deploy/docker-single-container/index.md#multi-version-upgrades)
+  - [Upgrade Notes](server.md)
+- [**Pure-docker custom deployments**](pure_docker.md)
+
+## Other helpful links
+- [Migrator operations](./migrator/migrator-operations.md)
+- [Upgrading Early Versions](./migrator/upgrading-early-versions.md)
+- [Troubleshooting upgrades](./migrator/troubleshooting-upgrades.md)
+- [Downgrading](./migrator/downgrading.md)
+- [Sourcegraph 5.2 gRPC Configuration Guide](./grpc/index.md)

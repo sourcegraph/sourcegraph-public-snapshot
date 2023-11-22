@@ -1,4 +1,6 @@
-import { PrefixSumComputer, PrefixSumIndexOfResult, toUint32 } from './prefixSumComputer'
+import { describe, expect, test } from 'vitest'
+
+import { PrefixSumComputer, type PrefixSumIndexOfResult, toUint32 } from './prefixSumComputer'
 
 // Adapted from
 // https://github.com/Microsoft/vscode/blob/7a07992127a6ff176f0ed073d0698d81d09fc4bb/src/vs/editor/test/common/viewModel/prefixSumComputer.test.ts.

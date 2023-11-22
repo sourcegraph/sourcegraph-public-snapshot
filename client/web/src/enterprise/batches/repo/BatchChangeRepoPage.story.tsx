@@ -1,13 +1,13 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { mockAuthenticatedUser } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 
 import { WebStory } from '../../../components/WebStory'
-import { RepoBatchChange, RepositoryFields } from '../../../graphql-operations'
-import { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
+import { type RepoBatchChange, type RepositoryFields, RepositoryType } from '../../../graphql-operations'
+import type { queryExternalChangesetWithFileDiffs as _queryExternalChangesetWithFileDiffs } from '../detail/backend'
 
-import {
+import type {
     queryRepoBatchChanges as _queryRepoBatchChanges,
     queryRepoBatchChangeStats as _queryRepoBatchChangeStats,
 } from './backend'
@@ -24,6 +24,8 @@ const repoDefaults: RepositoryFields = {
     name: 'github.com/sourcegraph/awesome',
     url: 'http://test.test/awesome',
     isFork: false,
+    metadata: [],
+    sourceType: RepositoryType.GIT_REPOSITORY,
 }
 
 const queryRepoBatchChangeStats: typeof _queryRepoBatchChangeStats = () =>
@@ -87,7 +89,7 @@ const queryEmptyExternalChangesetWithFileDiffs: typeof _queryExternalChangesetWi
         },
     })
 
-const decorator: DecoratorFn = story => <div className="p-3 container web-content">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container web-content">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/repo/BatchChangeRepoPage',
@@ -102,7 +104,7 @@ const config: Meta = {
 
 export default config
 
-export const ListOfBatchChanges: Story = () => (
+export const ListOfBatchChanges: StoryFn = () => (
     <WebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
         {props => (
             <BatchChangeRepoPage
@@ -120,7 +122,7 @@ export const ListOfBatchChanges: Story = () => (
 
 ListOfBatchChanges.storyName = 'List of batch changes'
 
-export const NoBatchChanges: Story = () => (
+export const NoBatchChanges: StoryFn = () => (
     <WebStory initialEntries={['/github.com/sourcegraph/awesome/-/batch-changes']}>
         {props => (
             <BatchChangeRepoPage

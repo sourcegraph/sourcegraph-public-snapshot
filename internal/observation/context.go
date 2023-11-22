@@ -7,7 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-	"go.opentelemetry.io/otel"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -20,20 +19,42 @@ import (
 // any location that wants to use it for observing operations.
 type Context struct {
 	Logger       log.Logger
-	Tracer       *trace.Tracer
+	Tracer       oteltrace.Tracer // may be nil
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
 }
 
+func (c *Context) Clone(opts ...Opt) *Context {
+	c1 := &Context{
+		Logger:       c.Logger,
+		Tracer:       c.Tracer,
+		Registerer:   c.Registerer,
+		HoneyDataset: c.HoneyDataset,
+	}
+
+	for _, opt := range opts {
+		opt(c1)
+	}
+
+	return c1
+}
+
 // TestContext is a behaviorless Context usable for unit tests.
-var TestContext = Context{Logger: log.NoOp(), Registerer: metrics.TestRegisterer}
+var TestContext = Context{
+	Logger:     log.NoOp(),
+	Tracer:     oteltrace.NewNoopTracerProvider().Tracer("noop"),
+	Registerer: metrics.NoOpRegisterer,
+	// We do not set HoneyDataset since if we accidently have HONEYCOMB_TEAM
+	// set in a test run it will log to honeycomb.
+}
 
 // TestContextTB creates a Context similar to `TestContext` but with a logger scoped
 // to the `testing.TB`.
 func TestContextTB(t testing.TB) *Context {
 	return &Context{
 		Logger:     logtest.Scoped(t),
-		Registerer: metrics.TestRegisterer,
+		Registerer: metrics.NoOpRegisterer,
+		Tracer:     oteltrace.NewNoopTracerProvider().Tracer("noop"),
 	}
 }
 
@@ -51,7 +72,6 @@ func ContextWithLogger(logger log.Logger, parent *Context) *Context {
 func ScopedContext(team, domain, component string, parent *Context) *Context {
 	return ContextWithLogger(log.Scoped(
 		fmt.Sprintf("%s.%s.%s", team, domain, component),
-		fmt.Sprintf("%s %s %s", team, domain, component),
 	), parent)
 }
 
@@ -61,10 +81,10 @@ func (c *Context) Operation(args Op) *Operation {
 	var logger log.Logger
 	if c.Logger != nil {
 		// Create a child logger, if a parent is provided.
-		logger = c.Logger.Scoped(args.Name, args.Description)
+		logger = c.Logger.Scoped(args.Name)
 	} else {
 		// Create a new logger.
-		logger = log.Scoped(args.Name, args.Description)
+		logger = log.Scoped(args.Name)
 	}
 	return &Operation{
 		context:      c,
@@ -72,17 +92,17 @@ func (c *Context) Operation(args Op) *Operation {
 		name:         args.Name,
 		kebabName:    kebabCase(args.Name),
 		metricLabels: args.MetricLabelValues,
-		logFields:    args.LogFields,
+		attributes:   args.Attrs,
 		errorFilter:  args.ErrorFilter,
 
-		Logger: logger.With(toLogFields(args.LogFields)...),
+		Logger: logger.With(attributesToLogFields(args.Attrs)...),
 	}
 }
 
 func NewContext(logger log.Logger, opts ...Opt) *Context {
 	ctx := &Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Tracer:     trace.GetTracer(),
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -95,9 +115,9 @@ func NewContext(logger log.Logger, opts ...Opt) *Context {
 
 type Opt func(*Context)
 
-func Tracer(provider oteltrace.TracerProvider) Opt {
+func Tracer(tracer oteltrace.Tracer) Opt {
 	return func(ctx *Context) {
-		ctx.Tracer = &trace.Tracer{TracerProvider: provider}
+		ctx.Tracer = tracer
 	}
 }
 

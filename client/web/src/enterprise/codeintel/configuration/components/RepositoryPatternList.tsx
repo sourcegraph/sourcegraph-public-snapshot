@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useMemo, useState } from 'react'
+import { type FunctionComponent, useEffect, useMemo, useState } from 'react'
 
 import { mdiDelete, mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
@@ -93,8 +93,16 @@ export const RepositoryPatternList: FunctionComponent<RepositoryPatternListProps
                 </div>
             ))}
 
+            {repositoryPatterns.length === 0 && (
+                <Button variant="secondary" aria-label="Add a repository pattern" onClick={addRepositoryPattern}>
+                    Add Repository Pattern
+                </Button>
+            )}
+
             <div className="d-flex flex-column">
-                <RepositoryList repositoryPatterns={repositoryPatterns} />
+                {repositoryPatterns && repositoryPatterns.length > 0 && (
+                    <RepositoryList repositoryPatterns={repositoryPatterns} />
+                )}
             </div>
         </div>
     )
@@ -105,6 +113,7 @@ interface RepositoryListProps {
 }
 
 const RepositoryList: FunctionComponent<RepositoryListProps> = ({ repositoryPatterns }) => {
+    const isCodyApp = window.context?.codyAppMode
     const [repositoryFetchLimit, setRepositoryFetchLimit] = useState(DEFAULT_FETCH_LIMIT)
     const {
         previewResult: preview,
@@ -179,9 +188,13 @@ const RepositoryList: FunctionComponent<RepositoryListProps> = ({ repositoryPatt
                 {preview.repositories.map(repo => (
                     <li key={repo.name} className="list-group-item">
                         {repo.externalRepository && <ExternalRepositoryIcon externalRepo={repo.externalRepository} />}
-                        <Link to={repo.url} target="_blank" rel="noopener noreferrer">
-                            {repo.name}
-                        </Link>
+                        {isCodyApp ? (
+                            <>{repo.name}</>
+                        ) : (
+                            <Link to={repo.url} target="_blank" rel="noopener noreferrer">
+                                {repo.name}
+                            </Link>
+                        )}
                     </li>
                 ))}
             </ul>

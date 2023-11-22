@@ -1,8 +1,8 @@
-import { createContext, FC, forwardRef, ReactNode, useContext } from 'react'
+import { createContext, type FC, forwardRef, type ReactNode, useContext } from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '../../../../../../types'
+import type { ForwardReferenceComponent } from '../../../../../../types'
 
 import styles from './LegendList.module.scss'
 

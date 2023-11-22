@@ -3,16 +3,16 @@ import React, { useCallback, useState } from 'react'
 import { mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, Icon, ProductStatusBadge, ProductStatusType } from '@sourcegraph/wildcard'
+import { Button, Icon, ProductStatusBadge, type ProductStatusType } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { BatchChangesProps } from '../../batches'
+import type { AuthenticatedUser } from '../../auth'
+import type { BatchChangesProps } from '../../batches'
 import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../components/Sidebar'
-import { OrgAreaOrganizationFields } from '../../graphql-operations'
+import type { OrgAreaOrganizationFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
-import { NavItemDescriptor } from '../../util/contributions'
+import type { NavItemDescriptor } from '../../util/contributions'
 
-import { OrgSettingsAreaRouteContext } from './OrgSettingsArea'
+import type { OrgSettingsAreaRouteContext } from './OrgSettingsArea'
 
 import styles from './OrgSettingsSidebar.module.scss'
 

@@ -1,8 +1,8 @@
-import { Unsubscribable } from 'rxjs'
+import type { Unsubscribable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { Settings } from '../../../settings/settings'
-import { ExtensionHostState } from '../extensionHostState'
+import type { Settings } from '../../../settings/settings'
+import type { ExtensionHostState } from '../extensionHostState'
 
 /**
  * Sets active loggers extension host state based on user settings.

@@ -38,11 +38,15 @@ func (j *updater) Routines(_ context.Context, observationCtx *observation.Contex
 	}
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(context.Background(), "search.index-status-reconciler", "reconciles indexed status between zoekt and postgres",
-			1*time.Hour, &handler{
+		goroutine.NewPeriodicGoroutine(
+			context.Background(),
+			&handler{
 				db:     db,
 				logger: observationCtx.Logger,
 			},
+			goroutine.WithName("search.index-status-reconciler"),
+			goroutine.WithDescription("reconciles indexed status between zoekt and postgres"),
+			goroutine.WithInterval(1*time.Hour),
 		),
 	}, nil
 }
@@ -58,12 +62,12 @@ var (
 )
 
 func (h *handler) Handle(ctx context.Context) error {
-	indexed, err := search.ListAllIndexed(ctx)
+	indexed, err := search.ListAllIndexed(ctx, search.Indexed())
 	if err != nil {
 		return err
 	}
 
-	return h.db.ZoektRepos().UpdateIndexStatuses(ctx, indexed.Minimal) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	return h.db.ZoektRepos().UpdateIndexStatuses(ctx, indexed.ReposMap)
 }
 
 func (h *handler) HandleError(err error) {

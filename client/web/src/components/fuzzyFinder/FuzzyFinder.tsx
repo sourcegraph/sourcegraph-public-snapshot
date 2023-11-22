@@ -1,14 +1,14 @@
-import React, { useEffect, Dispatch, SetStateAction, useCallback, useRef } from 'react'
+import React, { useEffect, type Dispatch, type SetStateAction, useCallback, useRef } from 'react'
 
-import * as H from 'history'
+import type * as H from 'history'
 
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { FuzzyModal } from './FuzzyModal'
 import { useFuzzyShortcuts } from './FuzzyShortcuts'
-import { fuzzyIsActive, FuzzyTabsProps, FuzzyState, useFuzzyState, FuzzyTabKey } from './FuzzyTabs'
+import { fuzzyIsActive, type FuzzyTabsProps, type FuzzyState, useFuzzyState, type FuzzyTabKey } from './FuzzyTabs'
 
 const DEFAULT_MAX_RESULTS = 50
 
@@ -65,8 +65,9 @@ export const FuzzyFinderContainer: React.FunctionComponent<FuzzyFinderContainerP
                 switch (tab) {
                     case 'files':
                     case 'symbols':
-                    case 'all':
+                    case 'all': {
                         toggleScope()
+                    }
                 }
             } else {
                 const newTab = tabsRef.current.focusNamedTab(tab)

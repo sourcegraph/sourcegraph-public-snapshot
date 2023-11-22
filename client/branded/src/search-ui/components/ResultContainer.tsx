@@ -2,12 +2,13 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
+import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
+import type { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 
 import { CodeHostIcon } from './CodeHostIcon'
+import { LastSyncedIcon } from './LastSyncedIcon'
 import { SearchResultStar } from './SearchResultStar'
 
 import styles from './ResultContainer.module.scss'
@@ -18,6 +19,7 @@ export interface ResultContainerProps {
     titleClassName?: string
     resultClassName?: string
     repoStars?: number
+    repoLastFetched?: string
     resultType?: SearchMatch['type']
     repoName?: string
     className?: string
@@ -55,6 +57,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         rankingDebug,
         as: Component = 'div',
         onResultClicked,
+        repoLastFetched,
     } = props
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -74,7 +77,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                     {/* Add a result type to be read out to screen readers only, so that screen reader users can
                     easily scan the search results list (for example, by navigating by landmarks). */}
                     <span className="sr-only">{resultType ? accessibleResultType[resultType] : 'search'} result,</span>
-                    {repoName && <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0 mr-1" />}
+                    {repoName && <CodeHostIcon repoName={repoName} className="flex-shrink-0 mr-1" />}
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}
                         data-testid="result-container-header"
@@ -87,9 +90,10 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </span>
                     )}
+                    {repoLastFetched && <LastSyncedIcon lastSyncedTime={repoLastFetched} className="ml-2" />}
                 </div>
                 {rankingDebug && <div>{rankingDebug}</div>}
-                <div className={classNames(styles.result, resultClassName)}>{children}</div>
+                {children && <div className={classNames(styles.result, resultClassName)}>{children}</div>}
             </article>
         </Component>
     )

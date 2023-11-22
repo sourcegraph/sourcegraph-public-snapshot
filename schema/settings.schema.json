@@ -13,17 +13,8 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "codeInsights": {
-          "description": "Enables code insights on directory pages.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
-        "codeInsightsLandingPage": {
-          "deprecated": true,
-          "description": "DEPRECATED: Enables code insights landing page layout.",
+        "newSearchNavigationUI": {
+          "description": "Enables new experimental search UI navigation",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -154,14 +145,6 @@
             "pointer": true
           }
         },
-        "enableCodeMirrorFileView": {
-          "description": "Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "enableLazyBlobSyntaxHighlighting": {
           "description": "Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.",
           "type": "boolean",
@@ -194,14 +177,6 @@
             "pointer": true
           }
         },
-        "applySearchQuerySuggestionOnEnter": {
-          "description": "This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "searchResultsAggregations": {
           "description": "Display aggregations for your search results on the search screen.",
           "type": "boolean",
@@ -227,7 +202,7 @@
           "description": "Specify which version of the search query input to use",
           "type": "string",
           "default": "v1",
-          "enum": ["v1", "experimental"],
+          "enum": ["v1", "v2"],
           "!go": {
             "pointer": true
           }
@@ -512,37 +487,10 @@
         "pointer": true
       }
     },
-    "alerts.codeHostIntegrationMessaging": {
-      "description": "What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to \"native-integration\" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.",
-      "type": "string",
-      "enum": ["browser-extension", "native-integration"],
-      "default": "browser-extension"
-    },
     "search.hideSuggestions": {
       "description": "Disable search suggestions below the search bar when constructing queries. Defaults to false.",
       "type": "boolean",
       "default": false,
-      "!go": {
-        "pointer": true
-      }
-    },
-    "insights.displayLocation.insightsPage": {
-      "type": "boolean",
-      "default": true,
-      "!go": {
-        "pointer": true
-      }
-    },
-    "insights.displayLocation.directory": {
-      "type": "boolean",
-      "default": true,
-      "!go": {
-        "pointer": true
-      }
-    },
-    "insights.displayLocation.homepage": {
-      "type": "boolean",
-      "default": true,
       "!go": {
         "pointer": true
       }
@@ -560,140 +508,17 @@
         "type": "string"
       },
       "default": {}
+    },
+    "orgs.allMembersBatchChangesAdmin": {
+      "description": "If enabled, all members of the org will be treated as admins (e.g. can edit, apply, delete) for all batch changes created in that org.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      }
     }
   },
   "definitions": {
-    "BackendInsight": {
-      "type": "object",
-      "required": ["title", "series"],
-      "properties": {
-        "title": {
-          "type": "string",
-          "description": "The short title of this insight"
-        },
-        "description": {
-          "type": "string",
-          "description": "The description of this insight"
-        },
-        "series": {
-          "type": "array",
-          "description": "Each query will be represented by one line on the chart.",
-          "items": {
-            "$ref": "#/definitions/BackendInsightSeries"
-          }
-        },
-        "filters": {
-          "$ref": "#/definitions/InsightFilters"
-        }
-      }
-    },
-    "BackendInsightSeries": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["name", "query"],
-      "properties": {
-        "name": {
-          "type": "string",
-          "description": "The name to use for the series in the graph."
-        },
-        "query": {
-          "type": "string",
-          "description": "Performs a search query and shows the number of results returned."
-        },
-        "stroke": {
-          "type": "string",
-          "description": "The color of the line for the series."
-        }
-      }
-    },
-    "InsightFilters": {
-      "type": "object",
-      "description": "Performs a filter",
-      "required": ["includeRepoRegexp", "excludeRepoRegexp"],
-      "properties": {
-        "includeRepoRegexp": {
-          "type": "string"
-        },
-        "excludeRepoRegexp": {
-          "type": "string"
-        },
-        "repositories": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "InsightDashboard": {
-      "type": "object",
-      "required": ["id", "title"],
-      "properties": {
-        "title": {
-          "description": "Title of the dashboard.",
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        },
-        "insightIds": {
-          "description": "Insights ids that will be included in the dashboard.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "Insight": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["title", "description", "series", "id"],
-      "properties": {
-        "title": {
-          "type": "string",
-          "description": "The short title of this insight"
-        },
-        "description": {
-          "type": "string",
-          "description": "The description of this insight"
-        },
-        "series": {
-          "type": "array",
-          "description": "Series of data to show for this insight",
-          "items": {
-            "$ref": "#/definitions/InsightSeries"
-          }
-        },
-        "id": {
-          "type": "string",
-          "description": "A globally  unique identifier for this insight."
-        }
-      }
-    },
-    "InsightSeries": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["label"],
-      "properties": {
-        "label": {
-          "type": "string",
-          "description": "The label to use for the series in the graph."
-        },
-        "repositoriesList": {
-          "type": "array",
-          "description": "Performs a search query and shows the number of results returned."
-        },
-        "search": {
-          "type": "string",
-          "description": "Performs a search query and shows the number of results returned."
-        },
-        "webhook": {
-          "type": "string",
-          "description": "(not yet supported) Fetch data from a webhook URL."
-        }
-      }
-    },
     "SearchScope": {
       "type": "object",
       "additionalProperties": false,

@@ -1,0 +1,46 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "image_repository")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+
+pkg_tar(
+    name = "sg_tarball",
+    srcs = ["//dev/sg"],
+    remap_paths = {
+        "/sg": "/usr/local/bin/sg",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = [
+        "/usr/local/bin/sg",
+    ],
+    tars = [":sg_tarball"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["sg:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("sg"),
+)

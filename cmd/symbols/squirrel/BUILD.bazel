@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "squirrel",
@@ -20,6 +21,7 @@ go_library(
     deps = [
         "//cmd/symbols/types",
         "//internal/api",
+        "//internal/jsonc",
         "//internal/search",
         "//internal/search/result",
         "//internal/types",
@@ -47,7 +49,16 @@ go_test(
         "local_code_intel_test.go",
         "service_test.go",
     ],
-    data = glob(["test_repos/**"]),
+    data = glob(["test_repos/**"]) + [
+        # We have to explicitly list those files as the test_repos/starlark folder
+        # is ignored in the .bazelignore file, to avoid picking up the BUILD.bazel
+        # which are test data and not related to the Sourcegraph codebase.
+        "test_repos/starlark/BUILD",
+        "test_repos/starlark/BUILD.bazel",
+        "test_repos/starlark/WORKSPACE",
+        "test_repos/starlark/bzl_library.bzl",
+        "test_repos/starlark/sample.bzl",
+    ],
     embed = [":squirrel"],
     deps = [
         "//internal/search",

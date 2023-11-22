@@ -1,0 +1,33 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "rewirer",
+    srcs = ["rewirer.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/batches/rewirer",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/batches/global",
+        "//internal/batches/types",
+        "//internal/database",
+        "//internal/types",
+    ],
+)
+
+go_test(
+    name = "rewirer_test",
+    timeout = "short",
+    srcs = ["rewirer_test.go"],
+    embed = [":rewirer"],
+    deps = [
+        "//internal/api",
+        "//internal/batches/global",
+        "//internal/batches/testing",
+        "//internal/batches/types",
+        "//internal/database",
+        "//internal/extsvc",
+        "//internal/types",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -1,4 +1,5 @@
 import { readFile } from 'mz/fs'
+import { describe, expect, it } from 'vitest'
 
 import { getFilePath, getFilePathFromURL } from './util'
 
@@ -40,8 +41,7 @@ describe('github/fileInfo', () => {
 
         for (const { url, rev, filePath } of toReturn) {
             it(`returns "${filePath}" for URL "${url}" and revision "${rev}"`, () => {
-                jsdom.reconfigure({ url })
-                expect(getFilePathFromURL(rev)).toBe(filePath)
+                expect(getFilePathFromURL(rev, new URL(url))).toBe(filePath)
             })
         }
 
@@ -60,9 +60,8 @@ describe('github/fileInfo', () => {
 
         for (const { url, rev, reason } of toThrow) {
             it(`throws an error for URL "${url}" and revision "${rev}", reason: "${reason}"`, () => {
-                jsdom.reconfigure({ url })
                 expect(() => {
-                    getFilePathFromURL(rev)
+                    getFilePathFromURL(rev, new URL(url))
                 }).toThrow()
             })
         }

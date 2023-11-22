@@ -1,0 +1,15 @@
+.page-wrapper {
+    background: radial-gradient(133.29% 34.62% at 100% -0%, rgba(161, 18, 255, 0.4) 0%, rgba(15, 17, 26, 0) 100%),
+        var(--black);
+    height: 100%;
+    width: 100%;
+
+    .page {
+        max-width: var(--viewport-xl);
+    }
+
+    .logo {
+        height: 3rem;
+        width: 3rem;
+    }
+}

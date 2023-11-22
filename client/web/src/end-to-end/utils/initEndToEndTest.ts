@@ -1,7 +1,7 @@
 import MockDate from 'mockdate'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 
 const { sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
 

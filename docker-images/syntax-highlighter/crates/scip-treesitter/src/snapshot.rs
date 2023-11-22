@@ -2,7 +2,9 @@ use std::{collections::VecDeque, fmt::Write};
 
 use anyhow::Result;
 use protobuf::Enum;
-use scip::types::{Document, Occurrence, SymbolRole, SyntaxKind};
+use scip::types::{
+    symbol_information, Document, Occurrence, SymbolInformation, SymbolRole, SyntaxKind,
+};
 
 use crate::types::PackedRange;
 
@@ -25,6 +27,7 @@ pub enum EmitSymbol {
     None,
     Definitions,
     References,
+    Enclosing,
     Unqualified,
     #[default]
     All,
@@ -70,7 +73,14 @@ pub fn dump_document_with_config(
         result += "\n";
 
         while let Some(occ) = occurrences.pop_front() {
-            let range = match PackedRange::from_vec(&occ.range) {
+            // EmitSymbol::Enclosing means only do the enclosing range,
+            // rather than the range of the symbol itself.
+            let range = match &opts.emit_symbol {
+                EmitSymbol::Enclosing => &occ.enclosing_range,
+                _ => &occ.range,
+            };
+
+            let range = match PackedRange::from_vec(range) {
                 Some(range) => range,
                 None => continue,
             };
@@ -102,7 +112,7 @@ pub fn dump_document_with_config(
 
                     let syntax =
                         format_syntax(&occ.syntax_kind.enum_value_or_default(), &opts.emit_syntax);
-                    let symbol = format_symbol(&occ, &opts.emit_symbol);
+                    let symbol = format_symbol(&occ, &opts.emit_symbol, &doc.symbols);
 
                     if syntax.is_some() || symbol.is_some() {
                         let syntax = syntax.unwrap_or_default();
@@ -134,18 +144,36 @@ fn format_syntax(kind: &SyntaxKind, emit_syntax: &EmitSyntax) -> Option<String> 
     }
 }
 
-fn format_symbol(occ: &Occurrence, emit_symbol: &EmitSymbol) -> Option<String> {
+fn format_symbol(
+    occ: &Occurrence,
+    emit_symbol: &EmitSymbol,
+    symbols: &[SymbolInformation],
+) -> Option<String> {
     if occ.symbol.is_empty() {
         return None;
     }
 
     let is_definition = occ.symbol_roles == SymbolRole::Definition.value();
 
+    let symbol = match scip::symbol::parse_symbol(&occ.symbol) {
+        Ok(symbol) => scip::symbol::format_symbol_with(
+            symbol,
+            scip::symbol::SymbolFormatOptions {
+                include_scheme: true,
+                include_package_manager: false,
+                include_package_name: false,
+                include_package_version: false,
+                include_descriptor: true,
+            },
+        ),
+        Err(_) => occ.symbol.clone(),
+    };
+
     match emit_symbol {
         EmitSymbol::None => None,
         EmitSymbol::Definitions if !is_definition => None,
         EmitSymbol::References if is_definition => None,
-        EmitSymbol::Unqualified => Some(format!(" {}", occ.symbol)),
+        EmitSymbol::Unqualified => Some(format!(" {}", symbol)),
         _ => {
             let kind = if is_definition {
                 "definition"
@@ -153,7 +181,15 @@ fn format_symbol(occ: &Occurrence, emit_symbol: &EmitSymbol) -> Option<String> {
                 "reference"
             };
 
-            Some(format!(" {} {}", kind, occ.symbol))
+            let mut kind_info = String::new();
+            if let Some(info) = symbols.iter().find(|sym| sym.symbol == occ.symbol) {
+                let symbol_kind = info.kind.enum_value().expect("to be a valid kind");
+                if symbol_kind != symbol_information::Kind::UnspecifiedKind {
+                    kind_info = format!("({:?})", symbol_kind);
+                }
+            }
+
+            Some(format!(" {kind}{kind_info} {symbol}"))
         }
     }
 }

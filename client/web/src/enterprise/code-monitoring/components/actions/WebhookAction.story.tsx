@@ -1,11 +1,11 @@
-import { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../components/WebStory'
 import { mockAuthenticatedUser } from '../../testing/util'
-import { ActionProps } from '../FormActionArea'
+import type { ActionProps } from '../FormActionArea'
 
 import { WebhookAction } from './WebhookAction'
 
@@ -34,7 +34,7 @@ const action: ActionProps['action'] = {
     includeResults: false,
 }
 
-export const WebhookActionStory: Story = () => (
+export const WebhookActionStory: StoryFn = () => (
     <WebStory>
         {() => (
             <>

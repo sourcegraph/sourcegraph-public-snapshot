@@ -1,53 +1,81 @@
 /**
- * An experimental implementation of the Blob view using CodeMirror
+ * An implementation of the Blob view using CodeMirror
  */
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 
 import { openSearchPanel } from '@codemirror/search'
-import { Compartment, EditorState, Extension } from '@codemirror/state'
+import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { isEqual } from 'lodash'
-import { createPath, NavigateFunction, useLocation, useNavigate, Location } from 'react-router-dom'
+import { createRoot } from 'react-dom/client'
+import { createPath, type NavigateFunction, useLocation, useNavigate, type Location } from 'react-router-dom'
 
+import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import {
     addLineRangeQueryParameter,
     formatSearchParameters,
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
-import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { getOrCreateCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { PlatformContext, PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import {
+    type AbsoluteRepoFile,
+    type ModeSpec,
+    parseQueryAndHash,
+    toPrettyBlobURL,
+    type BlobViewState,
+} from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
+import { isCodyEnabled } from '../../cody/isCodyEnabled'
+import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { ExternalLinkFields, Scalars } from '../../graphql-operations'
-import { BlameHunkData } from '../blame/useBlameHunks'
-import { HoverThresholdProps } from '../RepoContainer'
+import type { ExternalLinkFields, Scalars } from '../../graphql-operations'
+import type { BlameHunkData } from '../blame/useBlameHunks'
+import type { HoverThresholdProps } from '../RepoContainer'
 
+import { BlameDecoration } from './BlameDecoration'
 import { blobPropsFacet } from './codemirror'
-import { createBlameDecorationsExtension } from './codemirror/blame-decorations'
+import { blameData, showBlame } from './codemirror/blame-decorations'
 import { codeFoldingExtension } from './codemirror/code-folding'
+import { createCodeIntelExtension } from './codemirror/codeintel/extension'
+import { pinnedLocation } from './codemirror/codeintel/pin'
+import { syncSelection } from './codemirror/codeintel/token-selection'
+import { hideEmptyLastLine } from './codemirror/eof'
 import { syntaxHighlight } from './codemirror/highlight'
-import { selectableLineNumbers, SelectedLineRange, selectLines } from './codemirror/linenumbers'
-import { buildLinks } from './codemirror/links'
+import { selectableLineNumbers, type SelectedLineRange, selectLines } from './codemirror/linenumbers'
+import { linkify } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
-import { occurrenceAtPosition, positionAtCmPosition } from './codemirror/occurrence-utils'
+import { scipSnapshot } from './codemirror/scip-snapshot'
 import { search } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
-import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/code-intel-tooltips'
-import { tokenSelectionExtension } from './codemirror/token-selection/extension'
-import { languageSupport } from './codemirror/token-selection/languageSupport'
-import { selectionFromLocation } from './codemirror/token-selection/selections'
-import { isValidLineRange } from './codemirror/utils'
+import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
+import { HovercardView } from './codemirror/tooltips/HovercardView'
+import { showTemporaryTooltip, temporaryTooltip } from './codemirror/tooltips/TemporaryTooltip'
+import { locationToURL, positionToOffset } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
+
+/**
+ * The minimum number of milliseconds that must elapse before we handle a "Go to
+ * definition request".  The motivation to impose a minimum latency on this
+ * action is to give the user feedback that something happened if they rapidly
+ * trigger "Go to definition" from the same location and the destination token
+ * is already visible in the viewport.  Without this minimum latency, the user
+ * gets no feedback that the destination is visible.  With this latency, the
+ * source token (where the user clicks) gets briefly focused before the focus
+ * moves back to the destination token. This small wiggle in the focus state
+ * makes it easier to find the destination token.
+ */
+const MINIMUM_GO_TO_DEF_LATENCY_MILLIS = 20
 
 // Logical grouping of props that are only used by the CodeMirror blob view
 // implementation.
@@ -95,9 +123,6 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** The raw content of the blob. */
     content: string
 
-    /** The trusted syntax-highlighted code as HTML */
-    html: string
-
     /** LSIF syntax-highlighting data */
     lsif?: string
 
@@ -106,9 +131,17 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** External URLs for the file */
     externalURLs?: ExternalLinkFields[]
+
+    snapshotData?: { offset: number; data: string; additional: string[] | null }[] | null
 }
 
 const staticExtensions: Extension = [
+    // Log uncaught errors that happen in callbacks that we pass to
+    // CodeMirror. Without this exception sink, exceptions get silently
+    // ignored making it difficult to debug issues caused by uncaught
+    // exceptions.
+    // eslint-disable-next-line no-console
+    EditorView.exceptionSink.of(exception => console.log(exception)),
     EditorState.readOnly.of(true),
     EditorView.editable.of(false),
     EditorView.contentAttributes.of({
@@ -144,27 +177,18 @@ const staticExtensions: Extension = [
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
-        },
-        '.selected-line:focus': {
-            boxShadow: 'none',
+
+            '&:focus': {
+                boxShadow: 'none',
+            },
         },
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
     }),
+    hideEmptyLastLine,
+    linkify,
 ]
-
-// Compartments are used to reconfigure some parts of the editor without
-// affecting others.
-
-// Compartment to update various smaller settings
-const settingsCompartment = new Compartment()
-// Compartment to update blame decorations
-const blameDecorationsCompartment = new Compartment()
-// Compartment for propagating component props
-const blobPropsCompartment = new Compartment()
-// Compartment for line wrapping.
-const wrapCodeCompartment = new Compartment()
 
 export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     const {
@@ -208,32 +232,28 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     }, [props.activeURL, location.search, location.hash])
     const hasPin = useMemo(() => urlIsPinned(location.search), [location.search])
 
-    const blobProps = useMemo(
-        () =>
-            blobPropsFacet.of({
-                ...props,
-                navigate,
-                location,
-            }),
-        [props, navigate, location]
-    )
-
-    const isLightTheme = useIsLightTheme()
-    const themeSettings = useMemo(() => EditorView.darkTheme.of(isLightTheme === false), [isLightTheme])
-    const wrapCodeSettings = useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
-
-    const blameDecorations = useMemo(
-        () => createBlameDecorationsExtension(!!isBlameVisible, blameHunks, isLightTheme),
-        [isBlameVisible, blameHunks, isLightTheme]
-    )
-
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
     // reconfigure the editor extensions
-    const navigateRef = useRef(navigate)
-    navigateRef.current = navigate
-    const locationRef = useRef(location)
-    locationRef.current = location
+    const locationRef = useMutableValue(location)
+    const positionRef = useMutableValue(position)
+
+    const navigateOnClick = useMemo(
+        () =>
+            navigateToLineOnAnyClick
+                ? (line: number) =>
+                      navigate(
+                          toPrettyBlobURL({
+                              repoName: blobInfo.repoName,
+                              filePath: blobInfo.filePath,
+                              revision: blobInfo.revision,
+                              commitID: blobInfo.commitID,
+                              position: { line, character: 0 },
+                          })
+                      )
+                : undefined,
+        [navigateToLineOnAnyClick, navigate, blobInfo.repoName, blobInfo.filePath, blobInfo.revision, blobInfo.commitID]
+    )
 
     const customHistoryAction = props.nav
     const onSelection = useCallback(
@@ -263,31 +283,77 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                     })
                 )
             } else {
-                updateBrowserHistoryIfChanged(navigateRef.current, locationRef.current, newSearchParameters)
+                updateBrowserHistoryIfChanged(navigate, locationRef.current, newSearchParameters)
             }
         },
-        [customHistoryAction]
+        [customHistoryAction, locationRef, navigate]
+    )
+
+    // Added fallback to take care of ReferencesPanel/Simple storybook
+    const { setEditorScope } = useCodySidebar()
+
+    const editorRef = useRef<EditorView | null>(null)
+
+    const blameDecorations = useBlameDecoration(editorRef, { visible: !!isBlameVisible, blameHunks })
+    const blobProps = useCompartment(
+        editorRef,
+        useMemo(
+            () =>
+                blobPropsFacet.of({
+                    ...props,
+                    navigate,
+                    location,
+                }),
+            [props, navigate, location]
+        )
+    )
+    const wrapCodeSettings = useCompartment(
+        editorRef,
+        useMemo<Extension>(() => (wrapCode ? EditorView.lineWrapping : []), [wrapCode])
+    )
+    const codeIntelExtension = useCodeIntelExtension(
+        props.platformContext,
+        { repoName: blobInfo.repoName, filePath: blobInfo.filePath, commitID: blobInfo.commitID },
+        blobInfo.mode
+    )
+    const pinnedTooltip = useCompartment(
+        editorRef,
+        useMemo(() => pinnedLocation.of(hasPin ? position : null), [hasPin, position])
     )
     const extensions = useMemo(
         () => [
-            // Log uncaught errors that happen in callbacks that we pass to
-            // CodeMirror. Without this exception sink, exceptions get silently
-            // ignored making it difficult to debug issues caused by uncaught
-            // exceptions.
-            // eslint-disable-next-line no-console
-            EditorView.exceptionSink.of(exception => console.log(exception)),
             staticExtensions,
             selectableLineNumbers({
                 onSelection,
                 initialSelection: position.line !== undefined ? position : null,
-                navigateToLineOnAnyClick: navigateToLineOnAnyClick ?? false,
+                onLineClick: navigateOnClick,
             }),
+            scipSnapshot(blobInfo.content, blobInfo.snapshotData),
             codeFoldingExtension(),
-            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
+            isCodyEnabled()
+                ? codyWidgetExtension(
+                      editorRef.current
+                          ? new CodeMirrorEditor({
+                                view: editorRef.current,
+                                repo: props.blobInfo.repoName,
+                                revision: props.blobInfo.revision,
+                                filename: props.blobInfo.filePath,
+                                content: props.blobInfo.content,
+                            })
+                          : undefined
+                  )
+                : [],
+            search({
+                // useFileSearch is not a dependency because the search
+                // extension manages its own state. This is just the initial
+                // value
+                overrideBrowserFindInPageShortcut: useFileSearch,
+                onOverrideBrowserFindInPageToggle: setUseFileSearch,
+                navigate,
+            }),
+            pinnedTooltip,
+            navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension(navigate) : codeIntelExtension,
             syntaxHighlight.of(blobInfo),
-            languageSupport.of(blobInfo),
-            buildLinks.of(blobInfo),
-            pin.init(() => (hasPin ? position : null)),
             extensionsController !== null && !navigateToLineOnAnyClick
                 ? sourcegraphExtensions({
                       blobInfo,
@@ -295,27 +361,36 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                       extensionsController,
                   })
                 : [],
-            blobPropsCompartment.of(blobProps),
-            blameDecorationsCompartment.of(blameDecorations),
-            settingsCompartment.of(themeSettings),
-            wrapCodeCompartment.of(wrapCodeSettings),
+            blobProps,
+            blameDecorations,
+            wrapCodeSettings,
             search({
                 // useFileSearch is not a dependency because the search
                 // extension manages its own state. This is just the initial
                 // value
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
+                navigate,
             }),
         ],
-        // A couple of values are not dependencies (blameDecorations, blobProps,
-        // hasPin, position and settings) because those are updated in effects
+        // A couple of values are not dependencies (hasPin and position) because those are updated in effects
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController]
+        [
+            onSelection,
+            navigate,
+            blobInfo,
+            extensionsController,
+            isCodyEnabled,
+            codeIntelExtension,
+            editorRef.current,
+            blameDecorations,
+            wrapCodeSettings,
+            blobProps,
+            pinnedTooltip,
+        ]
     )
-
-    const editorRef = useRef<EditorView | null>(null)
 
     // Reconfigure editor when blobInfo or core extensions changed
     useEffect(() => {
@@ -338,56 +413,16 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             // Sync editor selection/focus with the URL so that triggering
             // `history.goBack/goForward()` works similar to the "Go back"
             // command in VS Code.
-            const { selection } = selectionFromLocation(editor, locationRef.current)
-            if (selection) {
-                const position = positionAtCmPosition(editor, selection.from)
-                const occurrence = occurrenceAtPosition(editor.state, position)
-                if (occurrence) {
-                    selectOccurrence(editor, occurrence)
-                    // Automatically focus the content DOM to enable keyboard
-                    // navigation. Without this automatic focus, users need to click
-                    // on the blob view with the mouse.
-                    // NOTE: this focus statment does not seem to have an effect
-                    // when using macOS VoiceOver.
-                    editor.contentDOM.focus({ preventScroll: true })
-                }
-            }
-        }
-    }, [blobInfo, extensions, navigateToLineOnAnyClick, locationRef])
+            syncSelection(editor, positionRef.current)
 
-    // Propagate props changes to extensions
-    useEffect(() => {
-        const editor = editorRef.current
-        if (editor) {
-            editor.dispatch({ effects: blobPropsCompartment.reconfigure(blobProps) })
+            // Automatically focus the content DOM to enable keyboard
+            // navigation. Without this automatic focus, users need to click
+            // on the blob view with the mouse.
+            // NOTE: this focus statment does not seem to have an effect
+            // when using macOS VoiceOver.
+            editor.contentDOM.focus({ preventScroll: true })
         }
-    }, [blobProps])
-
-    // Update blame decorations
-    useLayoutEffect(() => {
-        const editor = editorRef.current
-        if (editor) {
-            const effects = [blameDecorationsCompartment.reconfigure(blameDecorations), ...lockFirstVisibleLine(editor)]
-            editor.dispatch({ effects })
-        }
-    }, [blameDecorations])
-
-    // Update theme
-    useEffect(() => {
-        const editor = editorRef.current
-        if (editor) {
-            editor.dispatch({ effects: settingsCompartment.reconfigure(themeSettings) })
-        }
-    }, [themeSettings])
-
-    // Update line wrapping
-    useEffect(() => {
-        const editor = editorRef.current
-        if (editor) {
-            const effects = [wrapCodeCompartment.reconfigure(wrapCodeSettings), ...lockFirstVisibleLine(editor)]
-            editor.dispatch({ effects })
-        }
-    }, [wrapCodeSettings])
+    }, [blobInfo, extensions, navigateToLineOnAnyClick, positionRef])
 
     // Update selected lines when URL changes
     useEffect(() => {
@@ -396,15 +431,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             selectLines(editor, position.line ? position : null)
         }
     }, [position])
-
-    // Update pinned hovercard range
-    useEffect(() => {
-        const editor = editorRef.current
-        if (editor && (!hasPin || (position.line && isValidLineRange(position, editor.state.doc)))) {
-            // Only update range if position is valid inside the document.
-            updatePin(editor, hasPin ? position : null)
-        }
-    }, [position, hasPin])
 
     useCodeMirror(
         editorRef,
@@ -417,6 +443,16 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         useMemo(() => extensions, [])
     )
 
+    // Sync editor selection/focus with the URL so that triggering
+    // `history.goBack/goForward()` works similar to the "Go back"
+    // command in VS Code.
+    useEffect(() => {
+        const view = editorRef.current
+        if (view) {
+            syncSelection(view, positionRef.current)
+        }
+    }, [position, positionRef])
+
     // Sync editor store with global Zustand store API
     useEffect(() => setBlobEditView(editorRef.current ?? null), [])
 
@@ -425,6 +461,32 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             openSearchPanel(editorRef.current)
         }
     }, [])
+
+    // Sync the currently viewed document with the editor zustand store. This is used for features
+    // like Cody to know what file and range a user is looking at.
+    useEffect(() => {
+        const view = editorRef.current
+        setEditorScope(
+            new CodeMirrorEditor(
+                view
+                    ? {
+                          view,
+                          repo: props.blobInfo.repoName,
+                          revision: props.blobInfo.revision,
+                          filename: props.blobInfo.filePath,
+                          content: props.blobInfo.content,
+                      }
+                    : undefined
+            )
+        )
+        return () => setEditorScope(new NoopEditor())
+    }, [
+        props.blobInfo.content,
+        props.blobInfo.filePath,
+        props.blobInfo.repoName,
+        props.blobInfo.revision,
+        setEditorScope,
+    ])
 
     return (
         <>
@@ -454,6 +516,217 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 }
 
+function useCodeIntelExtension(
+    context: PlatformContext,
+    {
+        repoName,
+        filePath,
+        commitID,
+        revision,
+    }: { repoName: string; filePath: string; commitID: string; revision?: string },
+    mode: string
+): Extension {
+    const navigate = useNavigate()
+    const location = useLocation()
+    const locationRef = useRef(location)
+    const [api, setApi] = useState<CodeIntelAPI | null>(null)
+
+    useEffect(() => {
+        locationRef.current = location
+    }, [location])
+
+    useEffect(() => {
+        let ignore = false
+        void getOrCreateCodeIntelAPI(context).then(api => {
+            if (!ignore) {
+                setApi(api)
+            }
+        })
+        return () => {
+            ignore = true
+        }
+    }, [context])
+
+    return useMemo(
+        () => [
+            temporaryTooltip,
+            api
+                ? createCodeIntelExtension({
+                      api: {
+                          api,
+                          documentInfo: { repoName, filePath, commitID, revision },
+                          mode,
+                          createTooltipView: ({ view, token, hovercardData }) =>
+                              new HovercardView(view, token, hovercardData),
+                          openImplementations(_view, documentInfo, occurrence) {
+                              navigate(
+                                  toPrettyBlobURL({
+                                      ...documentInfo,
+                                      range: occurrence.range.withIncrementedValues(),
+                                      viewState: `implementations_${mode}` as BlobViewState,
+                                  })
+                              )
+                          },
+                          openReferences(_view, documentInfo, occurrence) {
+                              navigate(
+                                  toPrettyBlobURL({
+                                      ...documentInfo,
+                                      range: occurrence.range.withIncrementedValues(),
+                                      viewState: 'references',
+                                  })
+                              )
+                          },
+                          goToDefinition(view, definition, options) {
+                              const documentInfo = { repoName, filePath, commitID, revision }
+                              const goto = options?.newWindow
+                                  ? (url: string, _options?: unknown) => window.open(url, '_blank')
+                                  : navigate
+
+                              switch (definition.type) {
+                                  case 'none': {
+                                      const offset = positionToOffset(view.state.doc, definition.occurrence.range.start)
+                                      if (offset) {
+                                          showTemporaryTooltip(view, 'No definition found', offset, 2000)
+                                      }
+                                      break
+                                  }
+                                  case 'at-definition': {
+                                      const offset = positionToOffset(view.state.doc, definition.occurrence.range.start)
+                                      if (offset) {
+                                          showTemporaryTooltip(view, 'You are at the definition', offset, 2000)
+                                      }
+
+                                      // Open reference panel
+                                      goto(locationToURL(documentInfo, definition.from, 'references'), {
+                                          replace: true,
+                                      })
+                                      break
+                                  }
+                                  case 'single': {
+                                      interface DefinitionState {
+                                          // The destination URL if we trigger `history.goBack()`.  We use this state
+                                          // to avoid inserting redundant 'A->B->A->B' entries when the user triggers
+                                          // "go to definition" twice in a row from the same location.
+                                          previousURL?: string
+                                      }
+
+                                      const locationState = locationRef.current.state as DefinitionState
+                                      const hrefFrom = locationToURL(documentInfo, definition.from)
+                                      // Don't push URLs into the history if the last goto-def
+                                      // action was from the same URL same as this action. This
+                                      // happens when the user repeatedly triggers goto-def, which
+                                      // is easy to do when the definition URL is close to
+                                      // where the action got triggered.
+                                      const shouldPushHistory = locationState?.previousURL !== hrefFrom
+                                      // Add browser history entry for reference location. This allows users
+                                      // to easily jump back to the location they triggered 'go to definition'
+                                      // from. Additionally this
+                                      navigate(hrefFrom, {
+                                          replace: !shouldPushHistory || createPath(locationRef.current) === hrefFrom,
+                                      })
+
+                                      setTimeout(() => {
+                                          goto(locationToURL(documentInfo, definition.destination), {
+                                              replace: !shouldPushHistory,
+                                              state: { previousURL: hrefFrom },
+                                          })
+                                      }, MINIMUM_GO_TO_DEF_LATENCY_MILLIS)
+                                      break
+                                  }
+                                  case 'multiple': {
+                                      // Linking to the reference panel is a temporary workaround until we
+                                      // implement a component to resolve ambiguous results inside the blob
+                                      // view similar to how VS Code "Peek definition" works like.
+                                      goto(locationToURL(documentInfo, definition.destination, 'def'))
+                                      break
+                                  }
+                              }
+                          },
+                      },
+                      pin: {
+                          onPin(position) {
+                              const search = new URLSearchParams(locationRef.current.search)
+                              search.set('popover', 'pinned')
+
+                              updateBrowserHistoryIfChanged(
+                                  navigate,
+                                  locationRef.current,
+                                  // It may seem strange to set start and end to the same value, but that what's the old blob view is doing as well
+                                  addLineRangeQueryParameter(
+                                      search,
+                                      toPositionOrRangeQueryParameter({
+                                          position,
+                                          range: { start: position, end: position },
+                                      })
+                                  )
+                              )
+                              void navigator.clipboard.writeText(window.location.href)
+                          },
+                          onUnpin() {
+                              const parameters = new URLSearchParams(locationRef.current.search)
+                              parameters.delete('popover')
+
+                              updateBrowserHistoryIfChanged(navigate, locationRef.current, parameters)
+                          },
+                      },
+                      navigate,
+                  })
+                : [],
+        ],
+        [repoName, filePath, commitID, revision, mode, api, navigate, locationRef]
+    )
+}
+
+/**
+ * Create and update blame decorations.
+ */
+function useBlameDecoration(
+    editorRef: RefObject<EditorView>,
+    { visible, blameHunks }: { visible: boolean; blameHunks?: BlameHunkData }
+): Extension {
+    const navigate = useNavigate()
+
+    // Blame support is split into two compartments because we only want to trigger
+    // `lockFirstVisibleLine` when blame is enabled, not when data is received
+    // (this can cause the editor to scroll to a different line)
+    const enabled = useCompartment(
+        editorRef,
+        useMemo(
+            () =>
+                visible
+                    ? showBlame({
+                          createBlameDecoration(container, { line, hunk, onSelect, onDeselect, externalURLs }) {
+                              const root = createRoot(container)
+                              root.render(
+                                  <BlameDecoration
+                                      navigate={navigate}
+                                      line={line ?? 0}
+                                      blameHunk={hunk}
+                                      onSelect={onSelect}
+                                      onDeselect={onDeselect}
+                                      externalURLs={externalURLs}
+                                  />
+                              )
+                              return {
+                                  destroy() {
+                                      root.unmount()
+                                  },
+                              }
+                          },
+                      })
+                    : [],
+            [visible, navigate]
+        ),
+        lockFirstVisibleLine
+    )
+
+    const data = useCompartment(
+        editorRef,
+        useMemo(() => blameData(blameHunks), [blameHunks])
+    )
+    return useMemo(() => [enabled, data], [enabled, data])
+}
+
 /**
  * Returns true when the URL indicates that the hovercard at the URL position
  * should be shown on load (the hovercard is "pinned").
@@ -474,6 +747,16 @@ function useDistinctBlob(blobInfo: BlobInfo): BlobInfo {
         }
         return blobRef.current
     }, [blobInfo])
+}
+
+function useMutableValue<T>(value: T): Readonly<MutableRefObject<T>> {
+    const valueRef = useRef(value)
+
+    useEffect(() => {
+        valueRef.current = value
+    }, [value])
+
+    return valueRef
 }
 
 /**

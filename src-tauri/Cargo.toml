@@ -1,0 +1,47 @@
+[package]
+name = "app"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+license = ""
+repository = ""
+default-run = "app"
+edition = "2021"
+rust-version = "1.59"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+panic = "abort" # Strip expensive panic clean-up logic
+codegen-units = 1 # Compile crates one after another so the compiler can optimize better
+lto = true # Enables link to optimizations
+opt-level = "s" # Optimize for binary size
+strip = true # Remove debug symbols
+
+[build-dependencies]
+tauri-build = { version = "1.4.0", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+log = "0.4.17"
+serde = { version = "1.0", features = ["derive"] }
+tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tauri-plugin-deep-link = { git = "https://github.com/FabianLars/tauri-plugin-deep-link", branch = "main" }
+tauri-plugin-positioner = {version="1.0.4", features = ["system-tray"] }
+tauri-utils = "1.4.0"
+
+[dependencies.tauri]
+version = "1.4.1"
+features = [ "fs-all","devtools", "dialog-confirm", "dialog-open", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "updater", "window-set-resizable", "window-set-size", "window-start-dragging"]
+
+[dependencies.fix-path-env]
+git = "https://github.com/tauri-apps/fix-path-env-rs"
+branch = "dev"
+
+[features]
+# by default Tauri runs in production mode
+# when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
+default = [ "custom-protocol" ]
+# this feature is used for production builds where `devPath` points to the filesystem
+# DO NOT remove this
+custom-protocol = [ "tauri/custom-protocol" ]

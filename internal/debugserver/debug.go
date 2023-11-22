@@ -13,7 +13,6 @@ import (
 	"github.com/felixge/fgprof"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"golang.org/x/net/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -88,11 +87,6 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 		return goroutine.NoopRoutine()
 	}
 
-	// we're protected by adminOnly on the front of this
-	trace.AuthRequest = func(req *http.Request) (any, sensitive bool) {
-		return true, true
-	}
-
 	handler := httpserver.NewHandler(func(router *mux.Router) {
 		index := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, _ = w.Write([]byte(`
@@ -126,8 +120,6 @@ func NewServerRoutine(ready <-chan struct{}, extra ...Endpoint) goroutine.Backgr
 		router.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
 		router.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
 		router.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
-		router.Handle("/debug/requests", http.HandlerFunc(trace.Traces))
-		router.Handle("/debug/events", http.HandlerFunc(trace.Events))
 		router.Handle("/metrics", promhttp.Handler())
 
 		// This path acts as a wildcard and should appear after more specific entries.

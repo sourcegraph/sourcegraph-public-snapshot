@@ -27,6 +27,9 @@ var (
 //
 // Note: It aggregates Progress as well, and expects that the
 // MaxPendingPriority it receives are monotonically decreasing.
+//
+// Note: it ignores the top-level fields RepoURLs and LineFragments since we
+// do not read those values in Sourcegraph.
 type collectSender struct {
 	aggregate *zoekt.SearchResult
 	overflow  []*zoekt.SearchResult
@@ -42,23 +45,13 @@ func newCollectSender(opts *zoekt.SearchOptions) *collectSender {
 
 func (c *collectSender) Send(r *zoekt.SearchResult) {
 	if c.aggregate == nil {
-		c.aggregate = &zoekt.SearchResult{
-			RepoURLs:      map[string]string{},
-			LineFragments: map[string]string{},
-		}
+		c.aggregate = &zoekt.SearchResult{}
 	}
 
 	c.aggregate.Stats.Add(r.Stats)
 
 	if len(r.Files) > 0 {
 		c.aggregate.Files = append(c.aggregate.Files, r.Files...)
-
-		for k, v := range r.RepoURLs {
-			c.aggregate.RepoURLs[k] = v
-		}
-		for k, v := range r.LineFragments {
-			c.aggregate.LineFragments[k] = v
-		}
 	}
 
 	c.sizeBytes += r.SizeBytes()
@@ -98,6 +91,23 @@ func (c *collectSender) Done() (_ *zoekt.SearchResult, _ []*zoekt.SearchResult, 
 	return agg, overflow, true
 }
 
+type FlushSender interface {
+	Flush()
+	Send(endpoint string, event *zoekt.SearchResult)
+	SendDone(endpoint string)
+}
+
+type nopFlushCollector struct {
+	sender zoekt.Sender
+}
+
+func (n *nopFlushCollector) Send(_ string, event *zoekt.SearchResult) {
+	n.sender.Send(event)
+}
+
+func (n *nopFlushCollector) SendDone(_ string) {}
+func (n *nopFlushCollector) Flush()            {}
+
 type flushCollectSender struct {
 	mu            sync.Mutex
 	collectSender *collectSender
@@ -114,7 +124,14 @@ type flushCollectSender struct {
 //
 // If it has not heard back from every endpoint by a certain timeout, then it will
 // flush as a 'fallback plan' to avoid delaying the search too much.
-func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) *flushCollectSender {
+func newFlushCollectSender(opts *zoekt.SearchOptions, endpoints []string, maxSizeBytes int, sender zoekt.Sender) FlushSender {
+	// Nil options are permitted by Zoekt's "Streamer" interface. There are a few
+	// callers within Sourcegraph that call search with nil options (tests,
+	// insights), so we have to handle this case.
+	if opts == nil {
+		return &nopFlushCollector{sender}
+	}
+
 	firstResults := map[string]bool{}
 	for _, endpoint := range endpoints {
 		firstResults[endpoint] = true

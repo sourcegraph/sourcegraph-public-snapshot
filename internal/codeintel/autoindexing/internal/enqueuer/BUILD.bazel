@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "enqueuer",
+    srcs = [
+        "enqueuer.go",
+        "observability.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/enqueuer",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/codeintel/autoindexing/internal/inference",
+        "//internal/codeintel/autoindexing/internal/jobselector",
+        "//internal/codeintel/autoindexing/internal/store",
+        "//internal/codeintel/dependencies",
+        "//internal/codeintel/uploads/shared",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/gitserver",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

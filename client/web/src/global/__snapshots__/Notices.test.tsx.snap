@@ -1,8 +1,8 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Notices no notices 1`] = `<DocumentFragment />`;
+exports[`Notices > no notices 1`] = `<DocumentFragment />`;
 
-exports[`Notices shows notices for location 1`] = `
+exports[`Notices > shows notices for location 1`] = `
 <DocumentFragment>
   <div
     class="notices"
@@ -19,8 +19,6 @@ exports[`Notices shows notices for location 1`] = `
         <p>
           a
         </p>
-        
-
       </div>
     </div>
     <div
@@ -37,8 +35,6 @@ exports[`Notices shows notices for location 1`] = `
           <p>
             a
           </p>
-          
-
         </div>
       </div>
       <button

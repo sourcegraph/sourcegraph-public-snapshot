@@ -1,19 +1,28 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Navigate } from 'react-router-dom'
 
-import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { Text } from '@sourcegraph/wildcard'
 
-import { AuthenticatedUser } from '../../auth'
-import { UserSettingsAreaUserFields } from '../../graphql-operations'
+import type { AuthenticatedUser } from '../../auth'
+import { canWriteBatchChanges } from '../../batches/utils'
+import { SHOW_BUSINESS_FEATURES } from '../../enterprise/dotcom/productSubscriptions/features'
+import type { ExecutorsUserAreaProps } from '../../enterprise/executors/ExecutorsUserArea'
+import type { UserEventLogsPageProps } from '../../enterprise/user/settings/UserEventLogsPage'
+import type { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { SiteAdminAlert } from '../../site-admin/SiteAdminAlert'
 
-import { UserSettingsAreaRoute } from './UserSettingsArea'
+import type { UserSettingsAreaRoute } from './UserSettingsArea'
+
+const ExecutorsUserArea = lazyComponent<ExecutorsUserAreaProps, 'ExecutorsUserArea'>(
+    () => import('../../enterprise/executors/ExecutorsUserArea'),
+    'ExecutorsUserArea'
+)
 
 const SettingsArea = lazyComponent(() => import('../../settings/SettingsArea'), 'SettingsArea')
 
@@ -34,6 +43,11 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: 'password',
         render: () => <Navigate to="../security" replace={true} />,
+    },
+    {
+        path: 'quota',
+        render: lazyComponent(() => import('./quota/UserQuotaProfilePage'), 'UserQuotaProfilePage'),
+        condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
     },
     {
         path: 'emails',
@@ -57,6 +71,51 @@ export const userSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     {
         path: 'about-organizations',
         render: lazyComponent(() => import('./aboutOrganization/AboutOrganizationPage'), 'AboutOrganizationPage'),
+    },
+    {
+        path: 'permissions',
+        render: lazyComponent(
+            () => import('../../enterprise/user/settings/auth/UserSettingsPermissionsPage'),
+            'UserSettingsPermissionsPage'
+        ),
+    },
+    {
+        path: 'event-log',
+        render: lazyComponent<UserEventLogsPageProps, 'UserEventLogsPage'>(
+            () => import('../../enterprise/user/settings/UserEventLogsPage'),
+            'UserEventLogsPage'
+        ),
+    },
+    {
+        path: 'executors/*',
+        render: props => <ExecutorsUserArea {...props} namespaceID={props.user.id} />,
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+    },
+    {
+        path: 'batch-changes',
+        render: lazyComponent(
+            () => import('../../enterprise/batches/settings/BatchChangesSettingsArea'),
+            'BatchChangesSettingsArea'
+        ),
+        condition: ({ batchChangesEnabled, user: { viewerCanAdminister }, authenticatedUser }) =>
+            batchChangesEnabled && viewerCanAdminister && canWriteBatchChanges(authenticatedUser),
+    },
+    {
+        path: 'subscriptions/:subscriptionUUID',
+        render: lazyComponent(
+            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionPage'),
+            'UserSubscriptionsProductSubscriptionPage'
+        ),
+        condition: () => SHOW_BUSINESS_FEATURES,
+    },
+    {
+        path: 'subscriptions',
+        render: lazyComponent(
+            () => import('../../enterprise/user/productSubscriptions/UserSubscriptionsProductSubscriptionsPage'),
+            'UserSubscriptionsProductSubscriptionsPage'
+        ),
+        condition: () => SHOW_BUSINESS_FEATURES,
     },
 ]
 

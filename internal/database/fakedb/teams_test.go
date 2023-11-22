@@ -6,10 +6,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAncestors(t *testing.T) {
@@ -20,12 +20,8 @@ func TestAncestors(t *testing.T) {
 	sales := fs.AddTeam(&types.Team{Name: "sales"})
 	salesLeads := fs.AddTeam(&types.Team{Name: "sales-leads", ParentTeamID: sales})
 	ts, cursor, err := fs.TeamStore.ListTeams(context.Background(), database.ListTeamsOpts{ExceptAncestorID: source})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cursor != 0 {
-		t.Fatal("non-zero cursor")
-	}
+	require.NoError(t, err)
+	require.Zero(t, cursor)
 	want := []*types.Team{
 		{ID: eng, Name: "eng"},
 		{ID: sales, Name: "sales"},

@@ -14,13 +14,14 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/sourcegraph/zoekt"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -30,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 func TestMain(m *testing.M) {
@@ -139,15 +141,15 @@ func TestRevisionValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
-			repos := database.NewMockRepoStore()
+			repos := dbmocks.NewMockRepoStore()
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{{Name: "repoFoo"}}, nil)
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			op := search.RepoOptions{RepoFilters: toParsedRepoFilters(tt.repoFilters...)}
 			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil, nil)
 			repositoryResolver.gitserver = mockGitserver
-			resolved, err := repositoryResolver.Resolve(context.Background(), op)
+			resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 			if diff := cmp.Diff(tt.wantErr, errors.UnwrapAll(err)); diff != "" {
 				t.Error(diff)
 			}
@@ -270,7 +272,7 @@ func BenchmarkGetRevsForMatchedRepo(b *testing.B) {
 func TestResolverIterator(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	for i := 1; i <= 5; i++ {
 		r := types.MinimalRepo{
@@ -296,12 +298,29 @@ func TestResolverIterator(t *testing.T) {
 	})
 
 	resolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
-	all, err := resolver.Resolve(ctx, search.RepoOptions{})
+	all, _, err := resolver.resolve(ctx, search.RepoOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	allAtRev, err := resolver.Resolve(ctx, search.RepoOptions{RepoFilters: toParsedRepoFilters("foo/bar[0-4]@rev")})
+	// Assertation that we get the cursor we expect
+	{
+		want := types.MultiCursor{
+			{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
+			{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
+		}
+		_, next, err := resolver.resolve(ctx, search.RepoOptions{
+			Limit: 3,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(next, want); diff != "" {
+			t.Errorf("unexpected cursor (-have, +want):\n%s", diff)
+		}
+	}
+
+	allAtRev, _, err := resolver.resolve(ctx, search.RepoOptions{RepoFilters: toParsedRepoFilters("foo/bar[0-4]@rev")})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -325,10 +344,6 @@ func TestResolverIterator(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs: all.RepoRevs[:3],
-					Next: types.MultiCursor{
-						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
-						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
-					},
 				},
 				{
 					RepoRevs: all.RepoRevs[3:],
@@ -363,10 +378,6 @@ func TestResolverIterator(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs: allAtRev.RepoRevs[:2],
-					Next: types.MultiCursor{
-						{Column: "stars", Direction: "prev", Value: fmt.Sprint(allAtRev.RepoRevs[2].Repo.Stars)},
-						{Column: "id", Direction: "prev", Value: fmt.Sprint(allAtRev.RepoRevs[2].Repo.ID)},
-					},
 				},
 				{
 					RepoRevs: allAtRev.RepoRevs[2:],
@@ -412,6 +423,128 @@ func TestResolverIterator(t *testing.T) {
 	}
 }
 
+func TestResolverIterateRepoRevs(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(t))
+
+	// intentionally nil so it panics if we call it
+	var gsClient gitserver.Client = nil
+
+	var all []RepoRevSpecs
+	for i := 1; i <= 5; i++ {
+		r := types.MinimalRepo{
+			Name:  api.RepoName(fmt.Sprintf("github.com/foo/bar%d", i)),
+			Stars: i * 100,
+		}
+
+		repo := r.ToRepo()
+		if err := db.Repos().Create(ctx, repo); err != nil {
+			t.Fatal(err)
+		}
+		r.ID = repo.ID
+
+		all = append(all, RepoRevSpecs{Repo: r})
+	}
+
+	withRevSpecs := func(rrs []RepoRevSpecs, revs ...query.RevisionSpecifier) []RepoRevSpecs {
+		var with []RepoRevSpecs
+		for _, r := range rrs {
+			with = append(with, RepoRevSpecs{
+				Repo: r.Repo,
+				Revs: revs,
+			})
+		}
+		return with
+	}
+
+	for _, tc := range []struct {
+		name    string
+		opts    search.RepoOptions
+		want    []RepoRevSpecs
+		wantErr string
+	}{
+		{
+			name: "default",
+			opts: search.RepoOptions{},
+			want: withRevSpecs(all, query.RevisionSpecifier{}),
+		},
+		{
+			name: "specific repo",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar1"),
+			},
+			want: withRevSpecs(all[:1], query.RevisionSpecifier{}),
+		},
+		{
+			name: "no repos",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("horsegraph"),
+			},
+			wantErr: ErrNoResolvedRepos.Error(),
+		},
+
+		// The next block of test cases would normally reach out to gitserver
+		// and fail. But because we haven't reached out we should still get
+		// back a list. See the corresponding cases in TestResolverIterator.
+		{
+			name: "no gitserver revspec",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@bad_commit"),
+			},
+			want: withRevSpecs(all, query.RevisionSpecifier{RevSpec: "bad_commit"}),
+		},
+		{
+			name: "no gitserver refglob",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@*refs/heads/foo*"),
+			},
+			want: withRevSpecs(all, query.RevisionSpecifier{RefGlob: "refs/heads/foo*"}),
+		},
+		{
+			name: "no gitserver excluderefglob",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@*!refs/heads/foo*"),
+			},
+			want: withRevSpecs(all, query.RevisionSpecifier{ExcludeRefGlob: "refs/heads/foo*"}),
+		},
+		{
+			name: "no gitserver multiref",
+			opts: search.RepoOptions{
+				RepoFilters: toParsedRepoFilters("foo/bar[0-5]@foo:bar"),
+			},
+			want: withRevSpecs(all, query.RevisionSpecifier{RevSpec: "foo"}, query.RevisionSpecifier{RevSpec: "bar"}),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			r := NewResolver(logger, db, gsClient, nil, nil)
+			got, err := iterator.Collect(r.IterateRepoRevs(ctx, tc.opts))
+
+			var gotErr string
+			if err != nil {
+				gotErr = err.Error()
+			}
+			if diff := cmp.Diff(gotErr, tc.wantErr); diff != "" {
+				t.Errorf("unexpected error (-have, +want):\n%s", diff)
+			}
+
+			// copy want because we will mutate it when sorting
+			var want []RepoRevSpecs
+			want = append(want, tc.want...)
+
+			less := func(a, b RepoRevSpecs) bool {
+				return a.Repo.ID < b.Repo.ID
+			}
+			slices.SortFunc(got, less)
+			slices.SortFunc(want, less)
+
+			if diff := cmp.Diff(got, want); diff != "" {
+				t.Errorf("unexpected (-have, +want):\n%s", diff)
+			}
+		})
+	}
+}
+
 func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	searchContext := &types.SearchContext{ID: 1, Name: "searchcontext"}
 	repoA := types.MinimalRepo{ID: 1, Name: "example.com/a"}
@@ -426,7 +559,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		return api.CommitID(spec), nil
 	})
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, op database.ReposListOptions) ([]types.MinimalRepo, error) {
 		if op.SearchContextID != searchContext.ID {
 			t.Fatalf("got %q, want %q", op.SearchContextID, searchContext.ID)
@@ -434,7 +567,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		return []types.MinimalRepo{repoA, repoB}, nil
 	})
 
-	sc := database.NewMockSearchContextsStore()
+	sc := dbmocks.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultHook(func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
 		if opts.Name != searchContext.Name {
 			t.Fatalf("got %q, want %q", opts.Name, searchContext.Name)
@@ -448,7 +581,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		return searchContextRepositoryRevisions, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.SearchContextsFunc.SetDefaultReturn(sc)
 
@@ -456,7 +589,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		SearchContextSpec: "searchcontext",
 	}
 	repositoryResolver := NewResolver(logtest.Scoped(t), db, gsClient, nil, nil)
-	resolved, err := repositoryResolver.Resolve(context.Background(), op)
+	resolved, _, err := repositoryResolver.resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -483,12 +616,12 @@ func TestRepoHasFileContent(t *testing.T) {
 		}
 	}
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
 		return []types.MinimalRepo{repoA, repoB, repoC, repoD, repoE}, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	mockGitserver := gitserver.NewMockClient()
@@ -533,7 +666,7 @@ func TestRepoHasFileContent(t *testing.T) {
 	cases := []struct {
 		name          string
 		filters       []query.RepoHasFileContentArgs
-		matchingRepos map[uint32]*zoekt.MinimalRepoListEntry
+		matchingRepos zoekt.ReposMap
 		expected      []*search.RepositoryRevisions
 	}{{
 		name:          "no filters",
@@ -558,7 +691,7 @@ func TestRepoHasFileContent(t *testing.T) {
 		filters: []query.RepoHasFileContentArgs{{
 			Path: "pathB",
 		}},
-		matchingRepos: map[uint32]*zoekt.MinimalRepoListEntry{
+		matchingRepos: zoekt.ReposMap{
 			2: {
 				Branches: []zoekt.RepositoryBranch{{
 					Name: "HEAD",
@@ -613,7 +746,7 @@ func TestRepoHasFileContent(t *testing.T) {
 			// Only repos A and B are indexed
 			mockZoekt := NewMockStreamer()
 			mockZoekt.ListFunc.PushReturn(&zoekt.RepoList{
-				Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
+				ReposMap: zoekt.ReposMap{
 					uint32(repoA.ID): {
 						Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
 					},
@@ -624,11 +757,11 @@ func TestRepoHasFileContent(t *testing.T) {
 			}, nil)
 
 			mockZoekt.ListFunc.PushReturn(&zoekt.RepoList{
-				Minimal: tc.matchingRepos,
+				ReposMap: tc.matchingRepos,
 			}, nil)
 
 			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), mockZoekt)
-			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
+			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    toParsedRepoFilters(".*"),
 				HasFileContent: tc.filters,
 			})
@@ -653,7 +786,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 	}
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.HasCommitAfterFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, _ string, _ string) (bool, error) {
+	mockGitserver.HasCommitAfterFunc.SetDefaultHook(func(_ context.Context, repoName api.RepoName, _ string, _ string) (bool, error) {
 		switch repoName {
 		case repoA.Name:
 			return true, nil
@@ -668,7 +801,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 		}
 	})
 
-	repos := database.NewMockRepoStore()
+	repos := dbmocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(_ context.Context, opts database.ReposListOptions) ([]types.MinimalRepo, error) {
 		res := []types.MinimalRepo{}
 		for _, r := range []types.MinimalRepo{repoA, repoB, repoC, repoD} {
@@ -679,7 +812,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 		return res, nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	cases := []struct {
@@ -732,7 +865,7 @@ func TestRepoHasCommitAfter(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			res := NewResolver(logtest.Scoped(t), db, nil, endpoint.Static("test"), nil)
 			res.gitserver = mockGitserver
-			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
+			resolved, _, err := res.resolve(context.Background(), search.RepoOptions{
 				RepoFilters: toParsedRepoFilters(tc.nameFilter),
 				CommitAfter: tc.commitAfter,
 			})

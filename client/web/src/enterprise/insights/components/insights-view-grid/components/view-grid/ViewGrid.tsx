@@ -1,10 +1,10 @@
 import React, {
     createContext,
-    FC,
+    type FC,
     forwardRef,
-    HTMLAttributes,
-    PropsWithChildren,
-    ReactElement,
+    type HTMLAttributes,
+    type PropsWithChildren,
+    type ReactElement,
     useCallback,
     useContext,
     useEffect,
@@ -17,9 +17,9 @@ import React, {
 import classNames from 'classnames'
 import { noop } from 'lodash'
 import {
-    Layout,
-    Layout as ReactGridLayout,
-    Layouts as ReactGridLayouts,
+    type Layout,
+    type Layout as ReactGridLayout,
+    type Layouts as ReactGridLayouts,
     Responsive as ResponsiveGridLayout,
 } from 'react-grid-layout'
 import { Key } from 'ts-key-enum'
@@ -28,7 +28,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { isFirefox } from '@sourcegraph/common'
 import { useMeasure } from '@sourcegraph/wildcard'
 
-import { Direction, findNextLayout } from './focus-management'
+import { type Direction, findNextLayout } from './focus-management'
 
 import styles from './ViewGrid.module.scss'
 
@@ -114,6 +114,7 @@ interface ViewGridCommonProps {
     onResizeStart?: (newItem: ReactGridLayout) => void
     onResizeStop?: (newItem: ReactGridLayout) => void
     onDragStart?: (newItem: ReactGridLayout) => void
+    onDragStop?: (newItem: ReactGridLayout) => void
 }
 
 /** Renders drag and drop and resizable views grid. */
@@ -127,6 +128,7 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
         onResizeStart = noop,
         onResizeStop = noop,
         onDragStart = noop,
+        onDragStop = noop,
     } = props
 
     const gridRef = useRef<HTMLDivElement>(null)
@@ -147,13 +149,18 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
     )
 
     const handleResizeStop: ReactGridLayout.ItemCallback = useCallback(
-        (_layout, item, newItem) => onResizeStop(newItem),
+        (_layout, item, newItem) => requestAnimationFrame(() => onResizeStop(newItem)),
         [onResizeStop]
     )
 
     const handleDragStart: ReactGridLayout.ItemCallback = useCallback(
         (_layout, item, newItem) => onDragStart(newItem),
         [onDragStart]
+    )
+
+    const handleDragStop: ReactGridLayout.ItemCallback = useCallback(
+        (_layout, item, newItem) => requestAnimationFrame(() => onDragStop(newItem)),
+        [onDragStop]
     )
 
     // For Firefox we can't use css transform/translate to put view grid item in right place.
@@ -188,6 +195,7 @@ export const ViewGrid: FC<PropsWithChildren<ViewGridProps & ViewGridCommonProps>
                 onResizeStart={handleResizeStart}
                 onResizeStop={handleResizeStop}
                 onDragStart={handleDragStart}
+                onDragStop={handleDragStop}
                 onLayoutChange={onLayoutChange}
                 className={classNames(className, styles.viewGrid)}
             >

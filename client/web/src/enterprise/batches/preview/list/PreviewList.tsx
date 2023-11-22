@@ -6,22 +6,26 @@ import { tap } from 'rxjs/operators'
 import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../../components/DismissibleAlert'
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { BatchSpecApplyPreviewVariables, ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import type {
+    BatchSpecApplyPreviewVariables,
+    ChangesetApplyPreviewFields,
+    Scalars,
+} from '../../../../graphql-operations'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
-import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
+import type { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { filterPublishableIDs } from '../utils'
 
 import {
     queryChangesetApplyPreview as _queryChangesetApplyPreview,
-    queryChangesetSpecFileDiffs,
-    queryPublishableChangesetSpecIDs as _queryPublishableChangesetSpecIDs,
+    type queryChangesetSpecFileDiffs,
+    type queryPublishableChangesetSpecIDs as _queryPublishableChangesetSpecIDs,
 } from './backend'
-import { ChangesetApplyPreviewNode, ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
+import { ChangesetApplyPreviewNode, type ChangesetApplyPreviewNodeProps } from './ChangesetApplyPreviewNode'
 import { EmptyPreviewListElement } from './EmptyPreviewListElement'
 import { PreviewFilterRow } from './PreviewFilterRow'
-import { PreviewListHeader, PreviewListHeaderProps } from './PreviewListHeader'
+import { PreviewListHeader, type PreviewListHeaderProps } from './PreviewListHeader'
 import { PreviewSelectRow } from './PreviewSelectRow'
 
 import styles from './PreviewList.module.scss'

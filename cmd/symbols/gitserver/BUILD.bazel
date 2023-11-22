@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "gitserver",
@@ -11,13 +12,14 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
+        "//internal/database",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/metrics",
         "//internal/observation",
         "//internal/types",
         "//lib/errors",
-        "@com_github_opentracing_opentracing_go//log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

@@ -1,4 +1,4 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
@@ -6,7 +6,7 @@ import { mockWorkspace } from '../../batch-spec.mock'
 
 import { WorkspacesListItem } from './WorkspacesListItem'
 
-const decorator: DecoratorFn = story => <div className="list-group d-flex flex-column w-100">{story()}</div>
+const decorator: Decorator = story => <div className="list-group d-flex flex-column w-100">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/execute/workspaces',
@@ -27,7 +27,7 @@ const WORKSPACE_STATES: [key: string, state: BatchSpecWorkspaceState, isCached: 
     ['completed-cached', BatchSpecWorkspaceState.COMPLETED, true],
 ]
 
-export const WorkspacesListItemStory: Story = () => (
+export const WorkspacesListItemStory: StoryFn = () => (
     <WebStory>
         {props => (
             <>

@@ -1,8 +1,7 @@
 import { describe, test, before, after } from 'mocha'
 
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
-import { afterEachRecordCoverage } from '@sourcegraph/shared/src/testing/coverage'
-import { Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
 import { cloneRepos } from '../utils/cloneRepos'
@@ -26,7 +25,6 @@ describe('Site Admin', () => {
     after('Close browser', () => driver?.close())
 
     afterEachSaveScreenshotIfFailed(() => driver.page)
-    afterEachRecordCoverage(() => driver)
 
     // Flaky https://github.com/sourcegraph/sourcegraph/issues/45531
     test.skip('Overview', async () => {

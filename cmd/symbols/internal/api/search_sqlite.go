@@ -5,12 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	"github.com/dustin/go-humanize"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/dustin/go-humanize"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
@@ -29,22 +27,22 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 	operations := sharedobservability.NewOperations(observationCtx)
 
 	return func(ctx context.Context, args search.SymbolsParameters) (results []result.Symbol, err error) {
-		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{LogFields: []log.Field{
-			log.String("repo", string(args.Repo)),
-			log.String("commitID", string(args.CommitID)),
-			log.String("query", args.Query),
-			log.Bool("isRegExp", args.IsRegExp),
-			log.Bool("isCaseSensitive", args.IsCaseSensitive),
-			log.Int("numIncludePatterns", len(args.IncludePatterns)),
-			log.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
-			log.String("excludePattern", args.ExcludePattern),
-			log.Int("first", args.First),
-			log.Float64("timeoutSeconds", args.Timeout.Seconds()),
+		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+			args.Repo.Attr(),
+			args.CommitID.Attr(),
+			attribute.String("query", args.Query),
+			attribute.Bool("isRegExp", args.IsRegExp),
+			attribute.Bool("isCaseSensitive", args.IsCaseSensitive),
+			attribute.Int("numIncludePatterns", len(args.IncludePatterns)),
+			attribute.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
+			attribute.String("excludePattern", args.ExcludePattern),
+			attribute.Int("first", args.First),
+			attribute.Float64("timeoutSeconds", args.Timeout.Seconds()),
 		}})
 		defer func() {
 			endObservation(1, observation.Args{
 				MetricLabelValues: []string{observability.GetParseAmount(ctx)},
-				LogFields:         []log.Field{log.String("parseAmount", observability.GetParseAmount(ctx))},
+				Attrs:             []attribute.KeyValue{attribute.String("parseAmount", observability.GetParseAmount(ctx))},
 			})
 		}()
 		ctx = observability.SeedParseAmount(ctx)

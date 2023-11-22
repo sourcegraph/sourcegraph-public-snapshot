@@ -1,0 +1,20 @@
+.table-row {
+    border-bottom: none !important;
+    td {
+        padding: 0.5rem 0;
+
+        &:not(:last-child) {
+            padding-right: 1rem;
+        }
+    }
+}
+
+.table-cell-name {
+    max-width: 10rem;
+}
+
+.email {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

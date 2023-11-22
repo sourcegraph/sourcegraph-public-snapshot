@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/cockroachdb/errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const DefaultChannel = "#william-buildchecker-webhook-test"

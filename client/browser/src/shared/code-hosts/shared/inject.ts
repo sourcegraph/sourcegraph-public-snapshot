@@ -1,10 +1,10 @@
-import { Observable, Subscription } from 'rxjs'
+import { type Observable, Subscription } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
-import { SourcegraphIntegrationURLs } from '../../platform/context'
-import { MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
+import type { SourcegraphIntegrationURLs } from '../../platform/context'
+import { type MutationRecordLike, observeMutations as defaultObserveMutations } from '../../util/dom'
 
-import { determineCodeHost, CodeHost, injectCodeIntelligenceToCodeHost, ObserveMutations } from './codeHost'
+import { determineCodeHost, type CodeHost, injectCodeIntelligenceToCodeHost, type ObserveMutations } from './codeHost'
 
 /**
  * Checks if the current page is a known code host. If it is,

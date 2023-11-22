@@ -1,14 +1,14 @@
 <script lang="ts">
+    import { closeCompletion } from '@codemirror/autocomplete'
     import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
     import { Compartment, EditorState, Prec } from '@codemirror/state'
     import { EditorView, keymap, placeholder as placeholderExtension } from '@codemirror/view'
-    import { closeCompletion } from '@codemirror/autocomplete'
     import { createEventDispatcher } from 'svelte'
 
     import { browser } from '$app/environment'
     import { goto } from '$app/navigation'
+    import { createDefaultSuggestions, multiline, parseInputAsQuery, querySyntaxHighlighting } from '$lib/branded'
     import type { SearchPatternType } from '$lib/graphql-operations'
-    import { createDefaultSuggestions, singleLine, parseInputAsQuery, querySyntaxHighlighting } from '$lib/branded'
     import { fetchStreamSuggestions, QueryChangeSource, type QueryState } from '$lib/shared'
 
     import { defaultTheme } from './codemirror/theme'
@@ -46,7 +46,6 @@
                 fetchSuggestions: query => fetchStreamSuggestions(query),
                 isSourcegraphDotCom: false,
                 navigate: url => goto(url.toString()),
-                applyOnEnter: true,
             }),
         ]
 
@@ -84,7 +83,7 @@
                     },
                 ])
             ),
-            singleLine,
+            multiline(false),
             EditorView.updateListener.of(update => {
                 const { state } = update
                 if (update.docChanged) {

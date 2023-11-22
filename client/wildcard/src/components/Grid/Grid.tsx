@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react'
+import React, { type CSSProperties } from 'react'
 
 export interface GridProps {
     className?: string
@@ -13,16 +13,24 @@ export interface GridProps {
      *
      * @default 1
      */
-    spacing?: number
+    spacing?: number | number[]
+    /**
+     * optional CSS definition of grid-template-columns property
+     */
+    templateColumns?: string
 }
 
 /**
  * Dynamically generate the <Grid> style from provided props
  */
-const getGridStyle = (columnCount: number, spacing: number): CSSProperties => ({
+const getGridStyle = (
+    columnCount: GridProps['columnCount'],
+    spacing: GridProps['spacing'],
+    templateColumns?: GridProps['templateColumns']
+): CSSProperties => ({
     display: 'grid',
-    gap: `${spacing}rem`,
-    gridTemplateColumns: `[row-start] repeat(${columnCount}, 1fr) [row-end]`,
+    gap: Array.isArray(spacing) && spacing.length === 2 ? `${spacing[0]}rem ${spacing[1]}rem` : `${spacing}rem`,
+    gridTemplateColumns: templateColumns ?? `[row-start] repeat(${columnCount}, 1fr) [row-end]`,
     marginBottom: `${spacing}rem`,
 })
 
@@ -32,11 +40,12 @@ export const Grid: React.FunctionComponent<React.PropsWithChildren<GridProps>> =
     columnCount = 3,
     spacing = 1,
     className,
+    templateColumns,
 }) => (
     <div
         // We use `style` here to dynamically generate the grid styles.
         // eslint-disable-next-line react/forbid-dom-props
-        style={getGridStyle(columnCount, spacing)}
+        style={getGridStyle(columnCount, spacing, templateColumns)}
         className={className}
     >
         {children}

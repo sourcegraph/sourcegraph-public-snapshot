@@ -3,8 +3,8 @@ import React from 'react'
 import { MenuPopover as ReachMenuPopover, MenuItems } from '@reach/menu-button'
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '../../types'
-import { createRectangle, PopoverContent, PopoverContentProps, Position } from '../Popover'
+import type { ForwardReferenceComponent } from '../../types'
+import { createRectangle, PopoverContent, type PopoverContentProps, Position } from '../Popover'
 
 import styles from './MenuList.module.scss'
 

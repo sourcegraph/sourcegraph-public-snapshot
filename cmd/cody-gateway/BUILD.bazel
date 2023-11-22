@@ -1,0 +1,72 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+go_library(
+    name = "cody-gateway_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/cody-gateway/shared",
+        "//internal/conf",
+        "//internal/env",
+        "//internal/sanitycheck",
+        "//internal/service/svcmain",
+        "@com_github_getsentry_sentry_go//:sentry-go",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_binary(
+    name = "cody-gateway",
+    embed = [":cody-gateway_lib"],
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+)
+
+pkg_tar(
+    name = "tar_cody-gateway",
+    srcs = [":cody-gateway"],
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/cody-gateway",
+    ],
+    tars = [":tar_cody-gateway"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["cody-gateway:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("cody-gateway"),
+)

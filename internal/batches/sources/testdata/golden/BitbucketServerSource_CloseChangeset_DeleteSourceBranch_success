@@ -1,0 +1,55 @@
+{
+  "id": 168,
+  "version": 1,
+  "title": "PR to be deleted",
+  "description": "",
+  "state": "DECLINED",
+  "open": false,
+  "closed": true,
+  "createdDate": 1684292333177,
+  "updatedDate": 1684292383182,
+  "fromRef": {
+   "id": "refs/heads/delete-me",
+   "repository": {
+    "id": 10070,
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "toRef": {
+   "id": "refs/heads/master",
+   "repository": {
+    "id": 10070,
+    "slug": "automation-testing",
+    "project": {
+     "key": "SOUR"
+    }
+   }
+  },
+  "locked": false,
+  "author": {
+   "user": {
+    "name": "milton",
+    "emailAddress": "dev@sourcegraph.com",
+    "id": 1,
+    "displayName": "milton",
+    "active": true,
+    "slug": "milton",
+    "type": "NORMAL"
+   },
+   "role": "AUTHOR",
+   "approved": false,
+   "status": "UNAPPROVED"
+  },
+  "reviewers": [],
+  "participants": [],
+  "links": {
+   "self": [
+    {
+     "href": "https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/168"
+    }
+   ]
+  }
+ }

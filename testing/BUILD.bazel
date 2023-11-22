@@ -1,0 +1,256 @@
+load(":defs.bzl", "server_integration_test")
+
+server_integration_test(
+    name = "e2e_test",
+    args = [
+        "$(location //client/web/src/end-to-end:e2e)",
+        "$(rootpath //:mocha_config)",
+        "'$(rootpath //client/web/src/end-to-end:testing_e2e_bundle)/**/*.test.js'",
+    ],
+    data = [
+        "//:mocha_config",
+        "//client/web/src/end-to-end:e2e",
+        "//client/web/src/end-to-end:testing_e2e_bundle",
+        "//cmd/server:image_tarball",
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+        "TEST_USER_EMAIL": "test@sourcegraph.com",
+        "TEST_USER_PASSWORD": "supersecurepassword",
+        "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
+        "NO_CLEANUP": "false",
+        "KEEP_BROWSER": "false",
+        "DEVTOOLS": "false",
+        "BROWSER": "chrome",
+        "WINDOW_WIDTH": "1280",
+        "WINDOW_HEIGHT": "1024",
+        "LOG_BROWSER_CONSOLE": "false",
+        # Enable findDom on CodeMirror
+        "INTEGRATION_TESTS": "true",
+    },
+    env_inherit = [
+        "DISPLAY",
+        "E2E_HEADLESS",
+        "E2E_SOURCEGRAPH_BASE_URL",
+        "GHE_GITHUB_TOKEN",
+        "GH_TOKEN",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    port = "7080",
+    runner_src = ":e2e_test.sh",
+)
+
+server_integration_test(
+    name = "backend_integration_test",
+    timeout = "long",
+    args = [
+        "$(location //dev/gqltest:gqltest_test)",  # actual test
+        "$(location //dev/authtest:authtest_test)",  # actual test
+    ],
+    data = [
+        "//cmd/server:image_tarball",
+        "//dev/authtest:authtest_test",
+        "//dev/gqltest:gqltest_test",
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+    },
+    env_inherit = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_CODE_COMMIT_PASSWORD",
+        "AWS_CODE_COMMIT_USERNAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "AZURE_DEVOPS_TOKEN",
+        "AZURE_DEVOPS_USERNAME",
+        "BITBUCKET_SERVER_TOKEN",
+        "BITBUCKET_SERVER_URL",
+        "BITBUCKET_SERVER_USERNAME",
+        "GHE_GITHUB_TOKEN",
+        "PERFORCE_PASSWORD",
+        "PERFORCE_PORT",
+        "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    port = "7081",
+    runner_src = ":backend_integration_test.sh",
+)
+
+server_integration_test(
+    name = "grpc_backend_integration_test",
+    timeout = "long",
+    args = [
+        "$(location //dev/gqltest:gqltest_test)",  # actual test
+        "$(location //dev/authtest:authtest_test)",  # actual test
+    ],
+    data = [
+        "//cmd/server:image_tarball",
+        "//dev/authtest:authtest_test",
+        "//dev/gqltest:gqltest_test",
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "true",
+    },
+    env_inherit = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_CODE_COMMIT_PASSWORD",
+        "AWS_CODE_COMMIT_USERNAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "AZURE_DEVOPS_TOKEN",
+        "AZURE_DEVOPS_USERNAME",
+        "BITBUCKET_SERVER_TOKEN",
+        "BITBUCKET_SERVER_URL",
+        "BITBUCKET_SERVER_USERNAME",
+        "GHE_GITHUB_TOKEN",
+        "PERFORCE_PASSWORD",
+        "PERFORCE_PORT",
+        "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    port = "7082",
+    runner_src = ":backend_integration_test.sh",
+    tags = [
+        "manual",
+    ],
+)
+
+server_integration_test(
+    name = "codeintel_integration_test",
+    args = [
+        "$(location //internal/cmd/init-sg)",
+        "$(rlocationpath //dev/tools:src-cli)",
+        "$(location //dev/codeintel-qa/cmd/download)",
+        "$(location //dev/codeintel-qa/cmd/clear)",
+        "$(location //dev/codeintel-qa/cmd/upload)",
+        "$(location //dev/codeintel-qa/cmd/query)",
+        "$(location //dev/ci/integration/code-intel:repos.json)",
+    ],
+    data = [
+        "//cmd/server:image_tarball",
+        "//dev/ci/integration/code-intel:repos.json",
+        "//dev/codeintel-qa/cmd/clear",
+        "//dev/codeintel-qa/cmd/download",
+        "//dev/codeintel-qa/cmd/query",
+        "//dev/codeintel-qa/cmd/upload",
+        "//dev/tools:src-cli",
+        "//internal/cmd/init-sg",
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+        "TEST_USER_EMAIL": "test@sourcegraph.com",
+        "TEST_USER_PASSWORD": "supersecurepassword",
+        "SOURCEGRAPH_SUDO_USER": "admin",
+        "HOME": ".",
+        "__LOCAL__": "false",
+    },
+    env_inherit = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_CODE_COMMIT_PASSWORD",
+        "AWS_CODE_COMMIT_USERNAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "AZURE_DEVOPS_TOKEN",
+        "AZURE_DEVOPS_USERNAME",
+        "BITBUCKET_SERVER_TOKEN",
+        "BITBUCKET_SERVER_URL",
+        "BITBUCKET_SERVER_USERNAME",
+        "GITHUB_TOKEN",
+        "PERFORCE_PASSWORD",
+        "PERFORCE_PORT",
+        "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    port = "7083",
+    runner_src = ":codeintel_integration_test.sh",
+    tags = [
+        "manual",
+    ],
+)
+
+# This one is bit perculiar, when running the codeintel-qa locally, we need to disable the sandbox
+# so the runner can access the gcloud creds which are living in the users HOME, under
+# .config/gcloud/application_default_credentials.json.
+#
+# It's more complicated to make the server_integration_test macro handle this automatically than it is to
+# duplicate it, so we just duplicate and tweak it instead. It uses the same port, because those two tasks will
+# never be run at the same time anyway. There is a safe guard in the original one that informs the user
+# to use this variant instead.
+server_integration_test(
+    name = "codeintel_integration_test_local",
+    args = select({
+        "//:darwin_docker_e2e_go": [
+            "$(location //internal/cmd/init-sg:init-sg-darwin-arm64)",
+            "$(rlocationpath @src-cli-darwin-arm64//:src-cli-darwin-arm64)",
+            "$(location //dev/codeintel-qa/cmd/download:download-darwin-arm64)",
+            "$(location //dev/codeintel-qa/cmd/clear:clear-darwin-arm64)",
+            "$(location //dev/codeintel-qa/cmd/upload:upload-darwin-arm64)",
+            "$(location //dev/codeintel-qa/cmd/query:query-darwin-arm64)",
+            "$(location //dev/ci/integration/code-intel:repos.json)",
+        ],
+        "//conditions:default": [
+            "$(location //internal/cmd/init-sg)",
+            "$(rlocationpath //dev/tools:src-cli)",
+            "$(location //dev/codeintel-qa/cmd/download)",
+            "$(location //dev/codeintel-qa/cmd/clear)",
+            "$(location //dev/codeintel-qa/cmd/upload)",
+            "$(location //dev/codeintel-qa/cmd/query)",
+            "$(location //dev/ci/integration/code-intel:repos.json)",
+        ],
+    }),
+    data = select({
+        "//:darwin_docker_e2e_go": [
+            "//cmd/server:image_tarball",
+            "//dev/ci/integration/code-intel:repos.json",
+            "//dev/codeintel-qa/cmd/clear:clear-darwin-arm64",
+            "//dev/codeintel-qa/cmd/download:download-darwin-arm64",
+            "//dev/codeintel-qa/cmd/query:query-darwin-arm64",
+            "//dev/codeintel-qa/cmd/upload:upload-darwin-arm64",
+            "//internal/cmd/init-sg:init-sg-darwin-arm64",
+            "@src-cli-darwin-arm64//:src-cli-darwin-arm64",
+        ],
+        "//conditions:default": [
+            "//cmd/server:image_tarball",
+            "//dev/ci/integration/code-intel:repos.json",
+            "//dev/codeintel-qa/cmd/clear",
+            "//dev/codeintel-qa/cmd/download",
+            "//dev/codeintel-qa/cmd/query",
+            "//dev/codeintel-qa/cmd/upload",
+            "//dev/tools:src-cli",
+            "//internal/cmd/init-sg",
+        ],
+    }),
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+        "TEST_USER_EMAIL": "test@sourcegraph.com",
+        "TEST_USER_PASSWORD": "supersecurepassword",
+        "SOURCEGRAPH_SUDO_USER": "admin",
+        "HOME": ".",
+        "__LOCAL__": "true",
+    },
+    env_inherit = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_CODE_COMMIT_PASSWORD",
+        "AWS_CODE_COMMIT_USERNAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "AZURE_DEVOPS_TOKEN",
+        "AZURE_DEVOPS_USERNAME",
+        "BITBUCKET_SERVER_TOKEN",
+        "BITBUCKET_SERVER_URL",
+        "BITBUCKET_SERVER_USERNAME",
+        "GITHUB_TOKEN",
+        "PERFORCE_PASSWORD",
+        "PERFORCE_PORT",
+        "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+    ],
+    port = "7083",
+    runner_src = ":codeintel_integration_test.sh",
+    tags = [
+        "manual",
+        "no-sandbox",
+    ],
+)

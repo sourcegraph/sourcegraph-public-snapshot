@@ -1,0 +1,28 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "register",
+    srcs = ["register.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//cmd/worker/shared/init/codeinsights",
+        "//cmd/worker/shared/init/codeintel",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/encryption/keyring",
+        "//internal/insights",
+        "//internal/observation",
+        "//internal/oobmigration",
+        "//internal/oobmigration/migrations",
+        "//internal/oobmigration/migrations/batches",
+        "//internal/oobmigration/migrations/codeintel/lsif",
+        "//internal/oobmigration/migrations/iam",
+        "//internal/oobmigration/migrations/insights",
+        "//internal/oobmigration/migrations/insights/backfillv2",
+        "//internal/oobmigration/migrations/insights/recording_times",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -1,9 +1,10 @@
-import { cleanup, fireEvent, render, RenderResult } from '@testing-library/react'
+import { cleanup, fireEvent, render, type RenderResult } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
+import { DiffHunkLineType, type FileDiffHunkFields } from '../../graphql-operations'
 
-import { DiffHunkProps, DiffSplitHunk } from './DiffSplitHunk'
+import { type DiffHunkProps, DiffSplitHunk } from './DiffSplitHunk'
 
 import lineStyles from './Lines.module.scss'
 

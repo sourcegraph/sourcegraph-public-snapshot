@@ -182,6 +182,41 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     ): LocationConnection!
 
     """
+    A list of prototypes of the symbol under the given document position.
+    """
+    prototypes(
+        """
+        The line on which the symbol occurs (zero-based, inclusive).
+        """
+        line: Int!
+
+        """
+        The character (not byte) of the start line on which the symbol occurs (zero-based, inclusive).
+        """
+        character: Int!
+
+        """
+        When specified, indicates that this request should be paginated and
+        to fetch results starting at this cursor.
+        A future request can be made for more results by passing in the
+        'LocationConnection.pageInfo.endCursor' that is returned.
+        """
+        after: String
+
+        """
+        When specified, indicates that this request should be paginated and
+        the first N results (relative to the cursor) should be returned. i.e.
+        how many results to return per page.
+        """
+        first: Int
+
+        """
+        When specified, it filters prototypes by filename.
+        """
+        filter: String
+    ): LocationConnection!
+
+    """
     The hover result of the symbol under the given document position.
     """
     hover(
@@ -200,6 +235,35 @@ type GitBlobLSIFData implements TreeEntryLSIFData {
     Code diagnostics provided through LSIF.
     """
     diagnostics(first: Int): DiagnosticConnection!
+
+    """
+    The indexes that could provide precise code intelligence for the current blob.
+    """
+    visibleIndexes: [PreciseIndex!]
+
+    """
+    SCIP snapshot data (similar to the additional information from the `scip snapshot` command) for each SCIP Occurrence.
+    """
+    snapshot(indexID: ID!): [SnapshotData!]
+}
+
+"""
+The SCIP snapshot decoration for a single SCIP Occurrence.
+"""
+type SnapshotData {
+    """
+    The byte offset in the document immediately after the line the occurrence is on.
+    """
+    offset: Int!
+    """
+    The formatted SCIP symbol string.
+    """
+    data: String!
+
+    """
+    Any additional lines of snapshot output such as relationships, documentation etc.
+    """
+    additional: [String!]
 }
 
 """

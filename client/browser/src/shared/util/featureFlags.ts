@@ -1,5 +1,5 @@
 import { storage } from '../../browser-extension/web-extension-api/storage'
-import { featureFlagDefaults, FeatureFlags } from '../../browser-extension/web-extension-api/types'
+import { featureFlagDefaults, type FeatureFlags } from '../../browser-extension/web-extension-api/types'
 import { isInPage } from '../context'
 
 interface FeatureFlagsStorage {
@@ -39,7 +39,7 @@ const createFeatureFlagStorage = ({ get, set }: FeatureFlagUtilities): FeatureFl
     async toggle<K extends keyof FeatureFlags>(key: K): Promise<boolean> {
         const value = await get(key)
         await set(key, !value)
-        /* eslint-disable @typescript-eslint/return-await  */
+
         return !value
     },
 })

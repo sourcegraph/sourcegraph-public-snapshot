@@ -1,19 +1,20 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
-import { RouterProvider, createMemoryRouter, MemoryRouterProps } from 'react-router-dom'
+import type Mocha from 'mocha'
+import { RouterProvider, createMemoryRouter, type MemoryRouterProps } from 'react-router-dom'
 
 import { EMPTY_SETTINGS_CASCADE, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
-import { MockedStoryProvider, MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
-import { NOOP_TELEMETRY_SERVICE, TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { MockedStoryProvider, type MockedStoryProviderProps } from '@sourcegraph/shared/src/stories'
+import { NOOP_TELEMETRY_SERVICE, type TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeContext, ThemeSetting } from '@sourcegraph/shared/src/theme'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
 import { usePrependStyles, useStorybookTheme } from '@sourcegraph/wildcard/src/stories'
 
-import { SourcegraphContext } from '../jscontext'
-import { LegacyLayoutRouteContext, LegacyRouteContext } from '../LegacyRouteContext'
+import type { SourcegraphContext } from '../jscontext'
+import { type LegacyLayoutRouteContext, LegacyRouteContext } from '../LegacyRouteContext'
 
-import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
-import { legacyLayoutRouteContextMock } from './legacyLayoutRouteContext'
+import { type BreadcrumbSetters, type BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
+import { legacyLayoutRouteContextMock } from './legacyLayoutRouteContext.mock'
 
 import webStyles from '../SourcegraphWebApp.scss'
 

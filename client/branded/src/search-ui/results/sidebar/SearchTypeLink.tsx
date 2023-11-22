@@ -1,11 +1,11 @@
-import React, { ReactElement, useCallback } from 'react'
+import React, { type ReactElement, useCallback } from 'react'
 
 import classNames from 'classnames'
 
 import {
-    BuildSearchQueryURLParameters,
-    QueryState,
-    SearchContextProps,
+    type BuildSearchQueryURLParameters,
+    type QueryState,
+    type SearchContextProps,
     createQueryExampleFromString,
     updateQueryWithFilterAndExample,
     EditorHint,
@@ -13,7 +13,7 @@ import {
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { containsLiteralOrPattern } from '@sourcegraph/shared/src/search/query/validate'
-import { SearchType } from '@sourcegraph/shared/src/search/stream'
+import type { SearchType } from '@sourcegraph/shared/src/search/stream'
 import { Button, Link, createLinkUrl } from '@sourcegraph/wildcard'
 
 import styles from './SearchFilterSection.module.scss'

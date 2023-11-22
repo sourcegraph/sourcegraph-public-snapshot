@@ -27,8 +27,8 @@ func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatis
 		return nil, err
 	}
 
-	logger := srs.logger.Scoped("languages", "provide stats on langauges from the search results")
-	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, gitserver.NewClient(), matches)
+	logger := srs.logger.Scoped("languages")
+	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, gitserver.NewClient("graphql.searchresultlanguages"), matches)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 			srs.err = err
 			return
 		}
-		j, err := jobutil.NewBasicJob(srs.sr.SearchInputs, b, srs.sr.enterpriseJobs)
+		j, err := jobutil.NewBasicJob(srs.sr.SearchInputs, b)
 		if err != nil {
 			srs.err = err
 			return

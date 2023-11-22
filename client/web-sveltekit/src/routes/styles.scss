@@ -1,8 +1,4 @@
-@import 'open-color/open-color.css';
-@import '@sourcegraph/wildcard/src/global-styles/colors.scss';
-@import '@sourcegraph/wildcard/src/global-styles/variables.scss';
-
-@import '@sourcegraph/wildcard/src/global-styles/base.scss';
+@import 'wildcard/src/global-styles/base.scss';
 
 .match-highlight {
     background-color: var(--mark-bg);

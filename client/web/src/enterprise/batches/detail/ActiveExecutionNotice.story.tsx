@@ -1,13 +1,13 @@
 import { useMemo } from 'react'
 
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 import { BatchSpecState } from '../../../graphql-operations'
 
 import { ActiveExecutionNotice } from './ActiveExecutionNotice'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 const config: Meta = {
     title: 'web/batches/details',
     decorators: [decorator],
@@ -15,15 +15,17 @@ const config: Meta = {
         numberActive: {
             name: 'number of specs executing',
             control: { type: 'number' },
-            defaultValue: 1,
             min: 0,
         },
         numberComplete: {
             name: 'number of specs completed',
             control: { type: 'number' },
-            defaultValue: 1,
             min: 0,
         },
+    },
+    args: {
+        numberActive: 1,
+        numberComplete: 1,
     },
 }
 
@@ -32,7 +34,7 @@ export default config
 const PROCESSING_BATCH_SPEC = { state: BatchSpecState.PROCESSING }
 const COMPLETE_BATCH_SPEC = { state: BatchSpecState.COMPLETED }
 
-export const ActiveExecutionNoticeStory: Story = args => {
+export const ActiveExecutionNoticeStory: StoryFn = args => {
     const numberActive = args.numberActive
     const numberComplete = args.numberComplete
 

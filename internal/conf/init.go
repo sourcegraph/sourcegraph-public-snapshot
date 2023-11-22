@@ -2,6 +2,7 @@ package conf
 
 import (
 	"reflect"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -18,30 +19,37 @@ func Init() {
 		close(configurationServerFrontendOnlyInitialized)
 	}
 
-	// This watch loop is here so that we don't introduce
-	// package dependency cycles, since conf itself uses httpcli's internal
-	// client. This is gross, and the whole conf package is gross.
-	go Watch(func() {
-		// TLS external config
-		tlsBefore := httpcli.TLSExternalConfig()
-		tlsAfter := Get().ExperimentalFeatures.TlsExternal
-		if !reflect.DeepEqual(tlsBefore, tlsAfter) {
-			httpcli.SetTLSExternalConfig(tlsAfter)
-		}
+	EnsureHTTPClientIsConfigured()
+}
 
-		// Outbound request log limit and redact headers
-		outboundRequestLogLimitBefore := httpcli.OutboundRequestLogLimit()
-		outboundRequestLogLimitAfter := int32(Get().OutboundRequestLogLimit)
-		if outboundRequestLogLimitBefore != outboundRequestLogLimitAfter {
-			httpcli.SetOutboundRequestLogLimit(outboundRequestLogLimitAfter)
-		}
-		redactOutboundRequestHeadersBefore := httpcli.RedactOutboundRequestHeaders()
-		redactOutboundRequestHeadersAfter := true
-		if Get().RedactOutboundRequestHeaders != nil {
-			redactOutboundRequestHeadersAfter = *Get().RedactOutboundRequestHeaders
-		}
-		if redactOutboundRequestHeadersBefore != redactOutboundRequestHeadersAfter {
-			httpcli.SetRedactOutboundRequestHeaders(redactOutboundRequestHeadersAfter)
-		}
+var ensureHTTPClientIsConfiguredOnce sync.Once
+
+// EnsureHTTPClientIsConfigured configures the httpcli package settings. We have to do this
+// in this package as conf itself uses httpcli's internal client.
+func EnsureHTTPClientIsConfigured() {
+	ensureHTTPClientIsConfiguredOnce.Do(func() {
+		go Watch(func() {
+			// TLS external config
+			tlsBefore := httpcli.TLSExternalConfig()
+			tlsAfter := Get().ExperimentalFeatures.TlsExternal
+			if !reflect.DeepEqual(tlsBefore, tlsAfter) {
+				httpcli.SetTLSExternalConfig(tlsAfter)
+			}
+
+			// Outbound request log limit and redact headers
+			outboundRequestLogLimitBefore := httpcli.OutboundRequestLogLimit()
+			outboundRequestLogLimitAfter := int32(Get().OutboundRequestLogLimit)
+			if outboundRequestLogLimitBefore != outboundRequestLogLimitAfter {
+				httpcli.SetOutboundRequestLogLimit(outboundRequestLogLimitAfter)
+			}
+			redactOutboundRequestHeadersBefore := httpcli.RedactOutboundRequestHeaders()
+			redactOutboundRequestHeadersAfter := true
+			if Get().RedactOutboundRequestHeaders != nil {
+				redactOutboundRequestHeadersAfter = *Get().RedactOutboundRequestHeaders
+			}
+			if redactOutboundRequestHeadersBefore != redactOutboundRequestHeadersAfter {
+				httpcli.SetRedactOutboundRequestHeaders(redactOutboundRequestHeadersAfter)
+			}
+		})
 	})
 }

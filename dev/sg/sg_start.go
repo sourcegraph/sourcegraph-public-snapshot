@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/conc/pool"
@@ -15,6 +16,7 @@ import (
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -52,6 +54,8 @@ var (
 	warnStartServices  cli.StringSlice
 	errorStartServices cli.StringSlice
 	critStartServices  cli.StringSlice
+	exceptServices     cli.StringSlice
+	onlyServices       cli.StringSlice
 
 	startCommand = &cli.Command{
 		Name:      "start",
@@ -74,13 +78,17 @@ sg start batches
 sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterprise
 
 # View configuration for a commandset
-sg start -describe oss
+sg start -describe single-program
 `,
-		Category: CategoryDev,
+		Category: category.Dev,
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "describe",
 				Usage: "Print details about the selected commandset",
+			},
+			&cli.BoolFlag{
+				Name:  "sgtail",
+				Usage: "Connects to running sgtail instance",
 			},
 
 			&cli.StringSliceFlag{
@@ -112,6 +120,16 @@ sg start -describe oss
 				Aliases:     []string{"c"},
 				Usage:       "Services to set at info crit level.",
 				Destination: &critStartServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "except",
+				Usage:       "List of services of the specified command set to NOT start",
+				Destination: &exceptServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "only",
+				Usage:       "List of services of the specified command set to start. Commands NOT in this list will NOT be started.",
+				Destination: &onlyServices,
 			},
 		},
 		BashComplete: completions.CompleteOptions(func() (options []string) {
@@ -160,6 +178,8 @@ func constructStartCmdLongHelp() string {
 	return out.String()
 }
 
+var sgOnce sync.Once
+
 func startExec(ctx *cli.Context) error {
 	config, err := getConfig()
 	if err != nil {
@@ -191,6 +211,12 @@ func startExec(ctx *cli.Context) error {
 		return errors.New("no concurrent sg start with same arguments allowed")
 	}
 
+	if ctx.Bool("sgtail") {
+		if err := run.OpenUnixSocket(); err != nil {
+			return errors.Wrapf(err, "Did you forget to run sgtail first?")
+		}
+	}
+
 	commandset := args[0]
 	set, ok := config.Commandsets[commandset]
 	if !ok {
@@ -209,7 +235,7 @@ func startExec(ctx *cli.Context) error {
 
 	// If the commandset requires the dev-private repository to be cloned, we
 	// check that it's at the right location here.
-	if set.RequiresDevPrivate {
+	if set.RequiresDevPrivate && !NoDevPrivateCheck {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))
@@ -225,8 +251,7 @@ func startExec(ctx *cli.Context) error {
 		if !exists {
 			std.Out.WriteLine(output.Styled(output.StyleWarning, "ERROR: dev-private repository not found!"))
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "It's expected to exist at: %s", devPrivatePath))
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "If you're not a Sourcegraph teammate you probably want to run: sg start oss"))
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "If you're a Sourcegraph teammate, see the documentation for how to get set up: https://docs.sourcegraph.com/dev/setup/quickstart#run-sg-setup"))
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "See the documentation for how to get set up: https://docs.sourcegraph.com/dev/setup/quickstart#run-sg-setup"))
 
 			std.Out.Write("")
 			overwritePath := filepath.Join(repoRoot, "sg.config.overwrite.yaml")
@@ -280,6 +305,18 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
+	exceptList := exceptServices.Value()
+	exceptSet := make(map[string]interface{}, len(exceptList))
+	for _, svc := range exceptList {
+		exceptSet[svc] = struct{}{}
+	}
+
+	onlyList := onlyServices.Value()
+	onlySet := make(map[string]interface{}, len(onlyList))
+	for _, svc := range onlyList {
+		onlySet[svc] = struct{}{}
+	}
+
 	cmds := make([]run.Command, 0, len(set.Commands))
 	for _, name := range set.Commands {
 		cmd, ok := conf.Commands[name]
@@ -287,7 +324,22 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
 		}
 
-		cmds = append(cmds, cmd)
+		if _, excluded := exceptSet[name]; excluded {
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.Name))
+			continue
+		}
+
+		// No --only specified, just add command
+		if len(onlySet) == 0 {
+			cmds = append(cmds, cmd)
+		} else {
+			if _, inSet := onlySet[name]; inSet {
+				cmds = append(cmds, cmd)
+			} else {
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.Name))
+			}
+		}
+
 	}
 
 	bcmds := make([]run.BazelCommand, 0, len(set.BazelCommands))

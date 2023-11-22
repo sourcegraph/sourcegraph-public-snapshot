@@ -1,6 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react'
 
-import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline } from '@mdi/js'
+import type { ApolloError } from '@apollo/client'
+import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiDelete, mdiEye } from '@mdi/js'
 import classNames from 'classnames'
 
 import { logger } from '@sourcegraph/common'
@@ -8,7 +9,7 @@ import { useLazyQuery } from '@sourcegraph/http-client'
 import { Badge, Button, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
-import {
+import type {
     BatchChangesCodeHostFields,
     CheckBatchChangesCredentialResult,
     CheckBatchChangesCredentialVariables,
@@ -36,13 +37,16 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     refetchAll,
     userID,
 }) => {
+    const [checkCredError, setCheckCredError] = useState<ApolloError | undefined>()
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
     const codeHostDisplayName = defaultExternalServices[node.externalServiceKind].defaultDisplayName
 
-    const [checkCred, { data: checkCredData, loading: checkCredLoading, error: checkCredError }] = useLazyQuery<
+    const [checkCred, { data: checkCredData, loading: checkCredLoading }] = useLazyQuery<
         CheckBatchChangesCredentialResult,
         CheckBatchChangesCredentialVariables
-    >(CHECK_BATCH_CHANGES_CREDENTIAL, {})
+    >(CHECK_BATCH_CHANGES_CREDENTIAL, {
+        onError: err => setCheckCredError(err),
+    })
 
     const buttonReference = useRef<HTMLButtonElement | null>(null)
 
@@ -66,6 +70,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     }, [])
     const afterAction = useCallback(() => {
         setOpenModal(undefined)
+        setCheckCredError(undefined)
         buttonReference.current?.focus()
         refetchAll()
     }, [refetchAll, buttonReference])
@@ -141,18 +146,25 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                     successMessage={checkCredData ? 'Credential is valid' : undefined}
                                     failedMessage={checkCredError ? 'Credential is not authorized' : undefined}
                                 />
+
                                 <Button
-                                    className="text-danger text-nowrap test-code-host-connection-node-btn-remove"
-                                    onClick={onClickRemove}
-                                    variant="link"
+                                    className="ml-2 text-nowrap test-code-host-connection-node-btn-remove"
                                     aria-label={`Remove credentials for ${codeHostDisplayName}`}
+                                    onClick={onClickRemove}
+                                    variant="danger"
+                                    size="sm"
                                     ref={buttonReference}
                                 >
-                                    Remove
+                                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Remove
                                 </Button>
                                 {node.requiresSSH && (
-                                    <Button onClick={onClickView} className="text-nowrap ml-2" variant="secondary">
-                                        View public key
+                                    <Button
+                                        onClick={onClickView}
+                                        className="text-nowrap ml-2"
+                                        variant="secondary"
+                                        size="sm"
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiEye} /> View public key
                                     </Button>
                                 )}
                             </>
@@ -168,6 +180,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
                                 aria-label={`Add credentials for ${codeHostDisplayName}`}
                                 variant="success"
                                 ref={buttonReference}
+                                size="sm"
                             >
                                 Add credentials
                             </Button>

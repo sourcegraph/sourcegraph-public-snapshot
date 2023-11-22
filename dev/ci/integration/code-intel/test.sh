@@ -11,10 +11,12 @@ SOURCEGRAPH_BASE_URL="${1:-"http://localhost:7080"}"
 export SOURCEGRAPH_BASE_URL
 
 echo '--- :go: Building init-sg'
-go build -o init-sg ./internal/cmd/init-sg/...
+bazel build //internal/cmd/init-sg
+out=$(bazel cquery //internal/cmd/init-sg --output=files)
+cp "$out" "$root_dir/"
 
 echo '--- Initializing instance'
-"${root_dir}/init-sg" initSG
+"$root_dir/init-sg" initSG
 
 echo '--- Loading secrets'
 set +x # Avoid printing secrets
@@ -34,14 +36,14 @@ echo '--- :brain: Running the test suite'
 pushd dev/codeintel-qa
 
 echo '--- :zero: downloading test data from GCS'
-go run ./cmd/download
+bazel run //dev/codeintel-qa/cmd/download
 
 echo '--- :one: clearing existing state'
-go run ./cmd/clear
+bazel run //dev/codeintel-qa/cmd/clear
 
 echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
-env PATH="${root_dir}/.bin:${PATH}" go run ./cmd/upload --timeout=5m
+bazel run //dev/codeintel-qa/cmd/upload -- --timeout=5m --index-dir="$root_dir/dev/codeintel-qa/testdata/indexes"
 
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
-go run ./cmd/query
+bazel run //dev/codeintel-qa/cmd/query -- --index-dir="$root_dir/dev/codeintel-qa/testdata/indexes"
 popd

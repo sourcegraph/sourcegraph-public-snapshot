@@ -31,7 +31,7 @@ import {
     LoadingSpinner,
     Popover,
     PopoverContent,
-    PopoverOpenEvent,
+    type PopoverOpenEvent,
     PopoverTrigger,
     Position,
     Text,
@@ -41,8 +41,8 @@ import {
 
 import {
     SiteUserOrderBy,
-    UsersManagementUsersListResult,
-    UsersManagementUsersListVariables,
+    type UsersManagementUsersListResult,
+    type UsersManagementUsersListVariables,
 } from '../../../graphql-operations'
 import { useURLSyncedState } from '../../../hooks'
 import { USERS_MANAGEMENT_USERS_LIST } from '../queries'
@@ -58,7 +58,6 @@ const LIMIT = 25
 
 interface UsersListProps {
     onActionEnd?: () => void
-    isEnterprise: boolean
     renderAssignmentModal: (
         onCancel: () => void,
         onSuccess: (user: { username: string }) => void,
@@ -129,11 +128,7 @@ const dateRangeQueryParameterToVariable = (
     }
 }
 
-export const UsersList: React.FunctionComponent<UsersListProps> = ({
-    onActionEnd,
-    renderAssignmentModal,
-    isEnterprise,
-}) => {
+export const UsersList: React.FunctionComponent<UsersListProps> = ({ onActionEnd, renderAssignmentModal }) => {
     const [filters, setFilters] = useURLSyncedState(DEFAULT_FILTERS)
     const debouncedSearchText = useDebounce(filters.searchText, 300)
 
@@ -330,7 +325,7 @@ export const UsersList: React.FunctionComponent<UsersListProps> = ({
                                 label: 'Manage roles',
                                 icon: mdiBadgeAccount,
                                 onClick: openRoleAssignmentModal,
-                                condition: ([user]) => isEnterprise && !user?.deletedAt,
+                                condition: ([user]) => !user?.deletedAt,
                             },
                             {
                                 key: 'unlock-user',

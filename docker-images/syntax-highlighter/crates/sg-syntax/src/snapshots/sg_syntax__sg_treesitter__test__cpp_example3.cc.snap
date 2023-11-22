@@ -1,6 +1,5 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 362
 expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 ---
   #include <iostream>
@@ -256,16 +255,14 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^ Identifier
 //              ^ Identifier
 //                  ^ NumericLiteral
-//                    ^^^ Identifier
 //                        ^ Identifier
 //                            ^^ NumericLiteral
 //                                ^^^^^^^^^^^^^ Comment
       bool b2 = x < 3 or y > 20;  // b2 is false
 //    ^^^^ IdentifierBuiltinType
 //         ^^ Identifier
-//              ^ IdentifierType
+//              ^ Identifier
 //                  ^ NumericLiteral
-//                    ^^ Identifier
 //                       ^ Identifier
 //                           ^^ NumericLiteral
 //                                ^^^^^^^^^^^^^^ Comment
@@ -274,7 +271,6 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^ Identifier
 //              ^ Identifier
 //                  ^ NumericLiteral
-//                    ^^^ Identifier
 //                        ^ Identifier
 //                            ^^ NumericLiteral
 //                                ^^^^^^^^^^^^^^ Comment
@@ -283,7 +279,6 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
 //         ^^ Identifier
 //              ^ Identifier
 //                  ^ NumericLiteral
-//                    ^^ Identifier
 //                       ^ Identifier
 //                           ^^ NumericLiteral
 //                                ^^^^^^^^^^^^^ Comment
@@ -688,7 +683,7 @@ expression: "snapshot_treesitter_syntax_kinds(&document, &contents)"
   
   namespace std {
 //^^^^^^^^^ Keyword
-//          ^^^ Identifier
+//          ^^^ IdentifierNamespace
       template <>
 //    ^^^^^^^^ Keyword
       struct has_attribute<my_attribute> : true_type { };

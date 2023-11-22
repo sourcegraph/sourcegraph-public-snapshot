@@ -1,45 +1,58 @@
-import React, { Fragment, useEffect, useCallback, useState } from 'react'
+import React, { useEffect, useCallback, useState } from 'react'
 
 import { mdiAccount } from '@mdi/js'
+import classNames from 'classnames'
 import { formatDistanceToNowStrict } from 'date-fns'
+import { capitalize } from 'lodash'
 
-import { useLazyQuery, useMutation } from '@sourcegraph/http-client'
-import { Card, Text, Button, Grid, Alert, PageSwitcher, Link } from '@sourcegraph/wildcard'
+import { pluralize } from '@sourcegraph/common'
+import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
+import { Card, Text, Alert, PageSwitcher, Link, Select, Button, Badge, Tooltip } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import {
-    PendingAccessRequestsListResult,
-    PendingAccessRequestsListVariables,
-    RejectAccessRequestResult,
-    RejectAccessRequestVariables,
-    ApproveAccessRequestResult,
-    ApproveAccessRequestVariables,
-    DoesUsernameExistResult,
-    DoesUsernameExistVariables,
-    AccessRequestCreateUserResult,
-    AccessRequestCreateUserVariables,
+    type RejectAccessRequestResult,
+    type RejectAccessRequestVariables,
+    type ApproveAccessRequestResult,
+    type ApproveAccessRequestVariables,
+    type DoesUsernameExistResult,
+    type DoesUsernameExistVariables,
+    type AccessRequestCreateUserResult,
+    type AccessRequestCreateUserVariables,
+    type HasLicenseSeatsResult,
+    type HasLicenseSeatsVariables,
+    AccessRequestStatus,
+    type AccessRequestNode,
+    type GetAccessRequestsVariables,
+    type GetAccessRequestsResult,
 } from '../../graphql-operations'
+import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
 import { eventLogger } from '../../tracking/eventLogger'
 import { AccountCreatedAlert } from '../components/AccountCreatedAlert'
 import { SiteAdminPageTitle } from '../components/SiteAdminPageTitle'
+import { type IColumn, Table } from '../UserManagement/components/Table'
 
 import {
     APPROVE_ACCESS_REQUEST,
     ACCESS_REQUEST_CREATE_USER,
     DOES_USERNAME_EXIST,
-    PENDING_ACCESS_REQUESTS_LIST,
+    GET_ACCESS_REQUESTS_LIST,
     REJECT_ACCESS_REQUEST,
+    HAS_LICENSE_SEATS,
 } from './queries'
+
+import styles from './index.module.scss'
 
 /**
  * Converts a name to a username by removing all non-alphanumeric characters and converting to lowercase.
+ *
  * @param name user's name / full name
  * @param randomize whether to add a random suffix to the username to avoid collisions
  * @returns username
  */
 function toUsername(name: string, randomize?: boolean): string {
     // Remove all non-alphanumeric characters from the name and convert to lowercase.
-    const username = name.replace(/[^\dA-Za-z]/g, '').toLowerCase()
+    const username = name.replaceAll(/[^\dA-Za-z]/g, '').toLowerCase()
     if (!randomize) {
         return username
     }
@@ -75,12 +88,108 @@ function useGenerateUsername(): (name: string) => Promise<string> {
     )
 }
 
+function useHasRemainingSeats(): boolean {
+    const { data } = useQuery<HasLicenseSeatsResult, HasLicenseSeatsVariables>(HAS_LICENSE_SEATS, {})
+
+    const licenseSeatsCount = data?.site?.productSubscription?.license?.userCount
+    const usersCount = data?.site?.users?.totalCount
+    const tags = data?.site?.productSubscription?.license?.tags ?? []
+    return (
+        typeof licenseSeatsCount !== 'number' ||
+        typeof usersCount !== 'number' ||
+        licenseSeatsCount > usersCount ||
+        tags.includes('true-up')
+    )
+}
+
+const TableColumns: IColumn<AccessRequestNode>[] = [
+    {
+        key: 'Status',
+        header: 'Status',
+        align: 'right',
+        render: (node: AccessRequestNode) => (
+            <Badge
+                className="mb-0 d-flex align-items-center text-nowrap"
+                variant={
+                    node.status === AccessRequestStatus.APPROVED
+                        ? 'success'
+                        : node.status === AccessRequestStatus.REJECTED
+                        ? 'danger'
+                        : 'primary'
+                }
+            >
+                {node.status}
+            </Badge>
+        ),
+    },
+    {
+        key: 'Name & email',
+        header: 'Name & Email',
+        render: (node: AccessRequestNode) => (
+            <Tooltip content={node.email}>
+                <Text className={classNames('mb-0', styles.tableCellName)}>
+                    {node.name}
+                    <Text className={classNames('mb-0 text-muted', styles.email)} size="small">
+                        {node.email}
+                    </Text>
+                </Text>
+            </Tooltip>
+        ),
+    },
+
+    {
+        key: 'Created at',
+        header: 'Created at',
+        align: 'right',
+        render: (node: AccessRequestNode) => (
+            <Text className="mb-0 d-flex align-items-center text-nowrap">
+                {formatDistanceToNowStrict(new Date(node.createdAt), { addSuffix: true })}
+            </Text>
+        ),
+    },
+    {
+        key: 'Notes',
+        header: 'Notes',
+        align: 'right',
+        render: (node: AccessRequestNode) => (
+            <Text className="text-muted my-2 font-italic" size="small">
+                {node.additionalInfo}
+            </Text>
+        ),
+    },
+]
+
+const AccessRequestStatusPicker: React.FunctionComponent<{
+    status: AccessRequestStatus
+    onChange: (value: AccessRequestStatus) => void
+}> = ({ status, onChange }) => {
+    const handleStatusChange = useCallback(
+        (event: React.ChangeEvent<HTMLSelectElement>) => {
+            onChange(event.target.value as AccessRequestStatus)
+        },
+        [onChange]
+    )
+
+    return (
+        <Select id="access-request-status-filter" value={status} label="Status" onChange={handleStatusChange}>
+            {Object.entries(AccessRequestStatus).map(([key, value]) => (
+                <option key={key} value={value}>
+                    {capitalize(value)}
+                </option>
+            ))}
+        </Select>
+    )
+}
+
 const FIRST_COUNT = 25
+
 export const AccessRequestsPage: React.FunctionComponent = () => {
     useEffect(() => {
         eventLogger.logPageView('AccessRequestsPage')
     }, [])
     const [error, setError] = useState<Error | null>(null)
+
+    const [status, setStatus] = useURLSyncedString('status', AccessRequestStatus.PENDING)
 
     const {
         connection,
@@ -88,14 +197,10 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
         loading,
         refetch,
         ...paginationArgs
-    } = usePageSwitcherPagination<
-        PendingAccessRequestsListResult,
-        PendingAccessRequestsListVariables,
-        PendingAccessRequestsListResult['accessRequests']['nodes'][0]
-    >({
-        query: PENDING_ACCESS_REQUESTS_LIST,
+    } = usePageSwitcherPagination<GetAccessRequestsResult, GetAccessRequestsVariables, AccessRequestNode>({
+        query: GET_ACCESS_REQUESTS_LIST,
         variables: {
-            first: FIRST_COUNT,
+            status: status as AccessRequestStatus,
         },
         getConnection: result => result.data?.accessRequests,
         options: {
@@ -187,12 +292,23 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
         [generateUsername, createUser, approveAccessRequest, refetch]
     )
 
+    const hasRemainingSeats = useHasRemainingSeats()
+
     return (
         <>
             <SiteAdminPageTitle icon={mdiAccount}>
                 <span>Users</span>
                 <span>Account requests</span>
             </SiteAdminPageTitle>
+            {!hasRemainingSeats && (
+                <Alert variant="danger">
+                    No licenses remaining. To approve requests,{' '}
+                    <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
+                        purchase additional licenses
+                    </Link>{' '}
+                    or <Link to="/site-admin/users">remove inactive users</Link>.
+                </Alert>
+            )}
             <Card className="p-3">
                 {[queryError, error].filter(Boolean).map((err, index) => (
                     <Alert variant="danger" key={index}>
@@ -206,17 +322,58 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                         resetPasswordURL={lastApprovedUser.resetPasswordURL}
                     />
                 )}
-                <div className="d-flex justify-content-end">
-                    <PageSwitcher
-                        totalCount={connection?.totalCount ?? null}
-                        totalLabel={connection?.totalCount === 1 ? 'account request' : 'account requests'}
-                        {...paginationArgs}
-                    />
+                <div className="d-flex align-items-start justify-content-between">
+                    <AccessRequestStatusPicker status={status as AccessRequestStatus} onChange={setStatus} />
+                    <div className="d-flex justify-content-end mt-4">
+                        <PageSwitcher
+                            totalCount={connection?.totalCount ?? null}
+                            totalLabel={pluralize('account request', connection?.totalCount || 0)}
+                            {...paginationArgs}
+                        />
+                    </div>
                 </div>
-                <AccessRequestsList onApprove={handleApprove} onReject={handleReject} items={connection?.nodes || []} />
+                {!!connection?.nodes.length && (
+                    <>
+                        <Table<AccessRequestNode>
+                            rowClassName={styles.tableRow}
+                            columns={[
+                                ...TableColumns,
+                                {
+                                    key: 'Actions',
+                                    header: 'Actions',
+                                    align: 'right',
+                                    render: (node: AccessRequestNode) => (
+                                        <div className="d-flex align-items-start">
+                                            <Button
+                                                variant="link"
+                                                onClick={() => handleReject(node.id)}
+                                                className="pl-0"
+                                                size="sm"
+                                                disabled={status !== AccessRequestStatus.PENDING}
+                                            >
+                                                Reject
+                                            </Button>
+                                            <Button
+                                                variant="success"
+                                                disabled={!hasRemainingSeats || status === AccessRequestStatus.APPROVED}
+                                                className="ml-2"
+                                                size="sm"
+                                                onClick={() => handleApprove?.(node.id, node.name, node.email)}
+                                            >
+                                                Approve
+                                            </Button>
+                                        </div>
+                                    ),
+                                },
+                            ]}
+                            getRowId={node => node.id}
+                            data={connection.nodes}
+                        />
+                    </>
+                )}
                 {!loading && connection?.nodes.length === 0 && (
                     <div>
-                        <Alert variant="info">No pending requests</Alert>
+                        <Alert variant="info">No {capitalize(status)} requests</Alert>
                         <Text>
                             Users can request access to Sourcegraph via the login page. View the documentation to learn
                             more about{' '}
@@ -226,47 +383,5 @@ export const AccessRequestsPage: React.FunctionComponent = () => {
                 )}
             </Card>
         </>
-    )
-}
-
-interface AccessRequestsListProps {
-    onApprove: (id: string, name: string, email: string) => void
-    onReject: (id: string) => void
-    items: PendingAccessRequestsListResult['accessRequests']['nodes']
-}
-
-const AccessRequestsList: React.FunctionComponent<AccessRequestsListProps> = ({ onApprove, onReject, items }) => {
-    if (items.length === 0) {
-        return null
-    }
-    return (
-        <Grid columnCount={5}>
-            {['Email', 'Name', 'Created at', 'Notes', ''].map((value, index) => (
-                // eslint-disable-next-line react/no-array-index-key
-                <Text weight="medium" key={index} className="mb-1">
-                    {value}
-                </Text>
-            ))}
-            {items.map(({ id, email, name, createdAt, additionalInfo }) => (
-                <Fragment key={email}>
-                    <Text className="mb-0 d-flex align-items-center">{email}</Text>
-                    <Text className="mb-0 d-flex align-items-center">{name}</Text>
-                    <Text className="mb-0 d-flex align-items-center">
-                        {formatDistanceToNowStrict(new Date(createdAt), { addSuffix: true })}
-                    </Text>
-                    <Text className="text-muted mb-0 d-flex align-items-center" size="small">
-                        {additionalInfo}
-                    </Text>
-                    <div className="d-flex justify-content-end align-items-start">
-                        <Button variant="link" onClick={() => onReject(id)}>
-                            Reject
-                        </Button>
-                        <Button variant="success" className="ml-2" onClick={() => onApprove(id, name, email)}>
-                            Approve
-                        </Button>
-                    </div>
-                </Fragment>
-            ))}
-        </Grid>
     )
 }

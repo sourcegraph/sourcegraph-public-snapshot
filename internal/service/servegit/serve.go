@@ -20,7 +20,10 @@ import (
 
 	"golang.org/x/exp/slices"
 
+	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fastwalk"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -164,6 +167,9 @@ func (s *Serve) handler() http.Handler {
 			// calling FromSlash.
 			return filepath.FromSlash("/" + name)
 		},
+		ErrorHook: func(err error, stderr string) {
+			s.Logger.Error("git-service error", log.Error(err), log.String("stderr", stderr))
+		},
 		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
 			return func(err error) {
@@ -201,6 +207,70 @@ func isGitRepo(path string) bool {
 	}
 
 	return string(out) == ".git\n"
+}
+
+// Returns a string of the git remote if it exists
+func gitRemote(path string) string {
+	// Executing git rev-parse --git-dir in the root of a worktree returns .git
+	c := exec.Command("git", "remote", "get-url", "origin")
+	c.Dir = path
+	out, err := c.CombinedOutput()
+
+	if err != nil {
+		return ""
+	}
+
+	return convertGitCloneURLToCodebaseName(string(out))
+}
+
+// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
+// This should captures:
+// - "github:sourcegraph/sourcegraph" a common SSH host alias
+// - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
+// - "git@github.com:sourcegraph/sourcegraph.git"
+func convertGitCloneURLToCodebaseName(cloneURL string) string {
+	cloneURL = strings.TrimSpace(cloneURL)
+	if cloneURL == "" {
+		return ""
+	}
+	uri, err := url.Parse(strings.Replace(cloneURL, "git@", "", 1))
+	if err != nil {
+		return ""
+	}
+	// Handle common Git SSH URL format
+	match := regexp.MustCompile(`git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?`).FindStringSubmatch(cloneURL)
+	if strings.HasPrefix(cloneURL, "git@") && len(match) > 0 {
+		host := match[1]
+		owner := match[2]
+		repo := match[3]
+		return host + "/" + owner + "/" + repo
+	}
+
+	buildName := func(prefix string, uri *url.URL) string {
+		name := uri.Path
+		if name == "" {
+			name = uri.Opaque
+		}
+		return prefix + strings.TrimSuffix(name, ".git")
+	}
+
+	// Handle GitHub URLs
+	if strings.HasPrefix(uri.Scheme, "github") || strings.HasPrefix(uri.String(), "github") {
+		return buildName("github.com/", uri)
+	}
+	// Handle GitLab URLs
+	if strings.HasPrefix(uri.Scheme, "gitlab") || strings.HasPrefix(uri.String(), "gitlab") {
+		return buildName("gitlab.com/", uri)
+	}
+	// Handle HTTPS URLs
+	if strings.HasPrefix(uri.Scheme, "http") && uri.Host != "" && uri.Path != "" {
+		return buildName(uri.Host, uri)
+	}
+	// Generic URL
+	if uri.Host != "" && uri.Path != "" {
+		return buildName(uri.Host, uri)
+	}
+	return ""
 }
 
 // Repos returns a slice of all the git repositories it finds. It is a wrapper
@@ -312,6 +382,11 @@ func (s *Serve) Walk(root string, repoC chan<- Repo) error {
 			clonePath += "/.git"
 		}
 
+		// Use the remote as the name of repo if it exists
+		remote := gitRemote(path)
+		if remote != "" {
+			name = remote
+		}
 		repoC <- Repo{
 			Name:        name,
 			URI:         cloneURI,
@@ -354,9 +429,15 @@ func rootIsRepo(root string) (Repo, bool, error) {
 	if isGit {
 		clonePath += "/.git"
 	}
+	name := filepath.Base(abs)
+	// Use the remote as the name if it exists
+	remote := gitRemote(root)
+	if remote != "" {
+		name = remote
+	}
 
 	return Repo{
-		Name:        filepath.Base(abs),
+		Name:        name,
 		URI:         cloneURI,
 		ClonePath:   clonePath,
 		AbsFilePath: abs,

@@ -20,15 +20,15 @@ import {
 } from '@sourcegraph/wildcard'
 
 import {
-    BatchSpecExecutionFields,
+    type BatchSpecExecutionFields,
     BatchSpecState,
-    CancelBatchSpecExecutionResult,
-    CancelBatchSpecExecutionVariables,
-    RetryBatchSpecExecutionResult,
-    RetryBatchSpecExecutionVariables,
+    type CancelBatchSpecExecutionResult,
+    type CancelBatchSpecExecutionVariables,
+    type RetryBatchSpecExecutionResult,
+    type RetryBatchSpecExecutionVariables,
 } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
+import { type BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
 
 import { CANCEL_BATCH_SPEC_EXECUTION, RETRY_BATCH_SPEC_EXECUTION } from './backend'
 import { CancelExecutionModal } from './CancelExecutionModal'

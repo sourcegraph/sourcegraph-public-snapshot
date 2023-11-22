@@ -1,15 +1,16 @@
 import React, { useState } from 'react'
 
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { render, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { describe, expect, test } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
-import { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
+import type { RecentSearch } from '@sourcegraph/shared/src/settings/temporary/recentSearches'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { SearchHistoryEventLogsQueryResult } from '../../graphql-operations'
+import type { SearchHistoryEventLogsQueryResult } from '../../graphql-operations'
 
 import { SEARCH_HISTORY_EVENT_LOGS_QUERY, useRecentSearches } from './useRecentSearches'
 

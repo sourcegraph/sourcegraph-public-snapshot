@@ -1,0 +1,9 @@
+query SnippetAttribution($snippet: String!) {
+    snippetAttribution(snippet: $snippet, first: 5) {
+        totalCount
+        limitHit
+        nodes {
+            repositoryName
+        }
+    }
+}

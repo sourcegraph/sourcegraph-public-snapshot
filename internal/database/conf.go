@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -60,6 +61,15 @@ type ConfStore interface {
 // ErrNewerEdit is returned by SiteCreateIfUpToDate when a newer edit has already been applied and
 // the edit has been rejected.
 var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
+
+// ConfStoreWith instantiates and returns a new ConfStore using
+// the other store handle.
+func ConfStoreWith(other basestore.ShareableStore) ConfStore {
+	return &confStore{
+		Store:  basestore.NewWithHandle(other.Handle()),
+		logger: log.Scoped("confStore"),
+	}
+}
 
 type confStore struct {
 	*basestore.Store
@@ -182,8 +192,23 @@ func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *Paginat
 	return scanSiteConfigs(rows, err)
 }
 
+const getSiteConfigCount = `
+SELECT
+	COUNT(*)
+FROM (
+	SELECT
+		*,
+		LAG(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
+	FROM
+		critical_and_site_config) t
+WHERE (prev_redacted_contents IS NULL
+	OR redacted_contents != prev_redacted_contents)
+AND redacted_contents IS NOT NULL
+AND type = 'site'
+`
+
 func (s *confStore) GetSiteConfigCount(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(`SELECT count(*) from critical_and_site_config WHERE type = 'site'`)
+	q := sqlf.Sprintf(getSiteConfigCount)
 
 	var count int
 	err := s.QueryRow(ctx, q).Scan(&count)

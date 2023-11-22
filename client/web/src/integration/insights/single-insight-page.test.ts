@@ -1,11 +1,12 @@
 import assert from 'assert'
 
 import delay from 'delay'
+import { afterEach, beforeEach, describe, it } from 'mocha'
 
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from '../context'
 import { percySnapshotWithVariants } from '../utils'
 
 import { MIGRATION_TO_GQL_INSIGHT_DATA_FIXTURE } from './fixtures/calculated-insights'

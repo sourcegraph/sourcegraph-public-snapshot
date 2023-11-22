@@ -1,8 +1,8 @@
-import * as sourcegraph from '../api'
-import { queryGraphQL as sgQueryGraphQL, QueryGraphQLFn } from '../util/graphql'
+import type * as sourcegraph from '../api'
+import { queryGraphQL as sgQueryGraphQL, type QueryGraphQLFn } from '../util/graphql'
 import { parseGitURI } from '../util/uri'
 
-import { GenericLSIFResponse } from './api'
+import type { GenericLSIFResponse } from './api'
 
 export interface LocationConnectionNode {
     resource: {
@@ -23,7 +23,7 @@ export function nodeToLocation(
     textDocument: sourcegraph.TextDocument,
     { resource: { repository, commit, path }, range }: LocationConnectionNode
 ): sourcegraph.Location {
-    const { repo: currentRepo, commit: currentCommit } = parseGitURI(new URL(textDocument.uri))
+    const { repo: currentRepo, commit: currentCommit } = parseGitURI(textDocument.uri)
 
     return {
         uri: new URL(`git://${repository?.name || currentRepo}?${commit?.oid || currentCommit}#${path}`),

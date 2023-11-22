@@ -9,7 +9,7 @@
  * https://github.com/davidNHK/pollyjs/blob/3e876a8cc0b28e8ef422763762bdab10027bb25d/packages/%40pollyjs/core/src/-private/logger.js
  *
  */
-if (process.env.CI) {
+if (process.env.CI || process.env.LOG_BROWSER_CONSOLE === 'false') {
   const originalLog = console.log
   const originalError = console.error
   const originalGroup = console.group

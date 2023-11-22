@@ -2,22 +2,21 @@ package bg
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/fatih/color"
-	"github.com/pkg/browser"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 // AppReady is called once the frontend has reported it is ready to serve
-// requests. It contains tasks related to Sourcegraph App (single binary).
+// requests. It contains tasks related to Cody App (single binary).
 func AppReady(db database.DB, logger log.Logger) {
 	if !deploy.IsApp() {
 		return
@@ -25,9 +24,8 @@ func AppReady(db database.DB, logger log.Logger) {
 
 	ctx := context.Background()
 
-	// Our goal is to open the browser to a special sign-in URL containing a
-	// nonce (signInURL). We additionally want to display the URL without the
-	// nonce since it can only be used once (displayURL)
+	// Our goal is to open the browser to a special sign-in URL containing a in-memory
+	// secret (signInURL).
 	displayURL := globals.ExternalURL().String()
 	browserURL := displayURL
 
@@ -37,23 +35,7 @@ func AppReady(db database.DB, logger log.Logger) {
 		browserURL = signInURL
 	}
 
-	// See cmd/frontend/graphqlbackend/site_flags.go:needsRepositoryConfiguration
-	// There is technically a small race condition where we need repository discovery
-	// to finish before we decide whether or not to render the setup wizard.
-	//
-	// The impact of this race condition is very minimal (worst case scenario it
-	// displays the setup wizard when the user doesn't need it to.) We sleep for a second
-	// before opening the browser just to reduce the chance of it.
-	//
-	// https://github.com/sourcegraph/sourcegraph/pull/49820#issuecomment-1479959514
-	time.Sleep(1 * time.Second)
-	if err := browser.OpenURL(browserURL); err != nil {
-		logger.Error("failed to open browser", log.String("url", browserURL), log.Error(err))
-		// We failed to open the browser, so rather display that URL so the
-		// user can click it.
-		displayURL = browserURL
-	}
-
+	fmt.Fprintf(os.Stderr, "tauri:sign-in-url: %s\n", browserURL)
 	printExternalURL(displayURL)
 }
 

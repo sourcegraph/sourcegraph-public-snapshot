@@ -2,8 +2,8 @@ import React from 'react'
 
 import { SearchPatternType } from '../graphql-operations'
 
-import { CommunitySearchContextPage, CommunitySearchContextPageProps } from './CommunitySearchContextPage'
-import { CommunitySearchContextMetadata } from './types'
+import { CommunitySearchContextPage, type CommunitySearchContextPageProps } from './CommunitySearchContextPage'
+import type { CommunitySearchContextMetadata } from './types'
 
 export const backstage: CommunitySearchContextMetadata = {
     title: 'Backstage',

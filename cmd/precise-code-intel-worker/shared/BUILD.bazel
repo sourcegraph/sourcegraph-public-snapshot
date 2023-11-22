@@ -1,0 +1,38 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = [
+        "config.go",
+        "service.go",
+        "shared.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/shared",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/authz",
+        "//internal/authz/providers",
+        "//internal/authz/subrepoperms",
+        "//internal/codeintel",
+        "//internal/codeintel/shared",
+        "//internal/codeintel/shared/lsifuploadstore",
+        "//internal/codeintel/uploads",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/connections/live",
+        "//internal/debugserver",
+        "//internal/encryption/keyring",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/honey",
+        "//internal/httpserver",
+        "//internal/observation",
+        "//internal/service",
+        "//internal/symbols",
+        "//internal/uploadstore",
+        "//lib/errors",
+        "@com_github_aws_smithy_go//transport/http",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

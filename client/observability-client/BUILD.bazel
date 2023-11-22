@@ -1,8 +1,11 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_config_and_lint_root()
 
 ts_config(
     name = "tsconfig",
@@ -82,10 +85,13 @@ ts_project(
     testonly = True,
     srcs = ["src/sdk/__tests__/getTracingUrl.test.ts"],
     tsconfig = ":tsconfig",
-    deps = [":observability-client_lib"],
+    deps = [
+        ":observability-client_lib",
+        "//:node_modules/vitest",
+    ],
 )
 
-jest_test(
+vitest_test(
     name = "test",
     data = [
         ":observability-client_tests",

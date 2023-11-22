@@ -4,7 +4,7 @@ import classNames from 'classnames'
 import { noop } from 'lodash'
 import * as uuid from 'uuid'
 
-import { NotebookComponent, NotebookComponentProps } from '../../notebooks/notebook/NotebookComponent'
+import { NotebookComponent, type NotebookComponentProps } from '../../notebooks/notebook/NotebookComponent'
 import { convertMarkdownToBlocks } from '../../notebooks/serialize/convertMarkdownToBlocks'
 
 import styles from './RenderedNotebookMarkdown.module.scss'

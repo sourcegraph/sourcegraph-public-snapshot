@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import classNames from 'classnames'
 
@@ -20,6 +20,9 @@ interface BrandLogoProps extends Exclude<React.ImgHTMLAttributes<HTMLImageElemen
     variant: 'logo' | 'symbol'
 
     isLightTheme: boolean
+
+    /** Whether not to add styles for the spinning effect on hover. */
+    disableSymbolSpin?: boolean
 }
 
 /**
@@ -33,6 +36,7 @@ export const BrandLogo: FC<BrandLogoProps> = props => {
         variant,
         className,
         isLightTheme,
+        disableSymbolSpin,
         ...attrs
     } = props
 
@@ -50,7 +54,7 @@ export const BrandLogo: FC<BrandLogoProps> = props => {
         <img
             {...attrs}
             className={classNames(className, {
-                [styles.brandLogoSpin]: variant === 'symbol' && !branding?.disableSymbolSpin,
+                [styles.brandLogoSpin]: variant === 'symbol' && !branding?.disableSymbolSpin && !disableSymbolSpin,
             })}
             src={customBrandingLogoUrl || sourcegraphLogoUrl}
             alt={customBrandingLogoUrl ? 'Logo' : 'Sourcegraph logo'}

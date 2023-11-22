@@ -1,39 +1,35 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`ExternalServiceForm create GitHub 1`] = `
+exports[`ExternalServiceForm > create GitHub 1`] = `
 <DocumentFragment>
   <form
     class="external-service-form"
   >
-    <div
-      class="form-group"
+    <label
+      class="label w-100"
     >
-      <label
-        class="label label mb-0"
+      <p
+        class="mb-2"
       >
-        <div
-          class="mb-2"
-        >
-          Display name:
-        </div>
-        <div
-          class="container loader-input loaderInput"
-        >
-          <input
-            autocomplete="off"
-            autocorrect="off"
-            class="form-control with-invalid-icon"
-            id="test-external-service-form-display-name"
-            required=""
-            spellcheck="false"
-            type="text"
-            value="GitHub"
-          />
-        </div>
-      </label>
-    </div>
+        Display name
+      </p>
+      <div
+        class="container loader-input loaderInput mb-0"
+      >
+        <input
+          autocomplete="off"
+          autocorrect="off"
+          class="form-control with-invalid-icon"
+          id="test-external-service-form-display-name"
+          required=""
+          spellcheck="false"
+          type="text"
+          value="GitHub"
+        />
+      </div>
+    </label>
     <div
-      class="form-group"
+      class="form-group mt-3"
     >
       DynamicallyImportedMonacoSettingsEditor
     </div>
@@ -42,46 +38,42 @@ exports[`ExternalServiceForm create GitHub 1`] = `
       class="btn btnPrimary test-add-external-service-button"
       type="submit"
     >
-      Add repositories
+      Add connection
     </button>
   </form>
 </DocumentFragment>
 `;
 
-exports[`ExternalServiceForm edit GitHub 1`] = `
+exports[`ExternalServiceForm > edit GitHub 1`] = `
 <DocumentFragment>
   <form
     class="external-service-form"
   >
-    <div
-      class="form-group"
+    <label
+      class="label w-100"
     >
-      <label
-        class="label label mb-0"
+      <p
+        class="mb-2"
       >
-        <div
-          class="mb-2"
-        >
-          Display name:
-        </div>
-        <div
-          class="container loader-input loaderInput"
-        >
-          <input
-            autocomplete="off"
-            autocorrect="off"
-            class="form-control with-invalid-icon"
-            id="test-external-service-form-display-name"
-            required=""
-            spellcheck="false"
-            type="text"
-            value="GitHub"
-          />
-        </div>
-      </label>
-    </div>
+        Display name
+      </p>
+      <div
+        class="container loader-input loaderInput mb-0"
+      >
+        <input
+          autocomplete="off"
+          autocorrect="off"
+          class="form-control with-invalid-icon"
+          id="test-external-service-form-display-name"
+          required=""
+          spellcheck="false"
+          type="text"
+          value="GitHub"
+        />
+      </div>
+    </label>
     <div
-      class="form-group"
+      class="form-group mt-3"
     >
       DynamicallyImportedMonacoSettingsEditor
     </div>
@@ -90,47 +82,43 @@ exports[`ExternalServiceForm edit GitHub 1`] = `
       class="btn btnPrimary test-add-external-service-button"
       type="submit"
     >
-      Add repositories
+      Add connection
     </button>
   </form>
 </DocumentFragment>
 `;
 
-exports[`ExternalServiceForm edit GitHub, loading 1`] = `
+exports[`ExternalServiceForm > edit GitHub, loading 1`] = `
 <DocumentFragment>
   <form
     class="external-service-form"
   >
-    <div
-      class="form-group"
+    <label
+      class="label w-100"
     >
-      <label
-        class="label label mb-0"
+      <p
+        class="mb-2"
       >
-        <div
-          class="mb-2"
-        >
-          Display name:
-        </div>
-        <div
-          class="container loader-input loaderInput"
-        >
-          <input
-            autocomplete="off"
-            autocorrect="off"
-            class="form-control with-invalid-icon"
-            disabled=""
-            id="test-external-service-form-display-name"
-            required=""
-            spellcheck="false"
-            type="text"
-            value="GitHub"
-          />
-        </div>
-      </label>
-    </div>
+        Display name
+      </p>
+      <div
+        class="container loader-input loaderInput mb-0"
+      >
+        <input
+          autocomplete="off"
+          autocorrect="off"
+          class="form-control with-invalid-icon"
+          disabled=""
+          id="test-external-service-form-display-name"
+          required=""
+          spellcheck="false"
+          type="text"
+          value="GitHub"
+        />
+      </div>
+    </label>
     <div
-      class="form-group"
+      class="form-group mt-3"
     >
       DynamicallyImportedMonacoSettingsEditor
     </div>
@@ -146,7 +134,7 @@ exports[`ExternalServiceForm edit GitHub, loading 1`] = `
         data-loading-spinner="true"
         role="img"
       />
-      Add repositories
+      Add connection
     </button>
   </form>
 </DocumentFragment>

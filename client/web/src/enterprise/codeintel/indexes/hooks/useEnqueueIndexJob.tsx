@@ -1,8 +1,8 @@
-import { MutationFunctionOptions, FetchResult, useMutation } from '@apollo/client'
+import { type MutationFunctionOptions, type FetchResult, useMutation } from '@apollo/client'
 
 import { gql, getDocumentNode } from '@sourcegraph/http-client'
 
-import {
+import type {
     QueueAutoIndexJobsForRepoVariables,
     Exact,
     Maybe,

@@ -19,13 +19,20 @@
     overflow: auto;
 
     [data-reach-combobox-option]:hover {
-        background-color: var(--dropdown-link-hover-bg);
         color: var(--dropdown-link-hover-color);
+
+        :global(.theme-dark) & {
+            background-color: var(--color-bg-3);
+        }
+
+        :global(.theme-light) & {
+            background-color: var(--oc-gray-1);
+        }
     }
 
     [data-highlighted],
     [data-highlighted]:hover {
-        background-color: var(--dropdown-link-active-bg);
+        background-color: var(--dropdown-link-active-bg) !important;
         color: var(--dropdown-link-active-color);
     }
 

@@ -1,5 +1,6 @@
 import { noop } from 'lodash'
 import { NEVER } from 'rxjs'
+import { describe, expect, test } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -7,7 +8,7 @@ import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { SearchPatternType } from '../../graphql-operations'
 
-import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResultsInfoBar'
+import { SearchResultsInfoBar, type SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
@@ -20,6 +21,7 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     allExpanded: true,
     onExpandAllResultsToggle: noop,
     onSaveQueryClick: noop,
+    onExportCsvClick: noop,
     stats: <div />,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     patternType: SearchPatternType.standard,
@@ -27,8 +29,6 @@ const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     setSidebarCollapsed: noop,
     sidebarCollapsed: false,
     isSourcegraphDotCom: true,
-    isRankingEnabled: true,
-    setRankingEnabled: noop,
     options: {
         version: 'V3',
         patternType: SearchPatternType.standard,
@@ -52,8 +52,6 @@ describe('SearchResultsInfoBar', () => {
             renderSearchResultsInfoBar({
                 query: 'foo type:diff',
                 enableCodeMonitoring: false,
-                isRankingEnabled: true,
-                setRankingEnabled: noop,
             }).asFragment()
         ).toMatchSnapshot()
     })

@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resolvers",
+    srcs = ["resolver.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions/resolvers",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//internal/cody",
+        "//internal/completions/client",
+        "//internal/completions/httpapi",
+        "//internal/completions/types",
+        "//internal/conf",
+        "//internal/database",
+        "//internal/redispool",
+        "//internal/telemetry/telemetryrecorder",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

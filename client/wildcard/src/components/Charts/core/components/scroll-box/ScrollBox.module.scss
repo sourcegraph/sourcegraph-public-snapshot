@@ -1,4 +1,8 @@
 .root {
+    --shutter-height-internal: var(--shutter-height, 2rem);
+    --shutter-color-start-internal: var(--shutter-color-start, var(--color-bg-1));
+    --shutter-color-stop-internal: var(--shutter-color-stop, rgba(249, 250, 251, 0));
+
     position: relative;
     overflow: hidden;
 
@@ -8,7 +12,7 @@
         display: block;
         position: absolute;
         width: 100%;
-        height: 2rem;
+        height: var(--shutter-height-internal);
         max-height: 100%;
         opacity: 0;
         pointer-events: none;
@@ -17,12 +21,20 @@
 
     &::before {
         top: 0;
-        background: linear-gradient(0deg, rgba(249, 250, 251, 0) 0%, var(--color-bg-1) 100%);
+        background: linear-gradient(
+            0deg,
+            var(--shutter-color-stop-internal) 0%,
+            var(--shutter-color-start-internal) 100%
+        );
     }
 
     &::after {
         bottom: 0;
-        background: linear-gradient(180deg, rgba(249, 250, 251, 0) 0%, var(--color-bg-1) 100%);
+        background: linear-gradient(
+            180deg,
+            var(--shutter-color-stop-internal) 0%,
+            var(--shutter-color-start-internal) 100%
+        );
     }
 
     &--with-top-fader::before {

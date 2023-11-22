@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+set -ex
 MAX_DURATION_IN_SECONDS=600 # seconds
 
 tmp_log=$(mktemp)

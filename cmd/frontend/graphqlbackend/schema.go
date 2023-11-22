@@ -75,6 +75,11 @@ var outboundWebhooksSchema string
 //go:embed embeddings.graphql
 var embeddingsSchema string
 
+// codyContextSchema is the Context raw graqhql schema.
+//
+//go:embed cody_context.graphql
+var codyContextSchema string
+
 // rbacSchema is the RBAC raw graphql schema.
 //
 //go:embed rbac.graphql
@@ -85,7 +90,37 @@ var rbacSchema string
 //go:embed own.graphql
 var ownSchema string
 
-// appSchema is the Sourcegraph App local raw graqhql schema.
+// appSchema is the Cody App local raw graqhql schema.
 //
 //go:embed app.graphql
 var appSchema string
+
+// completionSchema is the Sourcegraph Completions raw graqhql schema.
+//
+//go:embed completions.graphql
+var completionSchema string
+
+// gitHubAppsSchema is the GitHub apps raw graqhql schema.
+//
+//go:embed githubapps.graphql
+var gitHubAppsSchema string
+
+// guardrailsSchema is the Sourcegraph Guardrails raw graphql schema.
+//
+//go:embed guardrails.graphql
+var guardrailsSchema string
+
+// contentLibrary is the Sourcegraph Content Library raw graphql schema.
+//
+//go:embed content_library.graphql
+var contentLibrary string
+
+// searchJobSchema is the Sourcegraph Search Job raw graphql schema.
+//
+//go:embed search_jobs.graphql
+var searchJobSchema string
+
+// telemetrySchema is the Sourcegraph Telemetry V2 raw graphql schema.
+//
+//go:embed telemetry.graphql
+var telemetrySchema string

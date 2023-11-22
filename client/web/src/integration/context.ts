@@ -1,16 +1,16 @@
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
-import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { getConfig } from '@sourcegraph/shared/src/testing/config'
 import {
     createSharedIntegrationTestContext,
-    IntegrationTestContext,
-    IntegrationTestOptions,
+    type IntegrationTestContext,
+    type IntegrationTestOptions,
 } from '@sourcegraph/shared/src/testing/integration/context'
 
-import { getWebpackManifest, getIndexHTML } from '../../dev/utils/get-index-html'
-import { WebGraphQlOperations } from '../graphql-operations'
-import { SourcegraphContext } from '../jscontext'
+import { getWebBuildManifest, getIndexHTML } from '../../dev/utils/get-index-html'
+import type { WebGraphQlOperations } from '../graphql-operations'
+import type { SourcegraphContext } from '../jscontext'
 
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createJsContext } from './jscontext'
@@ -70,7 +70,7 @@ export const createWebIntegrationTestContext = async ({
             .intercept((request, response) => {
                 response.type('text/html').send(
                     getIndexHTML({
-                        manifestFile: getWebpackManifest(),
+                        manifestFile: getWebBuildManifest(),
                         jsContext: { ...jsContext, ...customContext },
                     })
                 )

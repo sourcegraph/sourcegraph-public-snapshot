@@ -1,6 +1,6 @@
-import { Point } from '../types'
+import type { Point } from '../types'
 
-import { getDatumValue, isDatumWithValidNumber, SeriesWithData, SeriesDatum } from './data-series-processing'
+import { getDatumValue, isDatumWithValidNumber, type SeriesWithData, type SeriesDatum } from './data-series-processing'
 
 const NULL_LINK = (): undefined => undefined
 

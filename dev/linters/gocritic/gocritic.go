@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-critic/go-critic/framework/linter"
 	"golang.org/x/tools/go/analysis"
+
+	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
 )
 
 var Analyzer *analysis.Analyzer = createAnalyzer()
@@ -24,11 +26,11 @@ var DisabledLinters = []string{
 func createAnalyzer() *analysis.Analyzer {
 	linters := GetEnabledLinters(DisabledLinters...)
 
-	return &analysis.Analyzer{
+	return nolint.Wrap(&analysis.Analyzer{
 		Name: "gocritic",
 		Doc:  "linter from go-critic/go-critic, modified to be runnable in nogo",
 		Run:  runWithLinters(linters),
-	}
+	})
 }
 
 // runWithLinters is copied from https://sourcegraph.com/github.com/go-critic/go-critic@3f8d719ce34bb78eacfdb8fef52228aff8cbdb10/-/blob/checkers/analyzer/run.go?L27

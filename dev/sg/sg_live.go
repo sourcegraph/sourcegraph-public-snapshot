@@ -7,6 +7,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
@@ -33,7 +34,7 @@ sg live -help
 # Check for commits further back in history
 sg live -n 50 s2
 	`,
-	Category:    CategoryCompany,
+	Category:    category.Company,
 	Description: constructLiveCmdLongHelp(),
 	Action:      liveExec,
 	Flags: []cli.Flag{

@@ -1,15 +1,19 @@
 import delay from 'delay'
 import expect from 'expect'
-import { test } from 'mocha'
+import { afterEach, beforeEach, describe, test } from 'mocha'
 
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
-import { SearchEvent } from '@sourcegraph/shared/src/search/stream'
-import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { SearchEvent } from '@sourcegraph/shared/src/search/stream'
+import { createDriverForTest, type Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
 
-import { GetSearchAggregationResult, WebGraphQlOperations, SearchAggregationMode } from '../graphql-operations'
+import {
+    type GetSearchAggregationResult,
+    type WebGraphQlOperations,
+    SearchAggregationMode,
+} from '../graphql-operations'
 
-import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
+import { createWebIntegrationTestContext, type WebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, removeContextFromQuery } from './utils'
 
@@ -121,7 +125,6 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
             avatarURL: '',
             viewerCanAdminister: true,
             builtinAuth: true,
-            tags: [],
             createdAt: '2020-03-02T11:52:15Z',
             roles: {
                 __typename: 'RoleConnection',

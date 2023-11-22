@@ -7,7 +7,7 @@ import { pluralize } from '@sourcegraph/common'
 import { Badge, H2, H3, H4, useObservable } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../components/diff/DiffStat'
-import { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
+import type { ApplyPreviewStatsFields, DiffStatFields, Scalars } from '../../../graphql-operations'
 
 import { queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContext } from './BatchChangePreviewContext'

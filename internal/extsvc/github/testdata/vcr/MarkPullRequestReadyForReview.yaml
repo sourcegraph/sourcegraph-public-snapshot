@@ -38,7 +38,7 @@ interactions:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -63,9 +63,9 @@ interactions:
   response:
     body: '{"data":{"markPullRequestReadyForReview":{"pullRequest":{"id":"PR_kwDODS5xec4waL43","title":"This
       is a test PR, feel free to ignore","body":"I''m opening this PR to test something.
-      Please ignore.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/467","number":467,"createdAt":"2021-12-30T22:43:31Z","updatedAt":"2023-02-07T08:39:23Z","headRefOid":"c447ff8dabfd39e88ff99fe1cd69089dbdec4b72","baseRefOid":"36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea","headRefName":"test-pr-9","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"c447ff8dabfd39e88ff99fe1cd69089dbdec4b72","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAABHenIlg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHenIlw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHenImg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2021-12-30T22:41:59Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABhisHlngBqjg0NTU0Mzc3NTM="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"c447ff8dabfd39e88ff99fe1cd69089dbdec4b72","message":"Test
-      commit.","messageHeadline":"Test commit.","committedDate":"2021-12-30T22:41:59Z","pushedDate":"2021-12-30T22:43:12Z","url":"https://github.com/sourcegraph/automation-testing/commit/c447ff8dabfd39e88ff99fe1cd69089dbdec4b72","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","email":"adam@adamharvey.name","name":"Adam
-      Harvey","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}}}},{"__typename":"ReadyForReviewEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"createdAt":"2021-12-30T22:53:14Z"},{"__typename":"ConvertToDraftEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-02-07T08:38:12Z"},{"__typename":"ReadyForReviewEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/63290851?v=4","login":"sourcegraph-vcr","url":"https://github.com/sourcegraph-vcr"},"createdAt":"2023-02-07T08:39:23Z"}]}}}}}'
+      Please ignore.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/467","number":467,"createdAt":"2021-12-30T22:43:31Z","updatedAt":"2023-06-23T19:30:16Z","headRefOid":"c447ff8dabfd39e88ff99fe1cd69089dbdec4b72","baseRefOid":"36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea","headRefName":"test-pr-9","baseRefName":"master","reviewDecision":"REVIEW_REQUIRED","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"c447ff8dabfd39e88ff99fe1cd69089dbdec4b72","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAABHenIlg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHenIlw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHenImg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2021-12-30T22:41:59Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABiOm8XUABqjk2MjE0MjQyNDQ="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"c447ff8dabfd39e88ff99fe1cd69089dbdec4b72","message":"Test
+      commit.","messageHeadline":"Test commit.","committedDate":"2021-12-30T22:41:59Z","pushedDate":"2021-12-30T22:43:11Z","url":"https://github.com/sourcegraph/automation-testing/commit/c447ff8dabfd39e88ff99fe1cd69089dbdec4b72","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","email":"adam@adamharvey.name","name":"Adam
+      Harvey","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}}}},{"__typename":"ReadyForReviewEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"createdAt":"2021-12-30T22:53:14Z"},{"__typename":"ConvertToDraftEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-02-07T08:38:12Z"},{"__typename":"ReadyForReviewEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/63290851?v=4","login":"sourcegraph-vcr","url":"https://github.com/sourcegraph-vcr"},"createdAt":"2023-02-07T08:39:23Z"},{"__typename":"ConvertToDraftEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T19:29:53Z"},{"__typename":"ReadyForReviewEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T19:30:16Z"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -79,7 +79,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 07 Feb 2023 08:39:24 GMT
+      - Fri, 23 Jun 2023 19:30:17 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -95,17 +95,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 2160:546F:FE4EAF:10318D2:63E20E3B
+      - E1F2:0F6C:181055:314A27:6495F2C8
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4947"
+      - "4880"
       X-Ratelimit-Reset:
-      - "1675759612"
+      - "1687551677"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "53"
+      - "120"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -148,7 +148,7 @@ interactions:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -173,8 +173,8 @@ interactions:
   response:
     body: '{"data":{"markPullRequestReadyForReview":{"pullRequest":{"id":"PR_kwDODS5xec4waL4w","title":"This
       is a test PR, feel free to ignore","body":"I''m opening this PR to test something.
-      Please ignore.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/466","number":466,"createdAt":"2021-12-30T22:43:30Z","updatedAt":"2021-12-30T22:43:30Z","headRefOid":"10b4269455ca0f834f8b0e7c4cc197392cddc717","baseRefOid":"36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea","headRefName":"test-pr-8","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"10b4269455ca0f834f8b0e7c4cc197392cddc717","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAABHenIqA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHenIrA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHenIrw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2021-12-30T22:41:48Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABfg2Bp-AH2gAyODEyMTcwODAwOjEwYjQyNjk0NTVjYTBmODM0ZjhiMGU3YzRjYzE5NzM5MmNkZGM3MTc="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"10b4269455ca0f834f8b0e7c4cc197392cddc717","message":"Test
-      commit.","messageHeadline":"Test commit.","committedDate":"2021-12-30T22:41:48Z","pushedDate":"2021-12-30T22:43:12Z","url":"https://github.com/sourcegraph/automation-testing/commit/10b4269455ca0f834f8b0e7c4cc197392cddc717","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","email":"adam@adamharvey.name","name":"Adam
+      Please ignore.","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/466","number":466,"createdAt":"2021-12-30T22:43:30Z","updatedAt":"2021-12-30T22:43:30Z","headRefOid":"10b4269455ca0f834f8b0e7c4cc197392cddc717","baseRefOid":"36f6827a9ac62710ca5fb3df18000b9e7eb9b6ea","headRefName":"test-pr-8","baseRefName":"master","reviewDecision":"REVIEW_REQUIRED","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"10b4269455ca0f834f8b0e7c4cc197392cddc717","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAABHenIqA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHenIrA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHenIrw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2021-12-30T22:41:48Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABfg2Bp-AH2gAyODEyMTcwODAwOjEwYjQyNjk0NTVjYTBmODM0ZjhiMGU3YzRjYzE5NzM5MmNkZGM3MTc="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"10b4269455ca0f834f8b0e7c4cc197392cddc717","message":"Test
+      commit.","messageHeadline":"Test commit.","committedDate":"2021-12-30T22:41:48Z","pushedDate":"2021-12-30T22:43:11Z","url":"https://github.com/sourcegraph/automation-testing/commit/10b4269455ca0f834f8b0e7c4cc197392cddc717","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","email":"adam@adamharvey.name","name":"Adam
       Harvey","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}}}}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
@@ -189,7 +189,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 07 Feb 2023 08:39:25 GMT
+      - Fri, 23 Jun 2023 19:30:18 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -205,17 +205,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 2160:546F:FE53A2:1031DCC:63E20E3B
+      - E1F2:0F6C:1811EB:314D80:6495F2C8
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4944"
+      - "4877"
       X-Ratelimit-Reset:
-      - "1675759612"
+      - "1687551677"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "56"
+      - "123"
       X-Xss-Protection:
       - "0"
     status: 200 OK

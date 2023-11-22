@@ -1,19 +1,22 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
-import { WebStory, WebStoryChildrenProps } from '../WebStory'
+import { type ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
+import { WebStory, type WebStoryChildrenProps } from '../WebStory'
 
 import { FETCH_EXTERNAL_SERVICE } from './backend'
 import { ExternalServiceEditPage } from './ExternalServiceEditPage'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 container">
-        <WebStory path="/:externalServiceID" initialEntries={['service123']}>
+        <WebStory
+            path="/site-admin/external-services/:externalServiceID/edit"
+            initialEntries={['/site-admin/external-services/service123/edit']}
+        >
             {story}
         </WebStory>
     </div>
@@ -33,7 +36,7 @@ const config: Meta = {
 export default config
 
 const externalService = {
-    __typename: 'ExternalService' as const,
+    __typename: 'ExternalService',
     id: 'service123',
     kind: ExternalServiceKind.GITHUB,
     warning: null,
@@ -43,6 +46,7 @@ const externalService = {
     lastSyncError: null,
     repoCount: 0,
     lastSyncAt: null,
+    unrestricted: false,
     nextSyncAt: null,
     updatedAt: '2021-03-15T19:39:11Z',
     createdAt: '2021-03-15T19:39:11Z',
@@ -52,9 +56,18 @@ const externalService = {
         namespaceName: 'johndoe',
         url: '/users/johndoe',
     },
-}
+    rateLimiterState: {
+        __typename: 'RateLimiterState',
+        burst: 10,
+        currentCapacity: 10,
+        infinite: false,
+        interval: 3600,
+        lastReplenishment: new Date().toISOString(),
+        limit: 5,
+    },
+} as ExternalServiceFields
 
-function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceFields): WildcardMockLink {
+function newFetchMock(node: ExternalServiceFields): WildcardMockLink {
     return new WildcardMockLink([
         {
             request: {
@@ -67,7 +80,7 @@ function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceF
     ])
 }
 
-export const ViewConfig: Story<WebStoryChildrenProps> = props => (
+export const ViewConfig: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock(externalService)}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -80,7 +93,7 @@ export const ViewConfig: Story<WebStoryChildrenProps> = props => (
 
 ViewConfig.storyName = 'View external service config'
 
-export const ConfigWithInvalidUrl: Story<WebStoryChildrenProps> = props => (
+export const ConfigWithInvalidUrl: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, config: '{"url": "invalid-url"}' })}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -93,7 +106,7 @@ export const ConfigWithInvalidUrl: Story<WebStoryChildrenProps> = props => (
 
 ConfigWithInvalidUrl.storyName = 'External service config with invalid url'
 
-export const ConfigWithWarning: Story<WebStoryChildrenProps> = props => (
+export const ConfigWithWarning: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}
@@ -106,7 +119,7 @@ export const ConfigWithWarning: Story<WebStoryChildrenProps> = props => (
 
 ConfigWithWarning.storyName = 'External service config with warning after update'
 
-export const EditingDisabled: Story<WebStoryChildrenProps> = props => (
+export const EditingDisabled: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock({ ...externalService, warning: 'Invalid config we could not sync stuff' })}>
         <ExternalServiceEditPage
             telemetryService={NOOP_TELEMETRY_SERVICE}

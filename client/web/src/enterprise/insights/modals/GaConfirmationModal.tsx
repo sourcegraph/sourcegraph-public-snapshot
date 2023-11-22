@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Button, Modal, Link, H1, Text } from '@sourcegraph/wildcard'
@@ -9,14 +9,11 @@ import { FourLineChart, LangStatsInsightChart, ThreeLineChart } from './componen
 
 import styles from './GaConfirmationModal.module.scss'
 
-interface Props {
-    isSourcegraphApp: boolean
-}
-export const GaConfirmationModal: FC<Props> = props => {
+export const GaConfirmationModal: FC = () => {
     const [isGaAccepted, setGaAccepted] = useTemporarySetting('insights.freeGaExpiredAccepted', false)
     const { licensed } = useUiFeatures()
 
-    const showConfirmationModal = !licensed && isGaAccepted === false && !props.isSourcegraphApp
+    const showConfirmationModal = !licensed && isGaAccepted === false
 
     if (!showConfirmationModal) {
         return null

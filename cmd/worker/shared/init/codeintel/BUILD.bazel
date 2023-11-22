@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codeintel",
+    srcs = [
+        "db.go",
+        "services.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//cmd/worker/shared/init/db",
+        "//internal/codeintel",
+        "//internal/codeintel/shared",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database/connections/live",
+        "//internal/memo",
+        "//internal/observation",
+        "//lib/errors",
+    ],
+)

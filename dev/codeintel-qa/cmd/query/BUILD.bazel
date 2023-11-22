@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
 
 go_library(
     name = "query_lib",
@@ -10,6 +10,7 @@ go_library(
         "query_types.go",
         "state.go",
         "test_cases.go",
+        "test_cases_utils.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/codeintel-qa/cmd/query",
     visibility = ["//visibility:private"],
@@ -24,4 +25,12 @@ go_binary(
     name = "query",
     embed = [":query_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "query-darwin-arm64",
+    platform = "@io_bazel_rules_go//go/toolchain:darwin_arm64",
+    tags = ["manual"],
+    target = ":query",
+    visibility = ["//testing:__pkg__"],
 )

@@ -16,7 +16,7 @@ func TestGitserverLocalCloneEnqueue(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	jobid, err := db.GitserverLocalClone().Enqueue(ctx, 1, "gitserver1", "gitserver2", true)

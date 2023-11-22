@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"strings"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/google/go-cmp/cmp"
+	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -145,6 +148,66 @@ func TestGCSUpload(t *testing.T) {
 		t.Fatalf("unexpected number of NewWriter calls. want=%d have=%d", 1, len(calls))
 	} else if value := buf.String(); value != "TEST PAYLOAD" {
 		t.Errorf("unexpected payload. want=%s have=%s", "TEST PAYLOAD", value)
+	}
+}
+
+type mockGCSObjectsIterator struct {
+	objects []storage.ObjectAttrs
+}
+
+func (m *mockGCSObjectsIterator) Next() (*storage.ObjectAttrs, error) {
+	if len(m.objects) == 0 {
+		return nil, iterator.Done
+	}
+
+	obj := m.objects[0]
+	m.objects = m.objects[1:]
+	return &obj, nil
+}
+
+func (m *mockGCSObjectsIterator) PageInfo() *iterator.PageInfo {
+	return nil
+}
+
+func TestGCSList(t *testing.T) {
+	buf := &bytes.Buffer{}
+
+	gcsClient := NewMockGcsAPI()
+	bucketHandle := NewMockGcsBucketHandle()
+	objectHandle := NewMockGcsObjectHandle()
+
+	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
+	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
+	objectHandle.NewWriterFunc.SetDefaultReturn(nopCloser{buf})
+
+	objects := []storage.ObjectAttrs{{Name: "test-key1"}, {Name: "test-key2"}, {Name: "other-key"}}
+	bucketHandle.ObjectsFunc.SetDefaultHook(func(ctx context.Context, query *storage.Query) gcsObjectIterator {
+		j := 0
+		for i, obj := range objects {
+			if strings.HasPrefix(obj.Name, query.Prefix) {
+				objects[j] = objects[i]
+				j++
+			}
+		}
+		objects = objects[:j]
+
+		return &mockGCSObjectsIterator{objects}
+	})
+
+	client := testGCSClient(gcsClient, false)
+
+	iter, err := client.List(context.Background(), "test-")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var names []string
+	for iter.Next() {
+		names = append(names, iter.Current())
+	}
+
+	if d := cmp.Diff([]string{"test-key1", "test-key2"}, names); d != "" {
+		t.Fatalf("-want, +got: %s\n", d)
 	}
 }
 

@@ -25,7 +25,7 @@ If you frequently rely on your editor’s “go to definition” and “find ref
 
 If you're brand new to code search and you want to try it, visit [Sourcegraph.com](https://sourcegraph.com/search) to search across open source repositories. 
 
-For a high-level overview of how Sourcegraph compares to GitHub code search, see this [documennt](https://storage.googleapis.com/sourcegraph-assets/docs/PDFs/Sourcegraph%20vs.%20GitHub%20code%20search%20chart.pdf).  
+For a high-level overview of how Sourcegraph compares to GitHub code search, see this [document](https://storage.googleapis.com/sourcegraph-assets/docs/PDFs/Sourcegraph%20vs.%20GitHub%20code%20search%20chart.pdf).  
 
 ## Searching code
 
@@ -120,7 +120,7 @@ GitHub allows you to search indexed code, but not all code is indexed. GitHub’
 
 With GitHub, only the default **branch** is searchable (though GitHub is planning to support branch search in the future). 
 
-**Forks** are included in the index, but they are subject to the same limitations as other repositories, so not all forks are indexed.
+**Forks** are included in the index but are subject to the same limitations as other repositories, so not all forks are indexed. You may need to include the fork filter to retrieve results for the fork repos, but an admin can adjust global settings to include forks in search query results automatically. 
 
 GitHub code search supports searching across issues, pull requests, and discussions. In addition to searching your private code, GitHub has indexed over 7 million public GitHub repositories which are also searchable.
 
@@ -133,8 +133,6 @@ Sourcegraph allows you to search indexed and [unindexed](https://docs.sourcegrap
 * Files other than UTF-8 are excluded 
 
 With Sourcegraph, typically, the latest code on the default **branch** of each repository is indexed (usually the master or main), but Sourcegraph can also index other non-default branches, such as long-running branches like release branches. If you’re searching outside of indexed branches, you can use unindexed search. You should expect slightly slower results when searching unindexed code.  
-
-**Forks** are included in the index, but they are subject to the same limitations as other repositories, so not all forks are indexed. You may need to include the fork filter to retrieve results for the fork repos, but an admin can adjust global settings to automatically include forks in search query results. 
 
 In addition to searching your organization’s private code, you can use Sourcegraph.com to search across 2.8 million public repositories from multiple code hosts. 
 
@@ -720,13 +718,8 @@ GitHub does not currently offer functionality to embed code search within notebo
 
 GitHub is closed source, while Sourcegraph’s code is publicly available. 
 
-Sourcegraph offers two versions of its product: Sourcegraph OSS (just universal code search) and Sourcegraph Enterprise (full code intelligence platform). 
-
-Sourcegraph OSS is Apache 2 licensed and allows any developer to use, modify, and redistribute.
-
-
 ## Availability
 
 GitHub code search is currently available through a beta preview (you can sign up for their [waitlist](https://github.com/features/code-search-code-view/signup) to request access). The beta preview is not yet available for GitHub Enterprise. 
 
-Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://signup.sourcegraph.com/).
+Sourcegraph’s code intelligence platform is generally available, and you can sign up for a free trial for your team [here](https://about.sourcegraph.com/get-started?t=enterprise/).

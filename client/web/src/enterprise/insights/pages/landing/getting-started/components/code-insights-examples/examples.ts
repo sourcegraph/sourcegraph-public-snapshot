@@ -1,6 +1,6 @@
 import { DATA_SERIES_COLORS } from '../../../../../constants'
 
-import { CaptureGroupExampleContent, SearchInsightExampleContent } from './types'
+import type { CaptureGroupExampleContent, SearchInsightExampleContent } from './types'
 
 interface Datum {
     x: Date

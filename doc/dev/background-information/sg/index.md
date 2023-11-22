@@ -79,10 +79,6 @@ On the next command run, if a new version is detected, `sg` will auto update bef
 
 To see what's changed, use `sg version changelog`.
 
-## Usage
-
-Refer to the [generated `sg` reference](reference.md) for complete documentation of all commands.
-
 ### Help
 
 You can get help about commands locally in a variety of ways:
@@ -93,9 +89,9 @@ sg help # show all available commands
 # learn about a specific command or subcommand
 sg <command> -h
 sg <command> --help
-```
 
-A full reference is available in the [generated `sg` reference](reference.md). You can also view the full reference locally with `sg help -full`.
+sg help -full # full reference
+```
 
 ### Autocompletion
 
@@ -164,7 +160,6 @@ commandsets:
       - searcher
       - symbols
       - caddy
-      - github-proxy
       - zoekt-indexserver-0
       - zoekt-indexserver-1
       - zoekt-webserver-0
@@ -179,7 +174,7 @@ With that in `sg.config.overwrite.yaml` you can now run `sg start minimal-batche
 `sg start` runs many of the services (defined in the `commands` section of `sg.config.yaml`) as binaries that it compiles and runs according to the settings in their `cmd` and `install` sections. Sometimes while developing, you need to run some of the services isolated from your local environment. This example shows what to add to `sg.config.overwrite.yaml` so that `gitserver` will run in a Docker container. The `gitserver` service already has a build script that generates a Docker image; this configuration will use that script in the `install` section, and use the `env` defined in `sg.config.yaml` to pass environment variables to `docker` in the `run` section.
 
 **A few things to note about this configuration**
-- `PGHOST` is set to `host.docker.internal` so that `gitserver` running in the container can connect to the database that's running on your local machine. See [the Docker documentation](https://docs.docker.com/desktop/networking/#i-want-to-connect-from-a-container-to-a-service-on-the-host) for more information about `host.docker.internal`. In order to use `host.docker.internal` here, you will need to add it to `/etc/hosts` so that the services not running in Docker containers will be able to use it also. If you are using a different database, you will need to adjust `PHHOST` to suit.
+- `PGHOST` is set to `host.docker.internal` so that `gitserver` running in the container can connect to the database that's running on your local machine. See [the Docker documentation](https://docs.docker.com/desktop/networking/#i-want-to-connect-from-a-container-to-a-service-on-the-host) for more information about `host.docker.internal`. In order to use `host.docker.internal` here, you will need to add it to `/etc/hosts` so that the services not running in Docker containers will be able to use it also. If you are using a different database, you will need to adjust `PGHOST` to suit.
 -  `${SRC_FRONTEND_INTERNAL##*:}`, `${HOSTNAME##*:}`, and `${SRC_PROF_HTTP##*:}` use shell parameter expansion to pull the port number from the environment variables defined in `sg.config.yaml`. This parameter expansion works in at least the `ksh`, `bash` and `zsh` shells; might not work in others.
 - The `gitserver` Docker containers will be left running after `sg` has terminated. You will need to manually stop them.
 - The Prometheus agent gets metrics about the `/data/repos` mount. Because the Docker operating system is Linux, the metric function uses the `sysfs` pseudo filesystem and assumes that `/data/repos` is on a block device.  However, Docker bind mounts (which is what `-v ${SRC_REPOS_DIR}:/data/repos` creates) create virtual filesystems, not block filesystems. This will result in error messages in the container about "skipping metric registration" with a reason containing "failed to evaluate sysfs symlink". You can ignore those errors unless your development work involves the Prometheus metrics, in which case you will need to create Docker volumes and mount those instead of the bind mounts (Docker volumes are mounted as block devices). Using a Docker volume means that the repo dirs will not be on your local filesystem in the same location as `SRC_REPOS_DIR`.
@@ -191,7 +186,10 @@ env:
 commands:
   gitserver:
     install: |
-      VERSION=dev IMAGE=sourcegraph/gitserver ./cmd/gitserver/build.sh
+      config=""
+      [[ $(uname) == "Darwin" ]] && config="--config darwin-docker"
+      bazel build //cmd/gitserver:image_tarball ${config} && \
+      docker load --input $(bazel cquery //cmd/gitserver:image_tarball ${config} --output=files)
   gitserver-0:
     cmd: |
       docker inspect gitserver-${GITSERVER_INDEX} >/dev/null 2>&1 && docker stop gitserver-${GITSERVER_INDEX}
@@ -207,7 +205,7 @@ commands:
       -v ${SRC_REPOS_DIR}:/data/repos \
       --detach \
       --name gitserver-${GITSERVER_INDEX} \
-      sourcegraph/gitserver
+      gitserver:candidate
     env:
       GITSERVER_INDEX: 0
   gitserver-1:
@@ -225,7 +223,7 @@ commands:
       -v ${SRC_REPOS_DIR}:/data/repos \
       --detach \
       --name gitserver-${GITSERVER_INDEX} \
-      sourcegraph/gitserver
+      gitserver:candidate
     env:
       GITSERVER_INDEX: 1
 ```
@@ -253,6 +251,49 @@ Ensure that the `sourcegraph/syntax-highlighter:insiders` image is already avail
 docker pull -q sourcegraph/syntax-highlighter:insiders
 ```
 
+## `sg` and pre-commit hooks
+
+When `sg setup` is run, it will automatically install pre-commit hooks (using [pre-commit.com](https://pre-commit.com)), with a [provided configuration](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/.pre-commit-config.yaml) that will perform a series of fast checks before each commit you create locally.
+
+Amongst that list of checks, is a [script](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/dev/check-tokens.sh) that tries to detect the presence of tokens that would have been accidentally committed. While it's implementation is rather simple and won't catch all tokens (this is covered by automated scans in CI), it's enough to catch common mistakes and save you from having to rotate secrets, as they never left your computer. Due to the importance of such a measure, it's an opt-out process instead of opt-in.
+
+Therefore, it's strongly recommended to keep the pre-commit git hook. In the eventuality of the pre-commit detecting a false positive, you can disable it through `sg setup disable-pre-commit` and prevent `sg setup` from installing it by passing a flag `sg setup --skip-pre-commit`.
+
+### Exceptions
+
+There are legitimate cases where code contains what appears to be a Sourcegraph token but isn't usable on any existing deployments.
+Testing code for generating tokens is good example.
+
+You can tell pre-commit to simply skip these files by adding a `// pre-commit:ignore_sourcegraph_token` top-level comment, as
+shown in the example below:
+
+```
+package accesstoken
+
+// pre-commit:ignore_sourcegraph_token
+
+import (
+	"testing"
+)
+
+func TestGenerateDotcomUserGatewayAccessToken(t *testing.T) {
+	type args struct {
+		apiToken string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name:    "valid token 1",
+			args:    args{apiToken: "0123456789abcdef0123456789abcdef01234567"},
+			want:    "LOOKS_LIKE_A_REAL_TOKEN",
+			wantErr: false,
+		},
+  // (...)
+```
 
 ## Contributing to `sg`
 
@@ -282,7 +323,7 @@ Have questions or need help? Feel free to [open a discussion](https://github.com
 A `sourcegraph/sg` Docker image is available:
 
 ```dockerfile
-# ... 
+# ...
 COPY --from us.gcr.io/sourcegraph-dev/sg:insiders /usr/local/bin/sg ./sg
 # ...
 ```

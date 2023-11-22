@@ -4,13 +4,13 @@ import { mdiAccount } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { logger } from '@sourcegraph/common'
+import { logger, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Alert, Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
-import { FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables } from '../../../graphql-operations'
+import type { FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables } from '../../../graphql-operations'
 import { formatPersonName } from '../../../person/PersonLink'
 import { GitCommitNode } from '../../commits/GitCommitNode'
 
@@ -22,7 +22,8 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
     repoID: string
     revision?: string
     filePath: string
-}> = ({ repoID, revision, filePath }) => {
+    enableOwnershipPanel: boolean
+}> = ({ repoID, revision, filePath, enableOwnershipPanel }) => {
     const navigate = useNavigate()
 
     const openOwnershipPanel = useCallback(() => {
@@ -36,6 +37,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                 repo: repoID,
                 revision: revision ?? '',
                 currentPath: filePath,
+                includeOwn: enableOwnershipPanel,
             },
         }
     )
@@ -54,28 +56,39 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         )
     }
 
-    if (error || !(data?.node?.__typename === 'Repository' && data.node.commit)) {
-        return (
-            <div className={styles.wrapper}>
-                <Alert variant="danger" className="mb-0 py-1" aria-live="polite">
-                    Error getting history and ownership details about this file.
-                </Alert>
-            </div>
-        )
+    const errorDiv = (
+        <div className={styles.wrapper}>
+            <Alert variant="danger" className="mb-0 py-1" aria-live="polite">
+                Error getting history and ownership details about this file.
+            </Alert>
+        </div>
+    )
+
+    if (error || !(data?.node?.__typename === 'Repository')) {
+        return errorDiv
     }
 
-    const history = data?.node?.commit?.ancestors?.nodes?.[0]
-    const ownership = data.node.commit?.blob?.ownership
+    const commit = data.node.commit || data.node.changelist?.commit
+
+    if (!commit) {
+        return errorDiv
+    }
+
+    const history = commit?.ancestors?.nodes?.[0]
+    const ownership = commit?.blob?.ownership
+    const contributorsCount = commit?.blob?.contributors?.totalCount ?? 0
 
     return (
         <div className={styles.wrapper}>
             {history && (
-                <GitCommitNode
-                    node={history}
-                    extraCompact={true}
-                    hideExpandCommitMessageBody={true}
-                    className={styles.history}
-                />
+                <div className={styles.historyPanel}>
+                    <GitCommitNode
+                        node={history}
+                        extraCompact={true}
+                        hideExpandCommitMessageBody={true}
+                        className={styles.history}
+                    />
+                </div>
             )}
             {ownership && (
                 <Tooltip content="Show ownership details" placement="left">
@@ -115,8 +128,14 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                                     )}
                                 </div>
                             ))}
-                            {ownership.totalCount > 2 && (
+                            {ownership.totalCount > 2 ? (
                                 <div className={styles.ownMore}>+{ownership.totalCount - 2} more</div>
+                            ) : (
+                                contributorsCount > 0 && (
+                                    <div className={styles.ownMore}>
+                                        +{contributorsCount} {pluralize('contributor', contributorsCount)}
+                                    </div>
+                                )
                             )}
                         </div>
                     </Button>

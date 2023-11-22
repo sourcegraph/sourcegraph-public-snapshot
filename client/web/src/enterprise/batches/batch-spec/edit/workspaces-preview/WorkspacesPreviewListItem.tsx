@@ -4,7 +4,7 @@ import { mdiClose } from '@mdi/js'
 
 import { Button, Icon, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
-import {
+import type {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'

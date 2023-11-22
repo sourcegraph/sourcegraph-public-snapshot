@@ -1,8 +1,8 @@
-import { ApolloError, FetchResult, MutationFunctionOptions, OperationVariables } from '@apollo/client'
+import type { ApolloError, FetchResult, MutationFunctionOptions, OperationVariables } from '@apollo/client'
 
 import { gql, useMutation } from '@sourcegraph/http-client'
 
-import { UpdateRepositoryIndexConfigurationResult } from '../../../../graphql-operations'
+import type { UpdateRepositoryIndexConfigurationResult } from '../../../../graphql-operations'
 
 const UPDATE_CONFIGURATION_FOR_REPOSITORY = gql`
     mutation UpdateRepositoryIndexConfiguration($id: ID!, $content: String!) {

@@ -90,20 +90,6 @@ func TestSearch(t *testing.T) {
 	})
 
 	testSearchOther(t)
-
-	// Run the search tests with file-based ranking enabled
-	err = client.SetFeatureFlag("search-ranking", true)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	t.Run("graphql with file ranking", func(t *testing.T) {
-		testSearchClient(t, client)
-	})
-
-	t.Run("stream with file ranking", func(t *testing.T) {
-		testSearchClient(t, streamClient)
-	})
 }
 
 // searchClient is an interface so we can swap out a streaming vs graphql
@@ -143,23 +129,22 @@ func addKVPs(t *testing.T, client *gqltestutil.Client) {
 		t.Fatal(err)
 	}
 
-	err = client.SetFeatureFlag("repository-metadata", true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	testVal := "testval"
-	err = client.AddRepoKVP(repo1.ID, "testkey", &testVal)
+	err = client.AddRepoMetadata(repo1.ID, "testkey", &testVal)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.AddRepoKVP(repo2.ID, "testkey", &testVal)
+	err = client.AddRepoMetadata(repo2.ID, "testkey", &testVal)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = client.AddRepoKVP(repo2.ID, "testtag", nil)
+	err = client.AddRepoMetadata(repo2.ID, "testtag", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

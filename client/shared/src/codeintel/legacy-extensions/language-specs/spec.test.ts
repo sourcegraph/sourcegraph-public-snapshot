@@ -1,4 +1,6 @@
-import { FilterContext, Result } from './language-spec'
+import { test } from 'vitest'
+
+import type { FilterContext, Result } from './language-spec'
 
 /**
  * A zero-value filter context used for testing.

@@ -1,32 +1,29 @@
 /* eslint-disable ban/ban */
-import { ReactElement } from 'react'
+import type { ReactElement } from 'react'
 
-import { MockedResponse } from '@apollo/client/testing'
+import type { MockedResponse } from '@apollo/client/testing'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import sinon from 'sinon'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { MockIntersectionObserver } from '@sourcegraph/shared/src/testing/MockIntersectionObserver'
 
-import { InsightsDashboardsResult } from '../../../graphql-operations'
-import { CodeInsightsBackend, CodeInsightsBackendContext, FakeDefaultCodeInsightsBackend } from '../core'
+import type { InsightsDashboardsResult } from '../../../graphql-operations'
+import { type CodeInsightsBackend, CodeInsightsBackendContext, FakeDefaultCodeInsightsBackend } from '../core'
 import { GET_INSIGHT_DASHBOARDS_GQL } from '../core/hooks/use-insight-dashboards'
 
 import { CodeInsightsRootPage, CodeInsightsRootPageTab } from './CodeInsightsRootPage'
 
-function mockRouterDom() {
-    return {
-        ...jest.requireActual('react-router-dom'),
-        useNavigate: () => ({
-            push: jest.fn(),
-        }),
-    }
-}
-
-jest.mock('react-router-dom', () => mockRouterDom())
+vi.mock('react-router-dom', async () => ({
+    ...(await vi.importActual<typeof import('react-router-dom')>('react-router-dom')),
+    useNavigate: () => ({
+        push: vi.fn(),
+    }),
+}))
 
 const mockTelemetryService = {
     log: sinon.spy(),
@@ -78,7 +75,7 @@ const mockedGQL: MockedResponse[] = [
                 },
             },
         },
-    } as MockedResponse<InsightsDashboardsResult>,
+    } satisfies MockedResponse<InsightsDashboardsResult>,
 ]
 
 const renderWithBrandedContext = (component: ReactElement, { route = '/', path = '*', api = {} } = {}) => ({
@@ -105,7 +102,6 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
-                isSourcegraphApp={false}
             />,
             {
                 route: '/insights/dashboards/foo',
@@ -121,7 +117,6 @@ describe('CodeInsightsRootPage', () => {
             <CodeInsightsRootPage
                 activeTab={CodeInsightsRootPageTab.Dashboards}
                 telemetryService={mockTelemetryService}
-                isSourcegraphApp={false}
             />,
             {
                 route: '/insights/dashboards/foo',

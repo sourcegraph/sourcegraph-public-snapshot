@@ -3,8 +3,8 @@ import React, { forwardRef, useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ForwardReferenceComponent, H3 } from '@sourcegraph/wildcard'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, type ForwardReferenceComponent, H3 } from '@sourcegraph/wildcard'
 
 import { CodeInsightExampleCard } from '../../../../getting-started/components/code-insights-examples/code-insight-example-card/CodeInsightExampleCard'
 import { EXAMPLES } from '../examples'
@@ -139,6 +139,7 @@ export const CodeInsightsExamplesSliderItem = forwardRef((props, publicReference
 
     return <Comp ref={mergedReference} {...attributes} />
 }) as ForwardReferenceComponent<'div', CodeInsightsExamplesSliderItemProps>
+CodeInsightsExamplesSliderItem.displayName = 'CodeInsightsExamplesSliderItem'
 
 interface ArrowIconProps {
     side: 'right' | 'left'

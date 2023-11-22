@@ -19,13 +19,17 @@
     $: name = user.displayName || user.username || ''
 </script>
 
-<div>
-    <span>{getInitials(name)}</span>
-</div>
+{#if user.avatarURL}
+    <img src={user.avatarURL} role="presentation" aria-hidden="true" alt="Avatar of {name}" />
+{:else}
+    <div>
+        <span>{getInitials(name)}</span>
+    </div>
+{/if}
 
 <style lang="scss">
+    img,
     div {
-        flex: 1;
         isolation: isolate;
         display: inline-flex;
         border-radius: 50%;
@@ -37,20 +41,20 @@
         min-height: 1.5rem;
         position: relative;
         background: linear-gradient(to bottom, var(--logo-purple), var(--logo-orange));
-        width: var(--avatar-size);
-        height: var(--avatar-size);
+        width: var(--avatar-size, var(--icon-inline-size));
+        height: var(--avatar-size, var(--icon-inline-size));
+    }
 
-        &::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            border-radius: 50%;
-            background: linear-gradient(to right, var(--logo-purple), var(--logo-blue));
-            mask-image: linear-gradient(to bottom, #000000, transparent);
-        }
+    div::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        border-radius: 50%;
+        background: linear-gradient(to right, var(--logo-purple), var(--logo-blue));
+        mask-image: linear-gradient(to bottom, #000000, transparent);
     }
 
     span {

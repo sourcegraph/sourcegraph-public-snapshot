@@ -1,15 +1,27 @@
 import { within, fireEvent } from '@testing-library/react'
 import { createPath } from 'react-router-dom'
+import { describe, expect, it, vi } from 'vitest'
 
-import { SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
+import { EMPTY_SETTINGS_CASCADE, SettingsProvider } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
 
 import '@sourcegraph/shared/src/testing/mockReactVisibilitySensor'
 
+import { Code } from '@sourcegraph/wildcard'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+
+import type { BlobProps } from '../repo/blob/CodeMirrorBlob'
 
 import { ReferencesPanel } from './ReferencesPanel'
 import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
+
+// CodeMirror editor relies on contenteditable property which is not supported by `jsdom`: https://github.com/jsdom/jsdom/issues/1670.
+// We need to mock `CodeMirrorBlob to avoid errors.
+// More details on CodeMirror react components testing: https://gearheart.io/articles/codemirror-unit-testing-codemirror-react-components/.
+function mockCodeMirrorBlob(props: BlobProps) {
+    return <Code data-testid="codeMirrorBlobMock">{props.blobInfo.content}</Code>
+}
+vi.mock('../repo/blob/CodeMirrorBlob', () => ({ CodeMirrorBlob: mockCodeMirrorBlob }))
 
 describe('ReferencesPanel', () => {
     async function renderReferencesPanel() {
@@ -17,12 +29,7 @@ describe('ReferencesPanel', () => {
 
         const result = renderWithBrandedContext(
             <MockedTestProvider mocks={requestMocks}>
-                <SettingsProvider
-                    settingsCascade={{
-                        final: { experimentalFeatures: { enableCodeMirrorFileView: false } },
-                        subjects: [],
-                    }}
-                >
+                <SettingsProvider settingsCascade={EMPTY_SETTINGS_CASCADE}>
                     <ReferencesPanel {...defaultProps} />
                 </SettingsProvider>
             </MockedTestProvider>,
@@ -72,7 +79,7 @@ describe('ReferencesPanel', () => {
         const referenceButton = within(referencesList).getByTestId('reference-item-diff/diff.go-0')
         const fullReferenceURL =
             '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2-16:10'
-        expect(referenceButton).toHaveAttribute('data-href', fullReferenceURL)
+        expect(referenceButton).toHaveAttribute('href', fullReferenceURL)
         expect(referenceButton).not.toHaveClass('locationActive')
 
         // Click on reference
@@ -102,7 +109,7 @@ describe('ReferencesPanel', () => {
         expect(fileLink).toBeVisible()
 
         // Assert the code view is rendered, by doing a partial match against its content
-        const codeView = within(rightPane).getByRole('table')
+        const codeView = within(rightPane).getByTestId('codeMirrorBlobMock')
         expect(codeView).toHaveTextContent('package diff import')
 
         // Assert the current URL points at the reference panel

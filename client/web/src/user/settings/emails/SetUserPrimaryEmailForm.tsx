@@ -1,14 +1,14 @@
-import React, { useState, FunctionComponent, useCallback } from 'react'
+import React, { useState, type FunctionComponent, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 import { Select, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { LoaderButton } from '../../../components/LoaderButton'
-import {
+import type {
     SetUserEmailPrimaryResult,
     SetUserEmailPrimaryVariables,
     UserEmailsResult,

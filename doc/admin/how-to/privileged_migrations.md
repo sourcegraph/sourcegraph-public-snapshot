@@ -8,7 +8,7 @@ Note that these flags affect the `migrator` commands `up`, `upto`, `downto`, `up
 
 ## Option 1: `--unprivileged-only`
 
-Add the optional flag `--unprivileged-only` when [running the migrator](manual_database_migrations.md) against your Postgres instance. When the migration runner encounters an unapplied privileged migration, it will halt with an error message similar to the following.
+Add the optional flag `--unprivileged-only` when [running the migrator](../updates/migrator/migrator-operations.md) against your Postgres instance. When the migration runner encounters an unapplied privileged migration, it will halt with an error message similar to the following.
 
 ```
 ❌ failed to run migration for schema "frontend": refusing to apply a privileged migration: schema "frontend" requires database migrations 1657908958 and 1657908965 to be applied by a database user with elevated permissions
@@ -21,7 +21,7 @@ To be interactively instructed through the manual process, re-run the migrator w
 
 ## Option 2: `--noop-privileged`
 
-Add the optional flag `--noop-privileged` when [running the migrator](manual_database_migrations.md) against your Postgres instance. When the migration runner encounters an unapplied privileged migration, it will initially halt with an error message similar to the following.
+Add the optional flag `--noop-privileged` when [running the migrator](../updates/migrator/migrator-operations.md) against your Postgres instance. When the migration runner encounters an unapplied privileged migration, it will initially halt with an error message similar to the following.
 
 ```
 ❌ failed to run migration for schema "frontend": refusing to apply a privileged migration: apply the following SQL and re-run with the added flag `--privileged-hash=vp6EzmVmJfHgfchaShhJPUCq5v4=` to continue.

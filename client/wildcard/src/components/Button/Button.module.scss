@@ -44,7 +44,7 @@
 // since button doesn't use disabled attribute we enforce/mimic the native
 // disabled control styles.
 input.btn {
-    &:focus {
+    &:focus-visible {
         outline: 2px solid var(--primary-2);
         outline-offset: 2px;
     }
@@ -79,14 +79,14 @@ input.btn {
     }
 
     &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
-        &:hover:not(:global(.focus)):not(:focus),
+        &:hover:not(:global(.focus)):not(:focus-visible),
         &:active,
         &:global(.active) {
             text-decoration: underline;
             color: var(--link-hover-color);
         }
 
-        &:focus,
+        &:focus-visible,
         &:global(.focus) {
             text-decoration: underline;
 
@@ -137,7 +137,7 @@ input.btn {
     border: none;
     cursor: pointer;
 
-    &:focus-visible:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
+    &.focus:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
         box-shadow: 0 0 0 2px var(--primary-2);
     }
 
@@ -192,14 +192,14 @@ input.btn {
     }
 
     &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
-        &:hover:not(:global(.focus)):not(:focus),
+        &:hover:not(:global(.focus)):not(:focus-visible),
         &:active,
         &:global(.active) {
             color: var(--btn-text-color);
             background-color: var(--btn-dark-color-variant);
         }
 
-        &:focus,
+        &:focus-visible,
         &:global(.focus) {
             color: var(--btn-text-color);
             background-color: var(--btn-base-color);
@@ -247,7 +247,7 @@ input.btn {
             fill: var(--btn-base-color);
         }
 
-        &:hover:not(:global(.focus)):not(:focus),
+        &:hover:not(:global(.focus)):not(:focus-visible),
         &:active,
         &:global(.active) {
             background-color: var(--color-bg-1);
@@ -267,7 +267,7 @@ input.btn {
             }
         }
 
-        &:focus,
+        &:focus-visible,
         &:global(.focus) {
             color: var(--body-color);
             background-color: var(--body-bg);
@@ -358,7 +358,7 @@ input.btn {
         }
 
         &:not(:disabled):not(:global(.disabled)):not([aria-disabled='true']) {
-            &:hover:not(:global(.focus)):not(:focus),
+            &:hover:not(:global(.focus)):not(:focus-visible),
             &:active,
             &:global(.active) {
                 text-decoration: none;
@@ -370,7 +370,7 @@ input.btn {
                 }
             }
 
-            &:focus,
+            &:focus-visible,
             &:global(.focus) {
                 box-shadow: 0 0 0 2px var(--primary-2);
             }
@@ -392,17 +392,6 @@ input.btn {
     > .btn {
         position: relative;
         flex: 1 1 auto;
-
-        // Bring the hover, focused, and "active" buttons to the front to overlay
-        // the borders properly
-        &:hover {
-            z-index: 1;
-        }
-        &:focus,
-        &:active,
-        &:global(.active) {
-            z-index: 1;
-        }
     }
 }
 

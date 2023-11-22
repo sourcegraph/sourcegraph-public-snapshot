@@ -65,7 +65,7 @@ type RolePermissionStore interface {
 	AssignToSystemRole(ctx context.Context, opts AssignToSystemRoleOpts) error
 	// BulkAssignPermissionsToRole is used to assign multiple permissions to a role.
 	BulkAssignPermissionsToRole(ctx context.Context, opts BulkAssignPermissionsToRoleOpts) error
-	// BulkAssignToSystemRole is used to assign a permission to multiple system roles.
+	// BulkAssignPermissionsToSystemRoles is used to assign a permission to multiple system roles.
 	BulkAssignPermissionsToSystemRoles(ctx context.Context, opts BulkAssignPermissionsToSystemRolesOpts) error
 	// BulkRevokePermissionsForRole revokes bulk permissions assigned to a role.
 	BulkRevokePermissionsForRole(ctx context.Context, opts BulkRevokePermissionsForRoleOpts) error

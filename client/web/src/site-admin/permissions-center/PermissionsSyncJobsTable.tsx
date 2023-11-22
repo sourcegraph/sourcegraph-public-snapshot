@@ -1,6 +1,6 @@
-import React, { ChangeEvent, FC, useCallback, useEffect, useRef, useState } from 'react'
+import React, { type ChangeEvent, type FC, useCallback, useEffect, useRef, useState } from 'react'
 
-import { ApolloError } from '@apollo/client/errors'
+import type { ApolloError } from '@apollo/client/errors'
 import { mdiCancel, mdiClose, mdiDetails, mdiMapSearch, mdiReload, mdiSecurity } from '@mdi/js'
 import classNames from 'classnames'
 import { intervalToDuration } from 'date-fns'
@@ -11,7 +11,8 @@ import { animated, useSpring } from 'react-spring'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
 import { convertREMToPX } from '@sourcegraph/shared/src/components/utils/size'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import type { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
     Button,
@@ -28,32 +29,32 @@ import {
     useDebounce,
     useLocalStorage,
     Badge,
-    BadgeVariantType,
+    type BadgeVariantType,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../components/FilteredConnection/hooks/usePageSwitcherPagination'
 import { ConnectionError, ConnectionLoading } from '../../components/FilteredConnection/ui'
 import { PageTitle } from '../../components/PageTitle'
 import {
-    CancelPermissionsSyncJobResult,
+    type CancelPermissionsSyncJobResult,
     CancelPermissionsSyncJobResultMessage,
-    CancelPermissionsSyncJobVariables,
-    CodeHostState,
+    type CancelPermissionsSyncJobVariables,
+    type CodeHostState,
     CodeHostStatus,
-    PermissionsSyncJob,
+    type PermissionsSyncJob,
     PermissionsSyncJobReasonGroup,
-    PermissionsSyncJobsResult,
+    type PermissionsSyncJobsResult,
     PermissionsSyncJobsSearchType,
     PermissionsSyncJobState,
-    PermissionsSyncJobsVariables,
-    PermissionsSyncJobPriority,
-    ScheduleRepoPermissionsSyncResult,
-    ScheduleRepoPermissionsSyncVariables,
-    ScheduleUserPermissionsSyncResult,
-    ScheduleUserPermissionsSyncVariables,
+    type PermissionsSyncJobsVariables,
+    type PermissionsSyncJobPriority,
+    type ScheduleRepoPermissionsSyncResult,
+    type ScheduleRepoPermissionsSyncVariables,
+    type ScheduleUserPermissionsSyncResult,
+    type ScheduleUserPermissionsSyncVariables,
 } from '../../graphql-operations'
 import { useURLSyncedState } from '../../hooks'
-import { IColumn, Table } from '../UserManagement/components/Table'
+import { type IColumn, Table } from '../UserManagement/components/Table'
 
 import {
     CANCEL_PERMISSIONS_SYNC_JOB,
@@ -64,14 +65,17 @@ import {
 import {
     JOB_STATE_METADATA_MAPPING,
     PermissionsSyncJobNumbers,
+    PermissionsSyncJobNumberType,
     PermissionsSyncJobReasonByline,
     PermissionsSyncJobStatusBadge,
     PermissionsSyncJobSubject,
+    PermissionsSyncJobUpdatedAt,
 } from './PermissionsSyncJobNode'
+import { PermissionsSyncStats } from './PermissionsSyncStats'
 
 import styles from './styles.module.scss'
 
-interface Filters {
+export interface Filters {
     reason: string
     state: string
     searchType: string
@@ -88,10 +92,11 @@ const DEFAULT_FILTERS = {
     state: '',
     searchType: '',
     query: '',
+    partial: '',
 }
-const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 5000
+export const PERMISSIONS_SYNC_JOBS_POLL_INTERVAL = 2000
 
-interface Props extends TelemetryProps {
+interface Props extends TelemetryProps, TelemetryV2Props {
     minimal?: boolean
     userID?: string
     repoID?: string
@@ -99,6 +104,7 @@ interface Props extends TelemetryProps {
 
 export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
+    telemetryRecorder,
     minimal = false,
     userID,
     repoID,
@@ -112,7 +118,6 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const [polling, setPolling] = useLocalStorage<boolean>('polling_for_permissions_sync_jobs', true)
     const [showModal, setShowModal] = useState<boolean>(false)
     const [selectedJob, setSelectedJob] = useState<PermissionsSyncJob | undefined>(undefined)
-
     const { connection, loading, startPolling, stopPolling, error, variables, ...paginationProps } =
         usePageSwitcherPagination<PermissionsSyncJobsResult, PermissionsSyncJobsVariables, PermissionsSyncJob>({
             query: PERMISSIONS_SYNC_JOBS_QUERY,
@@ -122,6 +127,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 state: stringToState(filters.state),
                 searchType: stringToSearchType(filters.searchType),
                 query: debouncedQuery,
+                partial: filters.partial === 'true',
                 userID,
                 repoID,
             } as PermissionsSyncJobsVariables,
@@ -154,6 +160,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
         (searchType: PermissionsSyncJobsSearchType | null) => setFilters({ searchType: searchType?.toString() || '' }),
         [setFilters]
     )
+    const setPartial = useCallback((partial: boolean) => setFilters({ partial: partial.toString() }), [setFilters])
 
     const [notification, setNotification] = useState<Notification | undefined>(undefined)
     const [showNotification, setShowNotification] = useState<boolean>(false)
@@ -184,6 +191,9 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
     const handleTriggerPermsSync = useCallback(
         ([job]: PermissionsSyncJob[]) => {
             if (job.subject.__typename === 'Repository') {
+                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'trigger', {
+                    privateMetadata: { repo: job.subject.id },
+                })
                 triggerRepoSync({
                     variables: { repo: job.subject.id },
                     onCompleted: () =>
@@ -194,6 +204,9 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                     noop
                 )
             } else {
+                telemetryRecorder.recordEvent('permissions-center.user.sync', 'trigger', {
+                    privateMetadata: { user: job.subject.id },
+                })
                 triggerUserSync({
                     variables: { user: job.subject.id },
                     onCompleted: () => toggleNotification({ text: 'User permissions sync successfully scheduled' }),
@@ -204,7 +217,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 )
             }
         },
-        [triggerUserSync, triggerRepoSync, onError, toggleNotification]
+        [triggerUserSync, triggerRepoSync, onError, toggleNotification, telemetryRecorder]
     )
 
     const handleCancelSyncJob = useCallback(
@@ -218,16 +231,36 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 // noop here is used because an error is handled in `onError` option of `useMutation` above.
                 noop
             )
+
+            if (syncJob.subject.__typename === 'Repository') {
+                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'cancel', {
+                    privateMetadata: { repo: syncJob.subject.id },
+                })
+            } else {
+                telemetryRecorder.recordEvent('permissions-center.user.sync', 'cancel', {
+                    privateMetadata: { user: syncJob.subject.id },
+                })
+            }
         },
-        [cancelSyncJob, onError, toggleNotification]
+        [cancelSyncJob, onError, toggleNotification, telemetryRecorder]
     )
 
     const handleViewJobDetails = useCallback(
         ([syncJob]: PermissionsSyncJob[]) => {
             setShowModal(true)
             setSelectedJob(syncJob)
+
+            if (syncJob.subject.__typename === 'Repository') {
+                telemetryRecorder.recordEvent('permissions-center.repository.sync', 'view', {
+                    privateMetadata: { repo: syncJob.subject.id },
+                })
+            } else {
+                telemetryRecorder.recordEvent('permissions-center.user.sync', 'view', {
+                    privateMetadata: { user: syncJob.subject.id },
+                })
+            }
         },
-        [setShowModal, setSelectedJob]
+        [setShowModal, setSelectedJob, telemetryRecorder]
     )
 
     if (minimal) {
@@ -299,13 +332,18 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 className={classNames(styles.pageHeader, 'mb-3')}
             />
             {showModal && selectedJob && renderModal(selectedJob, () => setShowModal(false))}
+            <PermissionsSyncStats filters={filters} setFilters={setFilters} polling={polling} />
             <Container>
                 {error && <ConnectionError errors={[error.message]} />}
-                {!connection && <ConnectionLoading />}
+                {!connection && !error && <ConnectionLoading />}
                 {connection?.nodes && (
                     <div className={styles.filtersGrid}>
                         <PermissionsSyncJobReasonGroupPicker value={filters.reason} onChange={setReason} />
-                        <PermissionsSyncJobStatePicker value={filters.state} onChange={setState} />
+                        <PermissionsSyncJobStatePicker
+                            value={filters.partial === 'true' ? 'partial' : filters.state}
+                            onChange={setState}
+                            onPartialSuccessChange={setPartial}
+                        />
                         <PermissionsSyncJobSearchTypePicker value={filters.searchType} onChange={setSearchType} />
                         <PermissionsSyncJobSearchPane filters={filters} setFilters={setFilters} />
                     </div>
@@ -322,7 +360,7 @@ export const PermissionsSyncJobsTable: React.FunctionComponent<React.PropsWithCh
                 {connection?.nodes?.length === 0 && <EmptyList />}
                 {!!connection?.nodes?.length && (
                     <Table<PermissionsSyncJob>
-                        columns={TableColumns}
+                        columns={SiteAdminTableColumns}
                         getRowId={node => node.id}
                         data={connection.nodes}
                         rowClassName={styles.tableRow}
@@ -389,9 +427,11 @@ const AnimatedAlert: React.FunctionComponent<React.PropsWithChildren<{ className
     return (
         <animated.div style={style}>
             {/* Keep this in sync with calculation above: mb-3 = 1rem */}
-            <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
-                {children}
-            </Alert>
+            {visible && (
+                <Alert ref={ref} variant="success" className={classNames(className, 'mb-3')}>
+                    {children}
+                </Alert>
+            )}
         </animated.div>
     )
 }
@@ -400,13 +440,50 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
     {
         key: 'Status',
         header: 'Status',
-        render: ({ state, cancellationReason, failureMessage }: PermissionsSyncJob) => (
-            <PermissionsSyncJobStatusBadge
-                state={state}
-                cancellationReason={cancellationReason}
-                failureMessage={failureMessage}
-            />
+        render: job => <PermissionsSyncJobStatusBadge job={job} />,
+    },
+    {
+        key: 'UpdatedAt',
+        header: 'Updated At',
+        render: job => <PermissionsSyncJobUpdatedAt job={job} />,
+    },
+    {
+        key: 'Reason',
+        header: 'Reason',
+        render: (node: PermissionsSyncJob) => <PermissionsSyncJobReasonByline job={node} />,
+        cellClassName: classNames(styles.reasonGroupContainer, 'pr-1'),
+    },
+    {
+        key: 'Added',
+        header: { label: 'Added', align: 'right' },
+        align: 'right',
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.ADDED} />
         ),
+    },
+    {
+        key: 'Removed',
+        header: { label: 'Removed', align: 'right' },
+        align: 'right',
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.REMOVED} />
+        ),
+    },
+    {
+        key: 'Total',
+        header: { label: 'Total', align: 'right' },
+        align: 'right',
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.TOTAL} />
+        ),
+    },
+]
+
+const SiteAdminTableColumns: IColumn<PermissionsSyncJob>[] = [
+    {
+        key: 'Status',
+        header: 'Status',
+        render: job => <PermissionsSyncJobStatusBadge job={job} />,
     },
     {
         key: 'Name',
@@ -424,22 +501,24 @@ const TableColumns: IColumn<PermissionsSyncJob>[] = [
         key: 'Added',
         header: { label: 'Added', align: 'right' },
         align: 'right',
-        render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={true} />,
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.ADDED} />
+        ),
     },
     {
         key: 'Removed',
         header: { label: 'Removed', align: 'right' },
         align: 'right',
-        render: (node: PermissionsSyncJob) => <PermissionsSyncJobNumbers job={node} added={false} />,
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.REMOVED} />
+        ),
     },
     {
         key: 'Total',
         header: { label: 'Total', align: 'right' },
         align: 'right',
-        render: ({ permissionsFound }: PermissionsSyncJob) => (
-            <div className="text-muted text-right">
-                <b>{permissionsFound}</b>
-            </div>
+        render: (node: PermissionsSyncJob) => (
+            <PermissionsSyncJobNumbers job={node} type={PermissionsSyncJobNumberType.TOTAL} />
         ),
     },
 ]
@@ -480,18 +559,34 @@ const PermissionsSyncJobReasonGroupPicker: FC<PermissionsSyncJobReasonGroupPicke
 interface PermissionsSyncJobStatePickerProps {
     value: string
     onChange: (state: PermissionsSyncJobState | null) => void
+    onPartialSuccessChange: (partial: boolean) => void
 }
 
 const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = props => {
-    const { onChange, value } = props
+    const { onChange, onPartialSuccessChange, value } = props
 
     const handleSelect = (event: ChangeEvent<HTMLSelectElement>): void => {
-        const nextValue = event.target.value === '' ? null : (event.target.value as PermissionsSyncJobState)
+        let nextValue = null
+        let partial = false
+        switch (event.target.value) {
+            case '': {
+                break
+            }
+            case 'partial': {
+                partial = true
+                break
+            }
+            default: {
+                nextValue = event.target.value as PermissionsSyncJobState
+            }
+        }
         onChange(nextValue)
+        onPartialSuccessChange(partial)
     }
 
+    const selectedValue = value === 'partial' ? 'partial' : stringToState(value) || ''
     return (
-        <Select id="stateSelector" value={stringToState(value) || ''} label="State" onChange={handleSelect}>
+        <Select id="stateSelector" value={selectedValue} label="State" onChange={handleSelect}>
             <option value="">Any</option>
             <option value={PermissionsSyncJobState.CANCELED}>Canceled</option>
             <option value={PermissionsSyncJobState.COMPLETED}>Completed</option>
@@ -499,6 +594,7 @@ const PermissionsSyncJobStatePicker: FC<PermissionsSyncJobStatePickerProps> = pr
             <option value={PermissionsSyncJobState.FAILED}>Failed</option>
             <option value={PermissionsSyncJobState.PROCESSING}>Processing</option>
             <option value={PermissionsSyncJobState.QUEUED}>Queued</option>
+            <option value="partial">Partial</option>
         </Select>
     )
 }
@@ -572,12 +668,15 @@ const finalState = (state: PermissionsSyncJobState): boolean =>
 
 const prettyPrintCancelSyncJobMessage = (message: CancelPermissionsSyncJobResultMessage): string => {
     switch (message) {
-        case CancelPermissionsSyncJobResultMessage.SUCCESS:
+        case CancelPermissionsSyncJobResultMessage.SUCCESS: {
             return 'Permissions sync job canceled.'
-        case CancelPermissionsSyncJobResultMessage.NOT_FOUND:
+        }
+        case CancelPermissionsSyncJobResultMessage.NOT_FOUND: {
             return 'Permissions sync job is already dequeued and cannot be canceled.'
-        case CancelPermissionsSyncJobResultMessage.ERROR:
+        }
+        case CancelPermissionsSyncJobResultMessage.ERROR: {
             return 'Error during permissions sync job cancelling.'
+        }
     }
 }
 
@@ -671,14 +770,26 @@ const renderModal = (job: PermissionsSyncJob, hideModal: () => void): React.Reac
                     <Text className="mb-0" weight="bold">
                         Permissions added
                     </Text>
-                    <Text className="text-success mb-0" weight="bold">
+                    <Text
+                        className={classNames('mb-0', {
+                            'text-success': job.permissionsAdded > 0,
+                            'text-muted': job.permissionsAdded === 0,
+                        })}
+                        weight="bold"
+                    >
                         {job.permissionsAdded}
                     </Text>
 
                     <Text className="mb-0" weight="bold">
                         Permissions removed
                     </Text>
-                    <Text className="text-danger mb-0" weight="bold">
+                    <Text
+                        className={classNames('mb-0', {
+                            'text-danger': job.permissionsAdded > 0,
+                            'text-muted': job.permissionsAdded === 0,
+                        })}
+                        weight="bold"
+                    >
                         {job.permissionsRemoved}
                     </Text>
 

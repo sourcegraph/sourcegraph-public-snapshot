@@ -45,9 +45,7 @@ var DockerContainer = conftypes.RawUnified{
 			"type": "builtin",
 			"allowSignup": true
 		}
-	],
-
-	"disablePublicRepoRedirects": true,
+	]
 }`,
 }
 
@@ -79,17 +77,51 @@ var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
 // between the bundled executor and the publicly-facing executor API.
 var AppInMemoryExecutorPassword = uuid.NewV4().String()
 
-// App is the default configuration for the Sourcegraph app (which is also a single Go static binary.)
+// App is the default configuration for the Cody app.
 var App = conftypes.RawUnified{
 	Site: `{
 	"auth.providers": [
 		{ "type": "builtin" }
 	],
 	"externalURL": "http://localhost:3080",
-
 	"codeIntelAutoIndexing.enabled": true,
 	"codeIntelAutoIndexing.allowGlobalPolicies": true,
 	"executors.frontendURL": "http://host.docker.internal:3080",
+	"experimentalFeatures": {
+		"structuralSearch": "disabled"
+	},
+	"cody.enabled": true,
+	"repoListUpdateInterval": 0,
+	"completions": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	},
+	"embeddings": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	}
+}`,
+}
+
+// SingleProgram is the default configuration for the single-program distribution.
+var SingleProgram = conftypes.RawUnified{
+	Site: `{
+	"auth.providers": [
+		{ "type": "builtin" }
+	],
+	"externalURL": "http://localhost:3080",
+	"codeIntelAutoIndexing.enabled": true,
+	"codeIntelAutoIndexing.allowGlobalPolicies": true,
+	"executors.frontendURL": "http://host.docker.internal:3080",
+	"cody.enabled": true,
+	"completions": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	},
+	"embeddings": {
+		"enabled": true,
+		"provider": "sourcegraph"
+	}
 }`,
 }
 

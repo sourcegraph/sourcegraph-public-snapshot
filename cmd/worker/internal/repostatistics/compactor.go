@@ -36,11 +36,15 @@ func (j *compactor) Routines(_ context.Context, observationCtx *observation.Cont
 	}
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutine(context.Background(), "repomgmt.statistics-compactor", "compacts repo statistics",
-			30*time.Minute, &handler{
+		goroutine.NewPeriodicGoroutine(
+			context.Background(),
+			&handler{
 				store:  db.RepoStatistics(),
 				logger: observationCtx.Logger,
 			},
+			goroutine.WithName("repomgmt.statistics-compactor"),
+			goroutine.WithDescription("compacts repo statistics"),
+			goroutine.WithInterval(30*time.Minute),
 		),
 	}, nil
 }

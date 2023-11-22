@@ -1,15 +1,16 @@
 import { BehaviorSubject, of } from 'rxjs'
 import { filter, first } from 'rxjs/operators'
 import sinon from 'sinon'
-import sourcegraph from 'sourcegraph'
+import type sourcegraph from 'sourcegraph'
+import { describe, it } from 'vitest'
 
-import { Contributions } from '@sourcegraph/client-api'
+import type { Contributions } from '@sourcegraph/client-api'
 
-import { SettingsCascade } from '../../../settings/settings'
-import { MainThreadAPI } from '../../contract'
+import type { SettingsCascade } from '../../../settings/settings'
+import type { MainThreadAPI } from '../../contract'
 import { pretendRemote } from '../../util'
-import { activateExtensions, ExecutableExtension } from '../activation'
-import { ExtensionHostState } from '../extensionHostState'
+import { activateExtensions, type ExecutableExtension } from '../activation'
+import type { ExtensionHostState } from '../extensionHostState'
 
 describe('Extension activation', () => {
     describe('activateExtensions()', () => {

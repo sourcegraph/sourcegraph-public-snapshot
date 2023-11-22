@@ -1,13 +1,13 @@
-import { MutationTuple } from '@apollo/client'
-import { Observable } from 'rxjs'
+import type { MutationTuple } from '@apollo/client'
+import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { asError, ErrorLike } from '@sourcegraph/common'
+import { asError, type ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useMutation, useQuery } from '@sourcegraph/http-client'
 
 import { fileDiffFields } from '../../../../backend/diff'
 import { requestGraphQL } from '../../../../backend/graphql'
-import {
+import type {
     BatchSpecWorkspaceByIDResult,
     BatchSpecWorkspaceByIDVariables,
     BatchSpecWorkspacesConnectionFields,
@@ -91,6 +91,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
             __typename
             id
             queueName
+            queueNames
             hostname
             active
             os

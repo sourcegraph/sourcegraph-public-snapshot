@@ -1,6 +1,6 @@
 import minimatch from 'minimatch'
 
-import { Position } from '@sourcegraph/extension-api-types'
+import type { Position } from '@sourcegraph/extension-api-types'
 
 import type { DocumentFilter, DocumentSelector, TextDocument } from '../../../codeintel/legacy-extensions/api'
 

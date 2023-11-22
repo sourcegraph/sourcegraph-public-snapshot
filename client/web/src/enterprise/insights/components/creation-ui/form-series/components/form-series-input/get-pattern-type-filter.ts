@@ -11,16 +11,21 @@ export function getQueryPatternTypeFilter(query: string): SearchPatternType {
 
     if (patternType?.value) {
         switch (patternType.value.value) {
-            case SearchPatternType.regexp:
+            case SearchPatternType.regexp: {
                 return SearchPatternType.regexp
-            case SearchPatternType.structural:
+            }
+            case SearchPatternType.structural: {
                 return SearchPatternType.structural
-            case SearchPatternType.literal:
+            }
+            case SearchPatternType.literal: {
                 return SearchPatternType.literal
-            case SearchPatternType.standard:
+            }
+            case SearchPatternType.standard: {
                 return SearchPatternType.standard
-            default:
+            }
+            default: {
                 return SearchPatternType.standard
+            }
         }
     }
 

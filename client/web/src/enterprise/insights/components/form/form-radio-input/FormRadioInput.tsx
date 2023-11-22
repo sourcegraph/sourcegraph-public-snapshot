@@ -1,8 +1,8 @@
-import React, { InputHTMLAttributes } from 'react'
+import React, { type InputHTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
-import { Label, Tooltip, TooltipProps } from '@sourcegraph/wildcard'
+import { Label, Tooltip, type TooltipProps } from '@sourcegraph/wildcard'
 
 interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of radio input. */

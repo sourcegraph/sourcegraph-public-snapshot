@@ -1,4 +1,4 @@
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { subMinutes } from 'date-fns'
 import { of } from 'rxjs'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -7,15 +7,18 @@ import { getDocumentNode } from '@sourcegraph/http-client'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { ExternalServiceFields, ExternalServiceKind, ExternalServiceSyncJobState } from '../../graphql-operations'
-import { WebStory, WebStoryChildrenProps } from '../WebStory'
+import { type ExternalServiceFields, ExternalServiceKind, ExternalServiceSyncJobState } from '../../graphql-operations'
+import { WebStory, type WebStoryChildrenProps } from '../WebStory'
 
-import { FETCH_EXTERNAL_SERVICE, queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
+import { FETCH_EXTERNAL_SERVICE, type queryExternalServiceSyncJobs as _queryExternalServiceSyncJobs } from './backend'
 import { ExternalServicePage } from './ExternalServicePage'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 container">
-        <WebStory path="/:externalServiceID" initialEntries={['service123']}>
+        <WebStory
+            path="/site-admin/external-services/:externalServiceID"
+            initialEntries={['/site-admin/external-services/service123']}
+        >
             {story}
         </WebStory>
     </div>
@@ -29,7 +32,7 @@ const config: Meta = {
 export default config
 
 const externalService = {
-    __typename: 'ExternalService' as const,
+    __typename: 'ExternalService',
     id: 'service123',
     kind: ExternalServiceKind.GITHUB,
     warning: null,
@@ -39,6 +42,7 @@ const externalService = {
     lastSyncError: null,
     repoCount: 1337,
     lastSyncAt: null,
+    unrestricted: false,
     nextSyncAt: null,
     updatedAt: '2021-03-15T19:39:11Z',
     createdAt: '2021-03-15T19:39:11Z',
@@ -48,7 +52,16 @@ const externalService = {
         namespaceName: 'johndoe',
         url: '/users/johndoe',
     },
-}
+    rateLimiterState: {
+        __typename: 'RateLimiterState',
+        burst: 10,
+        currentCapacity: 10,
+        infinite: false,
+        interval: 3600,
+        lastReplenishment: new Date().toISOString(),
+        limit: 5,
+    },
+} as ExternalServiceFields
 
 const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
     of({
@@ -114,7 +127,7 @@ const queryExternalServiceSyncJobs: typeof _queryExternalServiceSyncJobs = () =>
         ],
     })
 
-function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceFields): WildcardMockLink {
+function newFetchMock(node: ExternalServiceFields): WildcardMockLink {
     return new WildcardMockLink([
         {
             request: {
@@ -127,7 +140,7 @@ function newFetchMock(node: { __typename: 'ExternalService' } & ExternalServiceF
     ])
 }
 
-export const ExternalServiceWithRepos: Story<WebStoryChildrenProps> = props => (
+export const ExternalServiceWithRepos: StoryFn<WebStoryChildrenProps> = props => (
     <MockedTestProvider link={newFetchMock(externalService)}>
         <ExternalServicePage
             queryExternalServiceSyncJobs={queryExternalServiceSyncJobs}

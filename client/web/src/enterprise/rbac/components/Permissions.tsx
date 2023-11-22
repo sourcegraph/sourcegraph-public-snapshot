@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FocusEventHandler } from 'react'
+import React, { type ChangeEvent, type FocusEventHandler } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 
@@ -6,7 +6,7 @@ import { Text, Checkbox, Grid, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { BatchChangesReadPermission } from '../../../rbac/constants'
 import { prettifyAction, prettifyNamespace } from '../../../util/settings'
-import { PermissionsMap, allNamespaces } from '../backend'
+import { type PermissionsMap, allNamespaces } from '../backend'
 
 interface PermissionListProps {
     allPermissions: PermissionsMap
@@ -14,6 +14,7 @@ interface PermissionListProps {
     onChange?: (event: ChangeEvent<HTMLInputElement>) => void
     onBlur?: FocusEventHandler<HTMLInputElement>
     disabled?: boolean
+    roleName: string
 }
 
 export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<PermissionListProps>> = ({
@@ -22,6 +23,7 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
     onChange,
     onBlur,
     disabled,
+    roleName,
 }) => (
     <>
         {allNamespaces.map(namespace => {
@@ -31,6 +33,11 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
                     <Text className="font-weight-bold">{prettifyNamespace(namespace)}</Text>
                     <Grid columnCount={4}>
                         {namespacePermissions.map(permission => {
+                            // The checkbox component keeps its own state and because we reuse this component when rendering
+                            // multiple roles on a pege, we have to ensure the `id` and `key` are unique across all instances
+                            // rendered on a page.
+                            const checkboxId = `${permission.id}-${roleName}`
+
                             // This is a hack to disable the BatchChangesReadPermission
                             // from the UI for now until it's fully implemented.
                             if (permission.displayName === BatchChangesReadPermission) {
@@ -49,7 +56,7 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
                                                 </Tooltip>
                                             </>
                                         }
-                                        id={permission.displayName}
+                                        id={checkboxId}
                                         checked={isChecked(permission.id)}
                                         value={permission.id}
                                         disabled={true}
@@ -60,7 +67,7 @@ export const PermissionsList: React.FunctionComponent<React.PropsWithChildren<Pe
                                 <Checkbox
                                     key={permission.id}
                                     label={prettifyAction(permission.action)}
-                                    id={permission.displayName}
+                                    id={checkboxId}
                                     checked={isChecked(permission.id)}
                                     value={permission.id}
                                     onChange={onChange}

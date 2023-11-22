@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -49,8 +48,8 @@ func NewCoursierHandle(obsctx *observation.Context, cacheDir string) *CoursierHa
 }
 
 func (c *CoursierHandle) FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
-	ctx, _, endObservation := c.operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.VersionedPackageSyntax()),
+	ctx, _, endObservation := c.operations.fetchSources.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -129,8 +128,8 @@ func (c *CoursierHandle) FetchByteCode(ctx context.Context, config *schema.JVMPa
 }
 
 func (c *CoursierHandle) Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (err error) {
-	ctx, _, endObservation := c.operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.VersionedPackageSyntax()),
+	ctx, _, endObservation := c.operations.exists.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -161,16 +160,22 @@ func (c *CoursierHandle) runCoursierCommand(ctx context.Context, config *schema.
 	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
 	defer cancel()
 
-	ctx, trace, endObservation := c.operations.runCommand.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("repositories", strings.Join(config.Maven.Repositories, "|")),
-		otlog.String("args", strings.Join(args, ", ")),
+	ctx, trace, endObservation := c.operations.runCommand.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.StringSlice("repositories", config.Maven.Repositories),
+		attribute.StringSlice("args", args),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	cmd := exec.CommandContext(ctx, CoursierBinary, args...)
+	arguments := args
+
 	if config.Maven.Credentials != "" {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("COURSIER_CREDENTIALS=%v", config.Maven.Credentials))
+		lines := strings.Split(config.Maven.Credentials, "\n")
+		for _, line := range lines {
+			arguments = append(arguments, "--credentials", strings.TrimSpace(line))
+		}
 	}
+	cmd := exec.CommandContext(ctx, CoursierBinary, arguments...)
+
 	if len(config.Maven.Repositories) > 0 {
 		cmd.Env = append(
 			cmd.Env,

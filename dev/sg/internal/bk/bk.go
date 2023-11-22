@@ -161,6 +161,19 @@ func (c *Client) ListArtifactsByBuildNumber(ctx context.Context, pipeline string
 	return artifacts, nil
 }
 
+// ListArtifactsByJob queries the Buildkite API and retrieves all the artifacts for a particular job
+func (c *Client) ListArtifactsByJob(ctx context.Context, pipeline string, buildNumber string, jobID string) ([]buildkite.Artifact, error) {
+	artifacts, _, err := c.bk.Artifacts.ListByJob(BuildkiteOrg, pipeline, buildNumber, jobID, nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "404 Not Found") {
+			return nil, errors.New("no artifacts because no build or job found")
+		}
+		return nil, err
+	}
+
+	return artifacts, nil
+}
+
 // DownloadArtifact downloads the Buildkite artifact into the provider io.Writer
 func (c *Client) DownloadArtifact(artifact buildkite.Artifact, w io.Writer) error {
 	url := artifact.DownloadURL
@@ -212,8 +225,9 @@ func (c *Client) TriggerBuild(ctx context.Context, pipeline, branch, commit stri
 }
 
 type ExportLogsOpts struct {
-	JobQuery string
-	State    string
+	JobStepKey string
+	JobQuery   string
+	State      string
 }
 
 type JobLogs struct {
@@ -278,6 +292,28 @@ func (c *Client) ExportLogs(ctx context.Context, pipeline string, build int, opt
 	buildDetails, _, err := c.bk.Builds.Get(BuildkiteOrg, pipeline, buildID, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.JobStepKey != "" {
+		var job *buildkite.Job
+		for _, j := range buildDetails.Jobs {
+			if j.StepKey != nil && *j.StepKey == opts.JobStepKey {
+				job = j
+				break
+			}
+		}
+		if job == nil {
+			return nil, errors.Newf("no job matching stepkey %q found in build %d", opts.JobStepKey, build)
+		}
+
+		l, _, err := c.bk.Jobs.GetJobLog(BuildkiteOrg, pipeline, buildID, *job.ID)
+		if err != nil {
+			return nil, err
+		}
+		return []*JobLogs{{
+			JobMeta: newJobMeta(build, job),
+			Content: l.Content,
+		}}, nil
 	}
 
 	if opts.JobQuery != "" {

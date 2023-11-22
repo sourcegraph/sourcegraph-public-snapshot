@@ -5,9 +5,9 @@ import classNames from 'classnames'
 
 import { Icon, Link, Text, Tree, Badge } from '@sourcegraph/wildcard'
 
-import { CodeIntelIndexerFields, PreciseIndexFields } from '../../../../../graphql-operations'
+import type { CodeIntelIndexerFields, PreciseIndexFields } from '../../../../../graphql-operations'
 import { INDEX_COMPLETED_STATES, INDEX_FAILURE_STATES } from '../../constants'
-import { FilterState } from '../../pages/RepoDashboardPage'
+import type { FilterState } from '../../pages/RepoDashboardPage'
 import { IndexStateBadge } from '../IndexStateBadge'
 
 import { byKey, getIndexerKey, groupBy, sanitizePath, getIndexRoot, buildTreeData, descendentNames } from './util'

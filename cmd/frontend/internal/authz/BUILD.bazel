@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "authz",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz",
+    visibility = ["//cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/enterprise",
+        "//cmd/frontend/graphqlbackend",
+        "//cmd/frontend/hooks",
+        "//cmd/frontend/internal/authz/resolvers",
+        "//cmd/frontend/internal/authz/webhooks",
+        "//cmd/frontend/internal/licensing/enforcement",
+        "//internal/actor",
+        "//internal/auth",
+        "//internal/authz",
+        "//internal/authz/providers",
+        "//internal/authz/subrepoperms",
+        "//internal/codeintel",
+        "//internal/conf",
+        "//internal/conf/conftypes",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/extsvc",
+        "//internal/licensing",
+        "//internal/observation",
+        "//internal/timeutil",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

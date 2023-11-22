@@ -16,6 +16,8 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
+
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // Tests that even with publishNotReadyAddresses: true in the headless services,
@@ -159,7 +161,7 @@ func TestK8sEndpoints(t *testing.T) {
 				Name: "indexed-search",
 			},
 			Spec: appsv1.StatefulSetSpec{
-				Replicas:    int32Ptr(2),
+				Replicas:    pointers.Ptr(int32(2)),
 				ServiceName: "indexed-search-svc", // normally same as sts name, but testing when different
 			},
 		},
@@ -179,10 +181,6 @@ func TestK8sEndpoints(t *testing.T) {
 			}
 		})
 	}
-}
-
-func int32Ptr(v int32) *int32 {
-	return &v
 }
 
 func localClient() (*kubernetes.Clientset, error) {

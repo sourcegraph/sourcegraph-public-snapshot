@@ -1,17 +1,17 @@
-import { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
-import { AuthenticatedUser } from '../../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
 import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'
 import { getLicenseAndUsageInfoResult } from '../list/testData'
 
 import { ConfigurationForm } from './ConfigurationForm'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/create/ConfigurationForm',
@@ -51,7 +51,7 @@ const buildMocks = (isLicensed = true, hasBatchChanges = true) =>
         },
     ])
 
-export const NewBatchChange: Story = () => (
+export const NewBatchChange: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
@@ -63,7 +63,7 @@ export const NewBatchChange: Story = () => (
 
 NewBatchChange.storyName = 'New batch change'
 
-export const NewOrgBatchChange: Story = () => (
+export const NewOrgBatchChange: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
@@ -79,7 +79,7 @@ export const NewOrgBatchChange: Story = () => (
 
 NewOrgBatchChange.storyName = 'New batch change with new Org'
 
-export const ExistingBatchChange: Story = () => (
+export const ExistingBatchChange: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks()}>
@@ -106,7 +106,7 @@ export const ExistingBatchChange: Story = () => (
 
 ExistingBatchChange.storyName = 'Read-only for existing batch change'
 
-export const LicenseAlert: Story = () => (
+export const LicenseAlert: StoryFn = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={buildMocks(false)}>

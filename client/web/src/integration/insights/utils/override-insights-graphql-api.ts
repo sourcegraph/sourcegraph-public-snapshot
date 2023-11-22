@@ -1,8 +1,8 @@
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { testUserID } from '@sourcegraph/shared/src/testing/integration/graphQlResults'
 
-import { WebGraphQlOperations } from '../../../graphql-operations'
-import { WebIntegrationTestContext } from '../../context'
+import type { WebGraphQlOperations } from '../../../graphql-operations'
+import type { WebIntegrationTestContext } from '../../context'
 import { commonWebGraphQlResults } from '../../graphQlResults'
 
 export interface OverrideGraphQLExtensionsProps {
@@ -77,10 +77,11 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 email: 'vova@sourcegraph.com',
                 displayName: null,
                 siteAdmin: true,
-                tags: [],
                 tosAccepted: true,
                 url: '/users/test',
                 settingsURL: '/users/test/settings',
+                hasVerifiedEmail: true,
+                completedPostSignup: true,
                 organizations: {
                     nodes: [
                         {
@@ -95,7 +96,6 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 },
                 session: { canSignOut: true },
                 viewerCanAdminister: true,
-                searchable: true,
                 emails: [],
                 latestSettings: null,
                 permissions: { nodes: [] },

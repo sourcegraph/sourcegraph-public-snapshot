@@ -592,6 +592,37 @@ func TestScanDelimited(t *testing.T) {
 	_ = test(`a"`, '"')
 }
 
+func TestDelimited(t *testing.T) {
+	inputs := []string{
+		"test",
+		"test\nabc",
+		"test\r\nabc",
+		"test\a\fabc",
+		"test\t\tabc",
+		"'test'",
+		"\"test\"",
+		"\"/test/\"",
+		"/test/",
+		"/test\\/abc/",
+		"\\\\",
+		"\\",
+		"\\/",
+	}
+	delimiters := []rune{'/', '"', '\''}
+
+	for _, input := range inputs {
+		for _, delimiter := range delimiters {
+			delimited := Delimit(input, delimiter)
+			undelimited, _, err := ScanDelimited([]byte(delimited), false, delimiter)
+			if err != nil {
+				t.Fatal(err)
+			}
+			redelimited := Delimit(undelimited, delimiter)
+			require.Equal(t, delimited, redelimited)
+		}
+	}
+}
+
 func TestMergePatterns(t *testing.T) {
 	test := func(input string) string {
 		p := &parser{buf: []byte(input), heuristics: parensAsPatterns}
@@ -774,7 +805,7 @@ func TestParseStandard(t *testing.T) {
 		return jsonStr
 	}
 
-	t.Run("patterns are literal and slash-delimited patterns /.../ are regexp", func(t *testing.T) {
+	t.Run("patterns are literal and slash-delimited patterns slash...slash are regexp", func(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test("anjou /saumur/")))
 	})
 
@@ -782,7 +813,30 @@ func TestParseStandard(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test(`"veneto"`)))
 	})
 
-	t.Run("parens around /.../", func(t *testing.T) {
+	t.Run("parens around slash...slash", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("(sancerre and /pouilly-fume/)")))
+	})
+}
+
+func TestParseNewStandard(t *testing.T) {
+	test := func(input string) string {
+		result, err := Parse(input, SearchTypeNewStandardRC1)
+		if err != nil {
+			return err.Error()
+		}
+		jsonStr, _ := PrettyJSON(result)
+		return jsonStr
+	}
+
+	t.Run("patterns are literal and slash-delimited patterns slash...slash are regexp", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test("anjou /saumur/")))
+	})
+
+	t.Run("quoted patterns are still literal", func(t *testing.T) {
+		autogold.ExpectFile(t, autogold.Raw(test(`"veneto"`)))
+	})
+
+	t.Run("parens around slash...slash", func(t *testing.T) {
 		autogold.ExpectFile(t, autogold.Raw(test("(sancerre and /pouilly-fume/)")))
 	})
 }

@@ -1,16 +1,22 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { Observable, of } from 'rxjs'
+import { type Observable, of } from 'rxjs'
 
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
+import { FilteredConnection, type FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
-import { GitRefType, Scalars, GitRefConnectionFields, GitRefFields, RepositoryFields } from '../../graphql-operations'
+import {
+    GitRefType,
+    type Scalars,
+    type GitRefConnectionFields,
+    type GitRefFields,
+    type RepositoryFields,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import {
     GitReferenceNode,
-    GitReferenceNodeProps,
+    type GitReferenceNodeProps,
     queryGitReferences as queryGitReferencesFromBackend,
 } from '../GitReference'
 

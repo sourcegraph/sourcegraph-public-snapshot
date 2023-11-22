@@ -1,8 +1,8 @@
 import {
-    ChangeEvent,
-    Dispatch,
-    InputHTMLAttributes,
-    RefObject,
+    type ChangeEvent,
+    type Dispatch,
+    type InputHTMLAttributes,
+    type RefObject,
     useCallback,
     useLayoutEffect,
     useRef,
@@ -11,10 +11,15 @@ import {
 
 import { noop } from 'rxjs'
 
-import { FieldMetaState, FieldState, FormAPI } from './useForm'
+import type { FieldMetaState, FieldState, FormAPI } from './useForm'
 import { getEventValue } from './utils/get-event-value'
 import { useAsyncValidation } from './utils/use-async-validation'
-import { AsyncValidator, getCustomValidationContext, getCustomValidationMessage, Validator } from './validators'
+import {
+    type AsyncValidator,
+    getCustomValidationContext,
+    getCustomValidationMessage,
+    type Validator,
+} from './validators'
 
 export interface Validators<FieldValue, ErrorContext> {
     sync?: Validator<FieldValue, ErrorContext>

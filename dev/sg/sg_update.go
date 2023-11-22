@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -28,7 +29,7 @@ var updateCommand = &cli.Command{
 	Description: `Update local sg installation with the latest changes. To see what's new, run:
 
     sg version changelog -next`,
-	Category: CategoryUtil,
+	Category: category.Util,
 	Action: func(cmd *cli.Context) error {
 		p := std.Out.Pending(output.Styled(output.StylePending, "Downloading latest sg release..."))
 		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {

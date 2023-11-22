@@ -12,6 +12,7 @@ import (
 	"github.com/prometheus/prometheus/model/labels"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
 )
@@ -141,7 +142,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 
 		board.Annotations.List = []sdk.Annotation{{
 			Name:        "Alert events",
-			Datasource:  StringPtr("Prometheus"),
+			Datasource:  pointers.Ptr("Prometheus"),
 			Expr:        expr,
 			Step:        "60s",
 			TitleFormat: "{{ description }} ({{ name }})",
@@ -168,7 +169,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 
 		board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
 			Name:        "Version changes",
-			Datasource:  StringPtr("Prometheus"),
+			Datasource:  pointers.Ptr("Prometheus"),
 			Expr:        expr,
 			Step:        "60s",
 			TitleFormat: "v{{ version }}",
@@ -256,7 +257,7 @@ func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folde
 		alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
 		alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
 			Title: "Graph panel",
-			URL:   StringPtr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
+			URL:   pointers.Ptr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
 		}}
 		board.Panels = append(board.Panels, alertsFiring)
 	}
@@ -500,10 +501,10 @@ var (
 		handbookSlug: "security",
 		teamName:     "Security",
 	}
-	ObservableOwnerRepoManagement = ObservableOwner{
-		identifier:   "repo-management",
-		handbookSlug: "repo-management",
-		teamName:     "Repo Management",
+	ObservableOwnerSource = ObservableOwner{
+		identifier:   "source",
+		handbookSlug: "source",
+		teamName:     "Source",
 	}
 	ObservableOwnerCodeInsights = ObservableOwner{
 		identifier:   "code-insights",
@@ -514,11 +515,6 @@ var (
 		identifier:   "devops",
 		handbookSlug: "devops",
 		teamName:     "Cloud DevOps",
-	}
-	ObservableOwnerIAM = ObservableOwner{
-		identifier:   "iam",
-		handbookSlug: "iam",
-		teamName:     "Identity and Access Management",
 	}
 	ObservableOwnerDataAnalytics = ObservableOwner{
 		identifier:   "data-analytics",
@@ -535,6 +531,11 @@ var (
 		identifier:   "cody",
 		handbookSlug: "cody",
 		teamName:     "Cody",
+	}
+	ObservableOwnerOwn = ObservableOwner{
+		identifier:   "own",
+		teamName:     "own",
+		handbookSlug: "own",
 	}
 )
 
@@ -825,14 +826,14 @@ func (o Observable) renderPanel(c *Dashboard, manipulations panelManipulationOpt
 	// Add reference links
 	panel.Links = []sdk.Link{{
 		Title:       "Panel reference",
-		URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
-		TargetBlank: boolPtr(true),
+		URL:         pointers.Ptr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
+		TargetBlank: pointers.Ptr(true),
 	}}
 	if !o.NoAlert {
 		panel.Links = append(panel.Links, sdk.Link{
 			Title:       "Alerts reference",
-			URL:         StringPtr(fmt.Sprintf("%s#%s", canonicalAlertDocsURL, observableDocAnchor(c, o))),
-			TargetBlank: boolPtr(true),
+			URL:         pointers.Ptr(fmt.Sprintf("%s#%s", canonicalAlertDocsURL, observableDocAnchor(c, o))),
+			TargetBlank: pointers.Ptr(true),
 		})
 	}
 

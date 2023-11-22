@@ -1,27 +1,32 @@
-import { Duration } from 'date-fns'
+import type { Duration } from 'date-fns'
 
 import {
-    InsightViewNode,
-    TimeIntervalStepInput,
+    type InsightViewNode,
+    type TimeIntervalStepInput,
     SeriesSortDirection,
     SeriesSortMode,
     TimeIntervalStepUnit,
 } from '../../../../../../graphql-operations'
 import { MAX_NUMBER_OF_SAMPLES } from '../../../../constants'
-import { InsightFilters, InsightSeriesDisplayOptions } from '../../../types/insight/common'
+import type { InsightFilters, InsightSeriesDisplayOptions } from '../../../types/insight/common'
 
 export function getDurationFromStep(step: TimeIntervalStepInput): Duration {
     switch (step.unit) {
-        case TimeIntervalStepUnit.HOUR:
+        case TimeIntervalStepUnit.HOUR: {
             return { hours: step.value }
-        case TimeIntervalStepUnit.DAY:
+        }
+        case TimeIntervalStepUnit.DAY: {
             return { days: step.value }
-        case TimeIntervalStepUnit.WEEK:
+        }
+        case TimeIntervalStepUnit.WEEK: {
             return { weeks: step.value }
-        case TimeIntervalStepUnit.MONTH:
+        }
+        case TimeIntervalStepUnit.MONTH: {
             return { months: step.value }
-        case TimeIntervalStepUnit.YEAR:
+        }
+        case TimeIntervalStepUnit.YEAR: {
             return { years: step.value }
+        }
     }
 }
 

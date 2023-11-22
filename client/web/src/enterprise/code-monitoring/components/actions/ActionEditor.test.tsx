@@ -1,10 +1,11 @@
 import { render } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
+import { describe, expect, test } from 'vitest'
 
 import { assertAriaDisabled } from '@sourcegraph/testing'
 
-import { ActionEditor, ActionEditorProps } from './ActionEditor'
+import { ActionEditor, type ActionEditorProps } from './ActionEditor'
 
 describe('ActionEditor', () => {
     const props: ActionEditorProps = {

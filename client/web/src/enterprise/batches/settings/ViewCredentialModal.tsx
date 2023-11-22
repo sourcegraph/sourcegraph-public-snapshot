@@ -2,7 +2,7 @@ import React from 'react'
 
 import { Button, Modal, H4, Input } from '@sourcegraph/wildcard'
 
-import { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
+import type { BatchChangesCodeHostFields, BatchChangesCredentialFields } from '../../../graphql-operations'
 
 import { CodeHostSshPublicKey } from './CodeHostSshPublicKey'
 import { ModalHeader } from './ModalHeader'

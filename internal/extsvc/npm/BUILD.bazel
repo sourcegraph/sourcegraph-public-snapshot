@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "npm",
@@ -14,11 +15,10 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/ratelimit",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//lib/errors",
-        "@com_github_opentracing_contrib_go_stdlib//nethttp",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -32,9 +32,11 @@ go_test(
         "//internal/conf/reposource",
         "//internal/httpcli",
         "//internal/httptestutil",
+        "//internal/ratelimit",
         "//internal/unpack",
         "//lib/errors",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_stretchr_testify//require",
+        "@org_golang_x_time//rate",
     ],
 )

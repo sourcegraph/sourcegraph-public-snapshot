@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
 import { renderMarkdown } from '@sourcegraph/common'
-import {
+import type {
     SearchPatternTypeProps,
     CaseSensitivityProps,
     SearchContextProps,
@@ -72,20 +72,17 @@ export const UnownedResultsAlert: React.FunctionComponent<React.PropsWithChildre
     return (
         <Alert className="my-2" variant="info">
             <Collapse isOpen={!isCollapsed} onOpenChange={opened => setIsCollapsed(!opened)}>
-                <div className="d-flex align-items-baseline">
+                <CollapseHeader
+                    as={Button}
+                    outline={false}
+                    className="w-100 align-items-center justify-content-between"
+                    aria-label={isCollapsed ? 'Show alert details' : 'Hide alert details'}
+                    variant="icon"
+                >
                     <H3 className="mb-0">{alertTitle}</H3>
-                    <CollapseHeader
-                        as={Button}
-                        outline={false}
-                        className="ml-2"
-                        aria-label={isCollapsed ? 'Show alert details' : 'Hide alert details'}
-                        variant="link"
-                        size="sm"
-                    >
-                        <Icon aria-hidden={true} svgPath={isCollapsed ? mdiChevronDown : mdiChevronUp} />
-                    </CollapseHeader>
-                </div>
-                <CollapsePanel>
+                    <Icon aria-hidden={true} svgPath={isCollapsed ? mdiChevronDown : mdiChevronUp} />
+                </CollapseHeader>
+                <CollapsePanel className="mt-2">
                     {alertDescription && (
                         <Markdown
                             className="mb-2"
@@ -96,8 +93,8 @@ export const UnownedResultsAlert: React.FunctionComponent<React.PropsWithChildre
                             })}
                         />
                     )}
-                    <Text className="d-flex align-items-center mb-0">
-                        <span>See unowned files</span>
+                    <Text className="d-flex align-items-baseline mb-0">
+                        <span>See unowned files:</span>
                         <small>
                             <Button
                                 variant="secondary"

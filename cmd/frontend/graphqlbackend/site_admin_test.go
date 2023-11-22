@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -25,14 +25,14 @@ import (
 
 func TestDeleteUser(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteUser(ctx, &struct {
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -47,14 +47,14 @@ func TestDeleteUser(t *testing.T) {
 	})
 
 	t.Run("delete current user", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := dbmocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		db := database.NewMockDB()
+		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteUser(ctx, &struct {
+		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).DeleteUser(ctx, &struct {
 			User graphql.ID
 			Hard *bool
 		}{
@@ -67,7 +67,7 @@ func TestDeleteUser(t *testing.T) {
 	})
 
 	// Mocking all database interactions here, but they are all thoroughly tested in the lower layer in "database" package.
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	users.DeleteFunc.SetDefaultReturn(nil)
 	users.HardDeleteFunc.SetDefaultReturn(nil)
@@ -85,10 +85,10 @@ func TestDeleteUser(t *testing.T) {
 		return users, nil
 	})
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := dbmocks.NewMockUserEmailsStore()
 	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{{Email: "alice@example.com"}}, nil)
 
-	externalAccounts := database.NewMockUserExternalAccountsStore()
+	externalAccounts := dbmocks.NewMockUserExternalAccountsStore()
 	externalAccountsListDefaultReturn := []*extsvc.Account{{
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitLab,
@@ -99,7 +99,7 @@ func TestDeleteUser(t *testing.T) {
 	externalAccounts.ListFunc.SetDefaultReturn(externalAccountsListDefaultReturn, nil)
 
 	const aliceUID = 6
-	authzStore := database.NewMockAuthzStore()
+	authzStore := dbmocks.NewMockAuthzStore()
 	authzStore.RevokeUserPermissionsFunc.SetDefaultHook(func(_ context.Context, args *database.RevokeUserPermissionsArgs) error {
 		if args.UserID != aliceUID {
 			return errors.Errorf("args.UserID: want 6 but got %v", args.UserID)
@@ -123,7 +123,7 @@ func TestDeleteUser(t *testing.T) {
 		return nil
 	})
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
@@ -303,18 +303,18 @@ func TestDeleteUser(t *testing.T) {
 }
 
 func TestDeleteOrganization_OnPremise(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := dbmocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := dbmocks.NewMockOrgMemberStore()
 	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
 
-	orgs := database.NewMockOrgStore()
+	orgs := dbmocks.NewMockOrgStore()
 
 	mockedOrg := types.Org{ID: 1, Name: "acme"}
 	orgIDString := string(MarshalOrgID(mockedOrg.ID))
 
-	db := database.NewMockDB()
+	db := dbmocks.NewMockDB()
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
@@ -427,18 +427,18 @@ func TestSetIsSiteAdmin(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := dbmocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: tc.isSiteAdmin}, nil)
 			users.SetIsSiteAdminFunc.SetDefaultReturn(nil)
 
-			securityLogEvents := database.NewMockSecurityEventLogsStore()
+			securityLogEvents := dbmocks.NewMockSecurityEventLogsStore()
 			securityLogEvents.LogEventFunc.SetDefaultReturn()
 
-			db := database.NewMockDB()
+			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.SecurityEventLogsFunc.SetDefaultReturn(securityLogEvents)
 
-			s := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
+			s := newSchemaResolver(db, gitserver.NewTestClient(t))
 
 			actorCtx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			result, err := s.SetUserIsSiteAdmin(actorCtx, &struct {

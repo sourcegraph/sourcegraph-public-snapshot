@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/markdown"
 )
 
@@ -20,6 +20,7 @@ type FileResolver interface {
 	RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
 	URL(ctx context.Context) (string, error)
 	CanonicalURL() string
+	ChangelistURL(ctx context.Context) (*string, error)
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
 	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
 

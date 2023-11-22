@@ -1,6 +1,6 @@
-import { Point } from '../models/geometry/point'
-import { Rectangle } from '../models/geometry/rectangle'
-import { Constraint, ElementPosition, Flipping, Overlapping, Padding, Strategy } from '../models/tether-models'
+import type { Point } from '../models/geometry/point'
+import type { Rectangle } from '../models/geometry/rectangle'
+import type { Constraint, ElementPosition, Flipping, Overlapping, Padding, Strategy } from '../models/tether-models'
 
 export interface Tether {
     /** Reference on target HTML element in the DOM. */

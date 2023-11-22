@@ -1,8 +1,13 @@
-import { SemVer } from 'semver'
+import type { SemVer } from 'semver'
 
-import { ReleaseConfig, setSrcCliVersion } from './config'
-import { cloneRepo, Edit, getAuthenticatedGitHubClient } from './github'
-import { nextSrcCliVersionInputWithAutodetect } from './util'
+import { type ReleaseConfig, setAWSExecutorVersion, setGoogleExecutorVersion, setSrcCliVersion } from './config'
+import { cloneRepo, createChangesets, type Edit, getAuthenticatedGitHubClient, releaseBlockerLabel } from './github'
+import {
+    nextAWSExecutorVersionInputWithAutodetect,
+    nextGoogleExecutorVersionInputWithAutodetect,
+    nextSrcCliVersionInputWithAutodetect,
+    pullRequestBody,
+} from './util'
 
 export async function bakeSrcCliSteps(config: ReleaseConfig): Promise<Edit[]> {
     const client = await getAuthenticatedGitHubClient()
@@ -28,6 +33,81 @@ export async function bakeSrcCliSteps(config: ReleaseConfig): Promise<Edit[]> {
         `cd doc/cli/references && go run ./doc.go --binaryPath="${workdir}/cmd/src/src"`,
     ]
 }
+export async function bakeAWSExecutorsSteps(config: ReleaseConfig): Promise<void> {
+    const client = await getAuthenticatedGitHubClient()
+    const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-aws-executors', {
+        revision: 'master',
+        revisionMustExist: true,
+    })
+
+    const next = await nextAWSExecutorVersionInputWithAutodetect(config, workdir)
+    setAWSExecutorVersion(config, next.version)
+    console.log(next)
+
+    const prDetails = {
+        body: pullRequestBody(`Update files for ${next.version} release`),
+        title: `executor: v${next.version}`,
+        commitMessage: `executor: v${next.version}`,
+    }
+    const sets = await createChangesets({
+        requiredCommands: [],
+        changes: [
+            {
+                ...prDetails,
+                repo: 'sourcegraph',
+                owner: 'terraform-aws-executors',
+                base: 'master',
+                head: `release/prepare-${next.version}`,
+                edits: [`./prepare-release.sh ${next.version}`],
+                labels: [releaseBlockerLabel],
+                draft: true,
+            },
+        ],
+        dryRun: config.dryRun.changesets,
+    })
+    console.log('Merge the following pull requests:\n')
+    for (const set of sets) {
+        console.log(set.pullRequestURL)
+    }
+}
+
+export async function bakeGoogleExecutorsSteps(config: ReleaseConfig): Promise<void> {
+    const client = await getAuthenticatedGitHubClient()
+    const { workdir } = await cloneRepo(client, 'sourcegraph', 'terraform-google-executors', {
+        revision: 'master',
+        revisionMustExist: true,
+    })
+    console.log(`Cloned sourcegraph/terraform-google-executors to ${workdir}`)
+
+    const next = await nextGoogleExecutorVersionInputWithAutodetect(config, workdir)
+    setGoogleExecutorVersion(config, next.version)
+
+    const prDetails = {
+        body: pullRequestBody(`Update files for ${next.version} release`),
+        title: `executor: v${next.version}`,
+        commitMessage: `executor: v${next.version}`,
+    }
+    const sets = await createChangesets({
+        requiredCommands: [],
+        changes: [
+            {
+                ...prDetails,
+                repo: 'terraform-google-executors',
+                owner: 'sourcegraph',
+                base: 'master',
+                head: `release/prepare-${next.version}`,
+                edits: [`./prepare-release.sh ${next.version}`],
+                labels: [releaseBlockerLabel],
+                draft: true,
+            },
+        ],
+        dryRun: config.dryRun.changesets,
+    })
+    console.log('Merge the following pull requests:\n')
+    for (const set of sets) {
+        console.log(set.pullRequestURL)
+    }
+}
 
 export function batchChangesInAppChangelog(version: SemVer, resetShow: boolean): Edit[] {
     const path = 'client/web/src/enterprise/batches/list/BatchChangesChangelogAlert.tsx'
@@ -47,5 +127,5 @@ export function combyReplace(pattern: string, replace: string, path: string): Ed
 
 export function indexerUpdate(): Edit {
     // eslint-disable-next-line no-template-curly-in-string
-    return 'cd enterprise/internal/codeintel/autoindexing/internal/inference/libs/ && DOCKER_USER=${CR_USERNAME} DOCKER_PASS=${CR_PASSWORD} ./update-shas.sh'
+    return 'cd internal/codeintel/autoindexing/internal/inference/libs/ && DOCKER_USER=${CR_USERNAME} DOCKER_PASS=${CR_PASSWORD} ./update-shas.sh'
 }

@@ -1,1002 +1,1209 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SignInPage renders redirect when user is authenticated 1`] = `<DocumentFragment />`;
-
-exports[`SignInPage renders sign in page (cloud) 1`] = `
+exports[`SignInPage > renders "Other login methods" if primary provider count is low enough 1`] = `
 <DocumentFragment>
   <div
-    class="signinSignupPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
     <div
-      class="heroPage lessPadding"
+      class="wrapper"
     >
       <div
-        class="iconWrapper bg-transparent"
+        class="container test-signin-form"
       >
-        <a
-          aria-label="/search"
-          class="anchorLink"
-          href="/search"
+        <div
+          class=""
+        >
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+              />
+            </svg>
+             Continue with GitHub
+          </a>
+        </div>
+        <button
+          class="btn btnSecondary btnBlock mt-2"
+          type="button"
         >
           <svg
             aria-hidden="true"
-            class="mdi-icon iconInline icon"
-            fill="none"
-            height="64"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
             role="img"
-            viewBox="0 0 52 52"
-            width="65"
-            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            width="24"
           >
             <path
-              d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-              fill="#FF5543"
-            />
-            <path
-              d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-              fill="#A112FF"
-            />
-            <path
-              d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-              fill="#00CBEC"
+              d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
             />
           </svg>
+           Other login methods
+        </button>
+      </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
         </a>
-      </div>
-      <h1
-        class="h1 title"
-      >
-        Sign in to Sourcegraph
-      </h1>
-      <div
-        class="mb-4 pb-5 signinPageContainer"
-      >
-        <div
-          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
-        >
-          <div
-            class="mb-2"
-          >
-            <a
-              class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
-            >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                />
-              </svg>
-               Continue with GitHub
-            </a>
-          </div>
-          <div
-            class="mb-2"
-          >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
-            >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
-                />
-              </svg>
-               Continue with Email
-            </a>
-          </div>
-        </div>
-        <p
-          class=""
-        >
-          New to Sourcegraph? 
-          <a
-            class="anchorLink"
-            href="/sign-up"
-          >
-            Sign up.
-          </a>
-           
-        </p>
-      </div>
+         
+      </p>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders sign in page (server) 1`] = `
+exports[`SignInPage > renders different prefix on provider buttons 1`] = `
 <DocumentFragment>
   <div
-    class="signinSignupPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
     <div
-      class="heroPage lessPadding"
+      class="wrapper"
     >
       <div
-        class="iconWrapper bg-transparent"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline icon"
-          fill="none"
-          height="64"
-          role="img"
-          viewBox="0 0 52 52"
-          width="65"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-            fill="#FF5543"
-          />
-          <path
-            d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-            fill="#A112FF"
-          />
-          <path
-            d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-            fill="#00CBEC"
-          />
-        </svg>
-      </div>
-      <h1
-        class="h1 title"
-      >
-        Sign in to Sourcegraph
-      </h1>
-      <div
-        class="mb-4 pb-5 signinPageContainer"
+        class="container test-signin-form"
       >
         <div
-          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
+          class="mb-2"
         >
-          <div
-            class="mb-2"
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
           >
-            <a
-              class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
             >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                />
-              </svg>
-               Continue with GitHub
-            </a>
-          </div>
-          <div
-            class="mb-2"
-          >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
-            >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
-                />
-              </svg>
-               Continue with Email
-            </a>
-          </div>
+              <path
+                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+              />
+            </svg>
+             Just login through GitHub
+          </a>
         </div>
-        <p
+        <div
           class=""
         >
-          New to Sourcegraph? 
           <a
-            class="anchorLink"
-            href="/sign-up"
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
           >
-            Sign up.
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M21.94 13.11L20.89 9.89C20.89 9.86 20.88 9.83 20.87 9.8L18.76 3.32C18.65 3 18.33 2.75 17.96 2.75C17.6 2.75 17.28 3 17.17 3.33L15.17 9.5H8.84L6.83 3.33C6.72 3 6.4 2.75 6.04 2.75H6.04C5.67 2.75 5.35 3 5.24 3.33L3.13 9.82C3.13 9.82 3.13 9.83 3.13 9.83L2.06 13.11C1.9 13.61 2.07 14.15 2.5 14.45L11.72 21.16C11.89 21.28 12.11 21.28 12.28 21.15L21.5 14.45C21.93 14.15 22.1 13.61 21.94 13.11M8.15 10.45L10.72 18.36L4.55 10.45M13.28 18.37L15.75 10.78L15.85 10.45H19.46L13.87 17.61M17.97 3.94L19.78 9.5H16.16M14.86 10.45L13.07 15.96L12 19.24L9.14 10.45M6.03 3.94L7.84 9.5H4.23M3.05 13.69C2.96 13.62 2.92 13.5 2.96 13.4L3.75 10.97L9.57 18.42M20.95 13.69L14.44 18.42L14.46 18.39L20.25 10.97L21.04 13.4C21.08 13.5 21.04 13.62 20.95 13.69"
+              />
+            </svg>
+             Just login through GitLab
           </a>
-           
-        </p>
+        </div>
+        <button
+          class="btn btnSecondary btnBlock mt-2"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
+            />
+          </svg>
+           Other login methods
+        </button>
       </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
+        </a>
+         
+      </p>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders sign in page (server) with email form expanded 1`] = `
+exports[`SignInPage > renders non-primary auth provider if primary provider count is low enough and showMore is in the query 1`] = `
 <DocumentFragment>
   <div
-    class="signinSignupPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
     <div
-      class="heroPage lessPadding"
+      class="wrapper"
     >
       <div
-        class="iconWrapper bg-transparent"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline icon"
-          fill="none"
-          height="64"
-          role="img"
-          viewBox="0 0 52 52"
-          width="65"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-            fill="#FF5543"
-          />
-          <path
-            d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-            fill="#A112FF"
-          />
-          <path
-            d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-            fill="#00CBEC"
-          />
-        </svg>
-      </div>
-      <h1
-        class="h1 title"
-      >
-        Sign in to Sourcegraph
-      </h1>
-      <div
-        class="mb-4 pb-5 signinPageContainer"
+        class="container test-signin-form"
       >
         <div
-          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
+          class="mb-3 text-left"
         >
-          <form
-            class="mb-3"
+          <button
+            class="btn btnLink p-0 border-0 font-weight-normal"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+              />
+            </svg>
+            Back
+          </button>
+        </div>
+        <div
+          class=""
+        >
+          <a
+            class="anchorLink btn btnSecondary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M21.94 13.11L20.89 9.89C20.89 9.86 20.88 9.83 20.87 9.8L18.76 3.32C18.65 3 18.33 2.75 17.96 2.75C17.6 2.75 17.28 3 17.17 3.33L15.17 9.5H8.84L6.83 3.33C6.72 3 6.4 2.75 6.04 2.75H6.04C5.67 2.75 5.35 3 5.24 3.33L3.13 9.82C3.13 9.82 3.13 9.83 3.13 9.83L2.06 13.11C1.9 13.61 2.07 14.15 2.5 14.45L11.72 21.16C11.89 21.28 12.11 21.28 12.28 21.15L21.5 14.45C21.93 14.15 22.1 13.61 21.94 13.11M8.15 10.45L10.72 18.36L4.55 10.45M13.28 18.37L15.75 10.78L15.85 10.45H19.46L13.87 17.61M17.97 3.94L19.78 9.5H16.16M14.86 10.45L13.07 15.96L12 19.24L9.14 10.45M6.03 3.94L7.84 9.5H4.23M3.05 13.69C2.96 13.62 2.92 13.5 2.96 13.4L3.75 10.97L9.57 18.42M20.95 13.69L14.44 18.42L14.46 18.39L20.25 10.97L21.04 13.4C21.08 13.5 21.04 13.62 20.95 13.69"
+              />
+            </svg>
+             Continue with GitLab
+          </a>
+        </div>
+      </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
+        </a>
+         
+      </p>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`SignInPage > renders redirect when user is authenticated 1`] = `<DocumentFragment />`;
+
+exports[`SignInPage > renders sign in page (dotcom) 1`] = `
+<DocumentFragment>
+  <div
+    class="wrapper"
+  >
+    <a
+      class="anchorLink"
+      href="/search"
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </a>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
+    <div
+      class="wrapper"
+    >
+      <div
+        class="container test-signin-form"
+      >
+        <div
+          class="mb-2"
+        >
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+              />
+            </svg>
+             Continue with GitHub
+          </a>
+        </div>
+        <div
+          class=""
+        >
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M21.94 13.11L20.89 9.89C20.89 9.86 20.88 9.83 20.87 9.8L18.76 3.32C18.65 3 18.33 2.75 17.96 2.75C17.6 2.75 17.28 3 17.17 3.33L15.17 9.5H8.84L6.83 3.33C6.72 3 6.4 2.75 6.04 2.75H6.04C5.67 2.75 5.35 3 5.24 3.33L3.13 9.82C3.13 9.82 3.13 9.83 3.13 9.83L2.06 13.11C1.9 13.61 2.07 14.15 2.5 14.45L11.72 21.16C11.89 21.28 12.11 21.28 12.28 21.15L21.5 14.45C21.93 14.15 22.1 13.61 21.94 13.11M8.15 10.45L10.72 18.36L4.55 10.45M13.28 18.37L15.75 10.78L15.85 10.45H19.46L13.87 17.61M17.97 3.94L19.78 9.5H16.16M14.86 10.45L13.07 15.96L12 19.24L9.14 10.45M6.03 3.94L7.84 9.5H4.23M3.05 13.69C2.96 13.62 2.92 13.5 2.96 13.4L3.75 10.97L9.57 18.42M20.95 13.69L14.44 18.42L14.46 18.39L20.25 10.97L21.04 13.4C21.08 13.5 21.04 13.62 20.95 13.69"
+              />
+            </svg>
+             Continue with GitLab
+          </a>
+        </div>
+        <button
+          class="btn btnSecondary btnBlock mt-2"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
+            />
+          </svg>
+           Other login methods
+        </button>
+      </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
+        </a>
+         To use Sourcegraph on private repositories, 
+        <a
+          class="anchorLink"
+          href="https://sourcegraph.com/get-started?t=enterprise"
+        >
+          consider Sourcegraph Enterprise
+        </a>
+        .
+      </p>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`SignInPage > renders sign in page (server) 1`] = `
+<DocumentFragment>
+  <div
+    class="wrapper"
+  >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
+    <div
+      class="wrapper"
+    >
+      <div
+        class="container test-signin-form"
+      >
+        <div
+          class="mb-2"
+        >
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+              />
+            </svg>
+             Continue with GitHub
+          </a>
+        </div>
+        <div
+          class=""
+        >
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M21.94 13.11L20.89 9.89C20.89 9.86 20.88 9.83 20.87 9.8L18.76 3.32C18.65 3 18.33 2.75 17.96 2.75C17.6 2.75 17.28 3 17.17 3.33L15.17 9.5H8.84L6.83 3.33C6.72 3 6.4 2.75 6.04 2.75H6.04C5.67 2.75 5.35 3 5.24 3.33L3.13 9.82C3.13 9.82 3.13 9.83 3.13 9.83L2.06 13.11C1.9 13.61 2.07 14.15 2.5 14.45L11.72 21.16C11.89 21.28 12.11 21.28 12.28 21.15L21.5 14.45C21.93 14.15 22.1 13.61 21.94 13.11M8.15 10.45L10.72 18.36L4.55 10.45M13.28 18.37L15.75 10.78L15.85 10.45H19.46L13.87 17.61M17.97 3.94L19.78 9.5H16.16M14.86 10.45L13.07 15.96L12 19.24L9.14 10.45M6.03 3.94L7.84 9.5H4.23M3.05 13.69C2.96 13.62 2.92 13.5 2.96 13.4L3.75 10.97L9.57 18.42M20.95 13.69L14.44 18.42L14.46 18.39L20.25 10.97L21.04 13.4C21.08 13.5 21.04 13.62 20.95 13.69"
+              />
+            </svg>
+             Continue with GitLab
+          </a>
+        </div>
+        <button
+          class="btn btnSecondary btnBlock mt-2"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
+            />
+          </svg>
+           Other login methods
+        </button>
+      </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
+        </a>
+         
+      </p>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`SignInPage > renders sign in page (server) with email form expanded 1`] = `
+<DocumentFragment>
+  <div
+    class="wrapper"
+  >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
+    <div
+      class="wrapper"
+    >
+      <div
+        class="container test-signin-form"
+      >
+        <div
+          class="mb-3 text-left"
+        >
+          <button
+            class="btn btnLink p-0 border-0 font-weight-normal"
+            type="button"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z"
+              />
+            </svg>
+            Back
+          </button>
+        </div>
+        <form
+          class=""
+        >
+          <label
+            class="label label form-group"
+          >
+            <div
+              class="mb-2"
+            >
+              <p
+                class="alignLeft"
+              >
+                Username or email
+              </p>
+            </div>
+            <div
+              class="container loader-input loaderInput"
+            >
+              <input
+                autocapitalize="off"
+                autocomplete="username"
+                class="form-control with-invalid-icon"
+                id="username-or-email"
+                required=""
+                type="text"
+                value=""
+              />
+            </div>
+          </label>
+          <div
+            class="form-group d-flex flex-column align-content-start position-relative"
           >
             <label
-              class="label label form-group"
+              class="label align-self-start"
+              for="password"
             >
-              <div
-                class="mb-2"
-              >
-                <p
-                  class="alignLeft"
-                >
-                  Username or email
-                </p>
-              </div>
-              <div
-                class="container loader-input loaderInput"
-              >
-                <input
-                  autocapitalize="off"
-                  autocomplete="username"
-                  class="form-control with-invalid-icon"
-                  id="username-or-email"
-                  required=""
-                  type="text"
-                  value=""
-                />
-              </div>
+              Password
             </label>
             <div
-              class="form-group d-flex flex-column align-content-start position-relative"
+              class="container loader-input loaderInput"
             >
-              <label
-                class="label align-self-start"
-                for="password"
-              >
-                Password
-              </label>
-              <div
-                class="container loader-input loaderInput"
-              >
-                <input
-                  autocomplete="current-password"
-                  class="form-control with-invalid-icon"
-                  id="password"
-                  name="password"
-                  placeholder=" "
-                  required=""
-                  type="password"
-                  value=""
-                />
-              </div>
-              <small
-                class="form-text text-muted align-self-end position-absolute"
-              >
-                <a
-                  class="anchorLink"
-                  href="/password-reset"
-                >
-                  Forgot password?
-                </a>
-              </small>
+              <input
+                autocomplete="current-password"
+                class="form-control with-invalid-icon"
+                id="password"
+                name="password"
+                placeholder=" "
+                required=""
+                type="password"
+                value=""
+              />
             </div>
-            <div
-              class="form-group mb-0"
-            >
-              <button
-                aria-disabled="false"
-                class="btn btnPrimary btnBlock"
-                type="submit"
-              >
-                Sign in
-              </button>
-            </div>
-          </form>
-          <div
-            class="mb-3 py-1 d-flex align-items-center"
-          >
-            <div
-              class="w-100 border"
-            />
             <small
-              class="px-2 text-muted "
+              class="form-text text-muted align-self-end position-absolute"
             >
-              OR
+              <a
+                class="anchorLink"
+                href="/password-reset"
+              >
+                Forgot password?
+              </a>
             </small>
-            <div
-              class="w-100 border"
-            />
           </div>
           <div
-            class="mb-2"
+            class="form-group mb-0"
           >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+            <button
+              aria-disabled="false"
+              class="btn btnPrimary btnBlock"
+              type="submit"
             >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                />
-              </svg>
-               Continue with GitHub
-            </a>
+              Sign in
+            </button>
           </div>
-        </div>
-        <p
-          class=""
-        >
-          New to Sourcegraph? 
-          <a
-            class="anchorLink"
-            href="/sign-up"
-          >
-            Sign up.
-          </a>
-           
-        </p>
+        </form>
       </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
+        </a>
+         
+      </p>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders sign in page (server) with only builtin authProvider 1`] = `
+exports[`SignInPage > renders sign in page (server) with only builtin authProvider 1`] = `
 <DocumentFragment>
   <div
-    class="signinSignupPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
     <div
-      class="heroPage lessPadding"
+      class="wrapper"
     >
       <div
-        class="iconWrapper bg-transparent"
+        class="container test-signin-form"
       >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline icon"
-          fill="none"
-          height="64"
-          role="img"
-          viewBox="0 0 52 52"
-          width="65"
-          xmlns="http://www.w3.org/2000/svg"
+        <form
+          class=""
         >
-          <path
-            d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-            fill="#FF5543"
-          />
-          <path
-            d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-            fill="#A112FF"
-          />
-          <path
-            d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-            fill="#00CBEC"
-          />
-        </svg>
-      </div>
-      <h1
-        class="h1 title"
-      >
-        Sign in to Sourcegraph
-      </h1>
-      <div
-        class="mb-4 pb-5 signinPageContainer"
-      >
-        <div
-          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
-        >
-          <form
-            class=""
+          <label
+            class="label label form-group"
+          >
+            <div
+              class="mb-2"
+            >
+              <p
+                class="alignLeft"
+              >
+                Username or email
+              </p>
+            </div>
+            <div
+              class="container loader-input loaderInput"
+            >
+              <input
+                autocapitalize="off"
+                autocomplete="username"
+                class="form-control with-invalid-icon"
+                id="username-or-email"
+                required=""
+                type="text"
+                value=""
+              />
+            </div>
+          </label>
+          <div
+            class="form-group d-flex flex-column align-content-start position-relative"
           >
             <label
-              class="label label form-group"
+              class="label align-self-start"
+              for="password"
             >
-              <div
-                class="mb-2"
-              >
-                <p
-                  class="alignLeft"
-                >
-                  Username or email
-                </p>
-              </div>
-              <div
-                class="container loader-input loaderInput"
-              >
-                <input
-                  autocapitalize="off"
-                  autocomplete="username"
-                  class="form-control with-invalid-icon"
-                  id="username-or-email"
-                  required=""
-                  type="text"
-                  value=""
-                />
-              </div>
+              Password
             </label>
             <div
-              class="form-group d-flex flex-column align-content-start position-relative"
+              class="container loader-input loaderInput"
             >
-              <label
-                class="label align-self-start"
-                for="password"
-              >
-                Password
-              </label>
-              <div
-                class="container loader-input loaderInput"
-              >
-                <input
-                  autocomplete="current-password"
-                  class="form-control with-invalid-icon"
-                  id="password"
-                  name="password"
-                  placeholder=" "
-                  required=""
-                  type="password"
-                  value=""
-                />
-              </div>
-              <small
-                class="form-text text-muted align-self-end position-absolute"
-              >
-                <a
-                  class="anchorLink"
-                  href="/password-reset"
-                >
-                  Forgot password?
-                </a>
-              </small>
+              <input
+                autocomplete="current-password"
+                class="form-control with-invalid-icon"
+                id="password"
+                name="password"
+                placeholder=" "
+                required=""
+                type="password"
+                value=""
+              />
             </div>
-            <div
-              class="form-group mb-0"
+            <small
+              class="form-text text-muted align-self-end position-absolute"
             >
-              <button
-                aria-disabled="false"
-                class="btn btnPrimary btnBlock"
-                type="submit"
+              <a
+                class="anchorLink"
+                href="/password-reset"
               >
-                Sign in
-              </button>
-            </div>
-          </form>
-        </div>
-        <p
-          class=""
-        >
-          New to Sourcegraph? 
-          <a
-            class="anchorLink"
-            href="/sign-up"
+                Forgot password?
+              </a>
+            </small>
+          </div>
+          <div
+            class="form-group mb-0"
           >
-            Sign up.
-          </a>
-           
-        </p>
+            <button
+              aria-disabled="false"
+              class="btn btnPrimary btnBlock"
+              type="submit"
+            >
+              Sign in
+            </button>
+          </div>
+        </form>
       </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
+        </a>
+         
+      </p>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`SignInPage renders sign in page (server) with request access link 1`] = `
+exports[`SignInPage > renders sign in page (server) with request access link 1`] = `
 <DocumentFragment>
   <div
-    class="signinSignupPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
     <div
-      class="heroPage lessPadding"
+      class="wrapper"
     >
       <div
-        class="iconWrapper bg-transparent"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline icon"
-          fill="none"
-          height="64"
-          role="img"
-          viewBox="0 0 52 52"
-          width="65"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-            fill="#FF5543"
-          />
-          <path
-            d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-            fill="#A112FF"
-          />
-          <path
-            d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-            fill="#00CBEC"
-          />
-        </svg>
-      </div>
-      <h1
-        class="h1 title"
-      >
-        Sign in to Sourcegraph
-      </h1>
-      <div
-        class="mb-4 pb-5 signinPageContainer"
+        class="container test-signin-form"
       >
         <div
-          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
+          class="mb-2"
         >
-          <div
-            class="mb-2"
-          >
-            <a
-              class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
-            >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                />
-              </svg>
-               Continue with GitHub
-            </a>
-          </div>
-          <div
-            class="mb-2"
-          >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
-            >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
-                />
-              </svg>
-               Continue with Email
-            </a>
-          </div>
-        </div>
-        <p
-          class="text-muted"
-        >
-          Need an account? 
           <a
-            class="anchorLink"
-            href="/request-access"
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
           >
-            Request access
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+              />
+            </svg>
+             Continue with GitHub
           </a>
-           or contact your site admin.
-        </p>
+        </div>
+        <div
+          class=""
+        >
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M21.94 13.11L20.89 9.89C20.89 9.86 20.88 9.83 20.87 9.8L18.76 3.32C18.65 3 18.33 2.75 17.96 2.75C17.6 2.75 17.28 3 17.17 3.33L15.17 9.5H8.84L6.83 3.33C6.72 3 6.4 2.75 6.04 2.75H6.04C5.67 2.75 5.35 3 5.24 3.33L3.13 9.82C3.13 9.82 3.13 9.83 3.13 9.83L2.06 13.11C1.9 13.61 2.07 14.15 2.5 14.45L11.72 21.16C11.89 21.28 12.11 21.28 12.28 21.15L21.5 14.45C21.93 14.15 22.1 13.61 21.94 13.11M8.15 10.45L10.72 18.36L4.55 10.45M13.28 18.37L15.75 10.78L15.85 10.45H19.46L13.87 17.61M17.97 3.94L19.78 9.5H16.16M14.86 10.45L13.07 15.96L12 19.24L9.14 10.45M6.03 3.94L7.84 9.5H4.23M3.05 13.69C2.96 13.62 2.92 13.5 2.96 13.4L3.75 10.97L9.57 18.42M20.95 13.69L14.44 18.42L14.46 18.39L20.25 10.97L21.04 13.4C21.08 13.5 21.04 13.62 20.95 13.69"
+              />
+            </svg>
+             Continue with GitLab
+          </a>
+        </div>
+        <button
+          class="btn btnSecondary btnBlock mt-2"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
+            />
+          </svg>
+           Other login methods
+        </button>
       </div>
+      <p
+        class="mt-3 text-center text-muted"
+      >
+        Need an account? 
+        <a
+          class="anchorLink"
+          href="/request-access"
+        >
+          Request access
+        </a>
+         or contact your site admin.
+      </p>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`SignInPage with Gerrit auth provider does not render the Gerrit provider 1`] = `
+exports[`SignInPage > with Gerrit auth provider > does not render the Gerrit provider 1`] = `
 <DocumentFragment>
   <div
-    class="signinSignupPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
     <div
-      class="heroPage lessPadding"
+      class="wrapper"
     >
       <div
-        class="iconWrapper bg-transparent"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline icon"
-          fill="none"
-          height="64"
-          role="img"
-          viewBox="0 0 52 52"
-          width="65"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-            fill="#FF5543"
-          />
-          <path
-            d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-            fill="#A112FF"
-          />
-          <path
-            d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-            fill="#00CBEC"
-          />
-        </svg>
-      </div>
-      <h1
-        class="h1 title"
-      >
-        Sign in to Sourcegraph
-      </h1>
-      <div
-        class="mb-4 pb-5 signinPageContainer"
+        class="container test-signin-form"
       >
         <div
-          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
+          class="mb-2"
         >
-          <div
-            class="mb-2"
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
           >
-            <a
-              class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
             >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                />
-              </svg>
-               Continue with GitHub
-            </a>
-          </div>
-          <div
-            class="mb-2"
-          >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
-            >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
-                />
-              </svg>
-               Continue with Email
-            </a>
-          </div>
+              <path
+                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+              />
+            </svg>
+             Continue with GitHub
+          </a>
         </div>
-        <p
+        <div
           class=""
         >
-          New to Sourcegraph? 
           <a
-            class="anchorLink"
-            href="/sign-up"
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
           >
-            Sign up.
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M21.94 13.11L20.89 9.89C20.89 9.86 20.88 9.83 20.87 9.8L18.76 3.32C18.65 3 18.33 2.75 17.96 2.75C17.6 2.75 17.28 3 17.17 3.33L15.17 9.5H8.84L6.83 3.33C6.72 3 6.4 2.75 6.04 2.75H6.04C5.67 2.75 5.35 3 5.24 3.33L3.13 9.82C3.13 9.82 3.13 9.83 3.13 9.83L2.06 13.11C1.9 13.61 2.07 14.15 2.5 14.45L11.72 21.16C11.89 21.28 12.11 21.28 12.28 21.15L21.5 14.45C21.93 14.15 22.1 13.61 21.94 13.11M8.15 10.45L10.72 18.36L4.55 10.45M13.28 18.37L15.75 10.78L15.85 10.45H19.46L13.87 17.61M17.97 3.94L19.78 9.5H16.16M14.86 10.45L13.07 15.96L12 19.24L9.14 10.45M6.03 3.94L7.84 9.5H4.23M3.05 13.69C2.96 13.62 2.92 13.5 2.96 13.4L3.75 10.97L9.57 18.42M20.95 13.69L14.44 18.42L14.46 18.39L20.25 10.97L21.04 13.4C21.08 13.5 21.04 13.62 20.95 13.69"
+              />
+            </svg>
+             Continue with GitLab
           </a>
-           
-        </p>
+        </div>
+        <button
+          class="btn btnSecondary btnBlock mt-2"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
+            />
+          </svg>
+           Other login methods
+        </button>
       </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
+        </a>
+         
+      </p>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`SignInPage with Sourcegraph operator auth provider renders page with 2 providers 1`] = `
+exports[`SignInPage > with Sourcegraph operator auth provider > renders page with 2 providers 1`] = `
 <DocumentFragment>
   <div
-    class="signinSignupPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
     <div
-      class="heroPage lessPadding"
+      class="wrapper"
     >
       <div
-        class="iconWrapper bg-transparent"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline icon"
-          fill="none"
-          height="64"
-          role="img"
-          viewBox="0 0 52 52"
-          width="65"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-            fill="#FF5543"
-          />
-          <path
-            d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-            fill="#A112FF"
-          />
-          <path
-            d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-            fill="#00CBEC"
-          />
-        </svg>
-      </div>
-      <h1
-        class="h1 title"
-      >
-        Sign in to Sourcegraph
-      </h1>
-      <div
-        class="mb-4 pb-5 signinPageContainer"
+        class="container test-signin-form"
       >
         <div
-          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
+          class="mb-2"
         >
-          <div
-            class="mb-2"
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
           >
-            <a
-              class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
             >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                />
-              </svg>
-               Continue with GitHub
-            </a>
-          </div>
-          <div
-            class="mb-2"
-          >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&"
-            >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
-                />
-              </svg>
-               Continue with Email
-            </a>
-          </div>
+              <path
+                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+              />
+            </svg>
+             Continue with GitHub
+          </a>
         </div>
-        <p
+        <div
           class=""
         >
-          New to Sourcegraph? 
           <a
-            class="anchorLink"
-            href="/sign-up"
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
           >
-            Sign up.
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M21.94 13.11L20.89 9.89C20.89 9.86 20.88 9.83 20.87 9.8L18.76 3.32C18.65 3 18.33 2.75 17.96 2.75C17.6 2.75 17.28 3 17.17 3.33L15.17 9.5H8.84L6.83 3.33C6.72 3 6.4 2.75 6.04 2.75H6.04C5.67 2.75 5.35 3 5.24 3.33L3.13 9.82C3.13 9.82 3.13 9.83 3.13 9.83L2.06 13.11C1.9 13.61 2.07 14.15 2.5 14.45L11.72 21.16C11.89 21.28 12.11 21.28 12.28 21.15L21.5 14.45C21.93 14.15 22.1 13.61 21.94 13.11M8.15 10.45L10.72 18.36L4.55 10.45M13.28 18.37L15.75 10.78L15.85 10.45H19.46L13.87 17.61M17.97 3.94L19.78 9.5H16.16M14.86 10.45L13.07 15.96L12 19.24L9.14 10.45M6.03 3.94L7.84 9.5H4.23M3.05 13.69C2.96 13.62 2.92 13.5 2.96 13.4L3.75 10.97L9.57 18.42M20.95 13.69L14.44 18.42L14.46 18.39L20.25 10.97L21.04 13.4C21.08 13.5 21.04 13.62 20.95 13.69"
+              />
+            </svg>
+             Continue with GitLab
           </a>
-           
-        </p>
+        </div>
+        <button
+          class="btn btnSecondary btnBlock mt-2"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
+            />
+          </svg>
+           Other login methods
+        </button>
       </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
+        </a>
+         
+      </p>
     </div>
   </div>
 </DocumentFragment>
 `;
 
-exports[`SignInPage with Sourcegraph operator auth provider renders page with 3 providers (url-param present) 1`] = `
+exports[`SignInPage > with Sourcegraph operator auth provider > renders page with 3 providers (url-param present) 1`] = `
 <DocumentFragment>
   <div
-    class="signinSignupPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Sign in to Sourcegraph
+    </h1>
     <div
-      class="heroPage lessPadding"
+      class="wrapper"
     >
       <div
-        class="iconWrapper bg-transparent"
-      >
-        <svg
-          aria-hidden="true"
-          class="mdi-icon iconInline icon"
-          fill="none"
-          height="64"
-          role="img"
-          viewBox="0 0 52 52"
-          width="65"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M30.8 51.8c-2.8.5-5.5-1.3-6-4.1L17.2 6.2c-.5-2.8 1.3-5.5 4.1-6s5.5 1.3 6 4.1l7.6 41.5c.5 2.8-1.4 5.5-4.1 6z"
-            fill="#FF5543"
-          />
-          <path
-            d="M10.9 44.7C9.1 45 7.3 44.4 6 43c-1.8-2.2-1.6-5.4.6-7.2L38.7 8.5c2.2-1.8 5.4-1.6 7.2.6 1.8 2.2 1.6 5.4-.6 7.2l-32 27.3c-.7.6-1.6 1-2.4 1.1z"
-            fill="#A112FF"
-          />
-          <path
-            d="M46.8 38.1c-.9.2-1.8.1-2.6-.2L4.4 23.8c-2.7-1-4.1-3.9-3.1-6.6 1-2.7 3.9-4.1 6.6-3.1l39.7 14.1c2.7 1 4.1 3.9 3.1 6.6-.6 1.8-2.2 3-3.9 3.3z"
-            fill="#00CBEC"
-          />
-        </svg>
-      </div>
-      <h1
-        class="h1 title"
-      >
-        Sign in to Sourcegraph
-      </h1>
-      <div
-        class="mb-4 pb-5 signinPageContainer"
+        class="container test-signin-form"
       >
         <div
-          class="test-signin-form rounded p-4 my-3 signinSignupForm mt-4"
+          class="mb-2"
         >
-          <div
-            class="mb-2"
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
           >
-            <a
-              class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
             >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
-                />
-              </svg>
-               Continue with GitHub
-            </a>
-          </div>
-          <div
-            class="mb-2"
-          >
-            <a
-              class="anchorLink btn btnPrimary btnBlock"
-              href=""
-            >
-               Continue with Sourcegraph Operators
-            </a>
-          </div>
-          <div
-            class="mb-2"
-          >
-            <a
-              class="anchorLink btn btnSecondary btnBlock"
-              href="/sign-in?email=1&sourcegraph-operator="
-            >
-              <svg
-                aria-hidden="true"
-                class="mdi-icon iconInline"
-                fill="currentColor"
-                height="24"
-                role="img"
-                viewBox="0 0 24 24"
-                width="24"
-              >
-                <path
-                  d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z"
-                />
-              </svg>
-               Continue with Email
-            </a>
-          </div>
+              <path
+                d="M12,2A10,10 0 0,0 2,12C2,16.42 4.87,20.17 8.84,21.5C9.34,21.58 9.5,21.27 9.5,21C9.5,20.77 9.5,20.14 9.5,19.31C6.73,19.91 6.14,17.97 6.14,17.97C5.68,16.81 5.03,16.5 5.03,16.5C4.12,15.88 5.1,15.9 5.1,15.9C6.1,15.97 6.63,16.93 6.63,16.93C7.5,18.45 8.97,18 9.54,17.76C9.63,17.11 9.89,16.67 10.17,16.42C7.95,16.17 5.62,15.31 5.62,11.5C5.62,10.39 6,9.5 6.65,8.79C6.55,8.54 6.2,7.5 6.75,6.15C6.75,6.15 7.59,5.88 9.5,7.17C10.29,6.95 11.15,6.84 12,6.84C12.85,6.84 13.71,6.95 14.5,7.17C16.41,5.88 17.25,6.15 17.25,6.15C17.8,7.5 17.45,8.54 17.35,8.79C18,9.5 18.38,10.39 18.38,11.5C18.38,15.32 16.04,16.16 13.81,16.41C14.17,16.72 14.5,17.33 14.5,18.26C14.5,19.6 14.5,20.68 14.5,21C14.5,21.27 14.66,21.59 15.17,21.5C19.14,20.16 22,16.42 22,12A10,10 0 0,0 12,2Z"
+              />
+            </svg>
+             Continue with GitHub
+          </a>
         </div>
-        <p
+        <div
+          class="mb-2"
+        >
+          <a
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost/.auth/gitlab/login?pc=f00bar&returnTo=%2Fsearch"
+          >
+            <svg
+              aria-hidden="true"
+              class="mdi-icon iconInline"
+              fill="currentColor"
+              height="24"
+              role="img"
+              viewBox="0 0 24 24"
+              width="24"
+            >
+              <path
+                d="M21.94 13.11L20.89 9.89C20.89 9.86 20.88 9.83 20.87 9.8L18.76 3.32C18.65 3 18.33 2.75 17.96 2.75C17.6 2.75 17.28 3 17.17 3.33L15.17 9.5H8.84L6.83 3.33C6.72 3 6.4 2.75 6.04 2.75H6.04C5.67 2.75 5.35 3 5.24 3.33L3.13 9.82C3.13 9.82 3.13 9.83 3.13 9.83L2.06 13.11C1.9 13.61 2.07 14.15 2.5 14.45L11.72 21.16C11.89 21.28 12.11 21.28 12.28 21.15L21.5 14.45C21.93 14.15 22.1 13.61 21.94 13.11M8.15 10.45L10.72 18.36L4.55 10.45M13.28 18.37L15.75 10.78L15.85 10.45H19.46L13.87 17.61M17.97 3.94L19.78 9.5H16.16M14.86 10.45L13.07 15.96L12 19.24L9.14 10.45M6.03 3.94L7.84 9.5H4.23M3.05 13.69C2.96 13.62 2.92 13.5 2.96 13.4L3.75 10.97L9.57 18.42M20.95 13.69L14.44 18.42L14.46 18.39L20.25 10.97L21.04 13.4C21.08 13.5 21.04 13.62 20.95 13.69"
+              />
+            </svg>
+             Continue with GitLab
+          </a>
+        </div>
+        <div
           class=""
         >
-          New to Sourcegraph? 
           <a
-            class="anchorLink"
-            href="/sign-up"
+            class="anchorLink btn btnPrimary btnBlock"
+            href="http://localhost:3000/?returnTo=%2Fsearch"
           >
-            Sign up.
+             Continue with Sourcegraph Operators
           </a>
-           
-        </p>
+        </div>
+        <button
+          class="btn btnSecondary btnBlock mt-2"
+          type="button"
+        >
+          <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline"
+            fill="currentColor"
+            height="24"
+            role="img"
+            viewBox="0 0 24 24"
+            width="24"
+          >
+            <path
+              d="M22,18V22H18V19H15V16H12L9.74,13.74C9.19,13.91 8.61,14 8,14A6,6 0 0,1 2,8A6,6 0 0,1 8,2A6,6 0 0,1 14,8C14,8.61 13.91,9.19 13.74,9.74L22,18M7,5A2,2 0 0,0 5,7A2,2 0 0,0 7,9A2,2 0 0,0 9,7A2,2 0 0,0 7,5Z"
+            />
+          </svg>
+           Other login methods
+        </button>
       </div>
+      <p
+        class="mt-3 text-center"
+      >
+        New to Sourcegraph? 
+        <a
+          class="anchorLink"
+          href="/sign-up"
+        >
+          Sign up
+        </a>
+         
+      </p>
     </div>
   </div>
 </DocumentFragment>

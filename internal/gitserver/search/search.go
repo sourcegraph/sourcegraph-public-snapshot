@@ -413,23 +413,33 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filte
 		diff.Content, diff.MatchedRanges = FormatDiff(rawDiff, hc.Diff)
 	}
 
+	commitID, err := api.NewCommitID(string(lc.Hash))
+	if err != nil {
+		return nil, err
+	}
+
+	parentIDs, err := lc.ParentIDs()
+	if err != nil {
+		return nil, err
+	}
+
 	return &protocol.CommitMatch{
-		Oid: api.CommitID(lc.Hash),
+		Oid: commitID,
 		Author: protocol.Signature{
-			Name:  string(lc.AuthorName),
-			Email: string(lc.AuthorEmail),
+			Name:  utf8String(lc.AuthorName),
+			Email: utf8String(lc.AuthorEmail),
 			Date:  authorDate,
 		},
 		Committer: protocol.Signature{
-			Name:  string(lc.CommitterName),
-			Email: string(lc.CommitterEmail),
+			Name:  utf8String(lc.CommitterName),
+			Email: utf8String(lc.CommitterEmail),
 			Date:  committerDate,
 		},
-		Parents:    lc.ParentIDs(),
+		Parents:    parentIDs,
 		SourceRefs: lc.SourceRefs(),
 		Refs:       lc.RefNames(),
 		Message: result.MatchedString{
-			Content:       string(lc.Message),
+			Content:       utf8String(lc.Message),
 			MatchedRanges: hc.Message,
 		},
 		Diff:          diff,
@@ -437,8 +447,12 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filte
 	}, nil
 }
 
+func utf8String(b []byte) string {
+	return string(bytes.ToValidUTF8(b, []byte("�")))
+}
+
 func filterRawDiff(rawDiff []*godiff.FileDiff, filterFunc func(string) (bool, error)) []*godiff.FileDiff {
-	logger := log.Scoped("filterRawDiff", "sub-repo filtering for raw diffs")
+	logger := log.Scoped("filterRawDiff")
 	if filterFunc == nil {
 		return rawDiff
 	}

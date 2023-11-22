@@ -1,10 +1,11 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
     name = "rbac",
     srcs = [
         "constants.go",
-        "gen.go",
         "parser.go",
         "permission.go",
         "permissions.go",
@@ -17,6 +18,7 @@ go_library(
         "//internal/actor",
         "//internal/auth",
         "//internal/database",
+        "//internal/rbac/types",
         "//internal/types",
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
@@ -42,10 +44,59 @@ go_test(
         "//internal/auth",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/rbac/types",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
+)
+
+genrule(
+    name = "generate_constants_go",
+    srcs = [
+        "//internal/rbac:schema.yaml",
+    ],
+    outs = [
+        "_constants.go",
+    ],
+    cmd = """
+    $(location //internal/rbac/gen:type_gen) -i $< -o $@ -lang go -kind constants
+    $(location @go_sdk//:bin/gofmt) -s -w $@
+    """,
+    tools = [
+        "//internal/rbac/gen:type_gen",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "generate_constants_ts",
+    srcs = [
+        "//internal/rbac:schema.yaml",
+    ],
+    outs = [
+        "_constants.ts",
+    ],
+    cmd = """\
+    $(location //internal/rbac/gen:type_gen) -i $< -o $@ -lang ts -kind constants
+    """,
+    tools = [
+        "//internal/rbac/gen:type_gen",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+write_generated_to_source_files(
+    name = "write_generated",
+    output_files = {"constants.go": "_constants.go"},
+    tags = ["go_generate"],
+    target = ":generate_constants_go",
+)
+
+exports_files(
+    ["schema.yaml"],
+    visibility = ["//internal/rbac:__subpackages__"],
 )

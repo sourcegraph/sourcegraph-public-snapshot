@@ -1,7 +1,7 @@
 import * as React from 'react'
 
 import { mdiHistory } from '@mdi/js'
-import { Location, NavigateFunction, To } from 'react-router-dom'
+import type { Location, NavigateFunction, To } from 'react-router-dom'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -17,8 +17,8 @@ import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
-import { RepoHeaderContext } from '../../RepoHeader'
-import { BlobPanelTabID } from '../panel/BlobPanel'
+import type { RepoHeaderContext } from '../../RepoHeader'
+import type { BlobPanelTabID } from '../panel/BlobPanel'
 
 /**
  * A repository header action that toggles the visibility of the history panel.

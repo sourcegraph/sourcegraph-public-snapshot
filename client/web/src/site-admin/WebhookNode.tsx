@@ -3,7 +3,7 @@ import React from 'react'
 import { H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../components/externalServices/externalServices'
-import { ExternalServiceKind } from '../graphql-operations'
+import type { ExternalServiceKind } from '../graphql-operations'
 
 import styles from './WebhookNode.module.scss'
 

@@ -28,20 +28,23 @@ import (
 // A GitLabSource yields repositories from a single GitLab connection configured
 // in Sourcegraph via the external services configuration.
 type GitLabSource struct {
-	svc                 *types.ExternalService
-	config              *schema.GitLabConnection
-	exclude             excludeFunc
-	baseURL             *url.URL // URL with path /api/v4 (no trailing slash)
-	nameTransformations reposource.NameTransformations
-	provider            *gitlab.ClientProvider
-	client              *gitlab.Client
-	logger              log.Logger
+	svc                       *types.ExternalService
+	config                    *schema.GitLabConnection
+	excluder                  repoExcluder
+	baseURL                   *url.URL // URL with path /api/v4 (no trailing slash)
+	nameTransformations       reposource.NameTransformations
+	provider                  *gitlab.ClientProvider
+	client                    *gitlab.Client
+	logger                    log.Logger
+	markInternalReposAsPublic bool
 }
 
-var _ Source = &GitLabSource{}
-var _ UserSource = &GitLabSource{}
-var _ AffiliatedRepositorySource = &GitLabSource{}
-var _ VersionSource = &GitLabSource{}
+var (
+	_ Source                     = &GitLabSource{}
+	_ UserSource                 = &GitLabSource{}
+	_ AffiliatedRepositorySource = &GitLabSource{}
+	_ VersionSource              = &GitLabSource{}
+)
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -87,13 +90,26 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(strconv.Itoa(r.Id))
+		rule := ex.AddRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
+
+		if r.Id != 0 {
+			rule.Exact(strconv.Itoa(r.Id))
+		}
+
+		if r.EmptyRepos {
+			rule.Generic(func(repo any) bool {
+				if project, ok := repo.(gitlab.Project); ok {
+					return project.EmptyRepo
+				}
+				return false
+			})
+		}
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
@@ -125,14 +141,15 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	}
 
 	return &GitLabSource{
-		svc:                 svc,
-		config:              c,
-		exclude:             exclude,
-		baseURL:             baseURL,
-		nameTransformations: nts,
-		provider:            provider,
-		client:              client,
-		logger:              logger,
+		svc:                       svc,
+		config:                    c,
+		excluder:                  ex,
+		baseURL:                   baseURL,
+		nameTransformations:       nts,
+		provider:                  provider,
+		client:                    client,
+		logger:                    logger,
+		markInternalReposAsPublic: c.MarkInternalReposAsPublic,
 	}, nil
 }
 
@@ -180,7 +197,6 @@ func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*t
 		PathWithNamespace: pathWithNamespace,
 		CommonOp:          gitlab.CommonOp{NoCache: true},
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +211,12 @@ func (s GitLabSource) ExternalServices() types.ExternalServices {
 
 func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	urn := s.svc.URN()
+
+	private := proj.Visibility == gitlab.Private || proj.Visibility == gitlab.Internal
+	if proj.Visibility == gitlab.Internal && s.markInternalReposAsPublic {
+		private = false
+	}
+
 	return &types.Repo{
 		Name: reposource.GitLabRepoName(
 			s.config.RepositoryPathPattern,
@@ -213,7 +235,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
 		Stars:        proj.StarCount,
-		Private:      proj.Visibility == "private" || proj.Visibility == "internal",
+		Private:      private,
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
@@ -236,7 +258,9 @@ func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID))
+	return s.excluder.ShouldExclude(p.PathWithNamespace) ||
+		s.excluder.ShouldExclude(strconv.Itoa(p.ID)) ||
+		s.excluder.ShouldExclude(*p)
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {

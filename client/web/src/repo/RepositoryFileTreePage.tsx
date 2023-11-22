@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
@@ -9,13 +9,14 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
-import { NotebookProps } from '../notebooks'
-import { OwnConfigProps } from '../own/OwnConfigProps'
+import type { SourcegraphContext } from '../jscontext'
+import type { NotebookProps } from '../notebooks'
+import type { OwnConfigProps } from '../own/OwnConfigProps'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
 import { formatHash, formatLineOrPositionOrRange, parseBrowserRepoURL } from '../util/url'
 
 import { BlobPage } from './blob/BlobPage'
-import { RepoRevisionContainerContext } from './RepoRevisionContainer'
+import type { RepoRevisionContainerContext } from './RepoRevisionContainer'
 import { RepoRevisionSidebar } from './RepoRevisionSidebar'
 import { TreePage } from './tree/TreePage'
 
@@ -23,6 +24,7 @@ import styles from './RepositoryFileTreePage.module.scss'
 
 export interface RepositoryFileTreePageProps extends RepoRevisionContainerContext, NotebookProps, OwnConfigProps {
     objectType: 'blob' | 'tree' | undefined
+    globalContext: Pick<SourcegraphContext, 'authProviders'>
 }
 
 /** Dev feature flag to make benchmarking the file tree in isolation easier. */
@@ -31,13 +33,13 @@ const hideRepoRevisionContent = localStorage.getItem('hideRepoRevContent')
 /** A page that shows a file or a directory (tree view) in a repository at the
  * current revision. */
 export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => {
-    const { repo, resolvedRevision, repoName, objectType: maybeObjectType, ...context } = props
+    const { repo, resolvedRevision, repoName, objectType: maybeObjectType, globalContext, ...context } = props
 
     const location = useLocation()
     const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
 
     // Redirect tree and blob routes pointing to the root to the repo page
-    if (maybeObjectType && filePath.replace(/\/+$/g, '') === '') {
+    if (maybeObjectType && filePath.replaceAll(/\/+$/g, '') === '') {
         return <Navigate to={toRepoURL({ repoName, revision: context.revision })} replace={true} />
     }
 
@@ -105,6 +107,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                     }
                                     fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
                                     className={styles.pageContent}
+                                    context={globalContext}
                                 />
                             </TraceSpanProvider>
                         ) : resolvedRevision ? (
@@ -117,6 +120,8 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                 repoName={repoName}
                                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                                 className={styles.pageContent}
+                                authenticatedUser={context.authenticatedUser}
+                                context={globalContext}
                             />
                         ) : (
                             <LoadingSpinner />

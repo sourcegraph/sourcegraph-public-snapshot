@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
 import { noop } from 'lodash'
+import { describe, expect, test } from 'vitest'
 
 import { PlainQueryInput } from './LazyQueryInput'
 

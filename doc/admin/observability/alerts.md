@@ -1,6 +1,6 @@
 # Alerts reference
 
-<!-- DO NOT EDIT: generated via: 'RELOAD=false sg run monitoring-generator' -->
+<!-- DO NOT EDIT: generated via: bazel run //doc/admin/observability:write_monitoring_docs -->
 
 This document contains a complete reference of all alerts in Sourcegraph's monitoring, and next steps for when you find alerts that are firing.
 If your alert isn't mentioned here, or if the next steps don't help, [contact us](mailto:support@sourcegraph.com) for assistance.
@@ -218,7 +218,7 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -251,7 +251,7 @@ Generated query for warning alert: `max((histogram_quantile(0.9, sum by (le) (ra
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -612,6 +612,38 @@ Generated query for warning alert: `max((sum by (alert_type) (increase(src_graph
 
 <br />
 
+## frontend: frontend_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "frontend" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> frontend: 300s+ maximum duration since last successful site configuration update (all "frontend" instances)
+
+**Next steps**
+
+- This indicates that one or more "frontend" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "frontend" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-frontend-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_frontend_frontend_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## frontend: internal_indexed_search_error_responses
 
 <p class="subtitle">internal indexed search error responses every 5m</p>
@@ -694,7 +726,7 @@ Generated query for warning alert: `max((sum by (code) (increase(searcher_servic
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -724,7 +756,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -754,7 +786,7 @@ Generated query for warning alert: `max((histogram_quantile(0.99, sum by (le, ca
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -849,7 +881,7 @@ Generated query for critical alert: `max((max by (owner) (observability_test_met
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1216,18 +1248,19 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*(frontend|sou
 
 ## frontend: email_delivery_failures
 
-<p class="subtitle">email delivery failures every 30 minutes</p>
+<p class="subtitle">email delivery failure rate over 30 minutes</p>
 
 **Descriptions**
 
-- <span class="badge badge-warning">warning</span> frontend: 1+ email delivery failures every 30 minutes
-- <span class="badge badge-critical">critical</span> frontend: 2+ email delivery failures every 30 minutes
+- <span class="badge badge-warning">warning</span> frontend: 0%+ email delivery failure rate over 30 minutes
+- <span class="badge badge-critical">critical</span> frontend: 10%+ email delivery failure rate over 30 minutes
 
 **Next steps**
 
 - Check your SMTP configuration in site configuration.
-- Check frontend logs for more detailed error messages.
+- Check `sourcegraph-frontend` logs for more detailed error messages.
 - Check your SMTP provider for more detailed error messages.
+- Use `sum(increase(src_email_send{success="false"}[30m]))` to check the raw count of delivery failures.
 - Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-email-delivery-failures).
 - **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
 
@@ -1243,9 +1276,9 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*(frontend|sou
 <details>
 <summary>Technical details</summary>
 
-Generated query for warning alert: `max((sum(increase(src_email_send{success="false"}[30m]))) >= 1)`
+Generated query for warning alert: `max((sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100) > 0)`
 
-Generated query for critical alert: `max((sum(increase(src_email_send{success="false"}[30m]))) >= 2)`
+Generated query for critical alert: `max((sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100) >= 10)`
 
 </details>
 
@@ -1422,7 +1455,7 @@ Generated query for critical alert: `max((histogram_quantile(0.9, sum by (le) (l
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1459,7 +1492,7 @@ Generated query for critical alert: `min(((src_gitserver_disk_space_available / 
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1493,7 +1526,7 @@ Generated query for critical alert: `max((sum by (instance, cmd) (src_gitserver_
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1526,7 +1559,7 @@ Generated query for warning alert: `max((sum(src_gitserver_clone_queue)) >= 25)`
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1563,12 +1596,44 @@ Generated query for warning alert: `max((sum(src_gitserver_lsremote_queue)) >= 2
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((sum by (category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2..",job="gitserver"}[5m])) / ignoring (category) group_left () sum(increase(src_frontend_internal_request_duration_seconds_count{job="gitserver"}[5m]))) >= 2)`
+
+</details>
+
+<br />
+
+## gitserver: gitserver_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "gitserver" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> gitserver: 300s+ maximum duration since last successful site configuration update (all "gitserver" instances)
+
+**Next steps**
+
+- This indicates that one or more "gitserver" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "gitserver" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-gitserver-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_gitserver_gitserver_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 
@@ -1597,7 +1662,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1631,7 +1696,7 @@ Generated query for critical alert: `max((sum by (app_name, db_name) (increase(s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1663,7 +1728,7 @@ Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1695,7 +1760,7 @@ Generated query for warning alert: `max((cadvisor_container_memory_usage_percent
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1727,7 +1792,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1759,7 +1824,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1789,7 +1854,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1819,7 +1884,7 @@ Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1851,360 +1916,12 @@ Generated query for warning alert: `max((max by (instance) (go_gc_duration_secon
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
 Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) / count by (app) (up{app=~".*gitserver"}) * 100) <= 90)`
-
-</details>
-
-<br />
-
-## github-proxy: github_proxy_waiting_requests
-
-<p class="subtitle">number of requests waiting on the global mutex</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 100+ number of requests waiting on the global mutex for 5m0s
-
-**Next steps**
-
-- 								- **Check github-proxy logs for network connection issues.
-								- **Check github status.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-github-proxy-waiting-requests).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_github_proxy_waiting_requests"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max(github_proxy_waiting_requests)) >= 100)`
-
-</details>
-
-<br />
-
-## github-proxy: container_cpu_usage
-
-<p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 99%+ container cpu usage total (1m average) across all cores by instance
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-container-cpu-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_container_cpu_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}) >= 99)`
-
-</details>
-
-<br />
-
-## github-proxy: container_memory_usage
-
-<p class="subtitle">container memory usage by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 99%+ container memory usage by instance
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-container-memory-usage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_container_memory_usage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}) >= 99)`
-
-</details>
-
-<br />
-
-## github-proxy: provisioning_container_cpu_usage_long_term
-
-<p class="subtitle">container cpu usage total (90th percentile over 1d) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 80%+ container cpu usage total (90th percentile over 1d) across all cores by instance for 336h0m0s
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing CPU limits in the `Deployment.yaml` for the github-proxy service.
-- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-cpu-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_cpu_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[1d])) >= 80)`
-
-</details>
-
-<br />
-
-## github-proxy: provisioning_container_memory_usage_long_term
-
-<p class="subtitle">container memory usage (1d maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 80%+ container memory usage (1d maximum) by instance for 336h0m0s
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing memory limits in the `Deployment.yaml` for the github-proxy service.
-- **Docker Compose:** Consider increasing `memory:` of the github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-memory-usage-long-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_memory_usage_long_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[1d])) >= 80)`
-
-</details>
-
-<br />
-
-## github-proxy: provisioning_container_cpu_usage_short_term
-
-<p class="subtitle">container cpu usage total (5m maximum) across all cores by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 90%+ container cpu usage total (5m maximum) across all cores by instance for 30m0s
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing CPU limits in the the relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `cpus:` of the github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-cpu-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_cpu_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^github-proxy.*"}[5m])) >= 90)`
-
-</details>
-
-<br />
-
-## github-proxy: provisioning_container_memory_usage_short_term
-
-<p class="subtitle">container memory usage (5m maximum) by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 90%+ container memory usage (5m maximum) by instance
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-provisioning-container-memory-usage-short-term).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_provisioning_container_memory_usage_short_term"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^github-proxy.*"}[5m])) >= 90)`
-
-</details>
-
-<br />
-
-## github-proxy: container_oomkill_events_total
-
-<p class="subtitle">container OOMKILL events total by instance</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 1+ container OOMKILL events total by instance
-
-**Next steps**
-
-- **Kubernetes:** Consider increasing memory limit in relevant `Deployment.yaml`.
-- **Docker Compose:** Consider increasing `memory:` of github-proxy container in `docker-compose.yml`.
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-container-oomkill-events-total).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_container_oomkill_events_total"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (name) (container_oom_events_total{name=~"^github-proxy.*"})) >= 1)`
-
-</details>
-
-<br />
-
-## github-proxy: go_goroutines
-
-<p class="subtitle">maximum active goroutines</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 10000+ maximum active goroutines for 10m0s
-
-**Next steps**
-
-- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#github-proxy-go-goroutines).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_go_goroutines"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~".*github-proxy"})) >= 10000)`
-
-</details>
-
-<br />
-
-## github-proxy: go_gc_duration_seconds
-
-<p class="subtitle">maximum go garbage collection duration</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github-proxy: 2s+ maximum go garbage collection duration
-
-**Next steps**
-
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-go-gc-duration-seconds).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github-proxy_go_gc_duration_seconds"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (instance) (go_gc_duration_seconds{job=~".*github-proxy"})) >= 2)`
-
-</details>
-
-<br />
-
-## github-proxy: pods_available_percentage
-
-<p class="subtitle">percentage pods available</p>
-
-**Descriptions**
-
-- <span class="badge badge-critical">critical</span> github-proxy: less than 90% percentage pods available for 10m0s
-
-**Next steps**
-
-- Determine if the pod was OOM killed using `kubectl describe pod github-proxy` (look for `OOMKilled: true`) and, if so, consider increasing the memory limit in the relevant `Deployment.yaml`.
-- Check the logs before the container restarted to see if there are `panic:` messages or similar using `kubectl logs -p github-proxy`.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-proxy-pods-available-percentage).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "critical_github-proxy_pods_available_percentage"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for critical alert: `min((sum by (app) (up{app=~".*github-proxy"}) / count by (app) (up{app=~".*github-proxy"}) * 100) <= 90)`
 
 </details>
 
@@ -4064,6 +3781,38 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*worker"}) / c
 
 <br />
 
+## worker: worker_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "worker" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> worker: 300s+ maximum duration since last successful site configuration update (all "worker" instances)
+
+**Next steps**
+
+- This indicates that one or more "worker" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "worker" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_worker_worker_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## repo-updater: src_repoupdater_max_sync_backoff
 
 <p class="subtitle">time since oldest sync</p>
@@ -4090,7 +3839,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4129,7 +3878,7 @@ with your code hosts connections or networking issues affecting communication wi
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4162,7 +3911,7 @@ Generated query for critical alert: `max((max by (family) (rate(src_repoupdater_
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4193,7 +3942,7 @@ Generated query for warning alert: `min((max by (family) (rate(src_repoupdater_s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4224,7 +3973,7 @@ Generated query for warning alert: `max((histogram_quantile(0.95, max by (le, fa
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4255,7 +4004,7 @@ Generated query for warning alert: `max((histogram_quantile(0.95, max by (le) (r
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4286,7 +4035,7 @@ Generated query for warning alert: `max((max(rate(src_repoupdater_syncer_synced_
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4317,7 +4066,7 @@ Generated query for warning alert: `min((max(rate(src_repoupdater_source_repos_t
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4348,7 +4097,7 @@ Generated query for warning alert: `max((max(rate(src_repoupdater_purge_failed[1
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4379,7 +4128,7 @@ Generated query for warning alert: `min((max(rate(src_repoupdater_sched_auto_fet
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4410,7 +4159,7 @@ Generated query for warning alert: `min((max(src_repoupdater_sched_known_repos))
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4441,7 +4190,7 @@ Generated query for critical alert: `max((max(deriv(src_repoupdater_sched_update
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4473,7 +4222,7 @@ Generated query for warning alert: `min((max(rate(src_repoupdater_sched_loops[1m
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4504,106 +4253,12 @@ Generated query for warning alert: `max((max(src_repoupdater_stale_repos)) >= 1)
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
 Generated query for critical alert: `max((max(rate(src_repoupdater_sched_error[1m]))) >= 1)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_perms
-
-<p class="subtitle">time gap between least and most up to date permissions</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 259200s+ time gap between least and most up to date permissions for 5m0s
-
-**Next steps**
-
-- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-perms).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_perms"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)) >= 259200)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_stale_perms
-
-<p class="subtitle">number of entities with stale permissions</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with stale permissions for 5m0s
-
-**Next steps**
-
-- Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-stale-perms).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_stale_perms"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_stale_perms)) >= 100)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_no_perms
-
-<p class="subtitle">number of entities with no permissions</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ number of entities with no permissions for 5m0s
-
-**Next steps**
-
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-no-perms).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_no_perms"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_syncer_no_perms)) >= 100)`
 
 </details>
 
@@ -4630,7 +4285,7 @@ Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_sy
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4661,44 +4316,12 @@ Generated query for warning alert: `max((max by (type) (src_repoupdater_perms_sy
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((histogram_quantile(0.95, max by (le, type) (rate(src_repoupdater_perms_syncer_sync_duration_seconds_bucket[1m])))) >= 30)`
-
-</details>
-
-<br />
-
-## repo-updater: perms_syncer_queue_size
-
-<p class="subtitle">permissions sync queued items</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> repo-updater: 100+ permissions sync queued items for 5m0s
-
-**Next steps**
-
-- **Enabled permissions for the first time:** Wait for few minutes and see if the number goes down.
-- **Otherwise:** Increase the API rate limit to [GitHub](https://docs.sourcegraph.com/admin/external_service/github#github-com-rate-limits), [GitLab](https://docs.sourcegraph.com/admin/external_service/gitlab#internal-rate-limits) or [Bitbucket Server](https://docs.sourcegraph.com/admin/external_service/bitbucket_server#internal-rate-limits).
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-perms-syncer-queue-size).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_repo-updater_perms_syncer_queue_size"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max(src_repoupdater_perms_syncer_queue_size)) >= 100)`
 
 </details>
 
@@ -4725,7 +4348,7 @@ Generated query for warning alert: `max((max(src_repoupdater_perms_syncer_queue_
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Identity and Access Management team](https://handbook.sourcegraph.com/departments/engineering/teams/iam).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4756,7 +4379,7 @@ Generated query for critical alert: `max((max by (type) (ceil(rate(src_repoupdat
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4788,7 +4411,7 @@ Generated query for critical alert: `max((max(src_repoupdater_external_services_
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4819,7 +4442,7 @@ Generated query for warning alert: `max((max(src_repoupdater_queued_sync_jobs_to
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4850,7 +4473,7 @@ Generated query for warning alert: `max((max(src_repoupdater_completed_sync_jobs
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4881,7 +4504,7 @@ Generated query for warning alert: `max((max(src_repoupdater_errored_sync_jobs_p
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4912,7 +4535,7 @@ Generated query for warning alert: `min((max by (name) (src_github_rate_limit_re
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4943,7 +4566,7 @@ Generated query for warning alert: `min((max by (name) (src_github_rate_limit_re
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -4974,12 +4597,44 @@ Generated query for warning alert: `min((max by (name) (src_github_rate_limit_re
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
 Generated query for critical alert: `min((max by (name) (src_gitlab_rate_limit_remaining{resource="rest"})) <= 30)`
+
+</details>
+
+<br />
+
+## repo-updater: repo_updater_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "repo_updater" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> repo-updater: 300s+ maximum duration since last successful site configuration update (all "repo_updater" instances)
+
+**Next steps**
+
+- This indicates that one or more "repo_updater" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "repo_updater" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-repo-updater-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_repo_updater_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 
@@ -5011,7 +4666,7 @@ Generated query for critical alert: `min((max by (name) (src_gitlab_rate_limit_r
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5045,7 +4700,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5079,7 +4734,7 @@ Generated query for critical alert: `max((sum by (app_name, db_name) (increase(s
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5111,7 +4766,7 @@ Generated query for warning alert: `max((cadvisor_container_cpu_usage_percentage
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5143,7 +4798,7 @@ Generated query for critical alert: `max((cadvisor_container_memory_usage_percen
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5175,7 +4830,7 @@ Generated query for warning alert: `max((quantile_over_time(0.9, cadvisor_contai
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5207,7 +4862,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5239,7 +4894,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_cpu_us
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5271,7 +4926,7 @@ Generated query for warning alert: `max((max_over_time(cadvisor_container_memory
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5301,7 +4956,7 @@ Generated query for warning alert: `max((max by (name) (container_oom_events_tot
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5331,7 +4986,7 @@ Generated query for warning alert: `max((max by (instance) (go_goroutines{job=~"
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5363,7 +5018,7 @@ Generated query for warning alert: `max((max by (instance) (go_gc_duration_secon
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Repo Management team](https://handbook.sourcegraph.com/departments/engineering/teams/repo-management).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5429,6 +5084,38 @@ Generated query for warning alert: `max((sum by (instance) (rate(searcher_servic
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((sum by (code) (increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring (code) group_left () sum(increase(searcher_service_request_total[5m])) * 100) >= 5)`
+
+</details>
+
+<br />
+
+## searcher: searcher_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "searcher" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> searcher: 300s+ maximum duration since last successful site configuration update (all "searcher" instances)
+
+**Next steps**
+
+- This indicates that one or more "searcher" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "searcher" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-searcher-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_searcher_searcher_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 
@@ -5818,6 +5505,38 @@ Generated query for warning alert: `max((max by (instance) (go_gc_duration_secon
 <summary>Technical details</summary>
 
 Generated query for critical alert: `min((sum by (app) (up{app=~".*searcher"}) / count by (app) (up{app=~".*searcher"}) * 100) <= 90)`
+
+</details>
+
+<br />
+
+## symbols: symbols_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "symbols" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> symbols: 300s+ maximum duration since last successful site configuration update (all "symbols" instances)
+
+**Next steps**
+
+- This indicates that one or more "symbols" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "symbols" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-symbols-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_symbols_symbols_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 
@@ -7794,6 +7513,140 @@ Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_d
 
 <br />
 
+## telemetry: telemetry_gateway_exporter_queue_growth
+
+<p class="subtitle">rate of growth of export queue over 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 1+ rate of growth of export queue over 30m for 1h0m0s
+- <span class="badge badge-critical">critical</span> telemetry: 1+ rate of growth of export queue over 30m for 36h0m0s
+
+**Next steps**
+
+- Check the "number of events exported per batch over 30m" dashboard panel to see if export throughput is at saturation.
+- Increase `TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE` to export more events per batch.
+- Reduce `TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL` to schedule more export jobs.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details to see if any export errors are occuring - if logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph`s Telemetry Gateway service.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#telemetry-telemetry-gateway-exporter-queue-growth).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetry_gateway_exporter_queue_growth",
+  "critical_telemetry_telemetry_gateway_exporter_queue_growth"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max(deriv(src_telemetrygatewayexporter_queue_size[30m]))) > 1)`
+
+Generated query for critical alert: `max((max(deriv(src_telemetrygatewayexporter_queue_size[30m]))) > 1)`
+
+</details>
+
+<br />
+
+## telemetry: telemetrygatewayexporter_exporter_errors_total
+
+<p class="subtitle">events exporter operation errors every 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 0+ events exporter operation errors every 30m
+
+**Next steps**
+
+- Failures indicate that exporting of telemetry events from Sourcegraph are failing. This may affect the performance of the database as the backlog grows.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details. If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph`s Telemetry Gateway service.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-exporter-errors-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetrygatewayexporter_exporter_errors_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[30m]))) > 0)`
+
+</details>
+
+<br />
+
+## telemetry: telemetrygatewayexporter_queue_cleanup_errors_total
+
+<p class="subtitle">export queue cleanup operation errors every 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 0+ export queue cleanup operation errors every 30m
+
+**Next steps**
+
+- Failures indicate that pruning of already-exported telemetry events from the database is failing. This may affect the performance of the database as the export queue table grows.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-cleanup-errors-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetrygatewayexporter_queue_cleanup_errors_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[30m]))) > 0)`
+
+</details>
+
+<br />
+
+## telemetry: telemetrygatewayexporter_queue_metrics_reporter_errors_total
+
+<p class="subtitle">export backlog metrics reporting operation errors every 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 0+ export backlog metrics reporting operation errors every 30m
+
+**Next steps**
+
+- Failures indicate that reporting of telemetry events metrics is failing. This may affect the reliability of telemetry events export metrics.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-metrics-reporter-errors-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetrygatewayexporter_queue_metrics_reporter_errors_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[30m]))) > 0)`
+
+</details>
+
+<br />
+
 ## telemetry: telemetry_job_error_rate
 
 <p class="subtitle">usage data exporter operation error rate over 5m</p>
@@ -7918,6 +7771,68 @@ Generated query for warning alert: `max((sum by (exporter) (rate(otelcol_exporte
 
 <br />
 
+## otel-collector: otelcol_exporter_enqueue_failed_spans
+
+<p class="subtitle">exporter enqueue failed spans</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 0+ exporter enqueue failed spans for 5m0s
+
+**Next steps**
+
+- Check the configuration of the exporter and if the service being exported is up. This may be caused by a queue full of unsettled elements, so you may need to decrease your sending rate or horizontally scale collectors.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otelcol-exporter-enqueue-failed-spans).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_otelcol_exporter_enqueue_failed_spans"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by (exporter) (rate(otelcol_exporter_enqueue_failed_spans{job=~"^.*"}[1m]))) > 0)`
+
+</details>
+
+<br />
+
+## otel-collector: otelcol_processor_dropped_spans
+
+<p class="subtitle">spans dropped per processor per minute</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> otel-collector: 0+ spans dropped per processor per minute for 5m0s
+
+**Next steps**
+
+- Check the configuration of the processor
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#otel-collector-otelcol-processor-dropped-spans).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_otel-collector_otelcol_processor_dropped_spans"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum by (processor) (rate(otelcol_processor_dropped_spans[1m]))) > 0)`
+
+</details>
+
+<br />
+
 ## otel-collector: container_cpu_usage
 
 <p class="subtitle">container cpu usage total (1m average) across all cores by instance</p>
@@ -8014,6 +7929,38 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collecto
 
 <br />
 
+## embeddings: embeddings_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "embeddings" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> embeddings: 300s+ maximum duration since last successful site configuration update (all "embeddings" instances)
+
+**Next steps**
+
+- This indicates that one or more "embeddings" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "embeddings" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-embeddings-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_embeddings_embeddings_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## embeddings: mean_blocked_seconds_per_conn_request
 
 <p class="subtitle">mean blocked seconds per conn request</p>
@@ -8037,7 +7984,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collecto
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
 
 <details>
 <summary>Technical details</summary>

@@ -1,5 +1,5 @@
 /* eslint-disable no-template-curly-in-string */
-import { Completion, resolveFieldAlias } from './filters'
+import { type Completion, resolveFieldAlias } from './filters'
 
 interface Access {
     name: string
@@ -40,6 +40,7 @@ export const PREDICATES: Access[] = [
                     { name: 'description' },
                     { name: 'tag' },
                     { name: 'key' },
+                    { name: 'meta' },
                     { name: 'topic' },
                 ],
             },
@@ -93,7 +94,7 @@ export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefi
 // - `foo(...))` succeeds up to the first `)`, which is recognized as the closing paren
 // - `foo(` does not succeed, it is not balanced
 // - `foo)` does not succeed, it is not balanced
-export const scanBalancedParens = (input: string): string | undefined => {
+const scanBalancedParens = (input: string): string | undefined => {
     let adjustedStart = 0
     let balanced = 0
     let current = ''
@@ -196,7 +197,7 @@ export const predicateCompletion = (field: string): Completion[] => {
             {
                 label: 'has.topic(...)',
                 insertText: 'has.topic(${1})',
-                description: 'Search only inside repositories that have a matching GitHub tag',
+                description: 'Search only inside repositories that have a matching GitHub/GitLab topic',
                 asSnippet: true,
             },
             {
@@ -212,21 +213,10 @@ export const predicateCompletion = (field: string): Completion[] => {
                 description: 'Search only inside repositories whose description matches',
             },
             {
-                label: 'has.tag(...)',
-                insertText: 'has.tag(${1})',
-                asSnippet: true,
-                description: 'Search only inside repositories tagged with a given tag',
-            },
-            {
-                label: 'has(...)',
-                insertText: 'has(${1:key}:${2:value})',
-                description: 'Search only inside repositories having a specified key:value pair',
-                asSnippet: true,
-            },
-            {
-                label: 'has.key(...)',
-                insertText: 'has.key(${1})',
-                description: 'Search only inside repositories having a specifiec key with any value',
+                label: 'has.meta(...)',
+                insertText: 'has.meta(${1:key}:${2:value})',
+                description:
+                    'Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata',
                 asSnippet: true,
             },
         ]
@@ -244,6 +234,12 @@ export const predicateCompletion = (field: string): Completion[] => {
                 insertText: 'has.owner(${1})',
                 asSnippet: true,
                 description: 'Search only inside files that have a specific owner',
+            },
+            {
+                label: 'has.contributor(...)',
+                insertText: 'has.contributor(${1})',
+                asSnippet: true,
+                description: 'Search only inside files that have a contributor that matches a pattern',
             },
         ]
     }

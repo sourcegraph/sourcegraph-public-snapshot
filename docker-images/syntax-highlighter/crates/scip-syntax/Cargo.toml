@@ -8,14 +8,20 @@ edition = "2021"
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+itertools.workspace = true
 protobuf.workspace = true
 scip.workspace = true
 tree-sitter.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+walkdir.workspace = true
 
 scip-macros = { path = "../scip-macros" }
 scip-treesitter = { path = "../scip-treesitter" }
 scip-treesitter-languages = { path = "../scip-treesitter-languages" }
 
 rustc-hash = "1.1.0"
-walkdir = "2"
 insta = "*"
+once_cell = "1.17.1"
+bitvec = "1.0.1"
+regex = "1"

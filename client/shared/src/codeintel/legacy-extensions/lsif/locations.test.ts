@@ -1,7 +1,9 @@
 import * as assert from 'assert'
 
+import { describe, it } from 'vitest'
+
 import * as scip from '../../scip'
-import * as sourcegraph from '../api'
+import type * as sourcegraph from '../api'
 
 import { nodeToLocation } from './locations'
 

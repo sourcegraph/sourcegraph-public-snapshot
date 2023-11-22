@@ -1,101 +1,23 @@
-# Sourcegraph
+# <img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-dark.svg" width="50%" class="theme-dark-only"><img alt="Sourcegraph logo" src="/assets/sourcegraph-logo-light.svg" width="50%" class="theme-light-only"><span class="sr-only">Sourcegraph</span>
 
-Sourcegraph is a code search and intelligence platform. Devs use it to search, understand, and fix code across large codebases.
+Sourcegraph makes it easy to read, write, and fix code—even in big, complex codebases.
 
-## [Sourcegraph.com/search](https://sourcegraph.com/search)
+- **Code search:** Search all of your repositories across all branches and all code hosts.
+- **Code intelligence:** Navigate code, find references, see code owners, trace history, & more.
+- **Fix & refactor:** Roll out & track large-scale changes & migrations across repos at once.
+- **AI code assistant:** Use Cody to read, write, and understand entire codebase faster.
 
-[Sourcegraph.com](https://sourcegraph.com/search) lets you try Sourcegraph instantly on 2 million+ open-source repositories.
+## Usage
 
-## Sourcegraph Cloud for private code
+- [**Get Cody**](cody/overview/index.md), the AI coding assistant
+- [**Use Sourcegraph on the cloud or self-hosted**](admin/deploy/index.md)
+- [Sourcegraph.com public code search](https://sourcegraph.com/search)
 
-<div>
-  <a class="cloud-cta" href="https://signup.sourcegraph.com" target="_blank" rel="noopener noreferrer">
-    <div class="cloud-cta-copy">
-      <h2>Sourcegraph Cloud</h2>
-      <h3>A single-tenant instance managed by Sourcegraph</h3>
-    </div>
-    <div class="cloud-cta-btn-container">
-      <div class="visual-btn">Sign up</div>
-    </div>
-  </a>
-</div>
+<br>
 
-## Self-hosted for private code
+<img src="https://about.sourcegraph.com/home/banner.png" class="screenshot" style="max-width:100%" />
 
-<div class="grid">
-  <!-- AWS One Click-->
-  <a class="btn-app btn" href="/admin/deploy/machine-images/aws-oneclick">
-    <img alt="aws-logo" src="/assets/other-logos/aws-light.svg" class="theme-light-only" />
-    <img alt="aws-logo" src="/assets/other-logos/aws-dark.svg" class="theme-dark-only" />
-    <h3>AWS One-Click</h3>
-    <p>Deploy onto AWS in one click (AMI)</p>
-  </a>
-</div>
-<div class="grid">
-  <!-- GCE Images-->
-  <a class="btn-app btn" href="/admin/deploy/machine-images/gce">
-    <img alt="aws-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/googlecloud.png" />
-    <h3>Google Compute Engine</h3>
-    <p>Launch quickly using a GCE machine image</p>
-  </a>
-</div>
-<div class="grid">
-  <!-- Azure -->
-  <a class="btn-app btn" href="/admin/deploy/single-node/script">
-    <img alt="azure-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/azure.png"/>
-    <h3>Azure</h3>
-    <p>Deploy onto Microsoft Azure<br/>(install script)</p>
-  </a>
-  <!-- Digital Ocean -->
-  <a class="btn-app btn" href="/admin/deploy/single-node/script">
-    <img alt="digital-ocean-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/DigitalOcean.png"/>
-    <h3>DigitalOcean</h3>
-    <p>Deploy onto DigitalOcean<br/>(install script)</p>
-  </a>
-  <!-- Others -->
-  <a class="btn-app btn" href="/admin/deploy/single-node/script">
-    <img alt="private-cloud-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/cloud.png"/>
-    <h3>Script install</h3>
-    <p>Deploy on any Linux machine using our script</p>
-  </a>
-</div>
-
-## Enterprise options
-
-For our largest customers, we also offer a Kubernetes multi-node cluster deployment and enterprise support.
-
-<div class="grid">
-  <!-- Kubernetes -->
-  <a class="btn-app btn" href="/admin/deploy/kubernetes">
-    <img alt="kubernetes-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/kubernetes.png"/>
-    <h3>Kubernetes</h3>
-	  <p>Deploy a multi-node cluster</p>
-    <p><strong>Enterprise-only</strong></p>
-  </a>
-</div>
-
-## Non-production
-
-<div class="grid">
-  <a class="btn-app btn" href="/admin/deploy/docker-single-container">
-    <img alt="docker-logo" src="https://storage.googleapis.com/sourcegraph-resource-estimator/assets/Docker.png"/>
-    <h3>Docker Container</h3>
-    <p>Spin up a local Sourcegraph instance with pure docker</p>
-  </a>
-  <a class="btn-app btn" href="/admin/deploy/single-node/k3s">
-    <img alt="k3s-logo" src="/assets/other-logos/k3s.png"/>
-    <h3>K3s</h3>
-    <p>Spin up a local Sourcegraph instance with Kubernetes</p>
-  </a>
-  <a class="btn-app btn" href="/admin/deploy/single-node/minikube">
-    <img alt="minikube-logo" src="/assets/other-logos/minikube.png"/>
-    <h3>Minikube</h3>
-    <p>Spin up a local Sourcegraph instance with Kubernetes</p>
-  </a>
-  <div></div>
-</div>
-
-## Quickstart
+<br><br>
 
 <div class="getting-started">
   <a href="getting-started" class="btn" alt="Run through the Quickstart guide">
@@ -115,9 +37,3 @@ For our largest customers, we also offer a Kubernetes multi-node cluster deploym
 * [Twitter](https://twitter.com/sourcegraph)
 * [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 * [Contact us](https://about.sourcegraph.com/contact)
-
-## Explanations
-
-- [About deploying Sourcegraph, upgrades, etc.](admin/deploy/index.md)
-- [How GitHub code search compares to Sourcegraph](getting-started/github-vs-sourcegraph.md)
-- [How Sourcegraph is licensed](getting-started/oss-enterprise.md)

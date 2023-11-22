@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-import { Tree, TreeNode, TreeProps, TreeRef } from '@sourcegraph/wildcard/src'
+import { Tree, type TreeNode, type TreeProps, type TreeRef } from '@sourcegraph/wildcard/src'
 
 export interface FocusableTreeProps {
     focusKey?: string

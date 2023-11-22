@@ -8,9 +8,12 @@ import (
 )
 
 func Symbols() *monitoring.Dashboard {
-	const containerName = "symbols"
+	const (
+		containerName   = "symbols"
+		grpcServiceName = "symbols.v1.SymbolsService"
+	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+	grpcMethodVariable := shared.GRPCMethodVariable("symbols", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "symbols",
@@ -27,7 +30,7 @@ func Symbols() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
-			shared.GRPCMethodVariable(containerName),
+			grpcMethodVariable,
 		},
 		Groups: []monitoring.Group{
 			shared.CodeIntelligence.NewSymbolsAPIGroup(containerName),
@@ -38,13 +41,28 @@ func Symbols() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					ServiceName:         containerName,
-					MetricNamespace:     containerName,
-					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex: `${instance:regex}`,
+					HumanServiceName:   containerName,
+					RawGRPCServiceName: grpcServiceName,
+
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex:  `${instance:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerCodeIntel),
 
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewGRPCInternalErrorMetricsGroup(
+				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   containerName,
+					RawGRPCServiceName: grpcServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+				}, monitoring.ObservableOwnerCodeIntel),
+
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "symbols",
+				InstanceFilterRegex: `${instance:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),

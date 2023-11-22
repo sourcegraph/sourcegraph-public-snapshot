@@ -1,12 +1,10 @@
 import React from 'react'
 
-import { mdiCloudAlert, mdiCloudClock, mdiCloudCheckOutline } from '@mdi/js'
+import { mdiCloudAlert, mdiCloudClock } from '@mdi/js'
 import classNames from 'classnames'
 import format from 'date-fns/format'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
-
-import styles from './LastSyncedIcon.module.scss'
 
 interface Props {
     lastSyncedTime: string
@@ -23,9 +21,9 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
     const oneWeekAgo = new Date()
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7)
 
-    let color = 'currentColor'
-    let status = `Last synced: ${formattedTime}`
-    let icon = mdiCloudCheckOutline
+    let color: string | undefined
+    let status: string | undefined
+    let icon: string | undefined
     if (parsedDate < oneWeekAgo) {
         color = 'var(--danger)'
         status = `Warning: severely out of date, last synced:  ${formattedTime}. Please contact your administrator.`
@@ -36,15 +34,15 @@ export const LastSyncedIcon: React.FunctionComponent<React.PropsWithChildren<Pro
         icon = mdiCloudClock
     }
 
-    return (
+    return color !== undefined && status !== undefined && icon !== undefined ? (
         <Tooltip content={status}>
             <Icon
                 tabIndex={0}
-                className={classNames(props.className, styles.lastSyncedIcon, 'text-muted')}
+                className={classNames(props.className, 'text-muted')}
                 aria-label={status}
                 svgPath={icon}
                 style={{ fill: color }}
             />
         </Tooltip>
-    )
+    ) : null
 }

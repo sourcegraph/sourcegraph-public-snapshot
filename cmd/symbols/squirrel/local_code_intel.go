@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// Nominal type for symbol names.
+// SymbolName is a nominal type for symbol names.
 type SymbolName string
 
 // Scope is a mapping from symbol name to symbol.
@@ -29,27 +29,24 @@ type PartialSymbol struct {
 }
 
 // LocalCodeIntel computes the local code intel payload, which is a list of symbols.
-func (squirrel *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath) (*types.LocalCodeIntelPayload, error) {
+func (s *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitPath types.RepoCommitPath) (*types.LocalCodeIntelPayload, error) {
 	// Parse the file.
-	root, err := squirrel.parse(ctx, repoCommitPath)
+	root, err := s.parse(ctx, repoCommitPath)
 	if err != nil {
 		return nil, err
 	}
 
 	// Collect scopes
 	scopes := map[NodeId]Scope{}
-	err = forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
+	forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
 		if node, ok := nameToNode["scope"]; ok {
 			scopes[nodeId(node.Node)] = map[SymbolName]*PartialSymbol{}
 			return
 		}
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// Collect defs
-	err = forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
+	forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
 		for captureName, node := range nameToNode {
 			// Only collect "definition*" captures.
 			if strings.HasPrefix(captureName, "definition") {
@@ -58,7 +55,7 @@ func (squirrel *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitP
 					// Found the scope.
 					if scope, ok := scopes[nodeId(cur)]; ok {
 						// Get the symbol name.
-						symbolName := SymbolName(node.Content(node.Contents))
+						symbolName := SymbolName(strings.ToValidUTF8(node.Content(node.Contents), "�"))
 
 						// Skip the symbol if it's already defined.
 						if _, ok := scope[symbolName]; ok {
@@ -80,9 +77,6 @@ func (squirrel *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitP
 			}
 		}
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	// Collect refs by walking the entire tree.
 	walk(root.Node, func(node *sitter.Node) {

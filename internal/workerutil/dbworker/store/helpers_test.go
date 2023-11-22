@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"strconv"
 	"testing"
 	"time"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -34,6 +34,10 @@ func (v TestRecord) RecordID() int {
 	return v.ID
 }
 
+func (v TestRecord) RecordUID() string {
+	return strconv.Itoa(v.ID)
+}
+
 func testScanRecord(sc dbutil.Scanner) (*TestRecord, error) {
 	var record TestRecord
 	return &record, sc.Scan(&record.ID, &record.State, pq.Array(&record.ExecutionLogs))
@@ -47,6 +51,10 @@ type TestRecordView struct {
 
 func (v TestRecordView) RecordID() int {
 	return v.ID
+}
+
+func (v TestRecordView) RecordUID() string {
+	return strconv.Itoa(v.ID)
 }
 
 func testScanRecordView(sc dbutil.Scanner) (*TestRecordView, error) {
@@ -64,14 +72,17 @@ func (v TestRecordRetry) RecordID() int {
 	return v.ID
 }
 
+func (v TestRecordRetry) RecordUID() string {
+	return strconv.Itoa(v.ID)
+}
+
 func testScanRecordRetry(sc dbutil.Scanner) (*TestRecordRetry, error) {
 	var record TestRecordRetry
 	return &record, sc.Scan(&record.ID, &record.State, &record.NumResets)
 }
 
 func setupStoreTest(t *testing.T) *sql.DB {
-	logger := logtest.Scoped(t)
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS workerutil_test (
