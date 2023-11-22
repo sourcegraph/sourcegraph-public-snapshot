@@ -1,9 +1,10 @@
 import { ComponentType } from 'react'
 
 import { CiSettings, CiTextAlignLeft } from 'react-icons/ci'
-import { FaJava, FaSass } from 'react-icons/fa'
+import { FaCss3Alt, FaJava, FaSass } from 'react-icons/fa'
 import { GoDatabase, GoTerminal } from 'react-icons/go'
 import { IoDocumentTextOutline } from 'react-icons/io5'
+import { PiFilePngLight } from 'react-icons/pi'
 import {
     SiApachegroovy,
     SiAssemblyscript,
@@ -12,7 +13,6 @@ import {
     SiCoffeescript,
     SiCplusplus,
     SiCsharp,
-    SiCssmodules,
     SiDart,
     SiDocker,
     SiFortran,
@@ -159,7 +159,7 @@ export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.COFFEE, { icon: SiCoffeescript, iconClass: styles.defaultIcon }],
     [FileExtension.CPP, { icon: SiCplusplus, iconClass: styles.blue }],
     [FileExtension.CSHARP, { icon: SiCsharp, iconClass: styles.blue }],
-    [FileExtension.CSS, { icon: SiCssmodules, iconClass: styles.blue }],
+    [FileExtension.CSS, { icon: FaCss3Alt, iconClass: styles.blue }],
     [FileExtension.DART, { icon: SiDart, iconClass: styles.blue }],
     [FileExtension.DEFAULT, { icon: IoDocumentTextOutline, iconClass: styles.defaultIcon }],
     [FileExtension.DOCKERFILE, { icon: SiDocker, iconClass: styles.blue }],
@@ -196,7 +196,7 @@ export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.PHP, { icon: SiPhp, iconClass: styles.cyan }],
     [FileExtension.PERL, { icon: SiPerl, iconClass: styles.defaultIcon }],
     [FileExtension.PERL_PM, { icon: SiPerl, iconClass: styles.defaultIcon }],
-    [FileExtension.PNG, { icon: SiJpeg, iconClass: styles.yellow }],
+    [FileExtension.PNG, { icon: PiFilePngLight, iconClass: styles.defaultIcon }],
     [FileExtension.POWERSHELL_PS1, { icon: GoTerminal, iconClass: styles.defaultIcon }],
     [FileExtension.POWERSHELL_PSM1, { icon: GoTerminal, iconClass: styles.defaultIcon }],
     [FileExtension.PYTHON, { icon: SiPython, iconClass: styles.blue }],
