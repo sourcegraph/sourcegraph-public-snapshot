@@ -43,10 +43,9 @@ interface HubSpotAPIProps {
 interface CreateHubSpotFormProps {
     [index: number]: HTMLFormElement
     formId: string
-    onFormReady?: ($form: HTMLFormElement, userId?: string) => void
+    onFormReady?: ($form: HTMLFormElement) => void
     onFormSubmitted?: () => void
     inlineMessage?: string
-    userId?: string
 }
 
 export interface HubSpotFormProps {
@@ -145,13 +144,7 @@ const loadAllScripts = async (): Promise<void> => {
  * @param CreateHubSpotFormProps.onFormSubmitted - callback after data is sent
  * @param CreateHubSpotFormProps.inlineMessage - form submission message
  */
-function createHubSpotForm({
-    formId,
-    onFormReady,
-    onFormSubmitted,
-    inlineMessage,
-    userId,
-}: CreateHubSpotFormProps): void {
+function createHubSpotForm({ formId, onFormReady, onFormSubmitted, inlineMessage }: CreateHubSpotFormProps): void {
     const hbsptCreateForm = (): void => {
         window.hbspt?.forms.create({
             region: 'na1',
@@ -160,7 +153,7 @@ function createHubSpotForm({
             target: '#form-target',
             onFormReady: (form: CreateHubSpotFormProps) => {
                 if (onFormReady) {
-                    onFormReady(form[0], userId)
+                    onFormReady(form[0])
                 }
             },
             onFormSubmitted,
@@ -189,6 +182,7 @@ const onHubsportFormReady = (form: HTMLFormElement, userId?: string): void => {
     const populateHiddenFormField = (formField: string, value: string): void => {
         const input = form.querySelector(`input[name="${formField}"]`) as HTMLInputElement
         if (input && !input.value) {
+            console.log(input)
             input.value = value || ''
         }
     }
@@ -223,6 +217,7 @@ const onHubsportFormReady = (form: HTMLFormElement, userId?: string): void => {
  * @param options.formId - an optional form id
  * @param options.onFormSubmitted - a callback that runs after a form submission
  * @param options.inlineMessage - a message to display after a form submission
+ * @param options.userId - authenticated user's id
  * @returns - a div element with an id where the HubSpot form renders
  */
 export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
@@ -251,11 +246,10 @@ export const HubSpotForm: FunctionComponent<HubSpotFormProps> = ({
                 formId: formId || masterFormId,
                 onFormReady: form => {
                     onFormReady?.(form)
-                    onHubsportFormReady(form)
+                    onHubsportFormReady(form, userId)
                 },
                 onFormSubmitted,
                 inlineMessage,
-                userId,
             })
 
             setFormCreated(true)
