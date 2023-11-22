@@ -60,6 +60,15 @@ func InternalHTTPMiddleware(next http.Handler) http.Handler {
 
 // httpMiddleware wraps the given handle func and attaches client IP data indicated in
 // incoming requests to the request header.
+//
+// hasCloudflareProxy enables a variety of features that assume we are behind
+// a Cloudflare WAF and can trust certain header values. We have a debug endpoint
+// that lets you confirm the presence of various headers:
+//
+//	curl --silent https://sourcegraph.com/-/debug/headers | grep Cf-
+//
+// Documentation for available headers is available at
+// https://developers.cloudflare.com/fundamentals/reference/http-request-headers
 func httpMiddleware(next http.Handler, hasCloudflareProxy bool) http.Handler {
 	forwardedForHeaders := []string{headerKeyForwardedFor}
 	if hasCloudflareProxy {
@@ -77,10 +86,24 @@ func httpMiddleware(next http.Handler, hasCloudflareProxy bool) http.Handler {
 			}
 		}
 
+		var wafIPCountryCode string
+		if hasCloudflareProxy {
+			// Use trusted Cloudflare-provided country code of the request.
+			// https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#cf-ipcountry
+			//
+			// Cloudflare uses the "XX" code to indicate that the country info
+			// is unknown.
+			if cfIPCountry := req.Header.Get("CF-IPCountry"); cfIPCountry != "" && cfIPCountry != "XX" {
+				wafIPCountryCode = cfIPCountry
+			}
+		}
+
 		ctxWithClient := WithClient(req.Context(), &Client{
 			IP:           strings.Split(req.RemoteAddr, ":")[0],
 			ForwardedFor: req.Header.Get(headerKeyForwardedFor),
 			UserAgent:    req.Header.Get(headerKeyUserAgent),
+
+			wafIPCountryCode: wafIPCountryCode,
 		})
 		next.ServeHTTP(rw, req.WithContext(ctxWithClient))
 	})
