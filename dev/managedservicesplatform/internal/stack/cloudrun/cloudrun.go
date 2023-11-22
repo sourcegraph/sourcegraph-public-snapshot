@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqlroles"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
@@ -225,20 +226,25 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			},
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to render Redis instance")
+			return nil, errors.Wrap(err, "failed to render Cloud SQL instance")
 		}
 
 		// Add parameters required for authentication
 		cloudRunBuilder.AddEnv("PGINSTANCE", *sqlInstance.Instance.ConnectionName())
 		cloudRunBuilder.AddEnv("PGUSER", *sqlInstance.WorkloadUser.Name())
-
-		// We need the workload superuser role to be granted before Cloud Run
-		// can correctly use the database instance
-		cloudRunBuilder.AddDependency(sqlInstance.WorkloadSuperuserGrant)
-
 		// NOTE: https://pkg.go.dev/cloud.google.com/go/cloudsqlconn#section-readme
 		// magically handles certs for us, so we don't need to mount certs in
 		// Cloud Run.
+
+		// Apply additional runtime configuration
+		pgRoles, err := postgresqlroles.New(stack, id.Group("postgresqlroles"), sqlInstance)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL roles")
+		}
+
+		// We need the workload superuser role to be granted before Cloud Run
+		// can correctly use the database instance
+		cloudRunBuilder.AddDependency(pgRoles.WorkloadSuperuserGrant)
 	}
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for

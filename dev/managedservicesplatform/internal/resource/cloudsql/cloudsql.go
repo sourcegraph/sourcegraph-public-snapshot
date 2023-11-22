@@ -4,15 +4,12 @@ import (
 	"fmt"
 
 	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/aws/jsii-runtime-go"
 	"github.com/hashicorp/terraform-cdk-go/cdktf"
 
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/sqldatabase"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/sqldatabaseinstance"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/sqluser"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/grantrole"
-	postgresql "github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql/provider"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/random/password"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
@@ -26,15 +23,14 @@ type Output struct {
 	// Instance is the Cloud SQL database instance. It can be accessed using
 	// WorkloadUser
 	Instance sqldatabaseinstance.SqlDatabaseInstance
+	// AdminUser is a cloudsqlsuperuser on the Cloud SQL instance.
+	AdminUser sqluser.SqlUser
 	// WorkloadUser is the SQL user corresponding to the Cloud Run workload
 	// service account. It should be used for automatic IAM authentication:
 	// https://pkg.go.dev/cloud.google.com/go/cloudsqlconn#readme-automatic-iam-database-authentication
 	//
 	// Before using WorkloadUser, WorkloadSuperuserGrant should be ready.
 	WorkloadUser sqluser.SqlUser
-	// WorkloadSuperuserGrant should be referenced as a dependency before
-	// WorkloadUser is used.
-	WorkloadSuperuserGrant cdktf.ITerraformDependable
 }
 
 type Config struct {
@@ -147,6 +143,9 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 				&sqldatabase.SqlDatabaseConfig{
 					Name:     pointers.Ptr(db),
 					Instance: instance.Name(),
+					// PostgreSQL cannot delete databases if there are users
+					// other than cloudsqlsuperuser with access
+					DeletionPolicy: pointers.Ptr("ABANDON"),
 				}))
 	}
 
@@ -160,6 +159,10 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		Project:  &config.ProjectID,
 		Name:     pointers.Ptr("msp-admin"),
 		Password: adminPassword.Result(),
+
+		// PostgreSQL cannot delete users with roles, so we just abandon the
+		// users in a deletion event.
+		DeletionPolicy: pointers.Ptr("ABANDON"),
 	})
 
 	// Grant access to workload service account
@@ -173,31 +176,19 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		Name: cdktf.Fn_Trimsuffix(&config.WorkloadIdentity.Email,
 			pointers.Ptr(".gserviceaccount.com")),
 
+		// PostgreSQL cannot delete users with roles, so we just abandon the
+		// users in a deletion event.
+		DeletionPolicy: pointers.Ptr("ABANDON"),
+
 		// workloadUser's username is required to connect to this instance, so
 		// to ensure database resources are all fully provisioned, we gate the
 		// availability of this secret on all database resources being ready.
 		DependsOn: &databaseResources,
 	})
 
-	// Additional configuration directly via Postgres
-	pgProvider := postgresql.NewPostgresqlProvider(scope, id.TerraformID("postgresql_provider"), &postgresql.PostgresqlProviderConfig{
-		Scheme:    pointers.Ptr("gcppostgres"),
-		Host:      instance.ConnectionName(),
-		Username:  adminUser.Name(),
-		Password:  adminPassword.Result(),
-		Port:      jsii.Number(5432),
-		Superuser: jsii.Bool(false),
-	})
-	workloadSuperuserGrant := grantrole.NewGrantRole(scope, id.TerraformID("workload_service_account_role_cloudsqlsuperuser"), &grantrole.GrantRoleConfig{
-		Provider:        pgProvider,
-		Role:            workloadUser.Name(),
-		GrantRole:       jsii.String("cloudsqlsuperuser"),
-		WithAdminOption: jsii.Bool(true),
-	})
-
 	return &Output{
-		Instance:               instance,
-		WorkloadUser:           workloadUser,
-		WorkloadSuperuserGrant: workloadSuperuserGrant,
+		Instance:     instance,
+		AdminUser:    adminUser,
+		WorkloadUser: workloadUser,
 	}, nil
 }
