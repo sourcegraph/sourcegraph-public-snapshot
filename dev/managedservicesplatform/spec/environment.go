@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type EnvironmentSpec struct {
@@ -45,6 +46,7 @@ type EnvironmentSpec struct {
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
 	errs = append(errs, s.Deploy.Validate()...)
+	errs = append(errs, s.Resources.Validate()...)
 	return errs
 }
 
@@ -256,14 +258,21 @@ type EnvironmentJobScheduleSpec struct {
 }
 
 type EnvironmentResourcesSpec struct {
-	// Redis, if provided, provisions a Redis instance. Details for using this
-	// Redis instance is automatically provided in environment variables:
+	// Redis, if provided, provisions a Redis instance backed by Cloud Memorystore.
+	// Details for using this Redis instance is automatically provided in
+	// environment variables:
 	//
 	//  - REDIS_ENDPOINT
 	//
 	// Sourcegraph Redis libraries (i.e. internal/redispool) will automatically
 	// use the given configuration.
 	Redis *EnvironmentResourceRedisSpec `json:"redis,omitempty"`
+	// PostgreSQL, if provided, provisions a PostgreSQL database instance backed
+	// by Cloud SQL.
+	//
+	// To connect to the database, use
+	// (lib/managedservicesplatform/service.Contract).GetPostgreSQLDB().
+	PostgreSQL *EnvironmentResourcePostgreSQLSpec `json:"postgreSQL,omitempty"`
 	// BigQueryTable, if provided, provisions a table for the service to write
 	// to. Details for writing to the table are automatically provided in
 	// environment variables:
@@ -280,16 +289,13 @@ type EnvironmentResourcesSpec struct {
 	BigQueryTable *EnvironmentResourceBigQueryTableSpec `json:"bigQueryTable,omitempty"`
 }
 
-// NeedsCloudRunConnector indicates if there are any resources that require a
-// connector network for Cloud Run to talk to provisioned resources.
-func (s *EnvironmentResourcesSpec) NeedsCloudRunConnector() bool {
+func (s *EnvironmentResourcesSpec) Validate() []error {
 	if s == nil {
-		return false
+		return nil
 	}
-	if s.Redis != nil {
-		return true
-	}
-	return false
+	var errs []error
+	errs = append(errs, s.PostgreSQL.Validate()...)
+	return errs
 }
 
 type EnvironmentResourceRedisSpec struct {
@@ -297,6 +303,47 @@ type EnvironmentResourceRedisSpec struct {
 	Tier *string `json:"tier,omitempty"`
 	// Defaults to 1.
 	MemoryGB *int `json:"memoryGB,omitempty"`
+}
+
+type EnvironmentResourcePostgreSQLSpec struct {
+	// Databases to provision - required.
+	Databases []string `json:"databases"`
+	// Defaults to 1. Must be 1, or an even number between 2 and 96.
+	CPU *int `json:"cpu,omitempty"`
+	// Defaults to 4 (to meet CloudSQL minimum). You must request 0.9 to 6.5 GB
+	// per vCPU.
+	MemoryGB *int `json:"memoryGB,omitempty"`
+}
+
+func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	if s.CPU != nil {
+		if *s.CPU < 1 {
+			errs = append(errs, errors.New("postgreSQL.cpu must be >= 1"))
+		}
+		if *s.CPU > 1 && *s.CPU%2 != 0 {
+			errs = append(errs, errors.New("postgreSQL.cpu must be 1 or a multiple of 2"))
+		}
+		if *s.CPU > 96 {
+			errs = append(errs, errors.New("postgreSQL.cpu must be <= 96"))
+		}
+	}
+	if s.MemoryGB != nil {
+		cpu := pointers.Deref(s.CPU, 1)
+		if *s.MemoryGB < 4 {
+			errs = append(errs, errors.New("postgreSQL.memoryGB must be >= 4"))
+		}
+		if *s.MemoryGB < cpu {
+			errs = append(errs, errors.New("postgreSQL.memoryGB must be >= postgreSQL.cpu"))
+		}
+		if *s.MemoryGB > 6*cpu {
+			errs = append(errs, errors.New("postgreSQL.memoryGB must be <= 6*postgreSQL.cpu"))
+		}
+	}
+	return errs
 }
 
 type EnvironmentResourceBigQueryTableSpec struct {

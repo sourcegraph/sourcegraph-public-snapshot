@@ -2,6 +2,7 @@ package gsmsecret
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/datagooglesecretmanagersecretversion"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecret"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecretversion"
@@ -20,6 +21,8 @@ type Config struct {
 
 	ID    string
 	Value string
+
+	DependsOn []cdktf.ITerraformDependable
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
@@ -38,6 +41,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		&secretmanagersecretversion.SecretManagerSecretVersionConfig{
 			Secret:     secret.Id(),
 			SecretData: &config.Value,
+			DependsOn:  &config.DependsOn,
 		})
 
 	return &Output{
