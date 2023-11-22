@@ -21,7 +21,7 @@ type Config struct {
 }
 
 func (c *Config) Load(env *service.Env) {
-	c.StatelessMode = env.GetBool("STATELESSMODE", "false", "if true, disable dependencies")
+	c.StatelessMode = env.GetBool("STATELESS_MODE", "false", "if true, disable dependencies")
 	c.Variable = env.Get("VARIABLE", "13", "variable value")
 }
 
