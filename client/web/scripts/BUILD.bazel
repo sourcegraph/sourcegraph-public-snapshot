@@ -15,7 +15,6 @@ ts_project(
 ts_binary(
     name = "report-bundle-diff_test",
     data = [
-        ":scripts_lib",
         "//:node_modules/@statoscope/cli",
         "//:node_modules/octokit",
         "//:node_modules/shelljs",
