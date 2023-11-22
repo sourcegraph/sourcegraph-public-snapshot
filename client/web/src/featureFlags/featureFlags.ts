@@ -32,6 +32,7 @@ export const FEATURE_FLAGS = [
     'search-content-based-lang-detection',
     'search-new-keyword',
     'search-debug',
+    'cody-chat-mock-test',
     'signup-survey-enabled',
 ] as const
 
