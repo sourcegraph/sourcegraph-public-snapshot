@@ -30,7 +30,7 @@ export const editorGroups: IEditor[][] = [
         },
         {
             icon: 'IntelliJ',
-            name: 'Intelli J',
+            name: 'IntelliJ IDEA',
             publisher: 'JetBrains',
         },
         {
@@ -119,7 +119,7 @@ function PurposeStep({ onNext }: { onNext: () => void }): JSX.Element {
             <div className="border-bottom pb-3 mb-3">
                 <H2 className="mb-1">What are you using Cody for?</H2>
                 <Text className="mb-0" size="small">
-                    This will allow us to understand better our audience and guide your journey
+                    This will allow us to understand our audience better and guide your journey
                 </Text>
             </div>
             <div className="d-flex align-items-center border-bottom mb-3 pb-3">
@@ -179,7 +179,7 @@ function EditorStep({ onNext, onCompleted }: { onNext: () => void; onCompleted: 
             <div className="border-bottom pb-3 mb-3">
                 <H2 className="mb-1">Choose your editor</H2>
                 <Text className="mb-0" size="small">
-                    Most of Cody experience happens in the IDE, lets get that set up
+                    Most of Cody experience happens in the IDE. Let's get that set up.
                 </Text>
             </div>
             <div className="mb-3 border-bottom pb-3">

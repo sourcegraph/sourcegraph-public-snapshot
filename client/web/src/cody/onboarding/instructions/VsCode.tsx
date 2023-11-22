@@ -34,7 +34,7 @@ export function VSCodeInstructions({
                                     Install Cody
                                 </Text>
                                 <Text className="text-muted mb-0" size="small">
-                                    Alternatively you can reach this page by clicking{' '}
+                                    Alternatively, you can reach this page by clicking{' '}
                                     <strong>View {'>'} Extensions</strong> and searching for <strong>Cody AI</strong>
                                 </Text>
                             </div>
@@ -58,7 +58,7 @@ export function VSCodeInstructions({
                                     Open Cody from the Sidebar on the Left
                                 </Text>
                                 <Text className="text-muted mb-0" size="small">
-                                    Alternatively you can reach this page by clicking{' '}
+                                    Alternatively, you can reach this page by clicking{' '}
                                     <strong>View {'>'} Extensions</strong> and searching for <strong>Cody AI</strong>
                                 </Text>
                             </div>

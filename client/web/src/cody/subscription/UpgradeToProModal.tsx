@@ -53,7 +53,7 @@ export function UpgradeToProModal({
                                     </Text>
                                 </div>
                                 <div className="mb-1">
-                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>22$</H2>
+                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>$22</H2>
                                     <Text className="mb-0 text-muted d-inline">/ month</Text>
                                 </div>
                                 <Text className="mb-4 text-muted" size="small">
@@ -126,7 +126,7 @@ export function UpgradeToProModal({
                                         No credit card required:
                                     </Text>
                                     <Text className="mb-0" size="small">
-                                        We'll reach out before your trial ends for billing details.
+                                        We'll reach out for billing details before your trial ends.
                                     </Text>
                                 </div>
                             </div>
@@ -144,7 +144,7 @@ export function UpgradeToProModal({
                                         No hidden fees, no surprises
                                     </Text>
                                     <Text className="mb-0" size="small">
-                                        We're eager to have you onboard nd to lister to your feedback
+                                        We're eager to have you onboard and listen to your feedback
                                     </Text>
                                 </div>
                             </div>
