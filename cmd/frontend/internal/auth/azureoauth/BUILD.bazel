@@ -56,6 +56,7 @@ go_test(
         "//internal/rcache",
         "//schema",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
         "@org_golang_x_oauth2//:oauth2",
