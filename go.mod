@@ -265,7 +265,6 @@ require (
 	github.com/hashicorp/go-tfe v1.32.1
 	github.com/hashicorp/terraform-cdk-go/cdktf v0.17.3
 	github.com/invopop/jsonschema v0.7.0
-	github.com/ip2location/ip2location-go/v9 v9.6.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mroth/weightedrand/v2 v2.0.1
@@ -375,7 +374,6 @@ require (
 	go.uber.org/goleak v1.2.1 // indirect
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920183334-c177e329c48b // indirect
-	lukechampine.com/uint128 v1.2.0 // indirect
 )
 
 require (

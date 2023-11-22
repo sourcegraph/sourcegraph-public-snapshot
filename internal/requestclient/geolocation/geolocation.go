@@ -1,18 +1,13 @@
 // Package geolocation provides a geolocation database for IP addresses.
-//
-// Acknowledgement required for redistribution (DO NOT REMOVE):
-//
-//	This site or product includes IP2Location LITE data available from http://www.ip2location.com.
+// It currently uses https://db-ip.com/db/download/ip-to-country-lite
 //
 // More details are available in internal/requestclient/geolocation/data/README.md
 package geolocation
 
 import (
-	"bytes"
 	_ "embed"
 	"net"
 
-	ip2location "github.com/ip2location/ip2location-go/v9"
 	"github.com/oschwald/maxminddb-golang"
 
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
@@ -52,13 +47,8 @@ func InferCountryCode(ipAddress string) (string, error) {
 	if err := getLocationsDB().Lookup(ip, &query); err != nil {
 		return "", errors.Wrap(err, "lookup failed")
 	}
+	if query.Country.ISOCode == "" {
+		return "", errors.New("no country code found")
+	}
 	return query.Country.ISOCode, nil
 }
-
-// We can't use io.NoOpCloser because we need to implement Reader and ReaderAt,
-// provided by *bytes.Reader, as well for the ip2location library.
-type noOpReaderAtCloser struct{ *bytes.Reader }
-
-var _ ip2location.DBReader = noOpReaderAtCloser{}
-
-func (noOpReaderAtCloser) Close() error { return nil }

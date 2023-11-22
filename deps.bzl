@@ -3669,13 +3669,6 @@ def go_dependencies():
         sum = "h1:vb6yqdpiqaytvreM0bsn2pXw+1YDvEk2RKSmBAQvgDQ=",
         version = "v6.1.3",
     )
-    go_repository(
-        name = "com_github_ip2location_ip2location_go_v9",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/ip2location/ip2location-go/v9",
-        sum = "h1:4tYtSoRNpUwbbgf3NUmF7c5vV0QVCKEeRPSbMCXiQfE=",
-        version = "v9.6.1",
-    )
 
     go_repository(
         name = "com_github_iris_contrib_schema",

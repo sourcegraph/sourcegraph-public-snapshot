@@ -10,7 +10,6 @@ go_library(
     deps = [
         "//internal/syncx",
         "//lib/errors",
-        "@com_github_ip2location_ip2location_go_v9//:ip2location-go",
         "@com_github_oschwald_maxminddb_golang//:maxminddb-golang",
     ],
 )
