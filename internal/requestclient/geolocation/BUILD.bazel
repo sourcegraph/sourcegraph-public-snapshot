@@ -4,13 +4,14 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "geolocation",
     srcs = ["geolocation.go"],
-    embedsrcs = ["data/IP2LOCATION-LITE-DB1.IPV6.BIN/IP2LOCATION-LITE-DB1.IPV6.BIN"],
+    embedsrcs = ["data/dbip-country-lite-2023-11.mmdb"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/requestclient/geolocation",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/syncx",
         "//lib/errors",
         "@com_github_ip2location_ip2location_go_v9//:ip2location-go",
+        "@com_github_oschwald_maxminddb_golang//:maxminddb-golang",
     ],
 )
 
