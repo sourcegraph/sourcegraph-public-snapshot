@@ -52,7 +52,6 @@ ts_project(
         "//:node_modules/mocha",
         "//client/shared/src/testing",  # keep
         "//client/web:node_modules/@sourcegraph/shared",
-        "//client/shared/src/testing", # keep
     ],
 )
 
