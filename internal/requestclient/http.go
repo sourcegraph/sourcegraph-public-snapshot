@@ -20,6 +20,8 @@ const (
 // HTTPTransport is a roundtripper that sets client IP information within request context as
 // headers on outgoing requests. The attached headers can be picked up and attached to
 // incoming request contexts with client.HTTPMiddleware.
+//
+// TODO(@bobheadxi): Migrate to httpcli.Doer and httpcli.Middleware
 type HTTPTransport struct {
 	RoundTripper http.RoundTripper
 }
@@ -33,6 +35,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	client := FromContext(req.Context())
 	if client != nil {
+		req = req.Clone(req.Context()) // RoundTripper should not modify original request
 		req.Header.Set(headerKeyClientIP, client.IP)
 		req.Header.Set(headerKeyForwardedFor, client.ForwardedFor)
 	}

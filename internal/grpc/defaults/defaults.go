@@ -20,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -80,6 +81,7 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
 			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.StreamClientPropagator(requestclient.Propagator{}),
+			propagator.StreamClientPropagator(requestinteraction.Propagator{}),
 			otelgrpc.StreamClientInterceptor(),
 			internalerrs.PrometheusStreamClientInterceptor,
 			internalerrs.LoggingStreamClientInterceptor(logger),
@@ -91,6 +93,7 @@ func defaultDialOptions(logger log.Logger, creds credentials.TransportCredential
 			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
 			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.UnaryClientPropagator(requestclient.Propagator{}),
+			propagator.UnaryClientPropagator(requestinteraction.Propagator{}),
 			otelgrpc.UnaryClientInterceptor(),
 			internalerrs.PrometheusUnaryClientInterceptor,
 			internalerrs.LoggingUnaryClientInterceptor(logger),
@@ -137,6 +140,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 			metrics.StreamServerInterceptor(),
 			messagesize.StreamServerInterceptor,
 			propagator.StreamServerPropagator(requestclient.Propagator{}),
+			propagator.StreamServerPropagator(requestinteraction.Propagator{}),
 			propagator.StreamServerPropagator(actor.ActorPropagator{}),
 			propagator.StreamServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamServerInterceptor(),
@@ -148,6 +152,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 			metrics.UnaryServerInterceptor(),
 			messagesize.UnaryServerInterceptor,
 			propagator.UnaryServerPropagator(requestclient.Propagator{}),
+			propagator.UnaryServerPropagator(requestinteraction.Propagator{}),
 			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
 			propagator.UnaryServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryServerInterceptor(),
