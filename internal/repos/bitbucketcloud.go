@@ -45,7 +45,24 @@ func NewBitbucketCloudSource(ctx context.Context, logger log.Logger, svc *types.
 	return newBitbucketCloudSource(logger, svc, &c, cf)
 }
 
+func validateAuthCrednetials(c *schema.BitbucketCloudConnection) error {
+	if c.AccessToken != "" {
+		if c.Username != "" || c.AppPassword != "" {
+			return errors.New("username and appPassword are not allowed when accessToken is set")
+		}
+	}
+	if c.AccessToken == "" && (c.AppPassword == "" || c.Username == "") {
+		return errors.New("either both appPassword and username, or accessToken must be set")
+	}
+
+	return nil
+}
+
 func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *schema.BitbucketCloudConnection, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
+	if err := validateAuthCrednetials(c); err != nil {
+		return nil, err
+	}
+
 	if cf == nil {
 		cf = httpcli.ExternalClientFactory
 	}
@@ -238,7 +255,6 @@ func (s *BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (Source, 
 	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
-
 }
 
 // ValidateAuthenticator validates the currently set authenticator is usable.

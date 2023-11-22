@@ -23,9 +23,20 @@ type BitbucketCloudSource struct {
 	client bitbucketcloud.Client
 }
 
-var (
-	_ ForkableChangesetSource = BitbucketCloudSource{}
-)
+var _ ForkableChangesetSource = BitbucketCloudSource{}
+
+func validateAuthCrednetials(c *schema.BitbucketCloudConnection) error {
+	if c.AccessToken != "" {
+		if c.Username != "" || c.AppPassword != "" {
+			return errors.New("username and appPassword are not allowed when accessToken is set")
+		}
+	}
+	if c.AccessToken == "" && (c.AppPassword == "" || c.Username == "") {
+		return errors.New("either both appPassword and username, or accessToken must be set")
+	}
+
+	return nil
+}
 
 func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
@@ -35,6 +46,10 @@ func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf
 	var c schema.BitbucketCloudConnection
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d", svc.ID)
+	}
+
+	if err := validateAuthCrednetials(&c); err != nil {
+		return nil, err
 	}
 
 	if cf == nil {
