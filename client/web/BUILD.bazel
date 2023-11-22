@@ -1112,6 +1112,7 @@ ts_project(
         "src/insights/utils/use-series-toggle.ts",
         "src/jscontext.ts",
         "src/marketing/backend.ts",
+        "src/marketing/components/HubSpotForm.tsx",
         "src/marketing/components/SurveyRatingRadio.tsx",
         "src/marketing/components/SurveyUseCaseForm.tsx",
         "src/marketing/components/TweetFeedback.tsx",
