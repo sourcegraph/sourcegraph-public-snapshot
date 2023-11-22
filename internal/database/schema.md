@@ -1982,7 +1982,7 @@ Triggers:
  failed_fetch | bigint |           | not null | 0
  corrupted    | bigint |           | not null | 0
 Indexes:
-    "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
+    "gitserver_repos_statistics_shard_id" btree (shard_id)
 
 ```
 
