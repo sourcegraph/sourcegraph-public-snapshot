@@ -211,7 +211,7 @@ func TestParseConfig(t *testing.T) {
 			if diff := cmp.Diff(tt.wantProblems, gotProblems.Messages()); diff != "" {
 				t.Errorf("problems: %s", diff)
 			}
-			if diff := cmp.Diff(wantConfigs, gotConfigs, cmpopts.IgnoreUnexported()); diff != "" {
+			if diff := cmp.Diff(wantConfigs, gotConfigs, cmpopts.IgnoreUnexported(oauth2.Config{})); diff != "" {
 				t.Errorf("problems: %s", diff)
 			}
 		})

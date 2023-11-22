@@ -267,7 +267,7 @@ func TestParseConfig(t *testing.T) {
 			if diff := cmp.Diff(tc.wantProblems, gotProblems.Messages()); diff != "" {
 				t.Errorf("mismatched problems (-want,+got):\n%s", diff)
 			}
-			if diff := cmp.Diff(wantConfigs, gotConfigs, cmpopts.IgnoreUnexported()); diff != "" {
+			if diff := cmp.Diff(wantConfigs, gotConfigs, cmpopts.IgnoreUnexported(oauth2.Config{})); diff != "" {
 				t.Errorf("mismatched configs (-want,+got):\n%s", diff)
 			}
 		})
