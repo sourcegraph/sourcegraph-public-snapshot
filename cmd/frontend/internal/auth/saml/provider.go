@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -31,8 +30,9 @@ import (
 const providerType = "saml"
 
 type provider struct {
-	config   schema.SAMLAuthProvider
-	multiple bool // whether there are multiple SAML auth providers
+	config     schema.SAMLAuthProvider
+	multiple   bool // whether there are multiple SAML auth providers
+	httpClient *http.Client
 
 	mu         sync.Mutex
 	samlSP     *saml2.SAMLServiceProvider
@@ -56,7 +56,7 @@ func (p *provider) Config() schema.AuthProviders {
 func (p *provider) Refresh(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.samlSP, p.refreshErr = getServiceProvider(ctx, &p.config)
+	p.samlSP, p.refreshErr = getServiceProvider(ctx, &p.config, p.httpClient)
 	return p.refreshErr
 }
 
@@ -104,13 +104,13 @@ func (p *provider) CachedInfo() *providers.Info {
 	return info
 }
 
-func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml2.SAMLServiceProvider, error) {
+func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider, httpClient *http.Client) (*saml2.SAMLServiceProvider, error) {
 	c, err := readProviderConfig(pc)
 	if err != nil {
 		return nil, err
 	}
 
-	idpMetadata, err := readIdentityProviderMetadata(ctx, c)
+	idpMetadata, err := readIdentityProviderMetadata(ctx, c, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +276,7 @@ func readProviderConfig(pc *schema.SAMLAuthProvider) (*providerConfig, error) {
 	return &c, nil
 }
 
-func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byte, error) {
+func readIdentityProviderMetadata(ctx context.Context, c *providerConfig, httpClient *http.Client) ([]byte, error) {
 	if c.identityProviderMetadata != nil {
 		return c.identityProviderMetadata, nil
 	}
@@ -286,7 +286,7 @@ func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byt
 		return nil, errors.WithMessage(err, "bad URL")
 	}
 
-	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
+	resp, err := httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, errors.WithMessage(err, "fetching SAML Identity Provider metadata")
 	}
