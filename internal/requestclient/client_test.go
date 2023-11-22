@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,21 +12,21 @@ func TestClientOriginCountryCode(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
 		client   *Client
-		wantCode string
+		wantCode autogold.Value
 	}{
 		{
 			name: "have trusted geolocation",
 			client: &Client{
 				wafIPCountryCode: "CA",
 			},
-			wantCode: "CA",
+			wantCode: autogold.Expect("CA"),
 		},
 		{
 			name: "infer from single ForwardedFor",
 			client: &Client{
 				ForwardedFor: "93.184.216.34", // ping -c1 example.net
 			},
-			wantCode: "US",
+			wantCode: autogold.Expect("GB"),
 		},
 		{
 			name: "infer from multiple ForwardedFor",
@@ -35,26 +36,26 @@ func TestClientOriginCountryCode(t *testing.T) {
 					"93.184.216.34",  // ping -c1 example.net
 				}, ","),
 			},
-			wantCode: "CN",
+			wantCode: autogold.Expect("CN"),
 		},
 		{
 			name: "infer from IP address",
 			client: &Client{
 				IP: "93.184.216.34", // ping -c1 example.net
 			},
-			wantCode: "US",
+			wantCode: autogold.Expect("GB"),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			code, err := tc.client.OriginCountryCode()
 			assert.NoError(t, err)
-			assert.Equal(t, tc.wantCode, code)
+			tc.wantCode.Equal(t, code)
 
 			// Check cached state
 			tc.client.countryCodeOnce.Do(func() {
-				t.Error("countryCodeOnce should not be called")
+				t.Error("countryCodeOnce should have been called already")
 			})
-			assert.Equal(t, tc.wantCode, tc.client.countryCode)
+			assert.Equal(t, code, tc.client.countryCode)
 			assert.NoError(t, tc.client.countryCodeError)
 		})
 	}
