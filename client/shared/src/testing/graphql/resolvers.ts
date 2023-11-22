@@ -1,7 +1,7 @@
 import { isInlineFragment } from '@apollo/client/utilities'
-import { IMockStore } from '@graphql-tools/mock'
-import { GraphQLResolveInfo } from 'graphql'
-import { GraphQLVariables } from 'msw'
+import type { IMockStore } from '@graphql-tools/mock'
+import type { GraphQLResolveInfo } from 'graphql'
+import type { GraphQLVariables } from 'msw'
 
 interface GenericGraphQLContext {
     nodeTypename?: string

@@ -47,8 +47,8 @@ interface Input extends Record<string, unknown> {
     plugins?: string[]
 }
 
-export const ALL_INPUTS: Input[] = [
-    {
+export const ALL_INPUTS: Record<string, Input> = {
+    'shared-operations': {
         outputPath: path.join(SHARED_FOLDER, './src/graphql-operations.ts'),
         interfaceNameForOperations: 'SharedGraphQlOperations',
         globs: SHARED_DOCUMENTS_GLOB,
@@ -56,39 +56,39 @@ export const ALL_INPUTS: Input[] = [
         onlyOperationTypes: false,
         enumValues: undefined,
     },
-    {
+    'shared-types': {
         outputPath: path.join(SHARED_FOLDER, './src/graphql-types.ts'),
         globs: [],
         plugins: [`${SHARED_FOLDER}/dev/extractGraphQlTypesCodegenPlugin.js`],
         onlyOperationTypes: false,
         enumValues: './graphql-operations',
     },
-    {
+    'browser-operations': {
         outputPath: path.join(BROWSER_FOLDER, './src/graphql-operations.ts'),
         interfaceNameForOperations: 'BrowserGraphQlOperations',
         globs: BROWSER_DOCUMENTS_GLOB,
     },
-    {
+    'web-operations': {
         outputPath: path.join(WEB_FOLDER, './src/graphql-operations.ts'),
         interfaceNameForOperations: 'WebGraphQlOperations',
         globs: WEB_DOCUMENTS_GLOB,
     },
-    {
+    'sveltekit-operations': {
         outputPath: path.join(SVELTEKIT_FOLDER, './src/lib/graphql-operations.ts'),
         interfaceNameForOperations: 'SvelteKitGraphQlOperations',
         globs: SVELTEKIT_DOCUMENTS_GLOB,
     },
-    {
+    'vscode-operations': {
         outputPath: path.join(VSCODE_FOLDER, './src/graphql-operations.ts'),
         interfaceNameForOperations: 'VSCodeGraphQlOperations',
         globs: VSCODE_DOCUMENTS_GLOB,
     },
-    {
+    'jetbrains-operations': {
         outputPath: path.join(JETBRAINS_FOLDER, './webview/src/graphql-operations.ts'),
         interfaceNameForOperations: 'JetBrainsGraphQlOperations',
         globs: JETBRAINS_DOCUMENTS_GLOB,
     },
-]
+}
 
 /**
  * Resolve the globs to files and filter to only files containing "gql`" (which indicates that they
@@ -154,14 +154,27 @@ function createCodegenConfig(operations: Input[]): CodegenConfig {
 
 if (require.main === module) {
     // Entry point to generate all GraphQL operations files, or a single one.
-    async function main(args: string[]) {
-        if (args.length !== 0 && args.length !== 2) {
-            throw new Error('Usage: [<schemaName> <outputPath>]')
+    async function main(args: string[]): Promise<void> {
+        let inputs: Input[] = []
+        switch (args.length) {
+            case 0: {
+                inputs = Object.values(ALL_INPUTS)
+                break
+            }
+            case 2: {
+                const configName = args[0]
+                if (!(configName in ALL_INPUTS)) {
+                    throw new Error(`Unknown config name: ${args[0]}`)
+                }
+                inputs = [{...ALL_INPUTS[configName], outputPath: args[1]}]
+                break
+            }
+            default: {
+                throw new Error('Usage: [<configName> <outputPath>]')
+            }
         }
         await generate(
-            createCodegenConfig(
-                args.length === 0 ? ALL_INPUTS : [{ interfaceNameForOperations: args[0], outputPath: args[1] }]
-            )
+            createCodegenConfig(inputs)
         )
     }
     main(process.argv.slice(2)).catch(error => {
