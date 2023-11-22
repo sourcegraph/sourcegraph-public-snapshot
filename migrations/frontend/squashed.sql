@@ -489,14 +489,15 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_delete() RETURNS trigger
     AS $$ BEGIN
       INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
       SELECT
-        (SELECT oldtab.shard_id),
-        (SELECT -COUNT(*)                                           FROM oldtab),
-        (SELECT -COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab),
-        (SELECT -COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab),
-        (SELECT -COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab),
-        (SELECT -COUNT(*) FILTER(WHERE last_error IS NOT NULL)      FROM oldtab),
-        (SELECT -COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL)    FROM oldtab)
-      FROM oldtab;
+        oldtab.shard_id,
+        (-COUNT(*)),
+        (-COUNT(*) FILTER(WHERE clone_status = 'not_cloned')),
+        (-COUNT(*) FILTER(WHERE clone_status = 'cloning')),
+        (-COUNT(*) FILTER(WHERE clone_status = 'cloned')),
+        (-COUNT(*) FILTER(WHERE last_error IS NOT NULL)),
+        (-COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL))
+      FROM oldtab
+      GROUP BY oldtab.shard_id;
 
       RETURN NULL;
   END
@@ -508,14 +509,15 @@ CREATE FUNCTION recalc_gitserver_repos_statistics_on_insert() RETURNS trigger
       -------------------------------------------------
       -- THIS IS CHANGED TO APPEND
       -------------------------------------------------
-      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)
+      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
       SELECT
         shard_id,
         COUNT(*) AS total,
         COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,
         COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
         COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
-        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch
+        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,
+        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted
       FROM
         newtab
       GROUP BY shard_id
@@ -2813,7 +2815,7 @@ COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corrup
 COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
 
 CREATE TABLE gitserver_repos_statistics (
-    shard_id text NOT NULL,
+    shard_id text,
     total bigint DEFAULT 0 NOT NULL,
     not_cloned bigint DEFAULT 0 NOT NULL,
     cloning bigint DEFAULT 0 NOT NULL,

@@ -148,11 +148,11 @@
     },
     {
       "Name": "recalc_gitserver_repos_statistics_on_delete",
-      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT\n        (SELECT oldtab.shard_id),\n        (SELECT -COUNT(*)                                           FROM oldtab),\n        (SELECT -COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab),\n        (SELECT -COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab),\n        (SELECT -COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab),\n        (SELECT -COUNT(*) FILTER(WHERE last_error IS NOT NULL)      FROM oldtab),\n        (SELECT -COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL)    FROM oldtab)\n      FROM oldtab;\n\n      RETURN NULL;\n  END\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT\n        oldtab.shard_id,\n        (-COUNT(*)),\n        (-COUNT(*) FILTER(WHERE clone_status = 'not_cloned')),\n        (-COUNT(*) FILTER(WHERE clone_status = 'cloning')),\n        (-COUNT(*) FILTER(WHERE clone_status = 'cloned')),\n        (-COUNT(*) FILTER(WHERE last_error IS NOT NULL)),\n        (-COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL))\n      FROM oldtab\n      GROUP BY oldtab.shard_id;\n\n      RETURN NULL;\n  END\n$function$\n"
     },
     {
       "Name": "recalc_gitserver_repos_statistics_on_insert",
-      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      -------------------------------------------------\n      -- THIS IS CHANGED TO APPEND\n      -------------------------------------------------\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)\n      SELECT\n        shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch\n      FROM\n        newtab\n      GROUP BY shard_id\n      ;\n\n      RETURN NULL;\n  END\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      -------------------------------------------------\n      -- THIS IS CHANGED TO APPEND\n      -------------------------------------------------\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT\n        shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,\n        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted\n      FROM\n        newtab\n      GROUP BY shard_id\n      ;\n\n      RETURN NULL;\n  END\n$function$\n"
     },
     {
       "Name": "recalc_gitserver_repos_statistics_on_update",
@@ -14709,7 +14709,7 @@
           "Name": "shard_id",
           "Index": 1,
           "TypeName": "text",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
