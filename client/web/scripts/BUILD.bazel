@@ -5,7 +5,6 @@ ts_project(
     srcs = [
         "report-bundle-diff.ts",
     ],
-    tsconfig = "//client/web:tsconfig",
     deps = [
         "//:node_modules/@types/shelljs",
         "//:node_modules/octokit",
