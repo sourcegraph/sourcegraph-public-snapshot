@@ -29,7 +29,6 @@ import { userSettingsAreaRoutes } from '../user/settings/routes'
 import { userSettingsSideBarItems } from '../user/settings/sidebaritems'
 
 import { APP_ROUTES } from './app/routes'
-import { BrainDot } from './codeintel/dashboard/components/BrainDot'
 import { enterpriseRepoContainerRoutes } from './repo/enterpriseRepoContainerRoutes'
 import { enterpriseRepoRevisionContainerRoutes } from './repo/enterpriseRepoRevisionContainerRoutes'
 import { siteAdminOverviewComponents } from './site-admin/overview/overviewComponents'
@@ -54,11 +53,6 @@ const injectedValuesConfig = {
     repoSettingsAreaRoutes,
     repoSettingsSidebarGroups: repoSettingsSideBarGroups,
     routes: windowContextConfig.isCodyApp ? APP_ROUTES : routes,
-
-    /**
-     * Per feature injections
-     */
-    brainDot: BrainDot,
 } satisfies StaticInjectedAppConfig
 
 const hardcodedConfig = {

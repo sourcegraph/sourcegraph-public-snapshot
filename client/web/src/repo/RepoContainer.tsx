@@ -48,6 +48,7 @@ import { useCodySidebar, useSidebarSize, CODY_SIDEBAR_SIZES } from '../cody/side
 import type { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
+import { BrainDot } from '../enterprise/codeintel/dashboard/components/BrainDot'
 import type { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import type { CodeInsightsProps } from '../insights/types'
 import type { NotebookProps } from '../notebooks'
@@ -536,8 +537,8 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>
-                        props.brainDot && actionType === 'nav' ? (
-                            <props.brainDot
+                        actionType === 'nav' ? (
+                            <BrainDot
                                 key="code-intelligence-status"
                                 repoName={repoName}
                                 path={filePath}

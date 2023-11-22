@@ -1,4 +1,3 @@
-import type { BrainDot } from './BrainDot'
 import type { UseCodeIntel } from './useCodeIntel'
 
 /**
@@ -6,6 +5,5 @@ import type { UseCodeIntel } from './useCodeIntel'
  */
 export interface CodeIntelligenceProps {
     codeIntelligenceEnabled: boolean
-    brainDot?: typeof BrainDot
     useCodeIntel?: UseCodeIntel
 }
