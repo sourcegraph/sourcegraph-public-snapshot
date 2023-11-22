@@ -21,9 +21,10 @@ import (
 )
 
 type handler struct {
-	client   *http.Client
-	store    database.OutboundWebhookStore
-	logStore database.OutboundWebhookLogStore
+	client        *http.Client
+	store         database.OutboundWebhookStore
+	logStore      database.OutboundWebhookLogStore
+	hostMatchList string
 }
 
 var _ workerutil.Handler[*types.OutboundWebhookJob] = &handler{}
