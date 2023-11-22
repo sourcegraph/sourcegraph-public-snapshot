@@ -592,7 +592,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	if completionsConfig == nil {
 		completionsConfig = &schema.Completions{
 			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-2",
+			ChatModel:       "anthropic/claude-2.0",
 			FastChatModel:   "anthropic/claude-instant-1",
 			CompletionModel: "anthropic/claude-instant-1",
 		}
@@ -632,7 +632,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic/claude-2"
+			completionsConfig.ChatModel = "anthropic/claude-2.0"
 		}
 
 		// Set a default fast chat model.
@@ -682,7 +682,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "claude-2"
+			completionsConfig.ChatModel = "claude-2.0"
 		}
 
 		// Set a default fast chat model.
@@ -1119,10 +1119,13 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-v2" {
+	if model == "claude-2" || model == "claude-2.0" || model == "claude-v2" {
 		// TODO: Technically, v2 also uses a 100k window, but we should validate
 		// that returning 100k here is the right thing to do.
 		return 12_000
+	}
+	if model == "claude-2.1" {
+		return 200_000
 	}
 	// For now, all other claude models have a 9k token window.
 	return 9_000
