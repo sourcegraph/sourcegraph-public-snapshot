@@ -256,22 +256,22 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	switch scope {
 	case types.CompletionsFeatureChat:
 		if isProUser {
-			if cfg.PerUserProDailyLimit > 0 {
-				return oneDayInSeconds, pointers.Ptr(cfg.PerUserProDailyLimit), nil
+			if cfg.PerProUserChatDailyLimit > 0 {
+				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserChatDailyLimit), nil
 			}
 		} else {
-			if cfg.PerUserCommunityMonthlyLimit > 0 {
-				return oneMonthInSeconds, pointers.Ptr(cfg.PerUserCommunityMonthlyLimit), nil
+			if cfg.PerCommunityUserChatMonthlyLimit > 0 {
+				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserChatMonthlyLimit), nil
 			}
 		}
 	case types.CompletionsFeatureCode:
 		if isProUser {
-			if cfg.PerUserProCodeCompletionsDailyLimit > 0 {
-				return oneDayInSeconds, pointers.Ptr(cfg.PerUserProCodeCompletionsDailyLimit), nil
+			if cfg.PerProUserCodeCompletionsDailyLimit > 0 {
+				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserCodeCompletionsDailyLimit), nil
 			}
 		} else {
-			if cfg.PerUserCommunityCodeCompletionsMonthlyLimit > 0 {
-				return oneMonthInSeconds, pointers.Ptr(cfg.PerUserCommunityCodeCompletionsMonthlyLimit), nil
+			if cfg.PerCommunityUserCodeCompletionsMonthlyLimit > 0 {
+				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserCodeCompletionsMonthlyLimit), nil
 			}
 		}
 	}

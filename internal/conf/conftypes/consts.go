@@ -17,10 +17,10 @@ type CompletionsConfig struct {
 	Endpoint                                    string
 	PerUserDailyLimit                           int
 	PerUserCodeCompletionsDailyLimit            int
-	PerUserCommunityMonthlyLimit                int
-	PerUserCommunityCodeCompletionsMonthlyLimit int
-	PerUserProDailyLimit                        int
-	PerUserProCodeCompletionsDailyLimit         int
+	PerCommunityUserChatMonthlyLimit            int
+	PerCommunityUserCodeCompletionsMonthlyLimit int
+	PerProUserChatDailyLimit                    int
+	PerProUserCodeCompletionsDailyLimit         int
 }
 
 type CompletionsProviderName string
