@@ -352,6 +352,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 					log.Error(errors.New(resp.Status)), // real error needed for Sentry reporting
 					log.String("resp.headers", headers.String()))
 				resolvedStatusCode = http.StatusServiceUnavailable
+			}
+
+			// This handles upstream 429 responses as well, since they get
+			// resolved to http.StatusServiceUnavailable.
+			if resolvedStatusCode == http.StatusServiceUnavailable {
 				// Propagate retry-after in case it is handle-able by the client,
 				// or write our default. 503 errors can have retry-after as well.
 				if upstreamRetryAfter := resp.Header.Get("retry-after"); upstreamRetryAfter != "" {

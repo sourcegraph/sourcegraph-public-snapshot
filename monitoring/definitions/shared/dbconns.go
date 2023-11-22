@@ -10,7 +10,7 @@ import (
 // Database connections monitoring overview.
 const TitleDatabaseConnectionsMonitoring = "Database connections"
 
-func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
+func DatabaseConnectionsMonitoring(app string, owner monitoring.ObservableOwner) []monitoring.Row {
 	return []monitoring.Row{
 		{
 			{
@@ -19,7 +19,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name=%q})`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
+				Owner:          owner,
 				Interpretation: "none",
 			},
 			{
@@ -28,7 +28,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_open{app_name=%q})`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
+				Owner:          owner,
 				Interpretation: "none",
 			},
 		},
@@ -39,7 +39,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name=%q})`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
+				Owner:          owner,
 				Interpretation: "none",
 			},
 			{
@@ -48,7 +48,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_idle{app_name=%q})`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
+				Owner:          owner,
 				Interpretation: "none",
 			},
 		},
@@ -65,7 +65,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Panel:    monitoring.Panel().LegendFormat("dbname={{db_name}}").Unit(monitoring.Seconds),
 				Warning:  monitoring.Alert().GreaterOrEqual(0.05).For(10 * time.Minute),
 				Critical: monitoring.Alert().GreaterOrEqual(0.10).For(15 * time.Minute),
-				Owner:    monitoring.ObservableOwnerDevOps,
+				Owner:    owner,
 				NextSteps: `
 					- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
 					- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
@@ -79,7 +79,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
+				Owner:          owner,
 				Interpretation: "none",
 			},
 			{
@@ -88,7 +88,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
+				Owner:          owner,
 				Interpretation: "none",
 			},
 			{
@@ -97,7 +97,7 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name=%q}[5m]))`, app),
 				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
+				Owner:          owner,
 				Interpretation: "none",
 			},
 		},
@@ -106,10 +106,10 @@ func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
 
 // NewDatabaseConnectionsMonitoringGroup creates a group containing panels displaying
 // database monitoring metrics for the given container.
-func NewDatabaseConnectionsMonitoringGroup(containerName string) monitoring.Group {
+func NewDatabaseConnectionsMonitoringGroup(containerName string, owner monitoring.ObservableOwner) monitoring.Group {
 	return monitoring.Group{
 		Title:  TitleDatabaseConnectionsMonitoring,
 		Hidden: true,
-		Rows:   DatabaseConnectionsMonitoring(containerName),
+		Rows:   DatabaseConnectionsMonitoring(containerName, owner),
 	}
 }

@@ -252,12 +252,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
                             {isSourcegraphDotCom && <MenuDivider className={styles.dropdownDivider} />}
                             {isSourcegraphDotCom && (
-                                <MenuLink
-                                    as={AnchorLink}
-                                    to="https://about.sourcegraph.com"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
+                                <MenuLink as={AnchorLink} to="https://sourcegraph.com" target="_blank" rel="noopener">
                                     About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}

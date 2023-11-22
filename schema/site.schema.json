@@ -986,8 +986,8 @@
             },
             "patterns": [
               {
-                "match": "^package main$",
-                "language": "go"
+                "match": "cobol_.*\\.txt",
+                "language": "cobol"
               }
             ]
           }
