@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
@@ -122,12 +122,15 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
     const navigate = useNavigate()
 
-    const [defaultVariables] = useState({
-        repoName: props.repoName,
-        revision: props.revision,
-        commitID: props.commitID,
-        first: MAX_TREE_ENTRIES,
-    })
+    const defaultVariables = useMemo(
+        () => ({
+            repoName: props.repoName,
+            revision: props.revision,
+            commitID: props.commitID,
+            first: MAX_TREE_ENTRIES,
+        }),
+        [props.repoName, props.revision, props.commitID]
+    )
 
     const { data, error, loading } = useQuery<FileTreeEntriesResult, FileTreeEntriesVariables>(QUERY, {
         variables: {
