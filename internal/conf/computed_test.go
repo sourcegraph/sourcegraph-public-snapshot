@@ -317,7 +317,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
-		ChatModel:                "anthropic/claude-2",
+		ChatModel:                "anthropic/claude-2.0",
 		ChatModelMaxTokens:       12000,
 		FastChatModel:            "anthropic/claude-instant-1",
 		FastChatModelMaxTokens:   9000,
@@ -616,7 +616,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				AccessToken:              "sgd_d796dd3efc6c5257694b80cba0537131457b1742b42d081a27aeaef091107bc4",
-				ChatModel:                "anthropic/claude-2",
+				ChatModel:                "anthropic/claude-2.0",
 				ChatModelMaxTokens:       12000,
 				FastChatModel:            "anthropic/claude-instant-1",
 				FastChatModelMaxTokens:   9000,
