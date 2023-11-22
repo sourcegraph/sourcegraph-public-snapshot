@@ -138,11 +138,9 @@ func newExternalClientFactory(cache bool, testOpt bool, middleware ...Middleware
 	}
 	mw = append(mw, middleware...)
 
-	var externalTransportOpt Opt
+	externalTransportOpt := ExternalTransportOpt
 	if testOpt {
 		externalTransportOpt = TestExternalTransportOpt
-	} else {
-		externalTransportOpt = ExternalTransportOpt
 	}
 
 	opts := []Opt{
@@ -421,7 +419,9 @@ func TestExternalTransportOpt(cli *http.Client) error {
 
 // ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
 // can contact non-Sourcegraph services. For example Admins can configure
-// TLS/SSL settings.
+// TLS/SSL settings. This adds filtering for external requests based on
+// predefined deny lists. Can be extended using the EXTERNAL_DENY_LIST
+// environment variable.
 func ExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
 	if err != nil {

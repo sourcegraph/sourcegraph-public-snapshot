@@ -61,7 +61,7 @@ func (p *Provider) Config() schema.AuthProviders {
 func (p *Provider) Refresh(context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.oidc, p.refreshErr = newOIDCProvider(p)
+	p.oidc, p.refreshErr = newOIDCProvider(p.config.Issuer, p.httpClient)
 	return p.refreshErr
 }
 
@@ -159,21 +159,21 @@ type providerExtraClaims struct {
 
 var mockNewProvider func(issuerURL string) (*oidcProvider, error)
 
-func newOIDCProvider(p *Provider) (*oidcProvider, error) {
+func newOIDCProvider(issuerURL string, httpClient *http.Client) (*oidcProvider, error) {
 	if mockNewProvider != nil {
-		return mockNewProvider(p.config.Issuer)
+		return mockNewProvider(issuerURL)
 	}
 
-	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), p.httpClient), p.config.Issuer)
+	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), httpClient), issuerURL)
 	if err != nil {
 		return nil, err
 	}
 
-	op := &oidcProvider{Provider: *bp}
-	if err := bp.Claims(&op.providerExtraClaims); err != nil {
+	p := &oidcProvider{Provider: *bp}
+	if err := bp.Claims(&p.providerExtraClaims); err != nil {
 		return nil, err
 	}
-	return op, nil
+	return p, nil
 }
 
 // revokeToken implements Token Revocation. See https://tools.ietf.org/html/rfc7009.
