@@ -316,6 +316,10 @@ rust_register_toolchains(
     ],
 )
 
+load("@rules_rust//util/import:deps.bzl", "import_deps")
+
+import_deps()
+
 # Needed for locally cross-compiling rust binaries to linux/amd64 on a Mac laptop, when seeking to
 # create container images in local for testing purposes.
 rust_repository_set(
