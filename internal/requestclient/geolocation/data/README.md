@@ -1,18 +1,14 @@
 # Geolocation data
 
 This package contains a small geolocation database that gets embedded in the `internal/requestclient/geolocation` package.
-We currently use the "IP2Location LITE" `IP-COUNTRY` (`db1`) database, which only includes country-level data.
-IP2Location LITE allows for redistribution with the following acknowledgement on all "sites, advertising materials and documentation mentioning features or use of this database":
+We currently use the [DB-IP.com](https://db-ip.com/)'s ["IP to Country Lite" database](https://db-ip.com/db/download/ip-to-country-lite) in MMDB format, which only includes country-level data.
 
-> This site or product includes IP2Location LITE data available from http://www.ip2location.com.
+The free DB-IP Lite database by DB-IP is licensed under a Creative Commons Attribution 4.0 International License.
 
-For more details, refer to [`IP2LOCATION-LITE-DB1.IPV6.BIN/README_LITE.TXT`](./IP2LOCATION-LITE-DB1.IPV6.BIN/README_LITE.TXT), which is part of database download.
+The full licensing terms are available [here](https://db-ip.com/db/lite.php).
 
 ## Updating the database
 
-This database was last updated 11/16/2023 - the [IP2Location FAQ](https://www.ip2location.com/faqs) indicates the database should be updated yearly.
+This database was last updated 11/16/2023. We should aim to update this yearly to stay in sync with any changes.
 
-The database must be downloaded manually from the IP2Location website, and requires an account in order to agree to IP2Location terms (such as the attribution required above).
-An existing account and detailed instructions are available in [this shared 1Password entry](https://my.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/fonquuhrzrdr4irultcuj6gqby).
-
-The contents of `IP2LOCATION-LITE-DB1.IPV6.BIN` should include everything in the download, including the license and README text.
+The database should be downloaded in MMDB format the ["IP to Country Lite" database page](https://db-ip.com/db/download/ip-to-country-lite).

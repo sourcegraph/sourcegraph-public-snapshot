@@ -5091,6 +5091,13 @@ def go_dependencies():
         sum = "h1:nV98dkBpqaYbDnhefmOQ+Rn4hE+jD6AtjYHXaU5WyJI=",
         version = "v1.2.13",
     )
+    go_repository(
+        name = "com_github_oschwald_maxminddb_golang",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/oschwald/maxminddb-golang",
+        sum = "h1:9FnTOD0YOhP7DGxGsq4glzpGy5+w7pq50AS6wALUMYs=",
+        version = "v1.12.0",
+    )
 
     go_repository(
         name = "com_github_ovh_go_ovh",

@@ -10,23 +10,25 @@ package geolocation
 import (
 	"bytes"
 	_ "embed"
+	"net"
 
 	ip2location "github.com/ip2location/ip2location-go/v9"
+	"github.com/oschwald/maxminddb-golang"
 
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//go:embed data/IP2LOCATION-LITE-DB1.IPV6.BIN/IP2LOCATION-LITE-DB1.IPV6.BIN
-var ip2locationDBBin []byte
+//go:embed data/dbip-country-lite-2023-11.mmdb
+var mmdbData []byte
 
-// getLocationsDB holds the ip2location database embedded at ip2locationDBBin.
+// getLocationsDB holds the MMDB-format database embedded at mmdbData.
 // It is only evaluated once - subsequent calls will return the first initialized
-// *ip2location.DB instance.
-var getLocationsDB = syncx.OnceValue(func() *ip2location.DB {
-	db, err := ip2location.OpenDBWithReader(noOpReaderAtCloser{bytes.NewReader(ip2locationDBBin)})
+// *maxminddb.Reader instance.
+var getLocationsDB = syncx.OnceValue(func() *maxminddb.Reader {
+	db, err := maxminddb.FromBytes(mmdbData)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "initialize IP database"))
 	}
 	return db
 })
@@ -37,21 +39,20 @@ func InferCountryCode(ipAddress string) (string, error) {
 	if ipAddress == "" {
 		return "", errors.New("no IP address provided")
 	}
-	result, err := getLocationsDB().Get_country_short(ipAddress)
-	if err != nil {
-		return "", errors.Wrap(err, "IP database query failed")
+	ip := net.ParseIP(ipAddress)
+	if ip == nil {
+		return "", errors.Newf("invalid IP address %q provided", ipAddress)
 	}
-	code := result.Country_short
-	// This library returns error messages in the results, which is quite
-	// unfortunate. The country short-codes are all 2 characters, but there is
-	// another standard, alpha-3, with 3 characters, so just in case we use 3
-	// characters as the threshold to treat this as an error.
-	if len(code) > 3 {
-		return "", errors.Newf("IP database query failed: %s", code)
-	} else if len(code) == 0 {
-		return "", errors.New("no result found")
+
+	var query struct {
+		Country struct {
+			ISOCode string `maxminddb:"iso_code"`
+		} `maxminddb:"country"`
 	}
-	return code, nil
+	if err := getLocationsDB().Lookup(ip, &query); err != nil {
+		return "", errors.Wrap(err, "lookup failed")
+	}
+	return query.Country.ISOCode, nil
 }
 
 // We can't use io.NoOpCloser because we need to implement Reader and ReaderAt,

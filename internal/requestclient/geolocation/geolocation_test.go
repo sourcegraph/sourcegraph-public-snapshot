@@ -39,7 +39,7 @@ func TestInferCountryCode(t *testing.T) {
 		{
 			name:      "not an IP address",
 			ipAddress: "sourcegraph.com",
-			wantError: autogold.Expect("IP database query failed: Invalid IP address."),
+			wantError: autogold.Expect(`invalid IP address "sourcegraph.com" provided`),
 		},
 		{
 			name:            "example 1 valid IPv4",
@@ -47,9 +47,9 @@ func TestInferCountryCode(t *testing.T) {
 			wantCountryCode: autogold.Expect("CN"),
 		},
 		{
-			name:            "example 3 valid IPv4",
+			name:            "example 2 valid IPv4",
 			ipAddress:       "93.184.216.34", // ping -c1 example.net
-			wantCountryCode: autogold.Expect("US"),
+			wantCountryCode: autogold.Expect("GB"),
 		},
 		{
 			name:            "example valid IPv6",
