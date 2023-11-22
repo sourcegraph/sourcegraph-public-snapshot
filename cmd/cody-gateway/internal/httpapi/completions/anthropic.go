@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/grafana/regexp"
 
@@ -37,7 +38,7 @@ const (
 func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (*flaggingResult, error) {
 	// Only usage of chat models us currently flagged, so if the request
 	// is using another model, we skip other checks.
-	if ar.Model != "claude-2" && ar.Model != "claude-v1" {
+	if !strings.HasPrefix(ar.Model, "claude-2") && ar.Model != "claude-v1" {
 		return nil, nil
 	}
 	reasons := []string{}

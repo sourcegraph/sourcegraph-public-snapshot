@@ -30,8 +30,15 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 		require.Contains(t, result.reasons, "unknown_prompt")
 	})
 
-	t.Run("preamble not configured ", func(t *testing.T) {
+	t.Run("preamble not configured", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
+		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
+		require.NoError(t, err)
+		require.False(t, result.IsFlagged())
+	})
+
+	t.Run("preamble not configured for claude-2.1", func(t *testing.T) {
+		ar := anthropicRequest{Model: "claude-2.1", Prompt: "some prompt without known preamble"}
 		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
 		require.NoError(t, err)
 		require.False(t, result.IsFlagged())
