@@ -182,7 +182,6 @@ const onHubsportFormReady = (form: HTMLFormElement, userId?: string): void => {
     const populateHiddenFormField = (formField: string, value: string): void => {
         const input = form.querySelector(`input[name="${formField}"]`) as HTMLInputElement
         if (input && !input.value) {
-            console.log(input)
             input.value = value || ''
         }
     }
