@@ -215,18 +215,18 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 	if limit == nil && cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		actor := sgactor.FromContext(ctx)
-		user, _ := actor.User(ctx, db.Users())
+		user, err := actor.User(ctx, db.Users())
 		if err != nil {
 			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
 		}
 		isProUser := user.CodyProEnabledAt != nil
 		intervalSeconds, limit, err = getSelfServeUsageLimits(scope, isProUser, *cfg)
-	}
-	if err != nil {
-		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
+		if err != nil {
+			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
+		}
 	}
 
-	// Otherwise, fall back to the global limit.
+	// Otherwise, fall back to the pre-Cody-GA global limit.
 	if limit == nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
 		switch scope {
