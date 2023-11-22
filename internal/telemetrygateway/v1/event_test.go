@@ -98,7 +98,7 @@ func TestNewEventWithDefaults(t *testing.T) {
   "id": "id",
   "interaction": {
     "geolocation": {
-      "countryCode": "US"
+      "countryCode": "GB"
     }
   },
   "timestamp": "2023-02-24T14:48:30Z"
