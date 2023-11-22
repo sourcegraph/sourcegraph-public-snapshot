@@ -1,5 +1,4 @@
-load("//dev:defs.bzl", "ts_project")
-load("@aspect_rules_js//js:defs.bzl", "js_binary")
+load("//dev:defs.bzl", "ts_binary", "ts_project")
 
 ts_project(
     name = "scripts_lib",
@@ -14,7 +13,7 @@ ts_project(
     ],
 )
 
-js_binary(
+ts_binary(
     name = "report-bundle-diff_test",
     data = [
         ":scripts_lib",
@@ -23,7 +22,7 @@ js_binary(
         "//:node_modules/shelljs",
         "//client/web:bundle",
     ],
-    entry_point = "report-bundle-diff.js",
+    entry_point = "report-bundle-diff.ts",
     env = {
         "BUILDKITE_COMMIT": "$$BUILDKITE_COMMIT",
         "BUILDKITE_BRANCH": "$$BUILDKITE_BRANCH",
