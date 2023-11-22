@@ -26,7 +26,7 @@ import { fetchBlob } from '../blob/backend'
 import { RenderedFile } from '../blob/RenderedFile'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { FILE_ICONS } from '../constants'
-import { getExtension } from '../utils'
+import { getFileInfo } from '../utils'
 
 import styles from './TreePagePanels.module.scss'
 
@@ -179,8 +179,8 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
             </thead>
             <tbody>
                 {entries.map(entry => {
-                    const fExtension = getExtension(entry.name)
-                    const fIcon = FILE_ICONS.get(fExtension.extension)
+                    const fileInfo = getFileInfo(entry.name, entry.isDirectory)
+                    const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
                     return (
                         <tr key={entry.name}>
@@ -195,10 +195,10 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
                                     title={entry.path}
                                     data-testid="tree-entry"
                                 >
-                                    {fIcon ? (
+                                    {fileIcon ? (
                                         <Icon
-                                            as={fIcon.icon}
-                                            className={classNames('mr-1', fIcon.iconClass)}
+                                            as={fileIcon.icon}
+                                            className={classNames('mr-1', fileIcon.iconClass)}
                                             aria-hidden={true}
                                         />
                                     ) : (

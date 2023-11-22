@@ -1,90 +1,77 @@
 import { describe, expect, it } from 'vitest'
 
 import { FileExtension } from './constants'
-import { contains, getExtension, getInitialSearchTerm } from './utils'
+import { containsTest, getFileInfo, getInitialSearchTerm } from './utils'
 
-describe('contains', () => {
+describe('containsTest', () => {
     const tests: {
         name: string
-        collection: string[]
-        target: string
+        file: string
         expected: boolean
     }[] = [
         {
-            name: 'returns true if item exists in array',
-            collection: ['bob', 'bill', 'sue', 'quinn', 'beyang'],
-            target: 'sue',
+            name: 'returns true if "test_" exists in file name',
+            file: 'test_myfile.go',
             expected: true,
         },
         {
-            name: 'returns false if item does not exist in array',
-            collection: ['bob', 'bill', 'sue', 'quinn', 'beyang'],
-            target: 'Taylor',
+            name: 'returns true if "_test" exists in file name',
+            file: 'myfile_test.go',
+            expected: true,
+        },
+        {
+            name: 'works with sub-extensions',
+            file: 'myreactcomponent.test.tsx',
+            expected: true,
+        },
+        {
+            name: 'returns false if if not a test file',
+            file: 'mytestcomponent.java',
             expected: false,
-        },
-        {
-            name: 'works on the first item',
-            collection: ['bob', 'bill', 'sue', 'quinn', 'beyang'],
-            target: 'bob',
-            expected: true,
-        },
-        {
-            name: 'works on the last item',
-            collection: ['bob', 'bill', 'sue', 'quinn', 'beyang'],
-            target: 'beyang',
-            expected: true,
         },
     ]
 
     for (const t of tests) {
         it(t.name, () => {
-            expect(contains(t.collection, t.target)).toBe(t.expected)
+            expect(containsTest(t.file)).toBe(t.expected)
         })
     }
 })
 
-describe('getExtension', () => {
+describe('getFileInfo', () => {
     const tests: {
         name: string
         file: string
+        isDirectory: boolean
         expectedExtension: FileExtension
         expectedIsTest: boolean
     }[] = [
         {
             name: 'works with simple file name',
             file: 'my-file.js',
+            isDirectory: false,
             expectedExtension: 'js' as FileExtension,
             expectedIsTest: false,
         },
         {
             name: 'works with complex file name',
             file: 'my-file.module.scss',
+            isDirectory: false,
             expectedExtension: 'scss' as FileExtension,
             expectedIsTest: false,
         },
         {
             name: 'returns isTest as true if file name contains test',
             file: 'my-file.test.tsx',
+            isDirectory: false,
             expectedExtension: 'tsx' as FileExtension,
             expectedIsTest: true,
-        },
-        {
-            name: "go.mod file returns 'go'",
-            file: 'go.mod',
-            expectedExtension: 'go' as FileExtension,
-            expectedIsTest: false,
-        },
-        {
-            name: "go.sum file returns 'go'",
-            file: 'go.sum',
-            expectedExtension: 'go' as FileExtension,
-            expectedIsTest: false,
         },
     ]
 
     for (const t of tests) {
         it(t.name, () => {
-            let e = getExtension(t.file)
+            let e = getFileInfo(t.file, t.isDirectory)
             expect(e.extension).toBe(t.expectedExtension)
             expect(e.isTest).toBe(t.expectedIsTest)
         })

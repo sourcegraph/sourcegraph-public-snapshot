@@ -1,4 +1,4 @@
-import { at } from 'lodash'
+import { includes } from 'lodash'
 
 import { type GitCommitFields, RepositoryType } from '../graphql-operations'
 
@@ -48,29 +48,36 @@ export const stringToCodeHostType = (codeHostType: string): CodeHostType => {
     }
 }
 
-export const contains = (arr: string[], target: string): boolean => {
-    for (const i of arr) {
-        if (i === target) {
+export interface FileInfo {
+    extension: FileExtension
+    isTest: boolean
+}
+
+export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
+    const fileInfo = { extension: '' as FileExtension, isTest: false }
+    fileInfo.isTest = isDirectory ? false : containsTest(file)
+
+    if (file.split('.').length === 1) {
+        return fileInfo
+    }
+
+    const f = file.split('.')
+    // Last item in 'f' is file extension string
+    fileInfo.extension = f.pop() as FileExtension
+    return fileInfo
+}
+
+export const containsTest = (file: string): boolean => {
+    const f = file.split('.')
+    const matchTest1 = '_test'
+    const matchTest2 = 'test_'
+    for (const i of f) {
+        if (i === 'test') {
+            return true
+        }
+        if (includes(i, matchTest1) || includes(i, matchTest2)) {
             return true
         }
     }
     return false
-}
-
-export const getExtension = (file: string): { extension: FileExtension; isTest: boolean } => {
-    const e = { extension: '' as FileExtension, isTest: false }
-    const f = file.split('.')
-    if (contains(f, 'test')) {
-        e.isTest = true
-    }
-
-    const s = f.slice(1)
-    if (contains(s, 'mod') || contains(s, 'sum')) {
-        e.extension = 'go' as FileExtension
-    } else {
-        // This is what the linter wants *shrugs*
-        e.extension = s[s.length - 1] as FileExtension
-    }
-    console.log(file, e)
-    return e
 }

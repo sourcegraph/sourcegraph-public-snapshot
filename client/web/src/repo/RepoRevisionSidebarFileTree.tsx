@@ -29,7 +29,7 @@ import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql
 
 import { FILE_ICONS } from './constants'
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
-import { getExtension } from './utils'
+import { getFileInfo } from './utils'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
 
@@ -391,8 +391,8 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const fExtension = getExtension(name)
-    const fIcon = FILE_ICONS.get(fExtension.extension)
+    const fileInfo = getFileInfo(name, isBranch)
+    const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -474,12 +474,11 @@ function renderNode({
                 }
             }}
         >
-            {/* Icon should be dynamically populated based on what kind of file type */}
             <div className={classNames(styles.iconContainer)}>
-                {fIcon ? (
+                {fileIcon ? (
                     <Icon
-                        as={fIcon.icon}
-                        className={classNames('mr-1', styles.icon, fIcon.iconClass)}
+                        as={fileIcon.icon}
+                        className={classNames('mr-1', styles.icon, fileIcon.iconClass)}
                         aria-hidden={true}
                     />
                 ) : (
@@ -491,7 +490,7 @@ function renderNode({
                         aria-hidden={true}
                     />
                 )}
-                {fExtension.isTest && <div className={classNames(styles.testIndicator)} />}
+                {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
                 {name}
             </div>
         </Link>
