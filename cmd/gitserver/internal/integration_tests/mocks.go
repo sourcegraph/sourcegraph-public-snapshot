@@ -273,6 +273,9 @@ func (c RepositoryLockSetStatusFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/cmd/gitserver/internal) used for unit
 // testing.
 type MockRepositoryLocker struct {
+	// AllStatusesFunc is an instance of a mock function object controlling
+	// the behavior of the method AllStatuses.
+	AllStatusesFunc *RepositoryLockerAllStatusesFunc
 	// StatusFunc is an instance of a mock function object controlling the
 	// behavior of the method Status.
 	StatusFunc *RepositoryLockerStatusFunc
@@ -286,6 +289,11 @@ type MockRepositoryLocker struct {
 // overwritten.
 func NewMockRepositoryLocker() *MockRepositoryLocker {
 	return &MockRepositoryLocker{
+		AllStatusesFunc: &RepositoryLockerAllStatusesFunc{
+			defaultHook: func() (r0 map[common.GitDir]string) {
+				return
+			},
+		},
 		StatusFunc: &RepositoryLockerStatusFunc{
 			defaultHook: func(common.GitDir) (r0 string, r1 bool) {
 				return
@@ -303,6 +311,11 @@ func NewMockRepositoryLocker() *MockRepositoryLocker {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockRepositoryLocker() *MockRepositoryLocker {
 	return &MockRepositoryLocker{
+		AllStatusesFunc: &RepositoryLockerAllStatusesFunc{
+			defaultHook: func() map[common.GitDir]string {
+				panic("unexpected invocation of MockRepositoryLocker.AllStatuses")
+			},
+		},
 		StatusFunc: &RepositoryLockerStatusFunc{
 			defaultHook: func(common.GitDir) (string, bool) {
 				panic("unexpected invocation of MockRepositoryLocker.Status")
@@ -321,6 +334,9 @@ func NewStrictMockRepositoryLocker() *MockRepositoryLocker {
 // implementation, unless overwritten.
 func NewMockRepositoryLockerFrom(i internal.RepositoryLocker) *MockRepositoryLocker {
 	return &MockRepositoryLocker{
+		AllStatusesFunc: &RepositoryLockerAllStatusesFunc{
+			defaultHook: i.AllStatuses,
+		},
 		StatusFunc: &RepositoryLockerStatusFunc{
 			defaultHook: i.Status,
 		},
@@ -328,6 +344,106 @@ func NewMockRepositoryLockerFrom(i internal.RepositoryLocker) *MockRepositoryLoc
 			defaultHook: i.TryAcquire,
 		},
 	}
+}
+
+// RepositoryLockerAllStatusesFunc describes the behavior when the
+// AllStatuses method of the parent MockRepositoryLocker instance is
+// invoked.
+type RepositoryLockerAllStatusesFunc struct {
+	defaultHook func() map[common.GitDir]string
+	hooks       []func() map[common.GitDir]string
+	history     []RepositoryLockerAllStatusesFuncCall
+	mutex       sync.Mutex
+}
+
+// AllStatuses delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockRepositoryLocker) AllStatuses() map[common.GitDir]string {
+	r0 := m.AllStatusesFunc.nextHook()()
+	m.AllStatusesFunc.appendCall(RepositoryLockerAllStatusesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AllStatuses method
+// of the parent MockRepositoryLocker instance is invoked and the hook queue
+// is empty.
+func (f *RepositoryLockerAllStatusesFunc) SetDefaultHook(hook func() map[common.GitDir]string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AllStatuses method of the parent MockRepositoryLocker instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *RepositoryLockerAllStatusesFunc) PushHook(hook func() map[common.GitDir]string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepositoryLockerAllStatusesFunc) SetDefaultReturn(r0 map[common.GitDir]string) {
+	f.SetDefaultHook(func() map[common.GitDir]string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepositoryLockerAllStatusesFunc) PushReturn(r0 map[common.GitDir]string) {
+	f.PushHook(func() map[common.GitDir]string {
+		return r0
+	})
+}
+
+func (f *RepositoryLockerAllStatusesFunc) nextHook() func() map[common.GitDir]string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepositoryLockerAllStatusesFunc) appendCall(r0 RepositoryLockerAllStatusesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepositoryLockerAllStatusesFuncCall objects
+// describing the invocations of this function.
+func (f *RepositoryLockerAllStatusesFunc) History() []RepositoryLockerAllStatusesFuncCall {
+	f.mutex.Lock()
+	history := make([]RepositoryLockerAllStatusesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepositoryLockerAllStatusesFuncCall is an object that describes an
+// invocation of method AllStatuses on an instance of MockRepositoryLocker.
+type RepositoryLockerAllStatusesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[common.GitDir]string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepositoryLockerAllStatusesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepositoryLockerAllStatusesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // RepositoryLockerStatusFunc describes the behavior when the Status method
