@@ -130,6 +130,7 @@ func TestMiddleware(t *testing.T) {
 			Type:               providerType,
 		},
 		callbackUrl: ".auth/callback",
+		httpClient:  httpcli.TestExternalClient,
 	}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
@@ -161,8 +162,6 @@ func TestMiddleware(t *testing.T) {
 			assert.Equal(t, uint32(123), event.UserID)
 		}
 	})
-
-	mockHttpCli = httpcli.TestExternalClient
 
 	if err := mockGetProviderValue.Refresh(context.Background()); err != nil {
 		t.Fatal(err)
@@ -334,6 +333,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 			Type:         providerType,
 		},
 		callbackUrl: ".auth/callback",
+		httpClient:  httpcli.TestExternalClient,
 	}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
