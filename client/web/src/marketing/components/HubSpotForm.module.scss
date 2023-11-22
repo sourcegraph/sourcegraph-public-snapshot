@@ -217,6 +217,7 @@
         line-height: normal;
     }
 
+    // stylelint-disable-next-line selector-id-pattern
     :global(#hsForm_85548efc-a879-4553-9ef0-a8da8fdcf541) :global(.hs-email) {
         display: none;
     }
