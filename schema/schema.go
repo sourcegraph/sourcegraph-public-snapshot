@@ -301,7 +301,7 @@ type BitbucketCloudAuthorization struct {
 
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
-	// The workspace access token to use when authenticating with Bitbucket Cloud.
+	// AccessToken description: The workspace access token to use when authenticating with Bitbucket Cloud.
 	AccessToken string `json:"accessToken,omitempty"`
 	// ApiURL description: The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	ApiURL string `json:"apiURL,omitempty"`
