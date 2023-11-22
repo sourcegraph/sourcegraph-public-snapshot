@@ -177,7 +177,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 			// if !idToken.Expiry.IsZero() {
 			// 	exp = time.Until(idToken.Expiry)
 			// }
-			if err = session.SetActor(w, r, sgactor.FromUser(result.User.ID), exp, result.User.CreatedAt); err != nil {
+			if _, err = session.SetActorFromUser(r.Context(), w, r, result.User, exp); err != nil {
 				log15.Error("Failed to authenticate with OpenID connect: could not initiate session.", "error", err)
 				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
 				return
@@ -398,6 +398,13 @@ const stateCookieTimeout = time.Minute * 15
 // RedirectToAuthRequest redirects the user to the authentication endpoint on the
 // external authentication provider.
 func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, cookieName, returnToURL string) {
+	// NOTE: We do not have a valid screen at the root path (always gets redirected
+	// to "/search"), and it is a marketing page on Sourcegraph.com, so redirecting to
+	// "/search" is a safe default.
+	if returnToURL == "" || returnToURL == "/" {
+		returnToURL = "/search"
+	}
+
 	// The state parameter is an opaque value used to maintain state between the
 	// original Authentication Request and the callback. We generate a random unique
 	// value as the OIDC state parameter.

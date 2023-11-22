@@ -26,11 +26,11 @@ type (
 	// A OtherSource yields repositories from a single Other connection configured
 	// in Sourcegraph via the external services configuration.
 	OtherSource struct {
-		svc     *types.ExternalService
-		conn    *schema.OtherExternalServiceConnection
-		exclude excludeFunc
-		client  httpcli.Doer
-		logger  log.Logger
+		svc      *types.ExternalService
+		conn     *schema.OtherExternalServiceConnection
+		excluder repoExcluder
+		client   httpcli.Doer
+		logger   log.Logger
 	}
 
 	// A srcExposeItem is the object model returned by src-cli when serving git repos
@@ -62,13 +62,13 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Pattern(r.Pattern)
+		ex.AddRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
@@ -77,11 +77,11 @@ func NewOtherSource(ctx context.Context, svc *types.ExternalService, cf *httpcli
 	}
 
 	return &OtherSource{
-		svc:     svc,
-		conn:    &c,
-		exclude: exclude,
-		client:  cli,
-		logger:  logger,
+		svc:      svc,
+		conn:     &c,
+		excluder: ex,
+		client:   cli,
+		logger:   logger,
 	}, nil
 }
 
@@ -137,7 +137,7 @@ func (s OtherSource) ExternalServices() types.ExternalServices {
 }
 
 func (s OtherSource) excludes(r *types.Repo) bool {
-	return s.exclude(string(r.Name))
+	return s.excluder.ShouldExclude(string(r.Name))
 }
 
 func (s OtherSource) cloneURLs() ([]*url.URL, error) {

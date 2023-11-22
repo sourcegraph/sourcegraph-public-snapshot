@@ -13,4 +13,5 @@ go_test(
     name = "bytesize_test",
     srcs = ["bytesize_test.go"],
     embed = [":bytesize"],
+    deps = ["@com_github_stretchr_testify//require"],
 )

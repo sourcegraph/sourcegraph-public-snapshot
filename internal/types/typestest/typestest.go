@@ -1,6 +1,7 @@
 package typestest
 
 import (
+	"encoding/json"
 	"strconv"
 	"testing"
 	"time"
@@ -113,6 +114,20 @@ func MakeGitLabExternalService() *types.ExternalService {
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "token": "abc", "projectQuery": ["projects?membership=true&archived=no"]}`),
 		CreatedAt:   now,
 		UpdatedAt:   now,
+	}
+}
+
+func MakeExternalService(t *testing.T, variant extsvc.Variant, config any) *types.ExternalService {
+	t.Helper()
+
+	bs, err := json.Marshal(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return &types.ExternalService{
+		Kind:   variant.AsKind(),
+		Config: extsvc.NewUnencryptedConfig(string(bs)),
 	}
 }
 

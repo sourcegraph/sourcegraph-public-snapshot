@@ -4,7 +4,7 @@ FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff5
 COPY cmd/symbols/ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-FROM rust:1.68.0-alpine3.17@sha256:d119a621ae12f84ec0c5fed77c24795120ed1c7874b2428b5a6ccc0f294dbe18 as scip-ctags
+FROM rust:1.73.0-alpine3.18@sha256:200be646c656b180aa9cf6cee1766f05fcf5bb0b94cf2900beeedca3bdf4016d as scip-ctags
 # hadolint ignore=DL3002
 USER root
 RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base

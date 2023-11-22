@@ -5,6 +5,7 @@ import (
 	"container/list"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os/exec"
@@ -51,7 +52,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
+type LazyDebugserverEndpoint struct {
+	lockerStatusEndpoint http.HandlerFunc
+}
+
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, config *Config) error {
 	logger := observationCtx.Logger
 
 	// Load and validate configuration.
@@ -195,6 +200,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}
 	rec.RegistrationDone()
+
+	debugserverEndpoints.lockerStatusEndpoint = func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewEncoder(w).Encode(locker.AllStatuses()); err != nil {
+			logger.Error("failed to encode locker statuses", log.Error(err))
+		}
+	}
 
 	logger.Info("git-server: listening", log.String("addr", config.ListenAddress))
 

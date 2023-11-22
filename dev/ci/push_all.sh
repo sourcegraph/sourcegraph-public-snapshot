@@ -19,6 +19,11 @@ function create_push_command() {
   target="$3"
   tags_args="$4"
 
+  # TODO(JH): https://github.com/sourcegraph/sourcegraph/issues/58442
+  if [[ "$target" == "//docker-images/syntax-highlighter:scip-ctags_candidate_push" ]]; then
+    repository="scip-ctags"
+  fi
+
   repositories_args=""
   for registry in "${registries[@]}"; do
     repositories_args="$repositories_args --repository ${registry}/${repository}"

@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"database/sql"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -14,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	gext "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit/externalaccount"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -126,11 +126,11 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	ExternalAccount graphql.ID
 },
 ) (*EmptyResponse, error) {
-	ff, err := r.db.FeatureFlags().GetFeatureFlag(ctx, "disallow-user-external-account-deletion")
-	if err != nil && err != sql.ErrNoRows {
-		return nil, err
-	} else if ff != nil && ff.Bool != nil && ff.Bool.Value {
-		return nil, errors.New("unlinking external account is not allowed")
+	disallow := featureflag.FromContext(ctx).GetBoolOr("disallow-user-external-account-deletion", false)
+	if disallow {
+		// NOTE: The error message will be directly shown to the user, so we need to make
+		// it read like a sentence.
+		return nil, errors.New("Self-serve unlinking external account is not allowed, please contact Sourcegraph support.")
 	}
 
 	id, err := unmarshalExternalAccountID(args.ExternalAccount)

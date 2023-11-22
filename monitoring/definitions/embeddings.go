@@ -29,7 +29,7 @@ func Embeddings() *monitoring.Dashboard {
 				HumanServiceName:    "embeddings",
 				InstanceFilterRegex: `${instance:regex}`,
 			}, monitoring.ObservableOwnerDevOps),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerCody),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCody, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCody, nil),

@@ -221,7 +221,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
 			t.Errorf("got redirect URL %v, want contains %v", got, want)
 		}
-		if state, want := state(t, resp.Header.Get("Location")), "/"; state.Redirect != want {
+		if state, want := state(t, resp.Header.Get("Location")), "/search"; state.Redirect != want {
 			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
 		}
 	})

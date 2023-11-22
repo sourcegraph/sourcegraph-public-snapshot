@@ -104,12 +104,12 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			req.Header.Set("Authorization", headerValue)
 
 			accessTokens := dbmocks.NewMockAccessTokenStore()
-			accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+			accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded string, opts database.TokenLookupOpts) (subjectUserID int32, err error) {
 				if want := "abcdef"; tokenHexEncoded != want {
 					t.Errorf("got %q, want %q", tokenHexEncoded, want)
 				}
-				if want := authz.ScopeUserAll; requiredScope != want {
-					t.Errorf("got %q, want %q", requiredScope, want)
+				if want := authz.ScopeUserAll; opts.RequiredScope != want {
+					t.Errorf("got %q, want %q", opts.RequiredScope, want)
 				}
 				return 123, nil
 			})
@@ -127,12 +127,12 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req = req.WithContext(sgactor.WithActor(context.Background(), &sgactor.Actor{UID: 456}))
 
 		accessTokens := dbmocks.NewMockAccessTokenStore()
-		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded string, opts database.TokenLookupOpts) (subjectUserID int32, err error) {
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
 			}
-			if want := authz.ScopeUserAll; requiredScope != want {
-				t.Errorf("got %q, want %q", requiredScope, want)
+			if want := authz.ScopeUserAll; opts.RequiredScope != want {
+				t.Errorf("got %q, want %q", opts.RequiredScope, want)
 			}
 			return 123, nil
 		})
@@ -160,12 +160,12 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 			req = req.WithContext(sgactor.WithActor(context.Background(), &sgactor.Actor{UID: 456}))
 
 			accessTokens := dbmocks.NewMockAccessTokenStore()
-			accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+			accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded string, opts database.TokenLookupOpts) (subjectUserID int32, err error) {
 				if want := "abcdef"; tokenHexEncoded != want {
 					t.Errorf("got %q, want %q", tokenHexEncoded, want)
 				}
-				if want := authz.ScopeUserAll; requiredScope != want {
-					t.Errorf("got %q, want %q", requiredScope, want)
+				if want := authz.ScopeUserAll; opts.RequiredScope != want {
+					t.Errorf("got %q, want %q", opts.RequiredScope, want)
 				}
 				return 123, nil
 			})
@@ -181,12 +181,12 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req.Header.Set("Authorization", `token-sudo token="abcdef",user="alice"`)
 
 		accessTokens := dbmocks.NewMockAccessTokenStore()
-		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded string, opts database.TokenLookupOpts) (subjectUserID int32, err error) {
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
 			}
-			if want := authz.ScopeSiteAdminSudo; requiredScope != want {
-				t.Errorf("got %q, want %q", requiredScope, want)
+			if want := authz.ScopeSiteAdminSudo; opts.RequiredScope != want {
+				t.Errorf("got %q, want %q", opts.RequiredScope, want)
 			}
 			return 123, nil
 		})
@@ -228,12 +228,12 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req.Header.Set("Authorization", `token-sudo token="abcdef",user="alice"`)
 
 		accessTokens := dbmocks.NewMockAccessTokenStore()
-		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded string, opts database.TokenLookupOpts) (subjectUserID int32, err error) {
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
 			}
-			if want := authz.ScopeSiteAdminSudo; requiredScope != want {
-				t.Errorf("got %q, want %q", requiredScope, want)
+			if want := authz.ScopeSiteAdminSudo; opts.RequiredScope != want {
+				t.Errorf("got %q, want %q", opts.RequiredScope, want)
 			}
 			return 123, nil
 		})
@@ -279,12 +279,12 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req.Header.Set("Authorization", `token-sudo token="abcdef",user="alice"`)
 
 		accessTokens := dbmocks.NewMockAccessTokenStore()
-		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded string, opts database.TokenLookupOpts) (subjectUserID int32, err error) {
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
 			}
-			if want := authz.ScopeSiteAdminSudo; requiredScope != want {
-				t.Errorf("got %q, want %q", requiredScope, want)
+			if want := authz.ScopeSiteAdminSudo; opts.RequiredScope != want {
+				t.Errorf("got %q, want %q", opts.RequiredScope, want)
 			}
 			return 123, nil
 		})
@@ -319,12 +319,12 @@ func TestAccessTokenAuthMiddleware(t *testing.T) {
 		req.Header.Set("Authorization", `token-sudo token="abcdef",user="doesntexist"`)
 
 		accessTokens := dbmocks.NewMockAccessTokenStore()
-		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded, requiredScope string) (subjectUserID int32, err error) {
+		accessTokens.LookupFunc.SetDefaultHook(func(_ context.Context, tokenHexEncoded string, opts database.TokenLookupOpts) (subjectUserID int32, err error) {
 			if want := "abcdef"; tokenHexEncoded != want {
 				t.Errorf("got %q, want %q", tokenHexEncoded, want)
 			}
-			if want := authz.ScopeSiteAdminSudo; requiredScope != want {
-				t.Errorf("got %q, want %q", requiredScope, want)
+			if want := authz.ScopeSiteAdminSudo; opts.RequiredScope != want {
+				t.Errorf("got %q, want %q", opts.RequiredScope, want)
 			}
 			return 123, nil
 		})

@@ -58,9 +58,9 @@ type GitserverRepoStore interface {
 	// ListReposWithLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
 	// note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
 	ListReposWithLastError(ctx context.Context) ([]api.RepoName, error)
-	// IteratePurgeableRepos iterates over all purgeable repos. These are repos that
+	// ListPurgeableRepos returns all purgeable repos. These are repos that
 	// are cloned on disk but have been deleted or blocked.
-	IteratePurgeableRepos(ctx context.Context, options IteratePurgableReposOptions, repoFn func(repo api.RepoName) error) error
+	ListPurgeableRepos(ctx context.Context, options ListPurgableReposOptions) ([]api.RepoName, error)
 	// TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
 	// counting repos with an associated cloud_default external service.
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
@@ -183,7 +183,7 @@ func scanLastErroredRepoRow(scanner dbutil.Scanner) (name api.RepoName, err erro
 
 var scanLastErroredRepos = basestore.NewSliceScanner(scanLastErroredRepoRow)
 
-type IteratePurgableReposOptions struct {
+type ListPurgableReposOptions struct {
 	// DeletedBefore will filter the deleted repos to only those that were deleted
 	// before the given time. The zero value will not apply filtering.
 	DeletedBefore time.Time
@@ -195,7 +195,9 @@ type IteratePurgableReposOptions struct {
 	Limiter *ratelimit.InstrumentedLimiter
 }
 
-func (s *gitserverRepoStore) IteratePurgeableRepos(ctx context.Context, options IteratePurgableReposOptions, repoFn func(repo api.RepoName) error) (err error) {
+var scanRepoNames = basestore.NewSliceScanner(basestore.ScanAny[api.RepoName])
+
+func (s *gitserverRepoStore) ListPurgeableRepos(ctx context.Context, options ListPurgableReposOptions) (repos []api.RepoName, err error) {
 	deletedAtClause := sqlf.Sprintf("deleted_at IS NOT NULL")
 	if !options.DeletedBefore.IsZero() {
 		deletedAtClause = sqlf.Sprintf("(deleted_at IS NOT NULL AND deleted_at < %s)", options.DeletedBefore)
@@ -204,27 +206,7 @@ func (s *gitserverRepoStore) IteratePurgeableRepos(ctx context.Context, options 
 	if options.Limit > 0 {
 		query = query + fmt.Sprintf(" LIMIT %d", options.Limit)
 	}
-	rows, err := s.Query(ctx, sqlf.Sprintf(query, deletedAtClause, types.CloneStatusCloned))
-	if err != nil {
-		return errors.Wrap(err, "fetching repos with nonempty last_error")
-	}
-	defer func() {
-		err = basestore.CloseRows(rows, err)
-	}()
-
-	for rows.Next() {
-		var name api.RepoName
-		if err := rows.Scan(&name); err != nil {
-			return errors.Wrap(err, "scanning row")
-		}
-		err := repoFn(name)
-		if err != nil {
-			// Abort
-			return errors.Wrap(err, "calling repoFn")
-		}
-	}
-
-	return nil
+	return scanRepoNames(s.Query(ctx, sqlf.Sprintf(query, deletedAtClause, types.CloneStatusCloned)))
 }
 
 const purgableReposQuery = `
