@@ -39,6 +39,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Core Concepts](cody/core-concepts/index.md)
 - [Cody Use Cases](cody/use-cases/index.md)
   - [Generate Unit Tests](cody/use-cases/generate-unit-tests.md)
+  - [Build Front-End UI](cody/use-cases/build-ui.md)
 - [Custom Commands](cody/custom-commands.md)
 - [Feature Parity Reference](cody/feature-reference.md)
 - [Troubleshooting](cody/troubleshooting.md)
