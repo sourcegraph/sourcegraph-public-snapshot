@@ -208,7 +208,7 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_delete() RETURNS
     LANGUAGE plpgsql
     AS $$ BEGIN
       INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
-      VALUES (
+      SELECT
         (SELECT oldtab.shard_id),
         (SELECT -COUNT(*)                                           FROM oldtab),
         (SELECT -COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab),
@@ -216,8 +216,7 @@ CREATE OR REPLACE FUNCTION recalc_gitserver_repos_statistics_on_delete() RETURNS
         (SELECT -COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab),
         (SELECT -COUNT(*) FILTER(WHERE last_error IS NOT NULL)      FROM oldtab),
         (SELECT -COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL)    FROM oldtab)
-      )
-      ;
+      FROM oldtab;
 
       RETURN NULL;
   END
