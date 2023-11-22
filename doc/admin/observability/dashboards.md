@@ -22566,64 +22566,6 @@ Query: `increase(prometheus_target_scrapes_sample_duplicate_timestamp_total[10m]
 
 <br />
 
-### Prometheus: Google Managed Prometheus (only available for `sourcegraph/prometheus-gcp`)
-
-#### prometheus: samples_exported
-
-<p class="subtitle">Samples exported to GMP every 5m</p>
-
-A high value indicates that large numbers of samples are being exported, potentially impacting costs.
-In [Sourcegraph Cloud centralized observability](https://handbook.sourcegraph.com/departments/cloud/technical-docs/observability/), high values can be investigated by:
-
-- going to per-instance self-hosted dashboards for Prometheus in (Internals -> Metrics cardinality).
-- querying for `monitoring_googleapis_com:billing_samples_ingested`, for example:
-
-```
-topk(10, sum by(metric_type, project_id) (rate(monitoring_googleapis_com:billing_samples_ingested[1h])))
-```
-
-This is required because GMP does not allow queries aggregating on `__name__`
-
-See [Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about `gcm_export_samples_sent_total`.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100300` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/cloud).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `rate(gcm_export_samples_sent_total[5m])`
-
-</details>
-
-<br />
-
-#### prometheus: pending_exports
-
-<p class="subtitle">Samples pending export to GMP per minute</p>
-
-A high value indicates exports are taking a long time.
-
-See [`gmc_*` Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about `gcm_export_pending_requests`.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Cloud team](https://handbook.sourcegraph.com/departments/cloud).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum_over_time(gcm_export_pending_requests[1m])`
-
-</details>
-
-<br />
-
 ### Prometheus: Container monitoring (not available on server)
 
 #### prometheus: container_missing
@@ -22642,7 +22584,7 @@ value change independent of deployment events (such as an upgrade), it could ind
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100300` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -22661,7 +22603,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^prometheus.*"}) > 
 
 Refer to the [alerts reference](./alerts.md#prometheus-container-cpu-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100301` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -22680,7 +22622,7 @@ Query: `cadvisor_container_cpu_usage_percentage_total{name=~"^prometheus.*"}`
 
 Refer to the [alerts reference](./alerts.md#prometheus-container-memory-usage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100402` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100302` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -22702,7 +22644,7 @@ When extremely high, this can indicate a resource usage problem, or can cause pr
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100403` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100303` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -22723,7 +22665,7 @@ Query: `sum by(name) (rate(container_fs_reads_total{name=~"^prometheus.*"}[1h]) 
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-cpu-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100500` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100400` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -22742,7 +22684,7 @@ Query: `quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{na
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-memory-usage-long-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100501` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100401` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -22761,7 +22703,7 @@ Query: `max_over_time(cadvisor_container_memory_usage_percentage_total{name=~"^p
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-cpu-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100510` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100410` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -22780,7 +22722,7 @@ Query: `max_over_time(cadvisor_container_cpu_usage_percentage_total{name=~"^prom
 
 Refer to the [alerts reference](./alerts.md#prometheus-provisioning-container-memory-usage-short-term) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100511` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100411` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -22802,7 +22744,7 @@ When it occurs frequently, it is an indicator of underprovisioning.
 
 Refer to the [alerts reference](./alerts.md#prometheus-container-oomkill-events-total) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100512` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100412` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
@@ -22823,7 +22765,7 @@ Query: `max by (name) (container_oom_events_total{name=~"^prometheus.*"})`
 
 Refer to the [alerts reference](./alerts.md#prometheus-pods-available-percentage) for 1 alert related to this panel.
 
-To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100600` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/prometheus/prometheus?viewPanel=100500` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
 
