@@ -183,7 +183,7 @@
     "bundlesize2": "^0.0.31",
     "chalk": "^4.1.0",
     "chokidar-cli": "^2.1.0",
-    "chromatic": "^7.2.3",
+    "chromatic": "^8.0.0",
     "chrome-webstore-upload-cli": "^1.2.0",
     "command-exists": "^1.2.9",
     "compression": "^1.7.4",

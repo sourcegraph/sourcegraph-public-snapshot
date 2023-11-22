@@ -810,8 +810,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       chromatic:
-        specifier: ^7.2.3
-        version: 7.2.3
+        specifier: ^8.0.0
+        version: 8.0.0
       chrome-webstore-upload-cli:
         specifier: ^1.2.0
         version: 1.2.0
@@ -12991,8 +12991,8 @@ packages:
     engines: {node: '>=10'}
     dev: true
 
-  /chromatic@7.2.3:
-    resolution: {integrity: sha512-UEcHB1nkPoHWoRybPzv6BOVqPr7PqDNuz3u8NCRg7KJciouOb20HjiUQx4Dh9mgA7JUsb2WeGHE2SG/0fHH0PA==}
+  /chromatic@8.0.0:
+    resolution: {integrity: sha512-K3wKac6XrbyZ+Hyt1Y3j5PIdvq/RA1LvVObhJ2VUuy6utTeEKoBIIIU7U0C6ZPj67WVk70+FjpDCv619SowcdQ==}
     hasBin: true
     dev: true
 

@@ -9,6 +9,8 @@ import { ROOT_PATH, STATIC_ASSETS_PATH, getEnvironmentBoolean } from '@sourcegra
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
 
+// FAKE CHANGE
+
 const getStoriesGlob = (): string[] => {
     if (ENVIRONMENT_CONFIG.STORIES_GLOB) {
         return [path.resolve(ROOT_PATH, ENVIRONMENT_CONFIG.STORIES_GLOB)]
