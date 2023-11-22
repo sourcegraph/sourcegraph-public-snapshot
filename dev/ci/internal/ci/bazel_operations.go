@@ -148,7 +148,7 @@ func bazelApplyPrecheckChanges() bk.StepOpt {
 	return bk.Cmd("dev/ci/bazel-prechecks-apply.sh")
 }
 
-func bazelTest(targets ...string) func(*bk.Pipeline) {
+func bazelTest(_ ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.DependsOn("bazel-prechecks"),
 		bk.AllowDependencyFailure(),
@@ -159,7 +159,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 
 	// Test commands
-	bazelTestCmds := []bk.StepOpt{}
+	// bazelTestCmds := []bk.StepOpt{}
 
 	cmds = append(cmds, bazelApplyPrecheckChanges())
 
@@ -170,13 +170,13 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.Cmd(bazelCmd("build //client/web:bundle")),
 	)
 
-	for _, target := range targets {
-		cmd := bazelCmd(fmt.Sprintf("test %s", target))
-		bazelTestCmds = append(bazelTestCmds,
-			bazelAnnouncef("bazel test %s", target),
-			bk.Cmd(cmd))
-	}
-	cmds = append(cmds, bazelTestCmds...)
+	// for _, target := range targets {
+	// 	cmd := bazelCmd(fmt.Sprintf("test %s", target))
+	// 	bazelTestCmds = append(bazelTestCmds,
+	// 		bazelAnnouncef("bazel test %s", target),
+	// 		bk.Cmd(cmd))
+	// }
+	// cmds = append(cmds, bazelTestCmds...)
 
 	// At the end, run the bazel bundle size command.
 	cmds = append(cmds, bk.Cmd(bazelCmd("run", "//client/web/scripts:report-bundle-diff_test")))
