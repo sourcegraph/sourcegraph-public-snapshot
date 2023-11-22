@@ -9,6 +9,7 @@ import { initEndToEndTest } from '../utils/initEndToEndTest'
 
 const { sourcegraphBaseUrl } = getConfig('gitHubDotComToken', 'sourcegraphBaseUrl')
 
+// Since the test inside the describe is skipped the after does not execute. This is a known bug and since
 describe.skip('Site Admin', () => {
     let driver: Driver
 
