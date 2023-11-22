@@ -406,7 +406,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "claude-2",
+				ChatModel:                "claude-2.0",
 				ChatModelMaxTokens:       12000,
 				FastChatModel:            "claude-instant-1",
 				FastChatModelMaxTokens:   9000,
