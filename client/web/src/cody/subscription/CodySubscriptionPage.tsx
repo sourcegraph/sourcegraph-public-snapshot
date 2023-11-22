@@ -13,8 +13,8 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type {
-    UserCodyPlanQueryResult,
-    UserCodyPlanQueryVariables,
+    UserCodyPlanResult,
+    UserCodyPlanVariables,
     ChangeCodyPlanResult,
     ChangeCodyPlanVariables,
 } from '../../graphql-operations'
@@ -46,7 +46,7 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
         eventLogger.log(EventName.CODY_SUBSCRIPTION_PAGE_VIEWED, { utm_source })
     }, [utm_source])
 
-    const { data } = useQuery<UserCodyPlanQueryResult, UserCodyPlanQueryVariables>(USER_CODY_PLAN, {})
+    const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
     const [changeCodyPlan] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
 
     const [isEnabled] = useFeatureFlag('cody-pro', false)

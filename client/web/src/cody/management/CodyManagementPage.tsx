@@ -10,7 +10,7 @@ import { Icon, PageHeader, Link, H4, H2, Text, ButtonLink, Modal, useSearchParam
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import type { UserCodyPlanQueryResult, UserCodyPlanQueryVariables } from '../../graphql-operations'
+import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
@@ -34,7 +34,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
         eventLogger.log(EventName.CODY_MANAGEMENT_PAGE_VIEWED, { utm_source })
     }, [utm_source])
 
-    const { data } = useQuery<UserCodyPlanQueryResult, UserCodyPlanQueryVariables>(USER_CODY_PLAN, {})
+    const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
 
     const [isEnabled] = useFeatureFlag('cody-pro', false)
 
