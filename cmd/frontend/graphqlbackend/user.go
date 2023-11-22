@@ -3,10 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"net/url"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -188,6 +190,114 @@ func (r *UserResolver) CodyProEnabledAt(ctx context.Context) *gqlutil.DateTime {
 
 func (r *UserResolver) CodyProEnabled(ctx context.Context) bool {
 	return r.CodyProEnabledAt(ctx) != nil
+}
+
+func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (*int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate()
+	if err != nil {
+		return nil, err
+	}
+
+	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND (name LIKE '%%recipe%%' OR name LIKE '%%command%%' OR name LIKE '%%chat%%')`, r.user.ID, currentPeriodStartDate.Time)
+
+	count, err := r.db.EventLogs().CountBySQL(ctx, query)
+
+	intCount := int32(count)
+
+	return &intCount, err
+}
+
+func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (*int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate()
+	if err != nil {
+		return nil, err
+	}
+
+	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND name LIKE '%%completion:suggested%%'`, r.user.ID, currentPeriodStartDate.Time)
+
+	count, err := r.db.EventLogs().CountBySQL(ctx, query)
+
+	intCount := int32(count)
+
+	return &intCount, err
+}
+
+func (r *UserResolver) CodyCurrentPeriodStartDate() (*gqlutil.DateTime, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings, because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+		return nil, err
+	}
+
+	subscriptionStartDate := r.user.CreatedAt
+	if r.user.CodyProEnabledAt != nil {
+		subscriptionStartDate = *r.user.CodyProEnabledAt
+	}
+
+	currentDate := time.Now()
+	startMonth := currentDate
+	startDayOfTheMonth := subscriptionStartDate.Day()
+
+	// Check if the current day is smaller than the target day
+	if currentDate.Day() < startDayOfTheMonth {
+		// Set to target day of the previous month
+		startMonth = currentDate.AddDate(0, -1, 0)
+	}
+
+	daysInMonth := time.Date(startMonth.Year(), startMonth.Month()+1, 0, 0, 0, 0, 0, startMonth.Location()).Day()
+
+	if startDayOfTheMonth > daysInMonth {
+		startDayOfTheMonth = daysInMonth
+	}
+
+	return &gqlutil.DateTime{Time: time.Date(startMonth.Year(), startMonth.Month(), startDayOfTheMonth, 0, 0, 0, 0, startMonth.Location())}, nil
+}
+
+func (r *UserResolver) CodyCurrentPeriodEndDate() (*gqlutil.DateTime, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings, because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+		return nil, err
+	}
+
+	subscriptionStartDate := r.user.CreatedAt
+	if r.user.CodyProEnabledAt != nil {
+		subscriptionStartDate = *r.user.CodyProEnabledAt
+	}
+
+	currentDate := time.Now()
+	endMonth := currentDate
+	endDayOfTheMonth := subscriptionStartDate.Day()
+
+	// Check if the current day is smaller than the target day
+	if currentDate.Day() >= endDayOfTheMonth {
+		// Set to target day of the next month
+		endMonth = currentDate.AddDate(0, 1, 0)
+	}
+
+	daysInMonth := time.Date(endMonth.Year(), endMonth.Month()+1, 0, 0, 0, 0, 0, endMonth.Location()).Day()
+
+	if endDayOfTheMonth > daysInMonth {
+		endDayOfTheMonth = daysInMonth
+	}
+
+	return &gqlutil.DateTime{Time: time.Date(endMonth.Year(), endMonth.Month(), endDayOfTheMonth, 0, 0, 0, 0, endMonth.Location())}, nil
 }
 
 func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {
