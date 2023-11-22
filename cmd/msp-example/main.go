@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/example/internal/example"
 	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/service"
+
+	"github.com/sourcegraph/sourcegraph/cmd/msp-example/internal/example"
 )
 
 func main() {
