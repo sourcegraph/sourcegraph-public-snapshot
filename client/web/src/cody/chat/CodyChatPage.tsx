@@ -39,6 +39,7 @@ import {
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type { SourcegraphContext } from '../../jscontext'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
@@ -97,6 +98,9 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
 }) => {
     const { pathname } = useLocation()
     const navigate = useNavigate()
+
+    // Evaluate a mock feature flag for the purpose of an A/A test. No functionality is affected by this flag.
+    const [_codyChatMockTestValue] = useFeatureFlag('cody-chat-mock-test')
 
     const codyChatStore = useCodyChat({
         userID: authenticatedUser?.id,
