@@ -47,6 +47,8 @@ func isAllowedCustomChatModel(model string) bool {
 
 	switch model {
 	case "anthropic/claude-2",
+		"anthropic/claude-2.0",
+		"anthropic/claude-2.1",
 		"anthropic/claude-instant-1.2-cyan",
 		"openai/gpt-3.5-turbo",
 		"openai/gpt-4-1106-preview":
