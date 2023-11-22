@@ -23,7 +23,7 @@ export const SearchPageFooter: FC = () => {
                           name: 'Docs',
                           href: 'https://docs.sourcegraph.com/',
                       },
-                      { name: 'Homepage', href: 'https://sourcegraph.com' },
+                      { name: 'About', href: 'https://sourcegraph.com' },
                       {
                           name: 'Cody',
                           href: 'https://sourcegraph.com/cody',
