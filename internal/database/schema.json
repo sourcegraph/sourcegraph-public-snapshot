@@ -16914,6 +16914,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "lsif_indexes_repository_id_indexer",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_indexes_repository_id_indexer ON lsif_indexes USING btree (repository_id, indexer)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "lsif_indexes_state",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -18048,6 +18058,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX lsif_uploads_repository_id_commit ON lsif_uploads USING btree (repository_id, commit)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_uploads_repository_id_indexer",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_uploads_repository_id_indexer ON lsif_uploads USING btree (repository_id, indexer)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
