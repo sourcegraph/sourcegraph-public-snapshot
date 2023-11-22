@@ -91,6 +91,7 @@ func ParseDiff(files []string) (diff Diff, changedFiles ChangedFiles) {
 
 		// Client
 		if !strings.HasSuffix(p, ".md") && (isRootClientFile(p) || strings.HasPrefix(p, "client/")) {
+			println("WTF")
 			diff |= Client
 		}
 		// dev/release contains a nodejs script that doesn't have tests but needs to be
