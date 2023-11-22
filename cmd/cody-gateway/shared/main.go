@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -179,6 +180,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Cloudflare in from of Cody Gateway. This comes first.
 	hasCloudflare := !config.InsecureDev
 	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
+	handler = requestinteraction.HTTPMiddleware(handler)
 
 	// Initialize our server
 	address := fmt.Sprintf(":%d", config.Port)

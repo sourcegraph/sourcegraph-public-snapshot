@@ -199,7 +199,7 @@ WHERE user_id = %s
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting sub repo permissions by user")
+		return nil, errors.Wrap(err, "getting sub repo permissions by user and service")
 	}
 
 	result := make(map[api.ExternalRepoSpec]authz.SubRepoPermissions)
