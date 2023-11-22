@@ -660,7 +660,6 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 				}
 				// If we didn't find any GitHub Apps configured for this code host, it's a
 				// noop; commit signing is not set up for this code host.
-				break
 			default:
 				if rejectUnverifiedCommit {
 					return errors.Wrap(err, "failed to get GitHub App for commit verification")
