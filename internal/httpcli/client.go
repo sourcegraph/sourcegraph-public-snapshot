@@ -179,15 +179,16 @@ var ExternalDoer, _ = ExternalClientFactory.Doer()
 var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
 
 // TestExternalClientFactory is a httpcli.Factory with common options
-// and middleware pre-set for communicating with TestExternalClientFactory services.
+// and is created for tests where you'd normally use an ExternalClientFactory.
+// Must be used in tests only as it doesn't apply any IP restrictions.
 var TestExternalClientFactory = newExternalClientFactory(false, true)
 
-// TestExternalClientFactory is a httpcli.Factory with common options
-// and middleware pre-set for communicating with TestExternalClientFactory services.
+// TestExternalClient is a shared client for external communication.
+// It does not apply any IP filering and must only be used in tests.
 var TestExternalClient, _ = TestExternalClientFactory.Client()
 
-// TestExternalDoer is a shared client for external communication used for tests.
-// It does not apply any IP filering.
+// TestExternalDoer is a shared client for testing external communications.
+// It does not apply any IP filering and must only be used in tests.
 var TestExternalDoer, _ = TestExternalClientFactory.Doer()
 
 // ExternalClient returns a shared client for external communication. This is
