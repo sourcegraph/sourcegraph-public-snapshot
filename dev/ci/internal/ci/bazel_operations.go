@@ -179,7 +179,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds = append(cmds, bazelTestCmds...)
 
 	// At the end, run the bazel bundle size command.
-	cmds = append(cmds, bk.Cmd(bazelStampedCmd("test", "//client/web/scripts:report-bundle-diff_test")))
+	cmds = append(cmds, bk.Cmd(bazelCmd("run", "//client/web/scripts:report-bundle-diff_test")))
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel: Tests",

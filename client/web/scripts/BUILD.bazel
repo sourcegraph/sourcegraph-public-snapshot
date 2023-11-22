@@ -1,5 +1,5 @@
 load("//dev:defs.bzl", "ts_project")
-load("@aspect_rules_js//js:defs.bzl", "js_test")
+load("@aspect_rules_js//js:defs.bzl", "js_binary")
 
 ts_project(
     name = "scripts_lib",
@@ -14,7 +14,7 @@ ts_project(
     ],
 )
 
-js_test(
+js_binary(
     name = "report-bundle-diff_test",
     data = [
         ":scripts_lib",
@@ -32,5 +32,4 @@ js_test(
         "GH_TOKEN": "$(GH_TOKEN)",
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle)",
     },
-    tags = ["manual"],
 )
