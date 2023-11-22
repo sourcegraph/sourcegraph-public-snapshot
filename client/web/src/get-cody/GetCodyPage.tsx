@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Badge, H2, Icon, Link, PageHeader, Text, useSearchParameters } from '@sourcegraph/wildcard'
+import { Badge, H2, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { ExternalsAuth } from '../auth/components/ExternalsAuth'
 import { CodyLetsWorkIcon } from '../cody/chat/CodyPageIcon'
