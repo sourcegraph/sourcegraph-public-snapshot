@@ -3664,6 +3664,7 @@ Foreign-key constraints:
  revision          | text                     |           | not null | 
 Indexes:
     "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+    "repo_embedding_jobs_repo" btree (repo_id, revision)
 Referenced by:
     TABLE "repo_embedding_job_stats" CONSTRAINT "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
 
