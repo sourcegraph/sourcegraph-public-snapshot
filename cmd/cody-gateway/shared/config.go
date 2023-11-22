@@ -99,6 +99,8 @@ func (c *Config) Load() {
 			"claude-v1.3",
 			"claude-v1.3-100k",
 			"claude-2",
+			"claude-2.0",
+			"claude-2.1",
 			"claude-2-100k",
 			"claude-instant-v1",
 			"claude-instant-1",
