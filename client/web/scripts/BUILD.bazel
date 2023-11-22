@@ -32,4 +32,5 @@ js_test(
         "GH_TOKEN": "$(GH_TOKEN)",
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle)",
     },
+    tags = ["manual"],
 )
