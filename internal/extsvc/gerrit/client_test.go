@@ -38,6 +38,7 @@ func TestClient_do(t *testing.T) {
 	t.Run("prefix does not get trimmed if not present", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "/unauthorized", nil)
 		require.NoError(t, err)
+
 		resp, err := c.do(context.Background(), req, nil)
 		assert.Nil(t, resp)
 		assert.Equal(t, fmt.Sprintf("Gerrit API HTTP error: code=401 url=\"%s/unauthorized\" body=\"Unauthorized\"", srvURL), err.Error())
