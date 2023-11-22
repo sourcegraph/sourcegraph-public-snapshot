@@ -64,6 +64,7 @@
     ]
   },
   "devDependencies": {
+    "@statoscope/cli": "^5.24.0",
     "@atlassian/aui": "^7.10.3",
     "@axe-core/puppeteer": "^4.4.2",
     "@gql2ts/types": "^1.9.0",
