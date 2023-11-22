@@ -1,0 +1,8 @@
+*.class
+.gradle
+.semanticdb
+.bsp
+.metals
+.scala-build
+semanticdb-targetroot
+!index.scip

@@ -3,7 +3,7 @@ load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
 
 rust_binary(
     name = "scip-treesitter-cli",
-    srcs = glob(["src/main.rs"]),
+    srcs = glob(["src/*.rs"]),
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
@@ -75,7 +75,10 @@ rust_test(
            glob(
                ["tests/snapshots/**"],
                allow_empty = False,
-           ),
+           ) + glob(
+        ["testdata/**"],
+        allow_empty = False,
+    ),
     env = {
         "INSTA_WORKSPACE_ROOT": ".",
         "RUST_BACKTRACE": "1",

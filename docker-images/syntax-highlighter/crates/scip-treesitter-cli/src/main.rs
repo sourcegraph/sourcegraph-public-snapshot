@@ -1,8 +1,5 @@
 use clap::{Parser, Subcommand};
-use scip_treesitter_cli::{
-    evaluate::ScipEvaluateOptions,
-    index::{index_command, AnalysisMode, IndexMode, IndexOptions},
-};
+use scip_treesitter_cli::index::{index_command, AnalysisMode, IndexMode, IndexOptions};
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -77,6 +74,10 @@ enum Commands {
         /// Print all occurrences in ground truth SCIP that don't match any occurrences in candidate SCIP
         #[arg(long)]
         print_false_negatives: bool,
+
+        /// Disable color output
+        #[arg(long, default_value_t = false)]
+        no_color: bool,
     },
 }
 
@@ -129,14 +130,16 @@ pub fn main() {
             print_true_positives,
             print_false_positives,
             print_false_negatives,
+            no_color,
         } => scip_treesitter_cli::evaluate::evaluate_command(
             PathBuf::from(candidate),
             PathBuf::from(ground_truth),
-            ScipEvaluateOptions {
+            scip_treesitter_cli::evaluate::EvaluationOutputOptions {
                 print_mapping,
                 print_true_positives,
                 print_false_positives,
                 print_false_negatives,
+                disable_colors: no_color,
             },
         ),
     }

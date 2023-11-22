@@ -164,9 +164,9 @@ pub fn index_command(
 
         let mut evaluator = Evaluator::default();
         evaluator
-            .evaluate_indexes(&index, &ground_truth, Default::default())
+            .evaluate_indexes(&index, &ground_truth)
             .unwrap()
-            .print_summary();
+            .write_summary(&mut std::io::stdout(), Default::default()).unwrap();
     }
 
     write_message_to_file(out, index).expect("to write the file");

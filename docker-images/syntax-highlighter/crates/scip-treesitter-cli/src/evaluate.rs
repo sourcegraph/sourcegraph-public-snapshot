@@ -8,18 +8,23 @@ use std::{
 };
 
 use anyhow::*;
-use colored::Colorize;
+use colored::{Color, ColoredString, Colorize};
 use scip::types::Index;
 use scip_treesitter::types::PackedRange;
 use string_interner::{symbol::SymbolU32, StringInterner, Symbol};
 
 use crate::{io::read_index_from_file, progress::*};
 
-pub fn evaluate_command(candidate: PathBuf, ground_truth: PathBuf, options: ScipEvaluateOptions) {
+pub fn evaluate_command(
+    candidate: PathBuf,
+    ground_truth: PathBuf,
+    evaluation_output_options: EvaluationOutputOptions,
+) {
     Evaluator::default()
-        .evaluate_files(candidate, ground_truth, options)
+        .evaluate_files(candidate, ground_truth)
         .unwrap()
-        .print_summary()
+        .write_summary(&mut std::io::stdout(), evaluation_output_options)
+        .unwrap()
 }
 
 fn validate_index(idx: &Index) -> Result<()> {
@@ -40,7 +45,7 @@ fn validate_index(idx: &Index) -> Result<()> {
 // These unfortunately don't help the typesafety and are only here to aid readability
 // TODO: newtype https://doc.rust-lang.org/book/ch19-03-advanced-traits.html#using-the-newtype-pattern-to-implement-external-traits-on-external-types
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, Ord, PartialOrd)]
 struct PathId {
     value: SymbolU32,
 }
@@ -125,11 +130,12 @@ struct ClassifiedLocation {
 }
 
 #[derive(Clone, Copy, Default, Debug)]
-pub struct ScipEvaluateOptions {
+pub struct EvaluationOutputOptions {
     pub print_mapping: bool,
     pub print_true_positives: bool,
     pub print_false_positives: bool,
     pub print_false_negatives: bool,
+    pub disable_colors: bool,
 }
 
 #[derive(serde::Serialize, Debug)]
@@ -143,20 +149,28 @@ pub struct EvaluationSummary {
 
 #[derive(Debug)]
 pub struct EvaluationResult<'e> {
-    evaluator: &'e Evaluator,
+    // evaluator: &'e Evaluator,
+    path_formatter: &'e mut PathFormatter,
+    symbol_formatter: &'e mut SymbolFormatter,
     summary: EvaluationSummary,
+    symbol_mapping: SymbolMapping,
     true_positives: Vec<SymbolOccurrence>,
     false_positives: Vec<SymbolOccurrence>,
     false_negatives: Vec<SymbolOccurrence>,
     // What options were used for this evaluation
-    options: ScipEvaluateOptions,
+}
+
+#[derive(Debug)]
+struct SymbolMapping {
+    candidate_sets: HashMap<SymbolId<Candidate>, HashMap<SymbolId<GroundTruth>, Overlap>>,
+    symbol_pair_weight: HashMap<SymbolPair, f32>,
 }
 
 impl<'e> EvaluationResult<'e> {
     fn new<'a>(
-        evaluator: &'a Evaluator,
+        evaluator: &'a mut Evaluator,
         classified: Vec<ClassifiedLocation>,
-        options: ScipEvaluateOptions,
+        symbol_mapping: SymbolMapping,
     ) -> EvaluationResult<'a> {
         let mut true_positives_occurrences: Vec<SymbolOccurrence> = Vec::new();
         let mut false_positives_occurrences: Vec<SymbolOccurrence> = Vec::new();
@@ -190,8 +204,21 @@ impl<'e> EvaluationResult<'e> {
         let precision = 100.0 * true_positives / (true_positives + false_positives);
         let recall = 100.0 * true_positives / (true_positives + false_negatives);
 
+        let sorter = |occ: &SymbolOccurrence| {
+            (
+                occ.location.path_id,
+                occ.location.rng.start_line,
+                occ.location.rng.start_col,
+            )
+        };
+
+        true_positives_occurrences.sort_by_key(sorter);
+        false_negatives_occurrences.sort_by_key(sorter);
+        false_positives_occurrences.sort_by_key(sorter);
+
         EvaluationResult {
-            evaluator,
+            symbol_formatter: &mut evaluator.symbol_formatter,
+            path_formatter: &mut evaluator.path_formatter,
             summary: EvaluationSummary {
                 precision_percent: precision,
                 recall_percent: recall,
@@ -202,88 +229,173 @@ impl<'e> EvaluationResult<'e> {
             true_positives: true_positives_occurrences,
             false_positives: false_positives_occurrences,
             false_negatives: false_negatives_occurrences,
-            options,
+            symbol_mapping,
         }
     }
 }
 
 impl<'e> EvaluationResult<'e> {
-    pub fn print_summary(&self) {
-        println!("{}", serde_json::to_string(&self.summary).unwrap());
+    fn write_occ<W: std::io::Write>(
+        &self,
+        label: &str,
+        occ: &SymbolOccurrence,
+        output: &mut W,
+    ) -> anyhow::Result<()> {
+        write!(
+            output,
+            "[{label}] {}: L{} C{} -- {}\n",
+            self.path_formatter.display_path(occ.location.path_id),
+            occ.range().start_line,
+            occ.range().start_col,
+            self.symbol_formatter.display_symbol(occ.symbol)
+        )?;
 
-        let print_occ = |occ: &SymbolOccurrence| {
-            eprintln!(
-                "{}: L{} C{} -- {}",
-                self.evaluator.display_path(occ.location.path_id),
-                occ.range().start_line,
-                occ.range().start_col,
-                self.evaluator.display_symbol(occ.symbol),
-            );
-        };
+        Ok(())
+    }
 
-        if self.options.print_false_negatives {
-            eprintln!();
+    fn render(&self, str: ColoredString, options: EvaluationOutputOptions) -> ColoredString {
+        if options.disable_colors {
+            str.normal()
+        } else {
+            str
+        }
+    }
 
-            eprintln!(
-                "{}: {}",
-                "False negatives".red(),
-                self.false_negatives.len().to_string().bold()
-            );
-            eprintln!(
-                "{}",
-                "How many actual occurrences we DIDN'T find compared to compiler?".italic()
-            );
+    fn write_mapping<W: std::io::Write>(
+        &mut self,
+        output: &mut W,
+        options: EvaluationOutputOptions,
+    ) -> anyhow::Result<()> {
+        let mut candidate_mapping_vec: Vec<(
+            SymbolId<Candidate>,
+            HashMap<SymbolId<GroundTruth>, Overlap>,
+        )> = self
+            .symbol_mapping
+            .candidate_sets
+            .clone()
+            .into_iter()
+            .collect();
+
+        candidate_mapping_vec.sort_by_key(|(sym, _)| *sym);
+
+        for (candidate_symbol, alternatives) in candidate_mapping_vec.into_iter() {
+            let candidate = self
+                .symbol_formatter
+                .try_strip_package_details(candidate_symbol);
+            let mut alternatives_vec: Vec<(SymbolId<GroundTruth>, Overlap)> =
+                alternatives.into_iter().collect();
+            alternatives_vec.sort_by_key(|(sym, _)| *sym);
+
+            write!(
+                output,
+                "{}\n",
+                self.render(
+                    self.symbol_formatter.display_symbol(candidate).red(),
+                    options
+                )
+            )?;
+
+            for (ground_truth_symbol, overlap) in &alternatives_vec {
+                let ground_truth = self
+                    .symbol_formatter
+                    .try_strip_package_details(*ground_truth_symbol);
+                let adjusted_weight = self
+                    .symbol_mapping
+                    .symbol_pair_weight
+                    .get(&SymbolPair {
+                        candidate: candidate_symbol,
+                        ground_truth: *ground_truth_symbol,
+                    })
+                    .unwrap();
+
+                write!(
+                    output,
+                    "   {:.2} {} [{}/{} occurrences]\n",
+                    adjusted_weight,
+                    self.render(
+                        self.symbol_formatter.display_symbol(ground_truth).green(),
+                        options
+                    ),
+                    overlap.common,
+                    overlap.total
+                )?;
+            }
+
+            write!(output, "\n")?;
+        }
+
+        Ok(())
+    }
+
+    pub fn write_summary<W: std::io::Write>(
+        &mut self,
+        output: &mut W,
+        options: EvaluationOutputOptions,
+    ) -> anyhow::Result<()> {
+        write!(output, "{}\n", serde_json::to_string(&self.summary)?)?;
+
+        if options.print_false_negatives && self.false_negatives.len() > 0 {
+            write!(output, "\n")?;
+
+            write!(
+                output,
+                "{}: {}\n",
+                self.render("False negatives (FN)".red(), options),
+                self.render(self.false_negatives.len().to_string().bold(), options)
+            )?;
 
             for symbol_occurrence in &self.false_negatives {
-                print_occ(symbol_occurrence);
+                self.write_occ("FN", symbol_occurrence, output)?;
             }
         }
 
-        if self.options.print_false_positives {
-            eprintln!();
-            eprintln!(
-                "{}: {}",
-                "False positives".red(),
-                self.false_positives.len().to_string().bold()
-            );
-            eprintln!(
-                "{}",
+        if options.print_false_positives && self.false_positives.len() > 0 {
+            write!(output, "\n")?;
+            write!(
+                output,
+                "{}: {}\n",
+                self.render("False positives".red(), options),
+                self.render(self.false_positives.len().to_string().bold(), options)
+            )?;
+
+            write!(
+                output,
+                "{}\n",
                 "How many extra occurrences we reported compared to compiler?".italic()
-            );
+            )?;
 
             for symbol_occurrence in &self.false_positives {
-                print_occ(symbol_occurrence);
+                self.write_occ("FP", symbol_occurrence, output)?;
             }
         }
 
-        if self.options.print_true_positives {
-            eprintln!();
-            eprintln!(
-                "{}: {}",
-                "True positives".green(),
-                self.true_positives.len().to_string().bold()
-            );
+        if options.print_true_positives {
+            write!(output, "\n")?;
+            write!(
+                output,
+                "{}: {}\n",
+                self.render("True positives".green(), options),
+                self.render(self.true_positives.len().to_string().bold(), options)
+            )?;
 
             for symbol_occurrence in &self.true_positives {
-                let file = self
-                    .evaluator
-                    .display_path(symbol_occurrence.location.path_id);
-                let rng = symbol_occurrence.range();
-                let header = format!("{file}: L{} C{} -- ", rng.start_line, rng.start_col);
-
-                eprintln!(
-                    "{} {}",
-                    header.yellow(),
-                    self.evaluator.display_symbol(symbol_occurrence.symbol)
-                );
+                self.write_occ("TP", symbol_occurrence, output)?;
             }
         }
+
+        if options.print_mapping {
+            write!(output, "\nSymbol mapping\n")?;
+            self.write_mapping(output, options)?;
+        }
+
+        Ok(())
     }
 }
 
 #[derive(Default, Debug)]
 pub struct Evaluator {
-    interner: StringInterner,
+    symbol_formatter: SymbolFormatter,
+    path_formatter: PathFormatter,
 }
 
 // Public API
@@ -292,12 +404,10 @@ impl Evaluator {
         &'e mut self,
         candidate: PathBuf,
         ground_truth: PathBuf,
-        options: ScipEvaluateOptions,
     ) -> Result<EvaluationResult<'e>> {
         self.evaluate_indexes(
             &read_index_from_file(candidate),
             &read_index_from_file(ground_truth),
-            options,
         )
     }
 
@@ -305,7 +415,6 @@ impl Evaluator {
         &'e mut self,
         candidate: &Index,
         ground_truth: &Index,
-        options: ScipEvaluateOptions,
     ) -> Result<EvaluationResult<'e>> {
         validate_index(candidate)?;
         validate_index(ground_truth)?;
@@ -451,43 +560,47 @@ impl Evaluator {
             result
         };
 
-        if options.print_mapping {
-            let mut candidate_mapping_vec: Vec<(
-                SymbolId<Candidate>,
-                HashMap<SymbolId<GroundTruth>, Overlap>,
-            )> = candidate_mapping.into_iter().collect();
+        // if options.print_mapping {
+        //     let mut candidate_mapping_vec: Vec<(
+        //         SymbolId<Candidate>,
+        //         HashMap<SymbolId<GroundTruth>, Overlap>,
+        //     )> = candidate_mapping.into_iter().collect();
 
-            candidate_mapping_vec.sort_by_key(|(sym, _)| *sym);
+        //     candidate_mapping_vec.sort_by_key(|(sym, _)| *sym);
 
-            for (candidate_symbol, alternatives) in candidate_mapping_vec.into_iter() {
-                let candidate = self.try_strip_package_details(candidate_symbol);
-                let mut alternatives_vec: Vec<(SymbolId<GroundTruth>, Overlap)> =
-                    alternatives.into_iter().collect();
-                alternatives_vec.sort_by_key(|(sym, _)| *sym);
+        //     for (candidate_symbol, alternatives) in candidate_mapping_vec.into_iter() {
+        //         let candidate = self
+        //             .symbol_formatter
+        //             .try_strip_package_details(candidate_symbol);
+        //         let mut alternatives_vec: Vec<(SymbolId<GroundTruth>, Overlap)> =
+        //             alternatives.into_iter().collect();
+        //         alternatives_vec.sort_by_key(|(sym, _)| *sym);
 
-                eprintln!("{}", self.display_symbol(candidate).red());
+        //         eprintln!("{}", self.symbol_formatter.display_symbol(candidate).red());
 
-                for (ground_truth_symbol, overlap) in &alternatives_vec {
-                    let ground_truth = self.try_strip_package_details(*ground_truth_symbol);
-                    let adjusted_weight = symbol_pair_weight
-                        .get(&SymbolPair {
-                            candidate: candidate_symbol,
-                            ground_truth: *ground_truth_symbol,
-                        })
-                        .unwrap();
+        //         for (ground_truth_symbol, overlap) in &alternatives_vec {
+        //             let ground_truth = self
+        //                 .symbol_formatter
+        //                 .try_strip_package_details(*ground_truth_symbol);
+        //             let adjusted_weight = symbol_pair_weight
+        //                 .get(&SymbolPair {
+        //                     candidate: candidate_symbol,
+        //                     ground_truth: *ground_truth_symbol,
+        //                 })
+        //                 .unwrap();
 
-                    eprintln!(
-                        "   {:.2} {} [{}/{} occurrences]",
-                        adjusted_weight,
-                        self.display_symbol(ground_truth).green(),
-                        overlap.common,
-                        overlap.total
-                    );
-                }
+        //             eprintln!(
+        //                 "   {:.2} {} [{}/{} occurrences]",
+        //                 adjusted_weight,
+        //                 self.symbol_formatter.display_symbol(ground_truth).green(),
+        //                 overlap.common,
+        //                 overlap.total
+        //             );
+        //         }
 
-                eprintln!();
-            }
-        }
+        //         eprintln!();
+        //     }
+        // }
 
         let mut classified_locations: Vec<ClassifiedLocation> = Vec::new();
 
@@ -527,7 +640,9 @@ impl Evaluator {
                         // This is an impossible situation by construction
                         None => panic!(
                             "Couldn't find a mapping for symbol {}",
-                            self.display_symbol(ground_truth_symbol).red()
+                            self.symbol_formatter
+                                .display_symbol(ground_truth_symbol)
+                                .red()
                         ),
                     }
                 }
@@ -555,12 +670,40 @@ impl Evaluator {
 
         bar.finish_and_clear();
 
-        Ok(EvaluationResult::new(self, classified_locations, options))
+        Ok(EvaluationResult::new(
+            self,
+            classified_locations,
+            SymbolMapping {
+                candidate_sets: candidate_mapping,
+                symbol_pair_weight,
+            },
+        ))
     }
 }
 
-// Private API
-impl Evaluator {
+#[derive(Default, Debug)]
+struct PathFormatter {
+    interner: StringInterner,
+}
+
+impl PathFormatter {
+    fn make_path_id(&mut self, s: &str) -> PathId {
+        PathId {
+            value: self.interner.get_or_intern(s),
+        }
+    }
+
+    fn display_path(&self, s: PathId) -> &str {
+        self.interner.resolve(s.value).unwrap()
+    }
+}
+
+#[derive(Default, Debug)]
+struct SymbolFormatter {
+    interner: StringInterner,
+}
+
+impl SymbolFormatter {
     fn make_symbol_id<T>(&mut self, s: &str) -> SymbolId<T> {
         SymbolId {
             value: self.interner.get_or_intern(s),
@@ -568,17 +711,7 @@ impl Evaluator {
         }
     }
 
-    fn make_path_id(&mut self, s: &str) -> PathId {
-        PathId {
-            value: self.interner.get_or_intern(s),
-        }
-    }
-
     fn display_symbol<T>(&self, s: SymbolId<T>) -> &str {
-        self.interner.resolve(s.value).unwrap()
-    }
-
-    fn display_path(&self, s: PathId) -> &str {
         self.interner.resolve(s.value).unwrap()
     }
 
@@ -602,19 +735,19 @@ impl Evaluator {
         let mut out: HashMap<LocationInFile, SymbolId<T>> = HashMap::new();
 
         for doc in &index.documents {
-            let path_id = self.make_path_id(&doc.relative_path);
+            let path_id = self.path_formatter.make_path_id(&doc.relative_path);
             out.reserve(doc.occurrences.len());
             for occ in &doc.occurrences {
                 let rng = PackedRange::from_vec(&occ.range).unwrap();
                 let sym_id: SymbolId<T>;
                 if let Some(prefix) = occ.symbol.strip_prefix("local ") {
-                    sym_id = self.make_symbol_id(&format!(
+                    sym_id = self.symbol_formatter.make_symbol_id(&format!(
                         "local doc-{}-{}",
                         path_id.value.to_usize(),
                         prefix
                     ));
                 } else {
-                    sym_id = self.make_symbol_id(&occ.symbol);
+                    sym_id = self.symbol_formatter.make_symbol_id(&occ.symbol);
                 }
                 let loc = LocationInFile { rng, path_id };
                 out.insert(loc, sym_id);
@@ -670,7 +803,7 @@ mod tests {
         // Evaluating index against itself should yield 100% precision and 100% recall
         {
             let evaluate_with_self = evaluator
-                .evaluate_indexes(&ground_truth, &ground_truth, Default::default())
+                .evaluate_indexes(&ground_truth, &ground_truth)
                 .unwrap();
             assert_eq!(evaluate_with_self.summary.precision_percent, 100.0);
             assert_eq!(evaluate_with_self.summary.recall_percent, 100.0);
@@ -695,7 +828,6 @@ mod tests {
                         ),
                     ]),
                     &ground_truth,
-                    Default::default(),
                 )
                 .unwrap();
             assert_eq!(evaluate_disjoint.summary.precision_percent, 0.0);
@@ -709,15 +841,13 @@ mod tests {
 
         // Evaluating empty index is an error
         {
-            let evaluate_empty =
-                evaluator.evaluate_indexes(&empty_index, &ground_truth, Default::default());
+            let evaluate_empty = evaluator.evaluate_indexes(&empty_index, &ground_truth);
             assert!(evaluate_empty.is_err());
         }
 
         // Evaluating against an empty index is an error
         {
-            let evaluate_against_empty =
-                evaluator.evaluate_indexes(&ground_truth, &empty_index, Default::default());
+            let evaluate_against_empty = evaluator.evaluate_indexes(&ground_truth, &empty_index);
             assert!(evaluate_against_empty.is_err());
         }
     }
