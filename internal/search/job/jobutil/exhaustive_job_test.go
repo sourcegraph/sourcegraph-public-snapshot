@@ -108,6 +108,56 @@ func TestNewExhaustive(t *testing.T) {
   (indexed . false))
 `),
 		},
+		{
+			Name:  "repo:has.file predicate",
+			Query: "type:file index:no foo repo:has.file(go.mod)",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (repoOpts.hasFileContent[0].path . go.mod)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+      (numRepos . 0)
+      (pathRegexps . [])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+  (numRepos . 1)
+  (pathRegexps . [])
+  (indexed . false))
+`),
+		},
+		{
+			Name:  "repo:has.meta predicate",
+			Query: "type:file index:no foo repo:has.meta(cognition)",
+			WantPager: autogold.Expect(`
+(REPOPAGER
+  (containsRefGlobs . false)
+  (repoOpts.useIndex . no)
+  (repoOpts.hasKVPs[0].key . cognition)
+  (PARTIALREPOS
+    (SEARCHERTEXTSEARCH
+      (useFullDeadline . true)
+      (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+      (numRepos . 0)
+      (pathRegexps . [])
+      (indexed . false))))
+`),
+			WantJob: autogold.Expect(`
+(SEARCHERTEXTSEARCH
+  (useFullDeadline . true)
+  (patternInfo . TextPatternInfo{"foo",re,nopath,filematchlimit:1000000})
+  (numRepos . 1)
+  (pathRegexps . [])
+  (indexed . false))
+`),
+		},
 	}
 
 	for _, tc := range cases {
@@ -157,10 +207,11 @@ func TestNewExhaustive_negative(t *testing.T) {
 		// catch-all regex
 		{query: `type:file index:no r:.* .*`, isPatterntypeRegex: true},
 		{query: `type:file index:no r:repo .*`, isPatterntypeRegex: true},
-		// predicates
-		{query: `type:file index:no repohasfile:foo.bar content`},
-		{query: `type:file index:no file:has.content("content")`},
-		{query: `type:file index:no repo:has.path("src") content`},
+		// file predicates
+		{query: `type:file index:no file:has.content(content)`},
+		{query: `type:file index:no file:has.owner(owner)`},
+		{query: `type:file index:no file:contains.content(content)`},
+		{query: `type:file index:no file:has.contributor(contributor)`},
 	}
 
 	for _, c := range tc {

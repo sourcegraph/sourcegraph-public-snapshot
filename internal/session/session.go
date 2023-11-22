@@ -15,13 +15,16 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/inconshreveable/log15"
@@ -241,6 +244,24 @@ func GetData(r *http.Request, key string, value any) error {
 	return nil
 }
 
+func SetActorFromUser(ctx context.Context, w http.ResponseWriter, r *http.Request, user *types.User, expiryPeriod time.Duration) (context.Context, error) {
+	info, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil {
+		return ctx, err
+	}
+
+	if info.IsExpired() && !user.SiteAdmin {
+		return ctx, errors.New("Sourcegraph license is expired. Only admins are allowed to sign in.")
+	}
+
+	// Write the session cookie
+	actor := sgactor.Actor{
+		UID: user.ID,
+	}
+
+	return ctx, SetActor(w, r, &actor, expiryPeriod, user.CreatedAt)
+}
+
 // SetActor sets the actor in the session, or removes it if actor == nil. If no session exists, a
 // new session is created.
 //
@@ -437,6 +458,16 @@ func authenticateByCookie(logger log.Logger, db database.DB, r *http.Request, w 
 			}
 			span.SetError(err)
 			return ctx // not authenticated
+		}
+
+		licenseInfo, err := licensing.GetConfiguredProductLicenseInfo()
+		if err != nil {
+			return ctx
+		}
+
+		if licenseInfo.IsExpired() && !usr.SiteAdmin {
+			_ = deleteSession(w, r) // Delete session since only admins are allowed
+			return ctx
 		}
 
 		// Check that the session is still valid

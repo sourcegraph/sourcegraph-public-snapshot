@@ -29,7 +29,7 @@ impl<'a> PartialEq for Scope<'a> {
 
 impl<'a> PartialOrd for Scope<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.range.partial_cmp(&other.range)
+        Some(self.cmp(other))
     }
 }
 

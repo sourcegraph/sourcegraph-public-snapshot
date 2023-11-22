@@ -62,7 +62,7 @@ func Symbols() *monitoring.Dashboard {
 				HumanServiceName:    "symbols",
 				InstanceFilterRegex: `${instance:regex}`,
 			}, monitoring.ObservableOwnerDevOps),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),

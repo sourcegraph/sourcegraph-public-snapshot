@@ -222,7 +222,7 @@ func TestSources_ListRepos_Excluded(t *testing.T) {
 					{Pattern: ".*public-repo.*"},
 					{Pattern: ".*secret-repo.*"},
 					{Pattern: ".*private-repo.*"},
-					{Pattern: `.*SGDEMO.*`},
+					{Pattern: ".*SGDEMO.*"},
 				},
 			}),
 			wantNames: []string{

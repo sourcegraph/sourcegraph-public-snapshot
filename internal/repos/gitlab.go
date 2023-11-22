@@ -30,7 +30,7 @@ import (
 type GitLabSource struct {
 	svc                       *types.ExternalService
 	config                    *schema.GitLabConnection
-	exclude                   excludeFunc
+	excluder                  repoExcluder
 	baseURL                   *url.URL // URL with path /api/v4 (no trailing slash)
 	nameTransformations       reposource.NameTransformations
 	provider                  *gitlab.ClientProvider
@@ -90,23 +90,26 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(strconv.Itoa(r.Id))
-		eb.Pattern(r.Pattern)
-		excludeFunc := func(repo any) bool {
-			if project, ok := repo.(gitlab.Project); ok {
-				return project.EmptyRepo
-			}
-			return false
+		rule := ex.AddRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
+
+		if r.Id != 0 {
+			rule.Exact(strconv.Itoa(r.Id))
 		}
+
 		if r.EmptyRepos {
-			eb.Generic(excludeFunc)
+			rule.Generic(func(repo any) bool {
+				if project, ok := repo.(gitlab.Project); ok {
+					return project.EmptyRepo
+				}
+				return false
+			})
 		}
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
@@ -140,7 +143,7 @@ func newGitLabSource(logger log.Logger, svc *types.ExternalService, c *schema.Gi
 	return &GitLabSource{
 		svc:                       svc,
 		config:                    c,
-		exclude:                   exclude,
+		excluder:                  ex,
 		baseURL:                   baseURL,
 		nameTransformations:       nts,
 		provider:                  provider,
@@ -255,7 +258,9 @@ func (s *GitLabSource) remoteURL(proj *gitlab.Project) string {
 }
 
 func (s *GitLabSource) excludes(p *gitlab.Project) bool {
-	return s.exclude(p.PathWithNamespace) || s.exclude(strconv.Itoa(p.ID)) || s.exclude(*p)
+	return s.excluder.ShouldExclude(p.PathWithNamespace) ||
+		s.excluder.ShouldExclude(strconv.Itoa(p.ID)) ||
+		s.excluder.ShouldExclude(*p)
 }
 
 func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceResult) {

@@ -6140,6 +6140,8 @@ CREATE INDEX lsif_indexes_queued_at_id ON lsif_indexes USING btree (queued_at DE
 
 CREATE INDEX lsif_indexes_repository_id_commit ON lsif_indexes USING btree (repository_id, commit);
 
+CREATE INDEX lsif_indexes_repository_id_indexer ON lsif_indexes USING btree (repository_id, indexer);
+
 CREATE INDEX lsif_indexes_state ON lsif_indexes USING btree (state);
 
 CREATE INDEX lsif_nearest_uploads_links_repository_id_ancestor_commit_bytea ON lsif_nearest_uploads_links USING btree (repository_id, ancestor_commit_bytea);
@@ -6173,6 +6175,8 @@ CREATE INDEX lsif_uploads_last_reconcile_at ON lsif_uploads USING btree (last_re
 CREATE INDEX lsif_uploads_repository_id_commit ON lsif_uploads USING btree (repository_id, commit);
 
 CREATE UNIQUE INDEX lsif_uploads_repository_id_commit_root_indexer ON lsif_uploads USING btree (repository_id, commit, root, indexer) WHERE (state = 'completed'::text);
+
+CREATE INDEX lsif_uploads_repository_id_indexer ON lsif_uploads USING btree (repository_id, indexer);
 
 CREATE INDEX lsif_uploads_state ON lsif_uploads USING btree (state);
 

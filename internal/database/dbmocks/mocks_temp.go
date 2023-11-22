@@ -1269,7 +1269,7 @@ func NewMockAccessTokenStore() *MockAccessTokenStore {
 			},
 		},
 		LookupFunc: &AccessTokenStoreLookupFunc{
-			defaultHook: func(context.Context, string, string) (r0 int32, r1 error) {
+			defaultHook: func(context.Context, string, database.TokenLookupOpts) (r0 int32, r1 error) {
 				return
 			},
 		},
@@ -1341,7 +1341,7 @@ func NewStrictMockAccessTokenStore() *MockAccessTokenStore {
 			},
 		},
 		LookupFunc: &AccessTokenStoreLookupFunc{
-			defaultHook: func(context.Context, string, string) (int32, error) {
+			defaultHook: func(context.Context, string, database.TokenLookupOpts) (int32, error) {
 				panic("unexpected invocation of MockAccessTokenStore.Lookup")
 			},
 		},
@@ -2500,15 +2500,15 @@ func (c AccessTokenStoreListFuncCall) Results() []interface{} {
 // AccessTokenStoreLookupFunc describes the behavior when the Lookup method
 // of the parent MockAccessTokenStore instance is invoked.
 type AccessTokenStoreLookupFunc struct {
-	defaultHook func(context.Context, string, string) (int32, error)
-	hooks       []func(context.Context, string, string) (int32, error)
+	defaultHook func(context.Context, string, database.TokenLookupOpts) (int32, error)
+	hooks       []func(context.Context, string, database.TokenLookupOpts) (int32, error)
 	history     []AccessTokenStoreLookupFuncCall
 	mutex       sync.Mutex
 }
 
 // Lookup delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockAccessTokenStore) Lookup(v0 context.Context, v1 string, v2 string) (int32, error) {
+func (m *MockAccessTokenStore) Lookup(v0 context.Context, v1 string, v2 database.TokenLookupOpts) (int32, error) {
 	r0, r1 := m.LookupFunc.nextHook()(v0, v1, v2)
 	m.LookupFunc.appendCall(AccessTokenStoreLookupFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -2517,7 +2517,7 @@ func (m *MockAccessTokenStore) Lookup(v0 context.Context, v1 string, v2 string) 
 // SetDefaultHook sets function that is called when the Lookup method of the
 // parent MockAccessTokenStore instance is invoked and the hook queue is
 // empty.
-func (f *AccessTokenStoreLookupFunc) SetDefaultHook(hook func(context.Context, string, string) (int32, error)) {
+func (f *AccessTokenStoreLookupFunc) SetDefaultHook(hook func(context.Context, string, database.TokenLookupOpts) (int32, error)) {
 	f.defaultHook = hook
 }
 
@@ -2525,7 +2525,7 @@ func (f *AccessTokenStoreLookupFunc) SetDefaultHook(hook func(context.Context, s
 // Lookup method of the parent MockAccessTokenStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *AccessTokenStoreLookupFunc) PushHook(hook func(context.Context, string, string) (int32, error)) {
+func (f *AccessTokenStoreLookupFunc) PushHook(hook func(context.Context, string, database.TokenLookupOpts) (int32, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2534,19 +2534,19 @@ func (f *AccessTokenStoreLookupFunc) PushHook(hook func(context.Context, string,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *AccessTokenStoreLookupFunc) SetDefaultReturn(r0 int32, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string) (int32, error) {
+	f.SetDefaultHook(func(context.Context, string, database.TokenLookupOpts) (int32, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *AccessTokenStoreLookupFunc) PushReturn(r0 int32, r1 error) {
-	f.PushHook(func(context.Context, string, string) (int32, error) {
+	f.PushHook(func(context.Context, string, database.TokenLookupOpts) (int32, error) {
 		return r0, r1
 	})
 }
 
-func (f *AccessTokenStoreLookupFunc) nextHook() func(context.Context, string, string) (int32, error) {
+func (f *AccessTokenStoreLookupFunc) nextHook() func(context.Context, string, database.TokenLookupOpts) (int32, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2587,7 +2587,7 @@ type AccessTokenStoreLookupFuncCall struct {
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 string
+	Arg2 database.TokenLookupOpts
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int32
@@ -37096,13 +37096,13 @@ type MockGitserverRepoStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *GitserverRepoStoreHandleFunc
-	// IteratePurgeableReposFunc is an instance of a mock function object
-	// controlling the behavior of the method IteratePurgeableRepos.
-	IteratePurgeableReposFunc *GitserverRepoStoreIteratePurgeableReposFunc
 	// IterateRepoGitserverStatusFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// IterateRepoGitserverStatus.
 	IterateRepoGitserverStatusFunc *GitserverRepoStoreIterateRepoGitserverStatusFunc
+	// ListPurgeableReposFunc is an instance of a mock function object
+	// controlling the behavior of the method ListPurgeableRepos.
+	ListPurgeableReposFunc *GitserverRepoStoreListPurgeableReposFunc
 	// ListReposWithLastErrorFunc is an instance of a mock function object
 	// controlling the behavior of the method ListReposWithLastError.
 	ListReposWithLastErrorFunc *GitserverRepoStoreListReposWithLastErrorFunc
@@ -37177,13 +37177,13 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 				return
 			},
 		},
-		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
-			defaultHook: func(context.Context, database.IteratePurgableReposOptions, func(repo api.RepoName) error) (r0 error) {
+		IterateRepoGitserverStatusFunc: &GitserverRepoStoreIterateRepoGitserverStatusFunc{
+			defaultHook: func(context.Context, database.IterateRepoGitserverStatusOptions) (r0 []types.RepoGitserverStatus, r1 int, r2 error) {
 				return
 			},
 		},
-		IterateRepoGitserverStatusFunc: &GitserverRepoStoreIterateRepoGitserverStatusFunc{
-			defaultHook: func(context.Context, database.IterateRepoGitserverStatusOptions) (r0 []types.RepoGitserverStatus, r1 int, r2 error) {
+		ListPurgeableReposFunc: &GitserverRepoStoreListPurgeableReposFunc{
+			defaultHook: func(context.Context, database.ListPurgableReposOptions) (r0 []api.RepoName, r1 error) {
 				return
 			},
 		},
@@ -37285,14 +37285,14 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.Handle")
 			},
 		},
-		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
-			defaultHook: func(context.Context, database.IteratePurgableReposOptions, func(repo api.RepoName) error) error {
-				panic("unexpected invocation of MockGitserverRepoStore.IteratePurgeableRepos")
-			},
-		},
 		IterateRepoGitserverStatusFunc: &GitserverRepoStoreIterateRepoGitserverStatusFunc{
 			defaultHook: func(context.Context, database.IterateRepoGitserverStatusOptions) ([]types.RepoGitserverStatus, int, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.IterateRepoGitserverStatus")
+			},
+		},
+		ListPurgeableReposFunc: &GitserverRepoStoreListPurgeableReposFunc{
+			defaultHook: func(context.Context, database.ListPurgableReposOptions) ([]api.RepoName, error) {
+				panic("unexpected invocation of MockGitserverRepoStore.ListPurgeableRepos")
 			},
 		},
 		ListReposWithLastErrorFunc: &GitserverRepoStoreListReposWithLastErrorFunc{
@@ -37381,11 +37381,11 @@ func NewMockGitserverRepoStoreFrom(i database.GitserverRepoStore) *MockGitserver
 		HandleFunc: &GitserverRepoStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
-		IteratePurgeableReposFunc: &GitserverRepoStoreIteratePurgeableReposFunc{
-			defaultHook: i.IteratePurgeableRepos,
-		},
 		IterateRepoGitserverStatusFunc: &GitserverRepoStoreIterateRepoGitserverStatusFunc{
 			defaultHook: i.IterateRepoGitserverStatus,
+		},
+		ListPurgeableReposFunc: &GitserverRepoStoreListPurgeableReposFunc{
+			defaultHook: i.ListPurgeableRepos,
 		},
 		ListReposWithLastErrorFunc: &GitserverRepoStoreListReposWithLastErrorFunc{
 			defaultHook: i.ListReposWithLastError,
@@ -38080,118 +38080,6 @@ func (c GitserverRepoStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// GitserverRepoStoreIteratePurgeableReposFunc describes the behavior when
-// the IteratePurgeableRepos method of the parent MockGitserverRepoStore
-// instance is invoked.
-type GitserverRepoStoreIteratePurgeableReposFunc struct {
-	defaultHook func(context.Context, database.IteratePurgableReposOptions, func(repo api.RepoName) error) error
-	hooks       []func(context.Context, database.IteratePurgableReposOptions, func(repo api.RepoName) error) error
-	history     []GitserverRepoStoreIteratePurgeableReposFuncCall
-	mutex       sync.Mutex
-}
-
-// IteratePurgeableRepos delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) IteratePurgeableRepos(v0 context.Context, v1 database.IteratePurgableReposOptions, v2 func(repo api.RepoName) error) error {
-	r0 := m.IteratePurgeableReposFunc.nextHook()(v0, v1, v2)
-	m.IteratePurgeableReposFunc.appendCall(GitserverRepoStoreIteratePurgeableReposFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the
-// IteratePurgeableRepos method of the parent MockGitserverRepoStore
-// instance is invoked and the hook queue is empty.
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultHook(hook func(context.Context, database.IteratePurgableReposOptions, func(repo api.RepoName) error) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// IteratePurgeableRepos method of the parent MockGitserverRepoStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushHook(hook func(context.Context, database.IteratePurgableReposOptions, func(repo api.RepoName) error) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, database.IteratePurgableReposOptions, func(repo api.RepoName) error) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, database.IteratePurgableReposOptions, func(repo api.RepoName) error) error {
-		return r0
-	})
-}
-
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) nextHook() func(context.Context, database.IteratePurgableReposOptions, func(repo api.RepoName) error) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) appendCall(r0 GitserverRepoStoreIteratePurgeableReposFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// GitserverRepoStoreIteratePurgeableReposFuncCall objects describing the
-// invocations of this function.
-func (f *GitserverRepoStoreIteratePurgeableReposFunc) History() []GitserverRepoStoreIteratePurgeableReposFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverRepoStoreIteratePurgeableReposFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverRepoStoreIteratePurgeableReposFuncCall is an object that
-// describes an invocation of method IteratePurgeableRepos on an instance of
-// MockGitserverRepoStore.
-type GitserverRepoStoreIteratePurgeableReposFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 database.IteratePurgableReposOptions
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 func(repo api.RepoName) error
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverRepoStoreIteratePurgeableReposFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverRepoStoreIteratePurgeableReposFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // GitserverRepoStoreIterateRepoGitserverStatusFunc describes the behavior
 // when the IterateRepoGitserverStatus method of the parent
 // MockGitserverRepoStore instance is invoked.
@@ -38305,6 +38193,118 @@ func (c GitserverRepoStoreIterateRepoGitserverStatusFuncCall) Args() []interface
 // invocation.
 func (c GitserverRepoStoreIterateRepoGitserverStatusFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// GitserverRepoStoreListPurgeableReposFunc describes the behavior when the
+// ListPurgeableRepos method of the parent MockGitserverRepoStore instance
+// is invoked.
+type GitserverRepoStoreListPurgeableReposFunc struct {
+	defaultHook func(context.Context, database.ListPurgableReposOptions) ([]api.RepoName, error)
+	hooks       []func(context.Context, database.ListPurgableReposOptions) ([]api.RepoName, error)
+	history     []GitserverRepoStoreListPurgeableReposFuncCall
+	mutex       sync.Mutex
+}
+
+// ListPurgeableRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) ListPurgeableRepos(v0 context.Context, v1 database.ListPurgableReposOptions) ([]api.RepoName, error) {
+	r0, r1 := m.ListPurgeableReposFunc.nextHook()(v0, v1)
+	m.ListPurgeableReposFunc.appendCall(GitserverRepoStoreListPurgeableReposFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListPurgeableRepos
+// method of the parent MockGitserverRepoStore instance is invoked and the
+// hook queue is empty.
+func (f *GitserverRepoStoreListPurgeableReposFunc) SetDefaultHook(hook func(context.Context, database.ListPurgableReposOptions) ([]api.RepoName, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListPurgeableRepos method of the parent MockGitserverRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverRepoStoreListPurgeableReposFunc) PushHook(hook func(context.Context, database.ListPurgableReposOptions) ([]api.RepoName, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreListPurgeableReposFunc) SetDefaultReturn(r0 []api.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ListPurgableReposOptions) ([]api.RepoName, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreListPurgeableReposFunc) PushReturn(r0 []api.RepoName, r1 error) {
+	f.PushHook(func(context.Context, database.ListPurgableReposOptions) ([]api.RepoName, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverRepoStoreListPurgeableReposFunc) nextHook() func(context.Context, database.ListPurgableReposOptions) ([]api.RepoName, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreListPurgeableReposFunc) appendCall(r0 GitserverRepoStoreListPurgeableReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitserverRepoStoreListPurgeableReposFuncCall objects describing the
+// invocations of this function.
+func (f *GitserverRepoStoreListPurgeableReposFunc) History() []GitserverRepoStoreListPurgeableReposFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreListPurgeableReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreListPurgeableReposFuncCall is an object that describes
+// an invocation of method ListPurgeableRepos on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreListPurgeableReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.ListPurgableReposOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []api.RepoName
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreListPurgeableReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreListPurgeableReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverRepoStoreListReposWithLastErrorFunc describes the behavior when

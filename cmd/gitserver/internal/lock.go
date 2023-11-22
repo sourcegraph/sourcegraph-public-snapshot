@@ -35,6 +35,8 @@ type RepositoryLocker interface {
 	// Status returns the status of the locked directory dir. If dir is not
 	// locked, then locked is false.
 	Status(dir common.GitDir) (status string, locked bool)
+	// AllStatuses returns the status of all locked directories.
+	AllStatuses() map[common.GitDir]string
 }
 
 func NewRepositoryLocker() RepositoryLocker {
@@ -86,6 +88,18 @@ func (rl *repositoryLocker) Status(dir common.GitDir) (status string, locked boo
 	defer rl.mu.RUnlock()
 	status, locked = rl.status[dir]
 	return
+}
+
+func (rl *repositoryLocker) AllStatuses() map[common.GitDir]string {
+	rl.mu.RLock()
+	defer rl.mu.RUnlock()
+
+	statuses := make(map[common.GitDir]string, len(rl.status))
+	for dir, status := range rl.status {
+		statuses[dir] = status
+	}
+
+	return statuses
 }
 
 type repositoryLock struct {

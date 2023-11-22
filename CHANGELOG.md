@@ -26,6 +26,12 @@ All notable changes to Sourcegraph are documented in this file.
 - The setting `experimentalFeatures.searchQueryInput` now refers to the new query input as `v2` (not `experimental`). <!-- NOTE: If v2 becomes the default before this release is cut, then update this entry to mention that instead of adding a separate entry. -->
 - Search-based code intel doesn't include the currently selected search context anymore. It was possible to get into a situation where search-based code intel wouldn't find any information due to being restricted by the current search context. [#58010](https://github.com/sourcegraph/sourcegraph/pull/58010)
 - The last commit which changed a file/directory is now shown in the files panel on the repo and file pages. To avoid duplicating information and confusion, the commits panel was removed. [58328](https://github.com/sourcegraph/sourcegraph/pull/58328)
+- Clicking on a search result now opens the blob view at the same commit as the search result. Before, blob views were opened at the tip of the default branch, which sometimes caused inconsistencies in line numbers if the index was out of date. [#58381](https://github.com/sourcegraph/sourcegraph/pull/58381)
+- The `exclude` configuration for code host configuration has been updated to allow chaining multiple conditions together and filtering GitHub repositories based on their size or number of GitHub stars. [#58377](https://github.com/sourcegraph/sourcegraph/pull/58377) and [#58405](https://github.com/sourcegraph/sourcegraph/pull/58405)
+  - Multiple attributes on _a single_ `exclude` entry now have to be all true for a repository to be excluded. Example: `{"exclude": [{"name": "github.com/example/example"}, {"id": "my-id"}]}` will _only_ exclude repositories that have the name _and_ the id mentioned.
+  - GitHub code host connections can exclude by size and stars now: `{"exclude": [{"name": "github.com/example/example"}, {"stars": "< 100", "size": ">= 1GB"}]}`
+  - For `size` and `stars` the supported operators are `<`, `>`, `<=`, `>=`.
+  - For `size` the supported units are `B`, `b`, `kB`, `KB`, `kiB`, `KiB`, `MiB`, `MB`, `GiB`, `GB`. No decimals points are supported.
 
 ### Fixed
 
@@ -54,6 +60,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 ### Fixed
+
+- Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
 
 ### Changed
 

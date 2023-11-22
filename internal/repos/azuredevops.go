@@ -7,6 +7,7 @@ import (
 
 	"github.com/goware/urlx"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -26,7 +27,7 @@ type AzureDevOpsSource struct {
 	serviceID string
 	config    schema.AzureDevOpsConnection
 	logger    log.Logger
-	exclude   excludeFunc
+	excluder  repoExcluder
 }
 
 // NewAzureDevOpsSource returns a new AzureDevOpsSource from the given external service.
@@ -54,14 +55,13 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Pattern(r.Pattern)
+		ex.AddRule().
+			Exact(r.Name).
+			Pattern(r.Pattern)
 	}
-
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
@@ -71,7 +71,7 @@ func NewAzureDevOpsSource(ctx context.Context, logger log.Logger, svc *types.Ext
 		serviceID: extsvc.NormalizeBaseURL(cli.GetURL()).String(),
 		config:    c,
 		logger:    logger,
-		exclude:   exclude,
+		excluder:  ex,
 	}, nil
 }
 
@@ -115,7 +115,8 @@ func (s *AzureDevOpsSource) processReposFromProjectOrOrg(ctx context.Context, na
 			results <- SourceResult{Source: s, Err: err}
 			continue
 		}
-		if s.exclude(fmt.Sprintf("%s/%s/%s", org, repo.Project.Name, repo.Name)) {
+		fullName := fmt.Sprintf("%s/%s/%s", org, repo.Project.Name, repo.Name)
+		if s.excluder.ShouldExclude(fullName) {
 			continue
 		}
 		repo, err := s.makeRepo(repo)
