@@ -16,6 +16,7 @@ chromatic_publish_output=$(</dev/stdin)
 if [ $exit_status -eq 0 ]; then
   echo "$chromatic_publish_output"
 else
+  echo "🧨 EXIT CODE ${exit_status}"
   echo "$chromatic_publish_output"
   exit 1
 fi
