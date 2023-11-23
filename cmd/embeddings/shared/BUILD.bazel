@@ -69,8 +69,8 @@ copy_file(
 # gazelle:exclude testdata
 go_test(
     name = "shared_test",
-    size = "moderate",
-    timeout = "medium",
+    size = "medium",
+    timeout = "moderate",
     srcs = [
         "context_qa_test.go",
         "main_test.go",
