@@ -55,7 +55,7 @@ func TestContextTB(t testing.TB) *Context {
 	return &Context{
 		Logger:     logtest.Scoped(t),
 		Registerer: metrics.NoOpRegisterer,
-		Tracer:     oteltrace.NewNoopTracerProvider().Tracer("noop"),
+		Tracer:     noop.NewTracerProvider().Tracer("noop"),
 	}
 }
 
