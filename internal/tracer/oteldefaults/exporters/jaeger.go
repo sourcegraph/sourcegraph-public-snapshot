@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	jaegercfg "github.com/uber/jaeger-client-go/config"
-	oteljaeger "go.opentelemetry.io/otel/exporters/jaeger"
+	oteljaeger "go.opentelemetry.io/otel/exporters/jaeger" //nolint:staticcheck
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
