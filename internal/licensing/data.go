@@ -115,8 +115,6 @@ var AllFeatures = []Feature{
 
 type PlanDetails struct {
 	Features []Feature
-	// ExpiredFeatures are the features that still work after the plan is expired.
-	ExpiredFeatures []Feature
 }
 
 // planDetails defines the features that are enabled for each plan.
@@ -125,10 +123,6 @@ var planDetails = map[Plan]PlanDetails{
 		Features: []Feature{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
-		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
 		},
 	},
 	PlanOldEnterprise: {
@@ -148,10 +142,6 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSCIM,
 			FeatureCody,
 		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
-		},
 	},
 	PlanTeam0: {
 		Features: []Feature{
@@ -160,10 +150,6 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
-		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
 		},
 	},
 	PlanEnterprise0: {
@@ -175,10 +161,6 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureSCIM,
 			FeatureCody,
-		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
 		},
 	},
 
@@ -193,10 +175,6 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSCIM,
 			FeatureCody,
 		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
-		},
 	},
 	PlanEnterprise1: {
 		Features: []Feature{
@@ -209,10 +187,6 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
-		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
 		},
 	},
 	PlanEnterpriseExtension: {
@@ -227,10 +201,6 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSCIM,
 			FeatureCody,
 		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
-		},
 	},
 	PlanFree0: {
 		Features: []Feature{
@@ -239,20 +209,9 @@ var planDetails = map[Plan]PlanDetails{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
 		},
-		ExpiredFeatures: []Feature{
-			FeatureSSO,
-			FeatureMonitoring,
-			&FeatureBatchChanges{MaxNumChangesets: 10},
-			&FeaturePrivateRepositories{Unrestricted: true},
-		},
 	},
 	PlanFree1: {
 		Features: []Feature{
-			FeatureMonitoring,
-			&FeatureBatchChanges{MaxNumChangesets: 10},
-			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
-		},
-		ExpiredFeatures: []Feature{
 			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
@@ -270,10 +229,6 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSCIM,
 			FeatureCody,
 			FeatureAllowAirGapped,
-		},
-		ExpiredFeatures: []Feature{
-			FeatureACLs,
-			FeatureSSO,
 		},
 	},
 }
