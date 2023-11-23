@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -83,6 +84,9 @@ func TestHandler_Handle(t *testing.T) {
 			logStore: logStore,
 		}
 
+		outbound.SetTestDenyList()
+		t.Cleanup(outbound.ResetDenyList)
+
 		err := h.Handle(ctx, logger, job)
 		// We expect an error here because sadServer returned a 500.
 		assert.Error(t, err)
@@ -112,7 +116,7 @@ func TestHandler_Handle(t *testing.T) {
 
 		webhook := &types.OutboundWebhook{
 			ID:     1,
-			URL:    encryption.NewUnencrypted("http://sourcegraph.com/webhook-receiver/1234"),
+			URL:    encryption.NewUnencrypted("http://127.0.0.1/webhook-receiver/1234"),
 			Secret: encryption.NewUnencrypted(secret),
 		}
 
@@ -136,12 +140,16 @@ func TestHandler_Handle(t *testing.T) {
 			logStore: logStore,
 		}
 
+		outbound.SetTestDenyList()
+		t.Cleanup(outbound.ResetDenyList)
+
 		err := h.Handle(ctx, logger, job)
 		assert.ErrorIs(t, err, want)
 
 		mockassert.CalledN(t, store.ListFunc, 1)
 		mockassert.CalledN(t, logStore.CreateFunc, 1)
 	})
+
 }
 
 type badTransport struct {
