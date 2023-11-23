@@ -22,6 +22,7 @@ const config = {
     'playwright.config.ts',
     'bundlesize.config.js',
     'prettier.config.js',
+    'svgo.config.js',
     '.vscode-test',
     '**/*.json',
     '**/*.d.ts',
