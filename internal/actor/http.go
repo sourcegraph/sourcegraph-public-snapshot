@@ -60,6 +60,8 @@ var (
 //
 // 🚨 SECURITY: Wherever possible, prefer to act in the context of a specific user rather
 // than as an internal actor, which can grant a lot of access in some cases.
+//
+// TODO(@bobheadxi): Migrate to httpcli.Doer and httpcli.Middleware
 type HTTPTransport struct {
 	RoundTripper http.RoundTripper
 }
@@ -71,6 +73,10 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.RoundTripper == nil {
 		t.RoundTripper = http.DefaultTransport
 	}
+
+	// RoundTripper should not modify original request. All the code paths
+	// below set a header, so we clone the request immediately.
+	req = req.Clone(req.Context())
 
 	actor := FromContext(req.Context())
 	path := getCondensedURLPath(req.URL.Path)
