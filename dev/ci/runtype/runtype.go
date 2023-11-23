@@ -141,7 +141,9 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	case MainDryRun:
 		return &RunTypeMatcher{
-			Branch: "main-dry-run/",
+			// TODO(@jhchabran) RFC795
+			Branch:       "(?:main-dry-run/)|(?:rfc795/main)",
+			BranchRegexp: true,
 		}
 	case ManuallyTriggered:
 		return &RunTypeMatcher{
