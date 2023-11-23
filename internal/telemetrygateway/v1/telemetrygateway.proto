@@ -204,4 +204,14 @@ message EventMarketingTracking {
 message EventInteraction {
   // OpenTelemetry trace ID representing the interaction associated with the event.
   optional string trace_id = 1;
+  // Reserve entry for client-provided interaction ID in follow-up change.
+  reserved 2;
+
+  message Geolocation {
+    // Inferred ISO 3166-1 alpha-2 or alpha-3 country code
+    string country_code = 1;
+  }
+  // Geolocation associated with the interaction, typically inferred from the
+  // originating client's IP address (which we do not collect).
+  optional Geolocation geolocation = 3;
 }
