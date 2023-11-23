@@ -14,7 +14,7 @@ build --test_env=PATH
 # Needed for DB in CI
 test --test_env=PGUSER=postgres
 test --test_env=PGPASSWORD=postgres
-test --test_env=PGSSLMODE
+test --test_env=PGSSLMODE=disable
 test --test_env=PGDATABASE=postgres
 
 # Allow tests to understand they're running in CI, which forces dbtest to drop database even in case of failures.
