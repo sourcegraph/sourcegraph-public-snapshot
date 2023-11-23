@@ -20,7 +20,7 @@ go_library(
         "@com_github_derision_test_glock//:glock",
         "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel_trace//:trace",
+        "@io_opentelemetry_go_otel_trace//noop",
     ],
 )
 

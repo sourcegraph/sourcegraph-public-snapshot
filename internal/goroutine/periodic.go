@@ -8,7 +8,7 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -129,7 +129,7 @@ func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Optio
 	if r.operation == nil {
 		r.operation = observation.NewContext(
 			log.Scoped("periodic"),
-			observation.Tracer(oteltrace.NewNoopTracerProvider().Tracer("noop")),
+			observation.Tracer(noop.NewTracerProvider().Tracer("noop")),
 			observation.Metrics(metrics.NoOpRegisterer),
 		).Operation(observation.Op{
 			Name:        r.name,

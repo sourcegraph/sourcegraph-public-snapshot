@@ -30,8 +30,8 @@ func newEnv() (*Env, error) {
 	}, nil
 }
 
-// TODO: Try to use description to generate docs.
-func (e *Env) get(name, defaultValue, description string) string {
+// TODO: Try to use third param description to generate docs.
+func (e *Env) get(name, defaultValue, _ string) string {
 	v, ok := e.env[name]
 	if !ok {
 		return defaultValue
