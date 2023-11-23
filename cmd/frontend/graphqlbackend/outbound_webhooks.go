@@ -136,12 +136,6 @@ func (r *schemaResolver) CreateOutboundWebhook(ctx context.Context, args CreateO
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 
-	// Validate the URL
-	err = outbound.CheckAddress(args.Input.URL)
-	if err != nil {
-		return nil, errors.Wrap(err, "invalid webhook address")
-	}
-
 	webhook := &types.OutboundWebhook{
 		CreatedBy:  user.ID,
 		UpdatedBy:  user.ID,
