@@ -21,6 +21,7 @@ const config = {
     'postcss.config.js',
     'playwright.config.ts',
     'bundlesize.config.js',
+    'prettier.config.js',
     '.vscode-test',
     '**/*.json',
     '**/*.d.ts',
