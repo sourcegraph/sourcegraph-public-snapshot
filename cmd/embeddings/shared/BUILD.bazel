@@ -1,6 +1,6 @@
-load("//dev:go_defs.bzl", "go_test")
+load("@aspect_bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
-load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
+load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "shared",
