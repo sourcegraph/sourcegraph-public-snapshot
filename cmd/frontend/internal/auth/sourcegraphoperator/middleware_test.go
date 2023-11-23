@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -183,7 +184,7 @@ func TestMiddleware(t *testing.T) {
 	defer oidcIDServer.Close()
 	providerConfig.Issuer = oidcIDServer.URL
 
-	mockProvider := NewProvider(providerConfig).(*provider)
+	mockProvider := NewProvider(providerConfig, httpcli.TestExternalClient).(*provider)
 	providers.MockProviders = []providers.Provider{mockProvider}
 	defer func() { providers.MockProviders = nil }()
 

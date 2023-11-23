@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -106,7 +107,7 @@ func getProviders() []providers.Provider {
 	multiple := len(cfgs) >= 2
 	ps := make([]providers.Provider, 0, len(cfgs))
 	for _, cfg := range cfgs {
-		p := &provider{config: *cfg, multiple: multiple}
+		p := &provider{config: *cfg, multiple: multiple, httpClient: httpcli.ExternalClient}
 		ps = append(ps, p)
 	}
 	return ps
