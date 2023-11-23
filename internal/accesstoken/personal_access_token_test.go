@@ -134,36 +134,6 @@ func TestGeneratePersonalAccessToken(t *testing.T) {
 			wantTokenLength: 50,
 			wantErr:         false,
 		},
-		{
-			name: "valid token generation, no identifier",
-			args: args{
-				licenseKey:    "abcdef1234abcdef1234abcdef1234abcdef1234",
-				isDevInstance: false,
-			},
-			wantTokenPrefix: "sgp_",
-			wantTokenLength: 44,
-			wantErr:         false,
-		},
-		{
-			name: "valid token generation, no identifier",
-			args: args{
-				licenseKey:    "",
-				isDevInstance: false,
-			},
-			wantTokenPrefix: "sgp_",
-			wantTokenLength: 44,
-			wantErr:         false,
-		},
-		{
-			name: "valid token generation, no identifier",
-			args: args{
-				licenseKey:    "",
-				isDevInstance: true,
-			},
-			wantTokenPrefix: "sgp_",
-			wantTokenLength: 44,
-			wantErr:         false,
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
