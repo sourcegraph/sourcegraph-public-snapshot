@@ -143,7 +143,7 @@ SELECT
 	SUM(failed_fetch),
 	SUM(corrupted)
 FROM deleted
-GROUP BY shard_id;
+GROUP BY shard_id
 `
 
 func (s *repoStatisticsStore) GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistic, error) {
@@ -161,7 +161,7 @@ SELECT
 	SUM(failed_fetch) AS failed_fetch,
 	SUM(corrupted) AS corrupted
 FROM gitserver_repos_statistics
-GROUP BY shard_id;
+GROUP BY shard_id
 `
 
 var scanGitserverReposStatistics = basestore.NewSliceScanner(scanGitserverReposStatistic)

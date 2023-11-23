@@ -61,15 +61,15 @@ var (
 )
 
 func (h *handler) Handle(ctx context.Context) error {
+	var errs error
 	if err := h.store.CompactRepoStatistics(ctx); err != nil {
-		return errors.Wrap(err, "error compacting repo statistics")
+		errs = errors.Append(errs, errors.Wrap(err, "error compacting repo statistics"))
 	}
 
 	if err := h.store.CompactGitserverReposStatistics(ctx); err != nil {
-		return errors.Wrap(err, "error compacting gitserver repos statistics")
+		errs = errors.Append(errs, errors.Wrap(err, "error compacting gitserver repos statistics"))
 	}
-
-	return nil
+	return errs
 }
 
 func (h *handler) HandleError(err error) {
