@@ -428,7 +428,7 @@ export const InlineNavigationPanel: FC<InlineNavigationPanelProps> = props => {
             )}
             {isSourcegraphDotCom && (
                 <NavItem>
-                    <NavLink variant={navLinkVariant} to="https://about.sourcegraph.com" external={true}>
+                    <NavLink variant={navLinkVariant} to="https://sourcegraph.com" external={true}>
                         About Sourcegraph
                     </NavLink>
                 </NavItem>

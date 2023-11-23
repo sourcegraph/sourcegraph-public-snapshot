@@ -165,7 +165,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 
 			ide := getIdeFromEvent(&args)
 
-			if ide == "vscode" {
+			if strings.ToLower(ide) == "vscode" {
 				if ffs := featureflag.FromContext(ctx); ffs != nil {
 					emailsEnabled = ffs.GetBoolOr("vscodeCodyEmailsEnabled", false)
 				}

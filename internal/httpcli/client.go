@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -144,6 +145,7 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
 			ExpJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	}
 	if cache {
@@ -160,8 +162,13 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 // convenience for existing uses of http.DefaultClient.
 // WARN: This client caches entire responses for etag matching. Do not use it for
 // one-off requests if possible, and definitely not for larger payloads, like
-// downloading arbitrarily sized files! See UncachedExternalClient instead.
+// downloading arbitrarily sized files! See UncachedExternalDoer instead.
 var ExternalDoer, _ = ExternalClientFactory.Doer()
+
+// UncachedExternalDoer is a shared client for external communication. This is a
+// convenience for existing uses of http.DefaultClient.
+// This client does not cache responses. To cache responses see ExternalDoer instead.
+var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
 
 // ExternalClient returns a shared client for external communication. This is
 // a convenience for existing uses of http.DefaultClient.
@@ -169,6 +176,11 @@ var ExternalDoer, _ = ExternalClientFactory.Doer()
 // one-off requests if possible, and definitely not for larger payloads, like
 // downloading arbitrarily sized files! See UncachedExternalClient instead.
 var ExternalClient, _ = ExternalClientFactory.Client()
+
+// UncachedExternalClient returns a shared client for external communication. This is
+// a convenience for existing uses of http.DefaultClient.
+// WARN: This client does not cache responses. To cache responses see ExternalClient instead.
+var UncachedExternalClient, _ = UncachedExternalClientFactory.Client()
 
 // InternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services.
@@ -202,6 +214,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
 		RequestClientTransportOpt,
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -824,6 +837,19 @@ func RequestClientTransportOpt(cli *http.Client) error {
 
 	cli.Transport = &wrappedTransport{
 		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
+
+	return nil
+}
+
+func RequestInteractionTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestinteraction.HTTPTransport{RoundTripper: cli.Transport},
 		Wrapped:      cli.Transport,
 	}
 

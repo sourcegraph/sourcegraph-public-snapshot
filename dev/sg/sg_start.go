@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/conc/pool"
@@ -84,6 +85,10 @@ sg start -describe single-program
 			&cli.BoolFlag{
 				Name:  "describe",
 				Usage: "Print details about the selected commandset",
+			},
+			&cli.BoolFlag{
+				Name:  "sgtail",
+				Usage: "Connects to running sgtail instance",
 			},
 
 			&cli.StringSliceFlag{
@@ -173,6 +178,8 @@ func constructStartCmdLongHelp() string {
 	return out.String()
 }
 
+var sgOnce sync.Once
+
 func startExec(ctx *cli.Context) error {
 	config, err := getConfig()
 	if err != nil {
@@ -202,6 +209,12 @@ func startExec(ctx *cli.Context) error {
 	if exists {
 		std.Out.WriteAlertf("Found 'sg %s' already running with the same arguments. Process: %d", strings.Join(os.Args[1:], " "), pid)
 		return errors.New("no concurrent sg start with same arguments allowed")
+	}
+
+	if ctx.Bool("sgtail") {
+		if err := run.OpenUnixSocket(); err != nil {
+			return errors.Wrapf(err, "Did you forget to run sgtail first?")
+		}
 	}
 
 	commandset := args[0]

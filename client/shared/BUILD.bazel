@@ -353,6 +353,7 @@ ts_project(
         "//:node_modules/@types/minimatch",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
+        "//:node_modules/@types/whatwg-url",
         "//:node_modules/classnames",
         "//:node_modules/comlink",
         "//:node_modules/core-js",
@@ -372,6 +373,7 @@ ts_project(
         "//:node_modules/use-deep-compare-effect",
         "//:node_modules/util",
         "//:node_modules/utility-types",
+        "//:node_modules/whatwg-url",
         "//:node_modules/zustand",
         "//schema:settings",  #keep
     ],
@@ -519,6 +521,7 @@ filegroup(
 vitest_test(
     name = "test",
     data = [
+        ":module_styles",
         ":shared_tests",
         ":snapshots",
     ],

@@ -11,7 +11,6 @@
     - `data` string with syntax highlighted response. The input `code` string [is properly escaped](https://github.com/sourcegraph/syntect_server/blob/ee3810f70e5701b961b7249393dbac8914c162ce/syntect/src/html.rs#L6) and as such can be directly rendered in the browser safely.
     - `plaintext` boolean indicating whether a syntax could not be found for the file and instead it was rendered as plain text.
   - An error response (`error` field), one of:
-    - `{"error": "invalid theme", "code": "invalid_theme"}`
     - `{"error": "resource not found", "code": "resource_not_found"}`
 - `GET` to `/health` to receive an `OK` health check response / ensure the service is alive.
 

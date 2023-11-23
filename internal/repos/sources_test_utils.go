@@ -1,7 +1,6 @@
 package repos
 
 import (
-	"encoding/json"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -91,15 +90,4 @@ func NewRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 	}
 
 	return rec
-}
-
-func MarshalJSON(t testing.TB, v any) string {
-	t.Helper()
-
-	bs, err := json.Marshal(v)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return string(bs)
 }

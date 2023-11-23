@@ -12,6 +12,9 @@ go_library(
     deps = [
         "//lib/background",
         "//lib/errors",
+        "@com_github_jackc_pgx_v5//:pgx",
+        "@com_github_jackc_pgx_v5//stdlib",
         "@com_github_sourcegraph_log//:log",
+        "@com_google_cloud_go_cloudsqlconn//:cloudsqlconn",
     ],
 )

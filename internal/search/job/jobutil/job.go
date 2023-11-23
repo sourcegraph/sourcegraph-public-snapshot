@@ -809,7 +809,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		PatternType:    b.patternType,
 	}
 
 	switch typ {
@@ -840,7 +840,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		PatternType:    b.patternType,
 	}
 
 	switch typ {

@@ -49,6 +49,27 @@
       "type": "boolean",
       "default": false
     },
+    "rateLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "graphQLMaxDepth": {
+          "description": "Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.",
+          "type": "integer",
+          "default": 30
+        },
+        "graphQLMaxAliases": {
+          "description": "Maximum number of aliases allowed in a GraphQL query",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxFieldCount": {
+          "description": "Maximum number of estimated fields allowed in a GraphQL response",
+          "type": "integer",
+          "default": 500000
+        }
+      }
+    },
     "exportUsageTelemetry": {
       "type": "object",
       "additionalProperties": false,
@@ -965,8 +986,8 @@
             },
             "patterns": [
               {
-                "match": "^package main$",
-                "language": "go"
+                "match": "cobol_.*\\.txt",
+                "language": "cobol"
               }
             ]
           }

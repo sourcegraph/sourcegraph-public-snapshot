@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -61,8 +62,11 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 		// If a buffer is configured, wrap in events.BufferedLogger
 		if config.BigQuery.EventBufferSize > 0 {
-			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger,
+			eventLogger, err = events.NewBufferedLogger(obctx.Logger, eventLogger,
 				config.BigQuery.EventBufferSize, config.BigQuery.EventBufferWorkers)
+			if err != nil {
+				return errors.Wrap(err, "create buffered logger")
+			}
 		}
 	} else {
 		eventLogger = events.NewStdoutLogger(obctx.Logger)
@@ -70,11 +74,14 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		// Useful for testing event logging in a way that has latency that is
 		// somewhat similar to BigQuery.
 		if os.Getenv("CODY_GATEWAY_BUFFERED_LAGGY_EVENT_LOGGING_FUN_TIMES_MODE") == "true" {
-			eventLogger = events.NewBufferedLogger(
+			eventLogger, err = events.NewBufferedLogger(
 				obctx.Logger,
 				events.NewDelayedLogger(eventLogger),
 				config.BigQuery.EventBufferSize,
 				config.BigQuery.EventBufferWorkers)
+			if err != nil {
+				return errors.Wrap(err, "create buffered logger")
+			}
 		}
 	}
 
@@ -173,6 +180,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Cloudflare in from of Cody Gateway. This comes first.
 	hasCloudflare := !config.InsecureDev
 	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
+	handler = requestinteraction.HTTPMiddleware(handler)
 
 	// Initialize our server
 	address := fmt.Sprintf(":%d", config.Port)

@@ -69,11 +69,7 @@ impl PackedRange {
 
 impl PartialOrd for PackedRange {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        (self.start_line, self.end_line, self.start_col).partial_cmp(&(
-            other.start_line,
-            other.end_line,
-            other.start_col,
-        ))
+        Some(self.cmp(other))
     }
 }
 

@@ -53,6 +53,9 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 	// request. As such we centralize our observability to always take into
 	// account the state of the ctx.
 	defer func() {
+		// We can downgrade error logs to rootLogger.Warn
+		errorLogger := rootLogger.Error
+
 		if err != nil {
 			switch ctx.Err() {
 			case context.Canceled:
@@ -66,11 +69,12 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 				// path in this case.
 				recordHybridFinalState("search-timeout")
 				unsearched, ok = nil, true
+				errorLogger = rootLogger.Warn
 			}
 		}
 
 		if err != nil {
-			rootLogger.Error("hybrid search failed", log.String("state", finalState), log.Error(err))
+			errorLogger("hybrid search failed", log.String("state", finalState), log.Error(err))
 		} else {
 			rootLogger.Debug("hybrid search done", log.String("state", finalState), log.Bool("ok", ok), log.Int("unsearched.len", len(unsearched)))
 		}

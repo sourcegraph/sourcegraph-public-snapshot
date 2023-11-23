@@ -1,6 +1,6 @@
 # Alerts reference
 
-<!-- DO NOT EDIT: generated via: bazel run //dev:write_all_generated -->
+<!-- DO NOT EDIT: generated via: bazel run //doc/admin/observability:write_monitoring_docs -->
 
 This document contains a complete reference of all alerts in Sourcegraph's monitoring, and next steps for when you find alerts that are firing.
 If your alert isn't mentioned here, or if the next steps don't help, [contact us](mailto:support@sourcegraph.com) for assistance.
@@ -1662,7 +1662,7 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1922,103 +1922,6 @@ Generated query for warning alert: `max((max by (instance) (go_gc_duration_secon
 <summary>Technical details</summary>
 
 Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) / count by (app) (up{app=~".*gitserver"}) * 100) <= 90)`
-
-</details>
-
-<br />
-
-## github: src_githubcom_concurrency_lock_waiting_requests
-
-<p class="subtitle">number of requests waiting on the global mutex</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github: 100+ number of requests waiting on the global mutex for 5m0s
-
-**Next steps**
-
-- 								- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
-								- **Check redis-store health.
-								- **Check GitHub status.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-waiting-requests).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github_src_githubcom_concurrency_lock_waiting_requests"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max(src_githubcom_concurrency_lock_waiting_requests)) >= 100)`
-
-</details>
-
-<br />
-
-## github: src_githubcom_concurrency_lock_failed_lock_requests
-
-<p class="subtitle">number of lock failures</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github: 100+ number of lock failures for 5m0s
-
-**Next steps**
-
-- 							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
-							- **Check redis-store health.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-failed-lock-requests).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github_src_githubcom_concurrency_lock_failed_lock_requests"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(rate(src_githubcom_concurrency_lock_failed_lock_requests[5m]))) >= 100)`
-
-</details>
-
-<br />
-
-## github: src_githubcom_concurrency_lock_failed_unlock_requests
-
-<p class="subtitle">number of unlock failures</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github: 100+ number of unlock failures for 5m0s
-
-**Next steps**
-
-- 							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
-							- **Check redis-store health.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-failed-unlock-requests).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github_src_githubcom_concurrency_lock_failed_unlock_requests"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(rate(src_githubcom_concurrency_lock_failed_unlock_requests[5m]))) >= 100)`
 
 </details>
 
@@ -4797,7 +4700,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -8081,7 +7984,7 @@ Generated query for critical alert: `max((max(max_over_time(src_conf_client_time
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
 
 <details>
 <summary>Technical details</summary>

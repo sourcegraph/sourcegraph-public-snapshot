@@ -17,7 +17,7 @@ export const defaultProjectConfig: UserWorkspaceConfig = {
     test: {
         testTimeout: 10000,
         hookTimeout: 1000,
-        experimentalVmThreads: true,
+        pool: 'vmThreads',
         include: [`**/*.test.${TS_EXT}?(x)`],
         exclude: [
             '**/integration-test',
@@ -34,7 +34,8 @@ export const defaultProjectConfig: UserWorkspaceConfig = {
         ],
         css: { modules: { classNameStrategy: 'non-scoped' } },
         hideSkippedTests: true,
-        globalSetup: [path.join(__dirname, `client/testing/src/globalTestSetup.${TS_EXT}`)],
+        setupFiles: [path.join(process.cwd(), `client/testing/src/perTestSetup.${TS_EXT}`)],
+        globalSetup: [path.join(process.cwd(), `client/testing/src/globalTestSetup.${TS_EXT}`)],
     },
     plugins: BAZEL
         ? [
@@ -61,8 +62,12 @@ const userConfig: UserConfig = {
     test: {
         cache: BAZEL ? false : undefined, // don't cache in Bazel
 
-        minThreads: 1, // otherwise it's slow when there are many CPU cores
-        maxThreads: 16,
+        poolOptions: {
+            vmThreads: {
+                minThreads: 1, // Otherwise it's slow when there are many CPU cores
+                maxThreads: 8, // Warning: setting this value to 16 leads to "Error: Failed to terminate worker"
+            },
+        },
         teardownTimeout: 1000,
 
         // For compatibility with Jest's defaults; can be changed to the Vitest defaults.
@@ -86,6 +91,11 @@ export function defineProjectWithDefaults(dir: string, config: UserWorkspaceConf
         config.test.name = name
     }
     if (!config.test.root) {
+        // Reorient the dir around process.cwd() if we're running in Bazel and we got a __dirname-relative path.
+        // https://medium.com/@Jakeherringbone/running-tools-under-bazel-8aa416e7090c
+        if (BAZEL && dir.startsWith(__dirname)) {
+            dir = path.join(process.cwd(), dir.slice(__dirname.length))
+        }
         config.test.root = dir
     }
 

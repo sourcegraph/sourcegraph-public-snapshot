@@ -8,6 +8,8 @@
 
 This page contains generated documentation for telemetry event data that gets exported to Sourcegraph from individual Sourcegraph instances.
 
+> WARNING: This page primarily pertains to the new telemetry system introduced in Sourcegraph 5.2.1 - refer to [DEPRECATED: Telemetry](deprecated.md) for the legacy system which may still be in use if a callsite has not been migrated yet.
+
 ## Table of Contents
 
 - [telemetrygateway/v1/telemetrygateway.proto](#telemetrygateway_v1_telemetrygateway-proto)
