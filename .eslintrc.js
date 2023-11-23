@@ -28,7 +28,7 @@ const config = {
     '**/*.d.ts',
     'eslint-relative-formatter.js',
     'typedoc.js',
-    '**/dev/esbuild/*',
+    'client/web/dev/**/*',
     'graphql-schema-linter.config.js',
   ],
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
