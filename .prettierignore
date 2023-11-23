@@ -19,7 +19,7 @@ vendor/
 .nyc_output/
 out/
 dist/
-dist-types/
+client/web/dist/
 client/shared/src/schema/*.d.ts
 ts-node-*
 testdata

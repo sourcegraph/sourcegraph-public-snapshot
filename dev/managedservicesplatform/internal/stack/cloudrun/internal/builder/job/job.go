@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/serviceaccount"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun/internal/builder"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -19,6 +20,7 @@ type jobBuilder struct {
 	env          []*cloudrunv2job.CloudRunV2JobTemplateTemplateContainersEnv
 	volumes      []*cloudrunv2job.CloudRunV2JobTemplateTemplateVolumes
 	volumeMounts []*cloudrunv2job.CloudRunV2JobTemplateTemplateContainersVolumeMounts
+	dependencies []cdktf.ITerraformDependable
 }
 
 var _ builder.Builder = (*jobBuilder)(nil)
@@ -28,6 +30,8 @@ var _ builder.Builder = (*jobBuilder)(nil)
 func NewBuilder() builder.Builder {
 	return &jobBuilder{}
 }
+
+func (b *jobBuilder) Kind() spec.ServiceKind { return spec.ServiceKindJob }
 
 func (b *jobBuilder) AddEnv(key, value string) {
 	b.env = append(b.env, &cloudrunv2job.CloudRunV2JobTemplateTemplateContainersEnv{
@@ -69,6 +73,12 @@ func (b *jobBuilder) AddSecretVolume(name, mountPath string, secret builder.Secr
 	})
 }
 
+// AddDependency ensures that particular Terraform resources are provisioned
+// before the Cloud Run resource is created.
+func (b *jobBuilder) AddDependency(dep cdktf.ITerraformDependable) {
+	b.dependencies = append(b.dependencies, dep)
+}
+
 func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (builder.Resource, error) {
 	var vpcAccess *cloudrunv2job.CloudRunV2JobTemplateTemplateVpcAccess
 	if vars.PrivateNetwork != nil {
@@ -81,7 +91,7 @@ func (b *jobBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (
 	job := cloudrunv2job.NewCloudRunV2Job(stack, pointers.Ptr("cloudrun"), &cloudrunv2job.CloudRunV2JobConfig{
 		Name:      pointers.Ptr(vars.Service.ID),
 		Location:  pointers.Ptr(vars.GCPRegion),
-		DependsOn: &vars.DependsOn,
+		DependsOn: &b.dependencies,
 
 		Template: &cloudrunv2job.CloudRunV2JobTemplate{
 			TaskCount: pointers.Ptr(float64(1)),
