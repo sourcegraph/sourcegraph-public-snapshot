@@ -251,15 +251,19 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	// the environment.
 	if vars.Environment.Resources != nil && vars.Environment.Resources.BigQueryTable != nil {
 		bigqueryDataset, err := bigquery.New(stack, resourceid.New("bigquery"), bigquery.Config{
-			DefaultProjectID: vars.ProjectID,
-			Spec:             *vars.Environment.Resources.BigQueryTable,
+			DefaultProjectID:       vars.ProjectID,
+			ServiceID:              vars.Service.ID,
+			WorkloadServiceAccount: vars.CloudRunWorkloadServiceAccount,
+			Spec:                   *vars.Environment.Resources.BigQueryTable,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render BigQuery dataset")
 		}
+
+		// Add parameters required for writing to the correct BigQuery table
 		cloudRunBuilder.AddEnv(serviceEnvVarPrefix+"BIGQUERY_PROJECT_ID", bigqueryDataset.ProjectID)
-		cloudRunBuilder.AddEnv(serviceEnvVarPrefix+"BIGQUERY_DATASET", bigqueryDataset.Dataset)
-		cloudRunBuilder.AddEnv(serviceEnvVarPrefix+"BIGQUERY_TABLE", bigqueryDataset.Table)
+		cloudRunBuilder.AddEnv(serviceEnvVarPrefix+"BIGQUERY_DATASET", bigqueryDataset.DatasetID)
+		cloudRunBuilder.AddEnv(serviceEnvVarPrefix+"BIGQUERY_TABLE", bigqueryDataset.TableID)
 	}
 
 	// Finalize output of builder

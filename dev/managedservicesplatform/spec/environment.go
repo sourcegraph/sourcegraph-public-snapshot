@@ -1,7 +1,10 @@
 package spec
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -347,21 +350,48 @@ func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
 }
 
 type EnvironmentResourceBigQueryTableSpec struct {
-	Region string `json:"region"`
 	// TableID is the ID of table to create within the service's BigQuery
-	// dataset.
+	// dataset. Required.
+	//
+	// If provisioning a table, a BigQuery JSON schema MUST be provided
+	// alongside the service specification file, in `bigquery.schema.json`.
 	TableID string `json:"tableID"`
-	// Schema defines the schema of the table.
-	Schema []EnvironmentResourceBigQuerySchemaColumn `json:"schema"`
+	// DatasetID, if provided, uses a custom dataset ID. By default, we use
+	// the service ID as the dataset ID.
+	DatasetID *string `json:"datasetID,omitempty"`
 	// ProjectID can be used to specify a separate project ID from the service's
 	// project for BigQuery resources. If not provided, resources are created
 	// within the service's project.
-	ProjectID string `json:"projectID"`
+	ProjectID *string `json:"projectID,omitempty"`
+	// Location defaults to "US". Do not configure unless you know what you are
+	// doing.
+	Location *string `json:"region,omitempty"`
+
+	// rawSchemaFile is the `bigquery.schema.json` file adjacent to the service
+	// specification. Loaded by (EnvironmentResourceBigQueryTableSpec).LoadSchema.
+	rawSchemaFile []byte
 }
 
-type EnvironmentResourceBigQuerySchemaColumn struct {
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Mode        string `json:"mode"`
-	Description string `json:"description"`
+// LoadSchema populates rawSchemaFile.
+func (s *EnvironmentResourceBigQueryTableSpec) LoadSchema(dir string) error {
+	// Open by convention
+	schema, err := os.ReadFile(filepath.Join(dir, "bigquery.schema.json"))
+	if err != nil {
+		return err
+	}
+
+	// Parse and marshal for consistent formatting
+	var schemaData any
+	if err := json.Unmarshal(schema, &schemaData); err != nil {
+		return err
+	}
+	s.rawSchemaFile, err = json.MarshalIndent(schemaData, "", "  ")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *EnvironmentResourceBigQueryTableSpec) GetSchema() []byte {
+	return s.rawSchemaFile
 }
