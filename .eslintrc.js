@@ -18,7 +18,7 @@ const config = {
     'svelte.config.js',
     'vite.config.ts',
     'vitest.config.ts',
-    'postcss.config.ts',
+    'postcss.config.js',
     'playwright.config.ts',
     'bundlesize.config.js',
     '.vscode-test',
