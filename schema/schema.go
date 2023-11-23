@@ -592,6 +592,14 @@ type Completions struct {
 	FastChatModelMaxTokens int `json:"fastChatModelMaxTokens,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model,omitempty"`
+	// PerCommunityUserChatMonthlyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.
+	PerCommunityUserChatMonthlyLimit int `json:"perCommunityUserChatMonthlyLimit,omitempty"`
+	// PerCommunityUserCodeCompletionsMonthlyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.
+	PerCommunityUserCodeCompletionsMonthlyLimit int `json:"perCommunityUserCodeCompletionsMonthlyLimit,omitempty"`
+	// PerProUserChatDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerProUserChatDailyLimit int `json:"perProUserChatDailyLimit,omitempty"`
+	// PerProUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerProUserCodeCompletionsDailyLimit int `json:"perProUserCodeCompletionsDailyLimit,omitempty"`
 	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
 	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
 	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
