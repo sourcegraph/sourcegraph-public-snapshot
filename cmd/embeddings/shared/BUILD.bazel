@@ -55,6 +55,7 @@ copy_file(
     name = "ln_test_data_embeddings_index",
     src = "@github_com_sourcegraph_sourcegraph_embeddingindex//file:downloaded",
     out = "testdata/github_com_sourcegraph_sourcegraph_cf360e12ff91b2fc199e75aef4ff6744.embeddingindex",
+    allow_symlink = True,
 )
 
 # See //cmd/embeddings/shared:assets.bzl for the macro fetching those external dependencies.
@@ -79,9 +80,6 @@ go_test(
         ":ln_test_data_embeddings_index",
         ":ln_test_data_query_embeddings_gob",
     ],  # keep
-    tags = [
-        "exclusive",
-    ],
     deps = [
         "//cmd/embeddings/qa",
         "//internal/api",
