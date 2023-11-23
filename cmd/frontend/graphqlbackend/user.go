@@ -175,7 +175,7 @@ func (r *UserResolver) CodyProEnabledAt(ctx context.Context) *gqlutil.DateTime {
 		return nil
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("cody_pro_dec_ga", false) {
+	if !featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
 		return nil
 	}
 
@@ -329,7 +329,7 @@ func (r *schemaResolver) UpgradeToCodyPro(ctx context.Context, args *upgradeToCo
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("cody_pro_dec_ga", false) {
+	if !featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
 		return nil, errors.New("this feature is not enabled")
 	}
 
