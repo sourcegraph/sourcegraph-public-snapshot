@@ -204,6 +204,11 @@ var TestExternalDoer, _ = TestExternalClientFactory.Doer()
 // downloading arbitrarily sized files! See UncachedExternalClient instead.
 var ExternalClient, _ = ExternalClientFactory.Client()
 
+// UncachedExternalClient returns a shared client for external communication. This is
+// a convenience for existing uses of http.DefaultClient.
+// WARN: This client does not cache responses. To cache responses see ExternalClient instead.
+var UncachedExternalClient, _ = UncachedExternalClientFactory.Client()
+
 // InternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services.
 var InternalClientFactory = NewInternalClientFactory("internal")
