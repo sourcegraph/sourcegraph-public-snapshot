@@ -42,6 +42,7 @@ type RepoStatisticsStore interface {
 	GetRepoStatistics(ctx context.Context) (RepoStatistics, error)
 	CompactRepoStatistics(ctx context.Context) error
 	GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistic, error)
+	CompactGitserverReposStatistics(ctx context.Context) error
 }
 
 // repoStatisticsStore is responsible for data stored in the repo_statistics
@@ -116,6 +117,35 @@ SELECT
 FROM deleted;
 `
 
+func (s *repoStatisticsStore) CompactGitserverReposStatistics(ctx context.Context) error {
+	return s.Exec(ctx, sqlf.Sprintf(compactGitserverReposStatisticsQueryFmtstr))
+}
+
+const compactGitserverReposStatisticsQueryFmtstr = `
+WITH deleted AS (
+	DELETE FROM gitserver_repos_statistics
+	RETURNING
+		shard_id,
+		total,
+		not_cloned,
+		cloning,
+		cloned,
+		failed_fetch,
+		corrupted
+)
+INSERT INTO gitserver_repos_statistics (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
+SELECT
+	shard_id,
+	SUM(total),
+	SUM(not_cloned),
+	SUM(cloning),
+	SUM(cloned),
+	SUM(failed_fetch),
+	SUM(corrupted)
+FROM deleted
+GROUP BY shard_id
+`
+
 func (s *repoStatisticsStore) GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistic, error) {
 	rows, err := s.Query(ctx, sqlf.Sprintf(getGitserverReposStatisticsQueryFmtStr))
 	return scanGitserverReposStatistics(rows, err)
@@ -124,13 +154,14 @@ func (s *repoStatisticsStore) GetGitserverReposStatistics(ctx context.Context) (
 const getGitserverReposStatisticsQueryFmtStr = `
 SELECT
 	shard_id,
-	total,
-	not_cloned,
-	cloning,
-	cloned,
-	failed_fetch,
-	corrupted
+	SUM(total) AS total,
+	SUM(not_cloned) AS not_cloned,
+	SUM(cloning) AS cloning,
+	SUM(cloned) AS cloned,
+	SUM(failed_fetch) AS failed_fetch,
+	SUM(corrupted) AS corrupted
 FROM gitserver_repos_statistics
+GROUP BY shard_id
 `
 
 var scanGitserverReposStatistics = basestore.NewSliceScanner(scanGitserverReposStatistic)

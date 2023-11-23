@@ -1974,7 +1974,7 @@ Triggers:
 ```
     Column    |  Type  | Collation | Nullable | Default 
 --------------+--------+-----------+----------+---------
- shard_id     | text   |           | not null | 
+ shard_id     | text   |           |          | 
  total        | bigint |           | not null | 0
  not_cloned   | bigint |           | not null | 0
  cloning      | bigint |           | not null | 0
@@ -1982,7 +1982,7 @@ Triggers:
  failed_fetch | bigint |           | not null | 0
  corrupted    | bigint |           | not null | 0
 Indexes:
-    "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
+    "gitserver_repos_statistics_shard_id" btree (shard_id)
 
 ```
 
