@@ -187,11 +187,12 @@ func init() {
 		},
 		{
 			Name:        "generate",
-			ArgsUsage:   "<service ID> <environment ID>",
+			Aliases:     []string{"gen"},
+			ArgsUsage:   "<service ID>",
 			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
 			UsageText: `
 # generate single env for a single service
-sg msp generate <service> <env>
+sg msp generate -e <env> <service>
 # generate all envs across all services
 sg msp generate -all
 # generate all envs for a single service
@@ -199,6 +200,11 @@ sg msp generate -all <service>
 			`,
 			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:    "env",
+					Aliases: []string{"e"},
+					Usage:   "Target service environment - use '-all' to target all environments",
+				},
 				&cli.BoolFlag{
 					Name:  "all",
 					Usage: "Generate infrastructure stacks for all services, or all envs for a service if service ID is provided",
@@ -230,7 +236,7 @@ sg msp generate -all <service>
 				if serviceID := c.Args().First(); serviceID == "" && !generateAll {
 					return errors.New("first argument service ID is required without the '-all' flag")
 				} else if serviceID != "" {
-					targetEnv := c.Args().Get(1)
+					targetEnv := c.String("env")
 					if targetEnv == "" && !generateAll {
 						return errors.New("second argument environment ID is required without the '-all' flag")
 					}
@@ -271,8 +277,13 @@ sg msp generate -all <service>
 					Name:        "sync",
 					Description: "Create or update all required Terraform Cloud workspaces for a service",
 					Usage:       "Optionally provide an environment ID as well to only sync that environment.",
-					ArgsUsage:   "<service ID> [environment ID]",
+					ArgsUsage:   "<service ID>",
 					Flags: []cli.Flag{
+						&cli.StringFlag{
+							Name:    "env",
+							Aliases: []string{"e"},
+							Usage:   "Target service environment - use '-all' to target all environments",
+						},
 						&cli.BoolFlag{
 							Name:  "all",
 							Usage: "Generate Terraform Cloud workspaces for all environments",
@@ -332,7 +343,7 @@ sg msp generate -all <service>
 							return errors.Wrap(err, "init Terraform Cloud client")
 						}
 
-						if targetEnv := c.Args().Get(1); targetEnv != "" {
+						if targetEnv := c.String("env"); targetEnv != "" {
 							env := service.GetEnvironment(targetEnv)
 							if env == nil {
 								return errors.Newf("environment %q not found in service spec", targetEnv)
