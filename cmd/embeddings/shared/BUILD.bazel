@@ -70,6 +70,7 @@ copy_file(
 go_test(
     name = "shared_test",
     timeout = "moderate",
+    size = "moderate",
     srcs = [
         "context_qa_test.go",
         "main_test.go",
