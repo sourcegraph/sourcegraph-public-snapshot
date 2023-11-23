@@ -485,7 +485,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
             <RepoHeaderContributionPortal
                 position="right"
-                priority={1}
+                priority={10}
                 id="cody"
                 {...repoHeaderContributionsLifecycleProps}
             >
@@ -503,7 +503,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
             <RepoHeaderContributionPortal
                 position="right"
-                priority={3}
+                priority={2}
                 id="go-to-code-host"
                 {...repoHeaderContributionsLifecycleProps}
             >
@@ -530,7 +530,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
             {isBrainDotVisible && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={7}
+                    priority={6}
                     id="code-intelligence-status"
                     renderInContextMenu={true}
                     {...repoHeaderContributionsLifecycleProps}

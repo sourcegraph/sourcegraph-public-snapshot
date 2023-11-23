@@ -7,7 +7,7 @@
 }
 
 .repo-action-icon {
-    fill: var(--link-color) !important;
+    fill: var(--icon-color) !important;
 }
 
 @media (--md-breakpoint-down) {
@@ -23,12 +23,7 @@
     padding: 0rem 0.5rem;
 }
 
-.copy-icon {
-    height: 0.75rem;
-    fill: var(--link-color);
-}
-
-.check-icon {
+.checked-icon {
     fill: green !important;
 }
 

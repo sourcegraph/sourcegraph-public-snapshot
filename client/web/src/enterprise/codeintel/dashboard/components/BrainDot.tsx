@@ -59,7 +59,7 @@ const BrainDotContent: React.FunctionComponent<BrainDotProps> = ({ repoName, com
                             key="none"
                             name="none"
                             label="None"
-                            wrapperClassName="py-1"
+                            wrapperClassName="py-1 px-2"
                             checked={visibleIndexID === undefined}
                             onChange={() => {
                                 delete indexIDsForSnapshotData[repoName]
@@ -72,7 +72,7 @@ const BrainDotContent: React.FunctionComponent<BrainDotProps> = ({ repoName, com
                                 id={index.id}
                                 name={index.id}
                                 checked={visibleIndexID === index.id}
-                                wrapperClassName="py-1"
+                                wrapperClassName="py-1 px-2"
                                 label={
                                     <>
                                         Index at <Code>{index.inputCommit.slice(0, 7)}</Code>
@@ -88,7 +88,7 @@ const BrainDotContent: React.FunctionComponent<BrainDotProps> = ({ repoName, com
                 </MenuHeader>
             )}
             {(visibleIndexes?.length ?? 0) === 0 && !visibleIndexesLoading && (
-                <Text className="mb-0">No precise indexes to display debug information for.</Text>
+                <small className="px-2">No precise indexes to display debug information for.</small>
             )}
         </>
     )

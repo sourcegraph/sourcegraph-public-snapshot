@@ -219,9 +219,9 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
             </Routes>
             {!isPackage && (
                 <RepoHeaderContributionPortal
-                    id="go-to-permalink"
-                    priority={3}
                     position="right"
+                    priority={1}
+                    id="go-to-permalink"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
                     {context => (

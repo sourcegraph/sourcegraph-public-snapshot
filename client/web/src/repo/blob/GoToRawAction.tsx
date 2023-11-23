@@ -9,6 +9,8 @@ import { Icon, Link } from '@sourcegraph/wildcard'
 import { RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import type { RepoHeaderContext } from '../RepoHeader'
 
+import styles from './GoToRawAction.module.scss'
+
 interface Props extends RepoSpec, Partial<RevisionSpec>, FileSpec, RepoHeaderContext, TelemetryProps {}
 
 /**
@@ -33,7 +35,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
                 onSelect={this.onClick.bind(this)}
                 download={true}
             >
-                <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} />
+                <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} className={styles.repoActionIcon} />
                 <span>Raw download</span>
             </RepoHeaderActionMenuLink>
         )

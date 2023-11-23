@@ -109,8 +109,8 @@ export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionPro
                     <Icon
                         aria-hidden={true}
                         svgPath={copyLinkIcon}
-                        className={classNames(styles.copyIcon, {
-                            [styles.checkIcon]: copied,
+                        className={classNames(styles.repoActionIcon, {
+                            [styles.checkedIcon]: copied,
                         })}
                     />
                     <Text className={styles.repoActionLabel}>{copyLinkLabel}</Text>

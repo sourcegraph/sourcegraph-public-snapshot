@@ -11,6 +11,8 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
 import type { RepoHeaderContext } from '../../RepoHeader'
 
+import styles from './ToggleLineWrap.module.scss'
+
 /**
  * A repository header action that toggles the line wrapping behavior for long lines in code files.
  */
@@ -78,7 +80,7 @@ export class ToggleLineWrap extends React.PureComponent<
                     as={this.state.value ? WrapDisabledIcon : undefined}
                     svgPath={!this.state.value ? mdiWrap : undefined}
                     aria-hidden={true}
-                    fill="text-muted"
+                    className={styles.repoActionIcon}
                 />
                 <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines</span>
             </RepoHeaderActionMenuItem>
