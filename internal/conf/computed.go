@@ -796,6 +796,10 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		Endpoint:                         completionsConfig.Endpoint,
 		PerUserDailyLimit:                completionsConfig.PerUserDailyLimit,
 		PerUserCodeCompletionsDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
+		PerCommunityUserChatMonthlyLimit: completionsConfig.PerCommunityUserChatMonthlyLimit,
+		PerCommunityUserCodeCompletionsMonthlyLimit: completionsConfig.PerCommunityUserCodeCompletionsMonthlyLimit,
+		PerProUserChatDailyLimit:                    completionsConfig.PerProUserChatDailyLimit,
+		PerProUserCodeCompletionsDailyLimit:         completionsConfig.PerProUserCodeCompletionsDailyLimit,
 	}
 
 	return computedConfig

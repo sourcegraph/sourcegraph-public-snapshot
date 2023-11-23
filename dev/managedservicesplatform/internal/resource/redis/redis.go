@@ -21,11 +21,11 @@ type Output struct {
 
 type Config struct {
 	ProjectID string
-
-	Region  string
-	Network computenetwork.ComputeNetwork
+	Region    string
 
 	Spec spec.EnvironmentResourceRedisSpec
+
+	Network computenetwork.ComputeNetwork
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {

@@ -59402,6 +59402,10 @@ func (c RepoPathStoreUpdateFileCountsFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockRepoStatisticsStore struct {
+	// CompactGitserverReposStatisticsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// CompactGitserverReposStatistics.
+	CompactGitserverReposStatisticsFunc *RepoStatisticsStoreCompactGitserverReposStatisticsFunc
 	// CompactRepoStatisticsFunc is an instance of a mock function object
 	// controlling the behavior of the method CompactRepoStatistics.
 	CompactRepoStatisticsFunc *RepoStatisticsStoreCompactRepoStatisticsFunc
@@ -59428,6 +59432,11 @@ type MockRepoStatisticsStore struct {
 // overwritten.
 func NewMockRepoStatisticsStore() *MockRepoStatisticsStore {
 	return &MockRepoStatisticsStore{
+		CompactGitserverReposStatisticsFunc: &RepoStatisticsStoreCompactGitserverReposStatisticsFunc{
+			defaultHook: func(context.Context) (r0 error) {
+				return
+			},
+		},
 		CompactRepoStatisticsFunc: &RepoStatisticsStoreCompactRepoStatisticsFunc{
 			defaultHook: func(context.Context) (r0 error) {
 				return
@@ -59466,6 +59475,11 @@ func NewMockRepoStatisticsStore() *MockRepoStatisticsStore {
 // overwritten.
 func NewStrictMockRepoStatisticsStore() *MockRepoStatisticsStore {
 	return &MockRepoStatisticsStore{
+		CompactGitserverReposStatisticsFunc: &RepoStatisticsStoreCompactGitserverReposStatisticsFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockRepoStatisticsStore.CompactGitserverReposStatistics")
+			},
+		},
 		CompactRepoStatisticsFunc: &RepoStatisticsStoreCompactRepoStatisticsFunc{
 			defaultHook: func(context.Context) error {
 				panic("unexpected invocation of MockRepoStatisticsStore.CompactRepoStatistics")
@@ -59504,6 +59518,9 @@ func NewStrictMockRepoStatisticsStore() *MockRepoStatisticsStore {
 // implementation, unless overwritten.
 func NewMockRepoStatisticsStoreFrom(i database.RepoStatisticsStore) *MockRepoStatisticsStore {
 	return &MockRepoStatisticsStore{
+		CompactGitserverReposStatisticsFunc: &RepoStatisticsStoreCompactGitserverReposStatisticsFunc{
+			defaultHook: i.CompactGitserverReposStatistics,
+		},
 		CompactRepoStatisticsFunc: &RepoStatisticsStoreCompactRepoStatisticsFunc{
 			defaultHook: i.CompactRepoStatistics,
 		},
@@ -59523,6 +59540,112 @@ func NewMockRepoStatisticsStoreFrom(i database.RepoStatisticsStore) *MockRepoSta
 			defaultHook: i.WithTransact,
 		},
 	}
+}
+
+// RepoStatisticsStoreCompactGitserverReposStatisticsFunc describes the
+// behavior when the CompactGitserverReposStatistics method of the parent
+// MockRepoStatisticsStore instance is invoked.
+type RepoStatisticsStoreCompactGitserverReposStatisticsFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall
+	mutex       sync.Mutex
+}
+
+// CompactGitserverReposStatistics delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockRepoStatisticsStore) CompactGitserverReposStatistics(v0 context.Context) error {
+	r0 := m.CompactGitserverReposStatisticsFunc.nextHook()(v0)
+	m.CompactGitserverReposStatisticsFunc.appendCall(RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// CompactGitserverReposStatistics method of the parent
+// MockRepoStatisticsStore instance is invoked and the hook queue is empty.
+func (f *RepoStatisticsStoreCompactGitserverReposStatisticsFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CompactGitserverReposStatistics method of the parent
+// MockRepoStatisticsStore instance invokes the hook at the front of the
+// queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *RepoStatisticsStoreCompactGitserverReposStatisticsFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStatisticsStoreCompactGitserverReposStatisticsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStatisticsStoreCompactGitserverReposStatisticsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *RepoStatisticsStoreCompactGitserverReposStatisticsFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStatisticsStoreCompactGitserverReposStatisticsFunc) appendCall(r0 RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall objects
+// describing the invocations of this function.
+func (f *RepoStatisticsStoreCompactGitserverReposStatisticsFunc) History() []RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall is an object
+// that describes an invocation of method CompactGitserverReposStatistics on
+// an instance of MockRepoStatisticsStore.
+type RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStatisticsStoreCompactGitserverReposStatisticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // RepoStatisticsStoreCompactRepoStatisticsFunc describes the behavior when

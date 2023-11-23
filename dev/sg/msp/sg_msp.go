@@ -273,6 +273,11 @@ sg msp generate -all <service>
 					Usage:       "Optionally provide an environment ID as well to only sync that environment.",
 					ArgsUsage:   "<service ID> [environment ID]",
 					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:  "all",
+							Usage: "Generate Terraform Cloud workspaces for all environments",
+							Value: false,
+						},
 						&cli.StringFlag{
 							Name:  "workspace-run-mode",
 							Usage: "One of 'vcs', 'cli'",
@@ -337,6 +342,9 @@ sg msp generate -all <service>
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
+							if targetEnv == "" && !c.Bool("all") {
+								return errors.New("second argument environment ID is required without the '-all' flag")
+							}
 							for _, env := range service.Environments {
 								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
