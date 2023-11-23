@@ -34,6 +34,7 @@ go_library(
         "//internal/rcache",
         "//internal/redispool",
         "//internal/requestclient",
+        "//internal/requestinteraction",
         "//internal/service",
         "//internal/trace",
         "//internal/trace/policy",

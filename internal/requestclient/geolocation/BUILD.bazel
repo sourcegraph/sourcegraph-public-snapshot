@@ -1,0 +1,26 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "geolocation",
+    srcs = ["geolocation.go"],
+    embedsrcs = ["data/dbip-country-lite-2023-11.mmdb"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/requestclient/geolocation",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/syncx",
+        "//lib/errors",
+        "@com_github_oschwald_maxminddb_golang//:maxminddb-golang",
+    ],
+)
+
+go_test(
+    name = "geolocation_test",
+    srcs = ["geolocation_test.go"],
+    embed = [":geolocation"],
+    deps = [
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
