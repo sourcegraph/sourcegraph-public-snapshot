@@ -13,9 +13,11 @@ import (
 
 const (
 	// SourcegraphDockerDevRegistry is a private registry for dev images, and requires authentication to pull from.
-	SourcegraphDockerDevRegistry = "us.gcr.io/sourcegraph-dev"
+	// SourcegraphDockerDevRegistry = "us.gcr.io/sourcegraph-dev"
+	SourcegraphDockerDevRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
 	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
-	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
+	// SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
+	SourcegraphDockerPublishRegistry = "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-public"
 )
 
 // DevRegistryImage returns the name of the image for the given app and tag on the

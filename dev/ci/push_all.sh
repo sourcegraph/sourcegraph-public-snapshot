@@ -42,10 +42,14 @@ function create_push_command() {
 }
 
 dev_registries=(
-  "us.gcr.io/sourcegraph-dev"
+  # "us.gcr.io/sourcegraph-dev"
+  # Temporary registry we use to test release process with internal releases
+  "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
 )
 prod_registries=(
-  "index.docker.io/sourcegraph"
+  # "index.docker.io/sourcegraph"
+  # Temporary registry we use to test release process with public releases
+  "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-public"
 )
 
 date_fragment="$(date +%Y-%m-%d)"
