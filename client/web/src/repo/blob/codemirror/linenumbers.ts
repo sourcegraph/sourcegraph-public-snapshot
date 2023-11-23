@@ -54,11 +54,6 @@ const selectedLinesTheme = EditorView.theme({
         minHeight: 'calc(1.5rem + 1px)',
     },
 
-    // Selected line background is set by adding 'selected-line' class to the layer markers.
-    '.cm-line.selected-line': {
-        background: 'transparent',
-    },
-
     /**
      * Rectangle markers `left` position matches the position of the character at the start of range
      * (for selected lines it is first character of the first line in a range). When line content (`.cm-line`)
