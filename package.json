@@ -46,7 +46,6 @@
     "release": "cd dev/release && pnpm run release",
     "docsite:serve": "./dev/docsite.sh -config doc/docsite.json serve -http=localhost:5080",
     "build-browser-extension": "pnpm --filter @sourcegraph/browser run build",
-    "optimize-svg-assets": "svgo --multipass --config=\"./svgo.config.js\"",
     "chromatic": "CHROMATIC=true pnpm run _chromatic --storybook-config-dir client/storybook/src --build-script-name=storybook:build",
     "_chromatic": "chromatic"
   },
@@ -170,7 +169,6 @@
     "@types/simmerjs": "0.5.4",
     "@types/sinon": "9.0.4",
     "@types/stream-json": "^1.7.3",
-    "@types/svgo": "2.6.0",
     "@types/uuid": "8.0.1",
     "@types/whatwg-url": "^11.0.3",
     "@types/yauzl": "^2.9.2",
@@ -250,7 +248,6 @@
     "string-width": "^4.2.0",
     "strip-ansi": "^6.0.1",
     "stylelint": "^14.3.0",
-    "svgo": "^2.7.0",
     "term-size": "^2.2.0",
     "text-table": "^0.2.0",
     "ts-dedent": "^2.2.0",
