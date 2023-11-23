@@ -76,7 +76,7 @@ func (m *mockResolver) LookupHost(hostname string) ([]string, error) {
 	case "sourcegraph.com":
 		return []string{"1.2.3.4"}, nil
 	default:
-		return []string{}, errors.New("no such host")
+		return []string{}, errors.Newf("no such host: %s", hostname)
 	}
 }
 
@@ -105,12 +105,16 @@ func ResetDenyList() {
 	defaultDenylist = old
 }
 
-// CheckAddress validates the intended destination address for a webhook, checking that
-// it's not invalid, local, a bad IP, or anything else.
-func CheckAddress(address string) error {
-	u, uErr := url.Parse(address)
-	if uErr != nil || !strings.HasPrefix(u.Scheme, "http") || u.Host == "" {
-		return errors.New("Could not parse address")
+// CheckURL validates the intended destination URL for a webhook, ensuring that
+// the hostname is not invalid, a bad IP, or anything else.
+func CheckURL(dest string) error {
+	u, uErr := url.Parse(dest)
+	if uErr != nil {
+		return errors.Newf("Could not parse provided URL %s", dest)
+	}
+
+	if !strings.HasPrefix(u.Scheme, "http") || u.Host == "" {
+		return errors.Newf("Unsupported URL provided %s", dest)
 	}
 
 	// This will validate if the IP address is external. Private, loopback and other
@@ -130,20 +134,22 @@ func CheckAddress(address string) error {
 	ip := net.ParseIP(u.Hostname())
 
 	if ip != nil {
-		if isIllegalIp(ip, hostAllowList) {
+		if isIllegalIP(ip, hostAllowList) {
 			return errIllegalAddr
 		}
-	} else {
-		addrs, err = defaultResolver.LookupHost(u.Hostname())
+		return nil
+	}
 
-		if err != nil || len(addrs) == 0 {
-			return errors.New("Could not resolve hostname")
-		}
-		for _, addr := range addrs {
-			if ip := net.ParseIP(addr); ip != nil {
-				if isIllegalIp(ip, hostAllowList) {
-					return errIllegalAddr
-				}
+	// we have to deal with a hostname
+	addrs, err = defaultResolver.LookupHost(u.Hostname())
+	if err != nil || len(addrs) == 0 {
+		return errors.New("Could not resolve hostname")
+	}
+
+	for _, addr := range addrs {
+		if ip := net.ParseIP(addr); ip != nil {
+			if isIllegalIP(ip, hostAllowList) {
+				return errIllegalAddr
 			}
 		}
 	}
@@ -151,7 +157,7 @@ func CheckAddress(address string) error {
 	return nil
 }
 
-func isIllegalIp(ip net.IP, hostAllowList *hostmatcher.HostMatchList) bool {
+func isIllegalIP(ip net.IP, hostAllowList *hostmatcher.HostMatchList) bool {
 	// if we do not match the IP address, it's not in the allow list
 	return hostAllowList.MatchIPAddr(ip)
 }

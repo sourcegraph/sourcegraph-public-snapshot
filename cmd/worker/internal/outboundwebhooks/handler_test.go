@@ -85,9 +85,7 @@ func TestHandler_Handle(t *testing.T) {
 		}
 
 		outbound.SetTestDenyList()
-		t.Cleanup(func() {
-			outbound.ResetDenyList()
-		})
+		t.Cleanup(outbound.ResetDenyList)
 
 		err := h.Handle(ctx, logger, job)
 		// We expect an error here because sadServer returned a 500.
@@ -143,9 +141,7 @@ func TestHandler_Handle(t *testing.T) {
 		}
 
 		outbound.SetTestDenyList()
-		t.Cleanup(func() {
-			outbound.ResetDenyList()
-		})
+		t.Cleanup(outbound.ResetDenyList)
 
 		err := h.Handle(ctx, logger, job)
 		assert.ErrorIs(t, err, want)

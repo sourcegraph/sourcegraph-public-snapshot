@@ -72,7 +72,7 @@ func TestCheckAddress(t *testing.T) {
 		}
 
 		for _, badURL := range badURLS {
-			err := CheckAddress(badURL)
+			err := CheckURL(badURL)
 			if !assert.Error(t, err) {
 				t.Fatalf("expected error, got nil for url '%v'", badURL)
 			}
@@ -89,7 +89,7 @@ func TestCheckAddress(t *testing.T) {
 		}
 
 		for _, goodURL := range goodURLS {
-			err := CheckAddress(goodURL)
+			err := CheckURL(goodURL)
 			if err != nil {
 				t.Fatalf("expected nil, got err for url '%v': %v", goodURL, err)
 			}
