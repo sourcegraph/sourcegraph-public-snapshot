@@ -116,6 +116,7 @@ mocha_test(
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:app)",
     },
     flaky = True,
+    is_percy_enabled = True,
     tags = [
         "no-sandbox",
         "requires-network",
