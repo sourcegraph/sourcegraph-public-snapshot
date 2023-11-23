@@ -1,9 +1,10 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 
 rust_binary(
     name = "scip-treesitter-cli",
-    srcs = glob(["src/main.rs"]),
+    srcs = ["src/main.rs"],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
@@ -87,4 +88,44 @@ rust_test(
         ":scip-treesitter-cli",
         ":scip-treesitter-cli-lib",
     ] + WORKSPACE_DEPS,
+)
+
+oci_image(
+    name = "stuff_image",
+    base = "@scip-java",
+)
+
+oci_tarball(
+    name = "stuff_image_tarball",
+    image = ":stuff_image",
+    repo_tags = ["scip-java-tmp:tmp"],
+)
+
+genrule(
+    name = "stuff",
+    srcs = [
+        "stuff.sh",
+        ":stuff_image_tarball",
+    ],
+    outs = ["index.scip"],
+    cmd = """\
+    $(location stuff.sh) $(location :stuff_image_tarball) $@
+    """,
+    tags = ["requires-network"],
+)
+
+# This is just to showcase how to get the output produced by :stuff
+# You'll probably want to use this in the data attribute of some tests.
+# It will be available during the test executions in the same folder
+# that the BUILD.bazel you're currently reading is located at.
+#
+# If some reason, you need it to be elsewhere, it's totally fine, there
+# rules to copy things around so they end up where you want them to be.
+genrule(
+    name = "stuff2",
+    srcs = [":stuff"],
+    outs = ["wfepwfepwe"],
+    cmd = """\
+    cat $(location :stuff)
+    """,
 )
