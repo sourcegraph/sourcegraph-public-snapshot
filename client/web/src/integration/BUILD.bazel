@@ -122,5 +122,7 @@ mocha_test(
         "requires-network",
     ],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
-    deps = [":integration_tests"],
+    deps = [
+        ":integration_tests",
+    ],
 )
