@@ -221,6 +221,7 @@ sg msp generate -all <service>
 					Value: true,
 				},
 			},
+			BashComplete: msprepo.ServicesCompletion(),
 			Action: func(c *cli.Context) error {
 				var (
 					generateAll    = c.Bool("all")
@@ -300,6 +301,7 @@ sg msp generate -all <service>
 							Value: false,
 						},
 					},
+					BashComplete: msprepo.ServicesCompletion(),
 					Action: func(c *cli.Context) error {
 						serviceID := c.Args().First()
 						if serviceID == "" {
