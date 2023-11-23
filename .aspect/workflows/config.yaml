@@ -10,7 +10,6 @@ bazel:
     # TODO(burmudar): launch containers with uid/guid mapped in
     - --noexperimental_reuse_sandbox_directories
 env:
-    CI: "true"
     PGUSER: postgres
     PGPASSWORD: postgres
     PGDATABASE: postgres
