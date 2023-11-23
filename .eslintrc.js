@@ -17,6 +17,7 @@ const config = {
     '**/vendor/*.js',
     'svelte.config.js',
     'vite.config.ts',
+    'vitest.config.ts',
     'playwright.config.ts',
     '.vscode-test',
     '**/*.json',
@@ -24,6 +25,8 @@ const config = {
     'eslint-relative-formatter.js',
     'typedoc.js',
     'bundlesize.config.js',
+    '**/dev/esbuild/*',
+    'graphql-schema-linter.config.js',
   ],
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
