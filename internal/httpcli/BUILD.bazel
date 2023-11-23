@@ -22,6 +22,7 @@ go_library(
         "//internal/metrics",
         "//internal/rcache",
         "//internal/requestclient",
+        "//internal/requestinteraction",
         "//internal/trace",
         "//internal/trace/policy",
         "//internal/types",

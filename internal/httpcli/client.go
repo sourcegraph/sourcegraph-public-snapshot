@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -144,6 +145,7 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
 			ExpJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	}
 	if cache {
@@ -212,6 +214,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
 		RequestClientTransportOpt,
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -834,6 +837,19 @@ func RequestClientTransportOpt(cli *http.Client) error {
 
 	cli.Transport = &wrappedTransport{
 		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
+
+	return nil
+}
+
+func RequestInteractionTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestinteraction.HTTPTransport{RoundTripper: cli.Transport},
 		Wrapped:      cli.Transport,
 	}
 
