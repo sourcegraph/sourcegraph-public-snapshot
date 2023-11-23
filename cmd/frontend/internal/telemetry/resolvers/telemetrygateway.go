@@ -25,11 +25,13 @@ func newTelemetryGatewayEvents(
 		event.Feature = e.Feature
 		event.Action = e.Action
 
-		// Override the interaction ID if one is explicitly provided
+		// Override interaction ID, or just set it, if an interaction ID is
+		// explicitly provided as part of event data.
 		if e.Parameters.InteractionID != nil && len(*e.Parameters.InteractionID) > 0 {
 			if event.Interaction == nil {
 				event.Interaction = &telemetrygatewayv1.EventInteraction{}
 			}
+			event.Interaction.InteractionId = e.Parameters.InteractionID
 		}
 
 		// Parse private metadata
