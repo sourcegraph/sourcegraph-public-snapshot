@@ -12,10 +12,10 @@ build --repository_cache=/home/buildkite/repocache-sourcegraph
 build --test_env=PATH
 
 # Needed for DB in CI
-build --test_env=PGUSER=postgres
-build --test_env=PGPASSWORD=postgres
-build --test_env=PGSSLMODE
-build --test_env=PGDATABASE=postgres
+test --test_env=PGUSER=postgres
+test --test_env=PGPASSWORD=postgres
+test --test_env=PGSSLMODE
+test --test_env=PGDATABASE=postgres
 
 # Allow tests to understand they're running in CI, which forces dbtest to drop database even in case of failures.
 # TODO(JH) we should instead wipe all templates after a job finishes.
@@ -31,11 +31,11 @@ build --test_env=BUILDKITE
 # Needed for mocha tests
 # We have to use the `--define` flag here instead of `--test_env` because
 # the mocha tests target is the build target and it's tested with `build_test`.
-build --define=E2E_HEADLESS=false
+test --define=E2E_HEADLESS=false
 # if we set this to localhost, chrome will refuse to conenct since local host is in its HTTP Strict Transport Security
 # by setting the loopback address we get passed that
-build --define=E2E_SOURCEGRAPH_BASE_URL="http://127.0.0.1:7080"
-build --define=DISPLAY=:99
+test --define=E2E_SOURCEGRAPH_BASE_URL="http://127.0.0.1:7080"
+test --define=DISPLAY=:99
 
 # Provides git commit, branch information to build targets like Percy via status file.
 # https://bazel.build/docs/user-manual#workspace-status
