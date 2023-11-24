@@ -163,13 +163,6 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 
 	cmds = append(cmds, bazelApplyPrecheckChanges())
 
-	// bazel build //client/web:bundle is very resource hungry and often crashes when ran along other targets
-	// so we run it first to avoid failing builds midway.
-	cmds = append(cmds,
-		bazelAnnouncef("bazel build //client/web:bundle"),
-		bk.Cmd(bazelCmd("build //client/web:bundle")),
-	)
-
 	for _, target := range targets {
 		cmd := bazelCmd(fmt.Sprintf("test %s", target))
 		bazelTestCmds = append(bazelTestCmds,
