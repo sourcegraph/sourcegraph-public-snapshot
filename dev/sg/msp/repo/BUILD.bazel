@@ -10,6 +10,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//dev/sg/internal/std",
+        "//lib/cliutil/completions",
         "//lib/errors",
         "@com_github_urfave_cli_v2//:cli",
     ],
