@@ -1,4 +1,4 @@
-package service
+package runtime
 
 import (
 	"fmt"
