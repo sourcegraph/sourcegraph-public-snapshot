@@ -34,7 +34,7 @@ extend type Query {
     """
     EXPERIMENTAL: Validate a search job.
     """
-   validateSearchJob(
+    validateSearchJob(
         """
         The query to validate.
         """
