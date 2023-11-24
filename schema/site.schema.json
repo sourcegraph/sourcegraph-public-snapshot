@@ -2770,32 +2770,32 @@
           "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "description": "If > 0, limits the maximum number of completions requests allowed by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
           "type": "integer",
           "default": 0
         },
         "perUserCodeCompletionsDailyLimit": {
-          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "description": "If > 0, limits the maximum number of code completions requests allowed by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
           "type": "integer",
           "default": 0
         },
         "perCommunityUserChatMonthlyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.",
+          "description": "If > 0, limits the maximum number of completions requests allowed by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
         "perCommunityUserCodeCompletionsMonthlyLimit": {
-          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.",
+          "description": "If > 0, limits the maximum number of code completions requests allowed by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
         "perProUserChatDailyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+          "description": "If > 0, limits the maximum number of completions requests allowed by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
         "perProUserCodeCompletionsDailyLimit": {
-          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+          "description": "If > 0, limits the maximum number of code completions requests allowed by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         }
