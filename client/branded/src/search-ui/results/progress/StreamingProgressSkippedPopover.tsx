@@ -343,7 +343,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
     const navigate = useNavigate()
     const [createSearchJob, { loading, error }] = useMutation(CREATE_SEARCH_JOB)
     const { error: validationError, loading: validationLoading } = useQuery(VALIDATE_SEARCH_JOB, {
-        variables: { query: query },
+        variables: { query },
     })
 
     useEffect(() => {
