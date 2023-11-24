@@ -103,13 +103,20 @@ func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 		return nil, err
 	}
 
+	var auther auth.Authenticator
+	if config.AccessToken != "" {
+		auther = &auth.OAuthBearerToken{Token: config.AccessToken}
+	} else {
+		auther = &auth.BasicAuth{
+			Username: config.Username,
+			Password: config.AppPassword,
+		}
+	}
+
 	return &client{
 		httpClient: httpClient,
 		URL:        extsvc.NormalizeBaseURL(apiURL),
-		Auth: &auth.BasicAuth{
-			Username: config.Username,
-			Password: config.AppPassword,
-		},
+		Auth:       auther,
 		// Default limits are defined in extsvc.GetLimitFromConfig
 		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketCloudClient", ""), urn)),
 	}, nil

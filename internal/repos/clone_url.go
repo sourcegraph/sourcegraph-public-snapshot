@@ -163,7 +163,7 @@ func bitbucketServerCloneURL(repo *bitbucketserver.Repo, cfg *schema.BitbucketSe
 }
 
 // bitbucketCloudCloneURL returns the repository's Git remote URL with the configured
-// Bitbucket Cloud app password inserted in the URL userinfo.
+// Bitbucket Cloud app password or workspace access token inserted in the URL userinfo.
 func bitbucketCloudCloneURL(logger log.Logger, repo *bitbucketcloud.Repo, cfg *schema.BitbucketCloudConnection) string {
 	if cfg.GitURLType == "ssh" {
 		return fmt.Sprintf("git@%s:%s.git", cfg.Url, repo.FullName)
@@ -186,7 +186,11 @@ func bitbucketCloudCloneURL(logger log.Logger, repo *bitbucketcloud.Repo, cfg *s
 		return fallbackURL
 	}
 
-	u.User = url.UserPassword(cfg.Username, cfg.AppPassword)
+	if cfg.AccessToken != "" {
+		u.User = url.UserPassword("x-token-auth", cfg.AccessToken)
+	} else {
+		u.User = url.UserPassword(cfg.Username, cfg.AppPassword)
+	}
 	return u.String()
 }
 
