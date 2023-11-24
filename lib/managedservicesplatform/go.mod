@@ -10,7 +10,7 @@ require (
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.21.0
 	github.com/jackc/pgx/v5 v5.5.0
 	github.com/prometheus/client_golang v1.17.0
-	github.com/sourcegraph/conc v0.3.0
+	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/log v0.0.0-20231018134238-fbadff7458bb
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20231122233253-1f857814717c
 	go.opentelemetry.io/contrib/detectors/gcp v1.21.1
