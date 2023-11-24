@@ -2495,12 +2495,12 @@
           "format": "uri"
         },
         "perCommunityUserEmbeddingsMonthlyLimit": {
-          "description": "If > 0, limits the MBs of code allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
         "perProUserEmbeddingsMonthlyLimit": {
-          "description": "If > 0, limits the MBs of code allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },

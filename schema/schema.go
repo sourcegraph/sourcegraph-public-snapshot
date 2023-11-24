@@ -690,9 +690,9 @@ type Embeddings struct {
 	MinimumInterval string `json:"minimumInterval,omitempty"`
 	// Model description: The model used for embedding. A default model will be used for each provider, if not set.
 	Model string `json:"model,omitempty"`
-	// PerCommunityUserEmbeddingsMonthlyLimit description: If > 0, limits the MBs of code allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.
+	// PerCommunityUserEmbeddingsMonthlyLimit description: If > 0, limits the number of tokens allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.
 	PerCommunityUserEmbeddingsMonthlyLimit int `json:"perCommunityUserEmbeddingsMonthlyLimit,omitempty"`
-	// PerProUserEmbeddingsMonthlyLimit description: If > 0, limits the MBs of code allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.
+	// PerProUserEmbeddingsMonthlyLimit description: If > 0, limits the number of tokens allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.
 	PerProUserEmbeddingsMonthlyLimit int `json:"perProUserEmbeddingsMonthlyLimit,omitempty"`
 	// PolicyRepositoryMatchLimit description: The maximum number of repositories that can be matched by a global embeddings policy
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
