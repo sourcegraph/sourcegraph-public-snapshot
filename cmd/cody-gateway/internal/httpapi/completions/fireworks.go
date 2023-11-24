@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"io"
 	"net/http"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
@@ -29,6 +29,7 @@ func NewFireworksHandler(
 	httpClient httpcli.Doer,
 	accessToken string,
 	allowedModels []string,
+	logSelfServeCodeCompletionRequests bool,
 ) http.Handler {
 	return makeUpstreamHandler(
 		baseLogger,
@@ -55,7 +56,35 @@ func NewFireworksHandler(
 					body.N = 1
 				}
 			},
-			getRequestMetadata: func(body fireworksRequest) (model string, additionalMetadata map[string]any) {
+			getRequestMetadata: func(ctx context.Context, logger log.Logger, act *actor.Actor, body fireworksRequest) (model string, additionalMetadata map[string]any) {
+				// we checked this is a code completion request in validateRequest
+				// check that actor is a PLG user
+				if logSelfServeCodeCompletionRequests && act.IsDotComActor() {
+					// record a new event in event logger
+					// TODO: add more metadata to the event
+					if err := eventLogger.LogEvent(
+						ctx,
+						events.Event{
+							Name:       codygateway.EventNameCodeCompletionLogged,
+							Source:     act.Source.Name(),
+							Identifier: act.ID,
+							Metadata: map[string]any{
+								"request": map[string]any{
+									"prompt":      body.Prompt,
+									"model":       body.Model,
+									"max_tokens":  body.MaxTokens,
+									"temperature": body.Temperature,
+									"top_p":       body.TopP,
+									"n":           body.N,
+									"stream":      body.Stream,
+									"echo":        body.Echo,
+									"stop":        body.Stop,
+								},
+							},
+						}); err != nil {
+						logger.Error("failed to log event", log.Error(err))
+					}
+				}
 				return body.Model, map[string]any{"stream": body.Stream}
 			},
 			transformRequest: func(r *http.Request) {
