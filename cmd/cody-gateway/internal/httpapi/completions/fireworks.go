@@ -60,8 +60,7 @@ func NewFireworksHandler(
 				// we checked this is a code completion request in validateRequest
 				// check that actor is a PLG user
 				if logSelfServeCodeCompletionRequests && act.IsDotComActor() {
-					// record a new event in event logger
-					// TODO: add more metadata to the event
+					// LogEvent is a channel send (not an external request), so should be ok here
 					if err := eventLogger.LogEvent(
 						ctx,
 						events.Event{
