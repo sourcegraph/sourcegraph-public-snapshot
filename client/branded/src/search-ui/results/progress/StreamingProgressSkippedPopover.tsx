@@ -1,4 +1,4 @@
-import React, { useCallback, useState, type FC } from 'react'
+import React, { useCallback, useState, type FC, useEffect } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
@@ -345,6 +345,12 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
     const { error: validationError, loading: validationLoading } = useQuery(VALIDATE_SEARCH_JOB, {
         variables: { query: query },
     })
+
+    useEffect(() => {
+        const validState = validationError ? 'invalid' : 'valid'
+
+        telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
+    }, [telemetryService, validationError])
 
     const handleCreateSearchJobClick = async (): Promise<void> => {
         await createSearchJob({ variables: { query } })
