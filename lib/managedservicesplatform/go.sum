@@ -20,6 +20,8 @@ github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.41
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.17.0 h1:DwGeS/9k9xdpnvVQuJF+L9bYNFvBCmCWlDA8d8opoZY=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.17.0/go.mod h1:SUVNJAkkyRKeM3L46/NhFGIz+Kx1zetN09qUs1XbMx8=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/cloudmock v0.41.0 h1:ZJwvlTjB8GycSRpysdcRv3FztommLDUfgii0VUUp5ys=
+github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.41.0 h1:MWQ81b2TkSLbDpLINiKdZdoht1VMEHCKr4BSZpb/KQ8=
+github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.41.0/go.mod h1:lz6DEePTxmjvYMtusOoS3qDAErC0STi/wmvqJucKY28=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.43.1 h1:ti4stlXHjDhGl+1h+EpqXv9+Wxv0XqCB3XTT4W6ZoQU=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.43.1/go.mod h1:lv7cjEH/BKG+7xh3vR4T8//UkWZ9eIkgAk6HpN/T6rk=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=

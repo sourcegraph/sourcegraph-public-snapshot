@@ -3051,8 +3051,8 @@ def go_dependencies():
         name = "com_github_googlecloudplatform_opentelemetry_operations_go_internal_resourcemapping",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping",
-        sum = "h1:ti4stlXHjDhGl+1h+EpqXv9+Wxv0XqCB3XTT4W6ZoQU=",
-        version = "v0.43.1",
+        sum = "h1:MWQ81b2TkSLbDpLINiKdZdoht1VMEHCKr4BSZpb/KQ8=",
+        version = "v0.41.0",
     )
 
     go_repository(
