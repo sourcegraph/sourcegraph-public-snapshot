@@ -20,6 +20,11 @@ replace (
 	// We publish 'lib' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/lib => ./lib
+	// We publish 'lib/managedservicesplatform' as a sub-package for import
+	// private services developed in other repositories, and to avoid bloating
+	// the more lightweight 'lib' package.
+	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
+	github.com/sourcegraph/sourcegraph/lib/managedservicesplatform => ./lib/managedservicesplatform
 	// We publish 'monitoring' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
