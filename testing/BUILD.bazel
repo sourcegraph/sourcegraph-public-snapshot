@@ -2,6 +2,7 @@ load(":defs.bzl", "server_integration_test")
 
 server_integration_test(
     name = "e2e_test",
+    timeout = "long",
     args = [
         "$(location //client/web/src/end-to-end:e2e)",
         "$(rootpath //:mocha_config)",

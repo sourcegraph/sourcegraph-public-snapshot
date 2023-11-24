@@ -152,9 +152,6 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                     )}
                 </div>
             </div>
-            <div className="mt-5">
-                We want to hear your feedback! <Link to="mailto:feedback@sourcegraph.com">Share your thoughts</Link>
-            </div>
         </>
     )
 }
