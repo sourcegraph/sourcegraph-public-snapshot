@@ -1,5 +1,6 @@
 <script lang="ts" context="module">
     import type { BlobFileFields } from '$lib/repo/api/blob'
+    import { HovercardView } from '$lib/repo/HovercardView'
 
     export interface BlobInfo extends BlobFileFields {
         commitID: string
@@ -8,8 +9,7 @@
         revision: string
     }
 
-    const shCompartment = new Compartment()
-    const miscSettingsCompartment = new Compartment()
+    const extensionsCompartment = new Compartment()
 
     const defaultTheme = EditorView.theme({
         '&': {
@@ -45,6 +45,15 @@
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
+        '.sourcegraph-document-highlight': {
+            backgroundColor: 'var(--secondary)',
+        },
+        '.selection-highlight': {
+            backgroundColor: 'var(--mark-bg)',
+        },
+        '.cm-tooltip': {
+            border: 'none',
+        },
     })
 
     const staticExtensions: Extension = [
@@ -66,7 +75,7 @@
             role: 'generic',
         }),
         defaultTheme,
-        buildLinks.of(true),
+        linkify,
     ]
 
     function configureSyntaxHighlighting(content: string, lsif: string): Extension {
@@ -81,27 +90,31 @@
 <script lang="ts">
     import '$lib/highlight.scss'
 
-    import { Compartment, EditorState, StateEffect, type Extension } from '@codemirror/state'
+    import { Compartment, EditorState, type Extension } from '@codemirror/state'
     import { EditorView } from '@codemirror/view'
     import { createEventDispatcher, onMount } from 'svelte'
 
     import { browser } from '$app/environment'
     import {
-        blobPropsFacet,
         selectableLineNumbers,
         syntaxHighlight,
         type SelectedLineRange,
         setSelectedLines,
         isValidLineRange,
-        codeIntelAPI as codeIntelAPIFacet,
-        buildLinks,
+        linkify,
+        createCodeIntelExtension,
+        syncSelection,
+        temporaryTooltip,
     } from '$lib/web'
-    import type { CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+    import { goto } from '$app/navigation'
+    import { getModeFromPath, type CodeIntelAPI } from '$lib/shared'
+    import { goToDefinition, openImplementations, openReferences } from './repo/blob'
+    import type { LineOrPositionOrRange } from '$lib/common'
 
     export let blobInfo: BlobInfo
     export let highlights: string
     export let wrapLines: boolean = false
-    export let selectedLines: SelectedLineRange | null = null
+    export let selectedLines: LineOrPositionOrRange | null = null
     export let codeIntelAPI: CodeIntelAPI
 
     const dispatch = createEventDispatcher<{ selectline: SelectedLineRange }>()
@@ -109,60 +122,80 @@
     let editor: EditorView
     let container: HTMLDivElement | null = null
 
-    function createEditor(container: HTMLDivElement): EditorView {
-        const extensions = [
-            // @ts-ignore - ugly (temporary?) hack to avoid issues with existing extension (selectableLineNumbers)
-            blobPropsFacet.of({
-                blobInfo,
-            }),
-            codeIntelAPIFacet.of(codeIntelAPI),
-            staticExtensions,
-            selectableLineNumbers({
-                onSelection(range) {
-                    dispatch('selectline', range)
-                },
-                initialSelection: selectedLines,
-                navigateToLineOnAnyClick: false,
-            }),
-            miscSettingsCompartment.of(configureMiscSettings({ wrapLines })),
-            shCompartment.of(configureSyntaxHighlighting(blobInfo.content, highlights)),
-        ]
+    const lineNumbers = selectableLineNumbers({
+        onSelection(range) {
+            dispatch('selectline', range)
+        },
+        initialSelection: selectedLines?.line === undefined ? null : selectedLines,
+    })
 
-        const view = new EditorView({
-            state: EditorState.create({ doc: blobInfo.content, extensions }),
-            parent: container,
-        })
-        return view
+    $: documentInfo = {
+        repoName: blobInfo.repoName,
+        commitID: blobInfo.commitID,
+        revision: blobInfo.revision,
+        filePath: blobInfo.filePath,
     }
+    $: mode = getModeFromPath(blobInfo.filePath)
+    $: codeIntelExtension = createCodeIntelExtension({
+        api: {
+            api: codeIntelAPI,
+            documentInfo: documentInfo,
+            mode,
+            goToDefinition: (view, definition, options) => goToDefinition(documentInfo, view, definition, options),
+            openReferences,
+            openImplementations,
+            createTooltipView: options => new HovercardView(options.view, options.token, options.hovercardData),
+        },
+        // TODO(fkling): Support tooltip pinning
+        pin: {},
+        navigate: to => {
+            if (typeof to === 'number') {
+                if (to > 0) {
+                    history.forward()
+                } else {
+                    history.back()
+                }
+            } else {
+                goto(to.toString())
+            }
+        },
+    })
+    $: settings = configureMiscSettings({ wrapLines })
+    $: sh = configureSyntaxHighlighting(blobInfo.content, highlights)
 
-    function updateExtensions(effects: StateEffect<unknown> | readonly StateEffect<unknown>[]) {
+    $: extensions = [sh, settings, lineNumbers, temporaryTooltip, codeIntelExtension, staticExtensions]
+
+    function update(blobInfo: BlobInfo, extensions: Extension, range: LineOrPositionOrRange | null) {
         if (editor) {
-            editor.dispatch({ effects })
+            // TODO(fkling): Find a way to combine this into a single transaction.
+            if (editor.state.sliceDoc() !== blobInfo.content) {
+                editor.setState(
+                    EditorState.create({ doc: blobInfo.content, extensions: extensionsCompartment.of(extensions) })
+                )
+            } else {
+                editor.dispatch({ effects: [extensionsCompartment.reconfigure(extensions)] })
+            }
+            editor.dispatch({
+                effects: setSelectedLines.of(range?.line && isValidLineRange(range, editor.state.doc) ? range : null),
+            })
+
+            if (range) {
+                syncSelection(editor, range)
+            }
         }
     }
 
-    function updateSelectedLines(range: SelectedLineRange) {
-        if (editor) {
-            updateExtensions(setSelectedLines.of(range && isValidLineRange(range, editor.state.doc) ? range : null))
-        }
-    }
-
-    // Update blob content and highlights
-    $: updateExtensions(shCompartment.reconfigure(configureSyntaxHighlighting(blobInfo.content, highlights)))
-    // Update line wrapping
-    $: updateExtensions(miscSettingsCompartment.reconfigure(configureMiscSettings({ wrapLines })))
-    // Update selected line
-    $: updateSelectedLines(selectedLines)
-
-    $: if (editor && editor?.state.sliceDoc() !== blobInfo.content) {
-        editor.dispatch({
-            changes: { from: 0, to: editor.state.doc.length, insert: blobInfo.content },
-        })
-    }
+    $: update(blobInfo, extensions, selectedLines)
 
     onMount(() => {
         if (container) {
-            editor = createEditor(container)
+            editor = new EditorView({
+                state: EditorState.create({ doc: blobInfo.content, extensions: extensionsCompartment.of(extensions) }),
+                parent: container,
+            })
+            if (selectedLines) {
+                syncSelection(editor, selectedLines)
+            }
         }
     })
 </script>

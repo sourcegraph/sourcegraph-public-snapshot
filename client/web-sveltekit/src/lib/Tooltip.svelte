@@ -74,7 +74,7 @@
 >
     <slot />
 </div>
-{#if (alwaysVisible || visible) && target}
+{#if (alwaysVisible || visible) && target && tooltip}
     <div role="tooltip" {id} use:popover={{ target, options }}>
         {tooltip}
         <div data-popper-arrow />
@@ -96,7 +96,9 @@
         --tooltip-padding-x: 0.5rem;
         --tooltip-margin: 0;
 
+        all: initial;
         isolation: isolate;
+        font-family: inherit;
         font-size: var(--tooltip-font-size);
         font-style: normal;
         font-weight: normal;

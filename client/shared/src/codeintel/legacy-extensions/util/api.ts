@@ -265,15 +265,18 @@ function buildSearchQuery(fileLocal: boolean): string {
                     ... on FileMatch {
                         __typename
                         file {
+                            canonicalURL
                             path
                             commit {
                                 oid
                             }
                         }
                         repository {
+                            id
                             name
                         }
                         symbols {
+                            canonicalURL
                             name
                             kind
                             location {

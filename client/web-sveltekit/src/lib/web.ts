@@ -6,8 +6,21 @@ export { createSuggestionsSource } from '@sourcegraph/web/src/search/input/sugge
 export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
 
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'
-export { buildLinks } from '@sourcegraph/web/src/repo/blob/codemirror/links'
-export { codeIntelAPI } from '@sourcegraph/web/src/repo/blob/codemirror/token-selection/extension'
+export { linkify } from '@sourcegraph/web/src/repo/blob/codemirror/links'
+export { createCodeIntelExtension } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/extension'
+export type { TooltipViewOptions } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/api'
+export { positionToOffset, locationToURL } from '@sourcegraph/web/src/repo/blob/codemirror/utils'
+export { syncSelection } from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/token-selection'
+export {
+    showTemporaryTooltip,
+    temporaryTooltip,
+} from '@sourcegraph/web/src/repo/blob/codemirror/tooltips/TemporaryTooltip'
+export type {
+    CodeIntelAPIConfig,
+    Definition,
+    GoToDefinitionOptions,
+    DocumentInfo,
+} from '@sourcegraph/web/src/repo/blob/codemirror/codeintel/api'
 export {
     selectableLineNumbers,
     type SelectedLineRange,
