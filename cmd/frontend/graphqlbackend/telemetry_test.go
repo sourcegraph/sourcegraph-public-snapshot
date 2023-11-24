@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/structpb"
 
@@ -33,6 +34,30 @@ func TestTelemetryRecordEvents(t *testing.T) {
 		// Assertions on received events.
 		assert func(t *testing.T, gotEvents []TelemetryEventInput)
 	}{
+		{
+			name: "simple event with interaction ID",
+			gqlEventsInput: `
+				{
+					feature: "cody.fixup"
+					action: "applied"
+					source: {
+						client: "VSCode.Cody"
+						clientVersion: "0.14.1"
+					}
+					parameters: {
+						version: 0
+						interactionID: "f1d1b784-c69b-4ca4-802a-4dcbca7d660f"
+					}
+				}
+			`,
+			assert: func(t *testing.T, gotEvents []TelemetryEventInput) {
+				require.Len(t, gotEvents, 1)
+				assert.NotNil(t, gotEvents[0].Parameters)
+				assert.NotNil(t, gotEvents[0].Parameters.InteractionID)
+				assert.Equal(t, "f1d1b784-c69b-4ca4-802a-4dcbca7d660f",
+					*gotEvents[0].Parameters.InteractionID)
+			},
+		},
 		{
 			name: "object privateMetadata",
 			gqlEventsInput: `

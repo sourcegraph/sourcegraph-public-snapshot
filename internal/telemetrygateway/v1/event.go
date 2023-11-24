@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -35,6 +36,12 @@ func NewEventWithDefaults(ctx context.Context, now time.Time, newEventID func() 
 				traceID = pointers.Ptr(eventTrace.TraceID().String())
 			}
 
+			// Get the interaction ID if provided
+			var interactionID *string
+			if it := requestinteraction.FromContext(ctx); it != nil {
+				interactionID = pointers.Ptr(it.ID)
+			}
+
 			// Get geolocation of request client, if there is one.
 			var geolocation *EventInteraction_Geolocation
 			if rc := requestclient.FromContext(ctx); rc != nil {
@@ -47,13 +54,14 @@ func NewEventWithDefaults(ctx context.Context, now time.Time, newEventID func() 
 
 			// If we have nothing interesting to show, leave out Interaction
 			// entirely.
-			if traceID == nil && geolocation == nil {
+			if traceID == nil && interactionID == nil && geolocation == nil {
 				return nil
 			}
 
 			return &EventInteraction{
-				TraceId:     traceID,
-				Geolocation: geolocation,
+				TraceId:       traceID,
+				InteractionId: interactionID,
+				Geolocation:   geolocation,
 			}
 		}(),
 		User: func() *EventUser {
