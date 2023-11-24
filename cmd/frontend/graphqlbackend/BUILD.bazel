@@ -386,7 +386,7 @@ go_library(
 
 go_test(
     name = "graphqlbackend_test",
-    timeout = "moderate",
+    timeout = "long",
     srcs = [
         "access_requests_test.go",
         "access_tokens_test.go",

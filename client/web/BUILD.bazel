@@ -2120,6 +2120,7 @@ esbuild(
     minify = True,
     sourcemap = "linked",
     splitting = True,
+    tags = ["exclusive"],
     visibility = ["//client/web/dist:__subpackages__"],
     deps = ESBUILD_CONFIG_DEPS,
 )
