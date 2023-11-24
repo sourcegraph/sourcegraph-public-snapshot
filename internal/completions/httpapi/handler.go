@@ -85,10 +85,12 @@ func newCompletionsHandler(
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return
 			}
 			accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
+				return
 			}
 		}
 
