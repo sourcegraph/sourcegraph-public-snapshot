@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo",
     visibility = ["//visibility:public"],
     deps = [
+        "//dev/managedservicesplatform/spec",
         "//dev/sg/internal/std",
         "//lib/cliutil/completions",
         "//lib/errors",

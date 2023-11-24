@@ -7,6 +7,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
 )
@@ -61,7 +62,9 @@ func ListServices() ([]string, error) {
 	return listServicesFromRoot(".")
 }
 
-func ServicesCompletion() cli.BashCompleteFunc {
+// ServicesAndEnvironmentsCompletion provides completions capabilities for
+// commands that accept '<service ID> <environment ID>' positional arguments.
+func ServicesAndEnvironmentsCompletion() cli.BashCompleteFunc {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil
@@ -70,10 +73,25 @@ func ServicesCompletion() cli.BashCompleteFunc {
 	if err != nil {
 		return nil
 	}
-	return completions.CompleteOptions(func() (options []string) {
-		services, _ := listServicesFromRoot(repoRoot)
-		return services
-	})
+	return func(c *cli.Context) {
+		switch c.Args().Len() {
+		case 0: // service not yet provided, try to complete service
+			completions.CompleteOptions(func() (options []string) {
+				services, _ := listServicesFromRoot(repoRoot)
+				return services
+			})(c)
+		case 1: // service already provided, try to complete environment
+			completions.CompleteOptionsOnly(func() (options []string) {
+				svc, err := spec.Open(filepath.Join(repoRoot, ServiceYAMLPath(c.Args().First())))
+				if err != nil {
+					// try to complete services as a fallback
+					services, _ := listServicesFromRoot(repoRoot)
+					return services
+				}
+				return svc.ListEnvironmentIDs()
+			})(c)
+		}
+	}
 }
 
 func ServiceYAMLPath(serviceID string) string {

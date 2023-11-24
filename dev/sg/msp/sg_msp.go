@@ -190,9 +190,12 @@ func init() {
 			Aliases:     []string{"gen"},
 			ArgsUsage:   "<service ID>",
 			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
+			Usage: `Optionally use '-all' to sync all environments for a service.
+
+Supports completions on services and environments.`,
 			UsageText: `
 # generate single env for a single service
-sg msp generate -e <env> <service>
+sg msp generate <service> <env>
 # generate all envs across all services
 sg msp generate -all
 # generate all envs for a single service
@@ -200,11 +203,6 @@ sg msp generate -all <service>
 			`,
 			Before: msprepo.UseManagedServicesRepo,
 			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "env",
-					Aliases: []string{"e"},
-					Usage:   "Target service environment - use '-all' to target all environments",
-				},
 				&cli.BoolFlag{
 					Name:  "all",
 					Usage: "Generate infrastructure stacks for all services, or all envs for a service if service ID is provided",
@@ -221,7 +219,7 @@ sg msp generate -all <service>
 					Value: true,
 				},
 			},
-			BashComplete: msprepo.ServicesCompletion(),
+			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
 				var (
 					generateAll    = c.Bool("all")
@@ -237,7 +235,7 @@ sg msp generate -all <service>
 				if serviceID := c.Args().First(); serviceID == "" && !generateAll {
 					return errors.New("first argument service ID is required without the '-all' flag")
 				} else if serviceID != "" {
-					targetEnv := c.String("env")
+					targetEnv := c.Args().Get(1)
 					if targetEnv == "" && !generateAll {
 						return errors.New("second argument environment ID is required without the '-all' flag")
 					}
@@ -276,15 +274,12 @@ sg msp generate -all <service>
 			Subcommands: []*cli.Command{
 				{
 					Name:        "sync",
-					Description: "Create or update all required Terraform Cloud workspaces for a service",
-					Usage:       "Optionally provide an environment ID as well to only sync that environment.",
-					ArgsUsage:   "<service ID>",
+					Description: "Create or update all required Terraform Cloud workspaces for an environment",
+					Usage: `Optionally use '-all' to sync all environments for a service.
+
+Supports completions on services and environments.`,
+					ArgsUsage: "<service ID> [environment ID]",
 					Flags: []cli.Flag{
-						&cli.StringFlag{
-							Name:    "env",
-							Aliases: []string{"e"},
-							Usage:   "Target service environment - use '-all' to target all environments",
-						},
 						&cli.BoolFlag{
 							Name:  "all",
 							Usage: "Generate Terraform Cloud workspaces for all environments",
@@ -301,7 +296,7 @@ sg msp generate -all <service>
 							Value: false,
 						},
 					},
-					BashComplete: msprepo.ServicesCompletion(),
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
 						serviceID := c.Args().First()
 						if serviceID == "" {
@@ -345,7 +340,7 @@ sg msp generate -all <service>
 							return errors.Wrap(err, "init Terraform Cloud client")
 						}
 
-						if targetEnv := c.String("env"); targetEnv != "" {
+						if targetEnv := c.Args().Get(1); targetEnv != "" {
 							env := service.GetEnvironment(targetEnv)
 							if env == nil {
 								return errors.Newf("environment %q not found in service spec", targetEnv)
