@@ -139,7 +139,7 @@ func newExternalClientFactory(cache bool, testOpt bool, middleware ...Middleware
 	mw = append(mw, middleware...)
 
 	externalTransportOpt := ExternalTransportOpt
-	if testOpt {
+	if testOpt || env.InsecureDev {
 		externalTransportOpt = TestExternalTransportOpt
 	}
 
