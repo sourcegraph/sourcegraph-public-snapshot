@@ -32,6 +32,16 @@ extend type Mutation {
 
 extend type Query {
     """
+    EXPERIMENTAL: Validate a search job.
+    """
+   validateSearchJob(
+        """
+        The query to validate.
+        """
+        query: String!
+    ): EmptyResponse
+
+    """
     EXPERIMENTAL: Get a list of search jobs.
     """
     searchJobs(
