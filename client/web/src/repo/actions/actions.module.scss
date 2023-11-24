@@ -20,11 +20,11 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0rem 0.5rem;
+    padding: 0 0.5rem;
 }
 
 .checked-icon {
-    fill: green !important;
+    fill: var(--green) !important;
 }
 
 .chevron-btn {
