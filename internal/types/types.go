@@ -1656,16 +1656,10 @@ type SearchJobsUsageStatistics struct {
 	WeeklySearchJobsUniqueDownloadClicks *int32
 	WeeklySearchJobsUniqueViewLogsClicks *int32
 	WeeklySearchJobsSearchFormShown      []SearchJobsSearchFormShownPing
-	WeeklySearchJobsValidationErrors     []SearchJobsValidationErrorPing
 }
 
 type SearchJobsSearchFormShownPing struct {
 	ValidState string
-	TotalCount int
-}
-
-type SearchJobsValidationErrorPing struct {
-	Errors     []string
 	TotalCount int
 }
 
