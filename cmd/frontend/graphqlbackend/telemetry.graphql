@@ -98,6 +98,14 @@ input TelemetryEventParametersInput {
     Billing-related metadata.
     """
     billingMetadata: TelemetryEventBillingMetadataInput
+    """
+    Optional interaction ID that can be provided to indicate the interaction
+    this event belongs to. It overrides the X-Sourcegraph-Interaction-ID header
+    if one is set on the request recording the event.
+
+    This parameter is only available in Sourcegraph 5.2.4 and later.
+    """
+    interactionID: String
 }
 
 """
