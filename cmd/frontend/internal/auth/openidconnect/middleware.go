@@ -237,8 +237,6 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 			errors.New("no state found (possible request forgery).")
 	}
 
-	fmt.Printf("\n\n%s == %s\n", oidcState, stateParam)
-
 	if oidcState != stateParam {
 		return nil,
 			"Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: state parameter did not match the expected value (possible request forgery).",
