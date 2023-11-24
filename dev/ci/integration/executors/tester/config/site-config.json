@@ -1,6 +1,6 @@
 {
   "executors.accessToken": "$EXECUTOR_FRONTEND_PASSWORD",
-  "executors.batcheshelperImage": "us.gcr.io/sourcegraph-dev/batcheshelper",
+  "executors.batcheshelperImage": "us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/batcheshelper",
   "executors.batcheshelperImageTag": "$CANDIDATE_VERSION",
   "auth.providers": [
     {
