@@ -177,10 +177,9 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 		return nil, nil
 	}
 
-	rateLimit := licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002"},
-		Limit:           int64(20 * tokensPerDollar),
-		IntervalSeconds: math.MaxInt32,
+	rateLimit, err := getEmbeddingsRateLimit(ctx, r.db)
+	if err != nil {
+		return nil, err
 	}
 
 	return &codyGatewayRateLimitResolver{
@@ -188,6 +187,39 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 		actorSource: codygateway.ActorSourceDotcomUser,
 		source:      graphqlbackend.CodyGatewayRateLimitSourcePlan,
 		v:           rateLimit,
+	}, nil
+}
+
+func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.CodyGatewayRateLimit, error) {
+	// Hard-coded defaults: 200M tokens for life
+	limit := int64(20 * tokensPerDollar)
+	intervalSeconds := int32(math.MaxInt32)
+
+	// Apply self-serve limits if available
+	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	if cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
+		actor := sgactor.FromContext(ctx)
+		user, err := actor.User(ctx, db.Users())
+		if err != nil {
+			return licensing.CodyGatewayRateLimit{}, err
+		}
+		intervalSeconds = oneMonthInSeconds
+		isProUser := user.CodyProEnabledAt != nil
+		if isProUser {
+			if cfg.PerProUserEmbeddingsMonthlyLimit > 0 {
+				limit = int64(cfg.PerProUserEmbeddingsMonthlyLimit)
+			}
+		} else {
+			if cfg.PerCommunityUserEmbeddingsMonthlyLimit > 0 {
+				limit = int64(cfg.PerCommunityUserEmbeddingsMonthlyLimit)
+			}
+		}
+	}
+
+	return licensing.CodyGatewayRateLimit{
+		AllowedModels:   []string{"openai/text-embedding-ada-002"},
+		Limit:           limit,
+		IntervalSeconds: intervalSeconds,
 	}, nil
 }
 
