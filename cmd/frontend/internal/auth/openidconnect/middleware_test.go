@@ -196,6 +196,7 @@ func TestMiddleware(t *testing.T) {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
+		session.SetData(respRecorder, req, "oidcState", validState)
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
@@ -388,6 +389,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 			req.AddCookie(cookie)
 		}
 		respRecorder := httptest.NewRecorder()
+		session.SetData(respRecorder, req, "oidcState", state)
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
