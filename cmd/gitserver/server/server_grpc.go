@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -292,7 +293,7 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err := p4testWithTrust(ss.Context(), req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
+	err := p4testWithTrust(ss.Context(), req.GetP4Port(), req.GetP4User(), req.GetP4Passwd(), filepath.Join(gs.Server.ReposDir, P4HomeName))
 	if err != nil {
 		if ctxErr := ss.Context().Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()

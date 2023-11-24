@@ -71,7 +71,7 @@ func (s *PerforceDepotSyncer) Type() string {
 }
 
 func (s *PerforceDepotSyncer) CanConnect(ctx context.Context, host, username, password string) error {
-	return p4testWithTrust(ctx, host, username, password)
+	return p4testWithTrust(ctx, host, username, password, s.P4Home)
 }
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
@@ -82,7 +82,7 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 	}
 
 	// start with a test and set up trust if necessary
-	if err := p4testWithTrust(ctx, host, username, password); err != nil {
+	if err := p4testWithTrust(ctx, host, username, password, s.P4Home); err != nil {
 		return err
 	}
 
@@ -95,7 +95,7 @@ func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, r
 	depot := strings.Split(strings.TrimLeft(path, "/"), "/")[0]
 
 	// get a list of depots that match the supplied depot (if it's defined)
-	if depots, err := p4depots(ctx, host, username, password, depot); err != nil {
+	if depots, err := p4depots(ctx, host, username, password, s.P4Home, depot); err != nil {
 		return err
 	} else if len(depots) == 0 {
 		// this user doesn't have access to any depots,
@@ -118,7 +118,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 		return nil, errors.Wrap(err, "decompose")
 	}
 
-	err = p4testWithTrust(ctx, p4port, username, password)
+	err = p4testWithTrust(ctx, p4port, username, password, s.P4Home)
 	if err != nil {
 		return nil, errors.Wrap(err, "test with trust")
 	}
@@ -164,7 +164,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 		return nil, errors.Wrap(err, "decompose")
 	}
 
-	err = p4testWithTrust(ctx, host, username, password)
+	err = p4testWithTrust(ctx, host, username, password, s.P4Home)
 	if err != nil {
 		return nil, errors.Wrap(err, "test with trust")
 	}
@@ -255,13 +255,14 @@ func decomposePerforceRemoteURL(remoteURL *vcs.URL) (username, password, host, d
 }
 
 // p4trust blindly accepts fingerprint of the Perforce server.
-func p4trust(ctx context.Context, host string) error {
+func p4trust(ctx context.Context, host, p4home string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "p4", "trust", "-y", "-f")
 	cmd.Env = append(os.Environ(),
 		"P4PORT="+host,
+		"HOME="+p4home,
 	)
 
 	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
@@ -278,7 +279,7 @@ func p4trust(ctx context.Context, host string) error {
 }
 
 // p4test uses `p4 login -s` to test the Perforce connection: host, port, user, password.
-func p4test(ctx context.Context, host, username, password string) error {
+func p4test(ctx context.Context, host, username, password, p4home string) error {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -291,6 +292,7 @@ func p4test(ctx context.Context, host, username, password string) error {
 		"P4PORT="+host,
 		"P4USER="+username,
 		"P4PASSWD="+password,
+		"HOME="+p4home,
 	)
 
 	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
@@ -309,7 +311,7 @@ func p4test(ctx context.Context, host, username, password string) error {
 // p4depots returns all of the depots to which the user has access on the host
 // and whose names match the given nameFilter, which can contain asterisks (*) for wildcards
 // if nameFilter is blank, return all depots
-func p4depots(ctx context.Context, host, username, password, nameFilter string) ([]PerforceDepot, error) {
+func p4depots(ctx context.Context, host, username, password, p4home, nameFilter string) ([]PerforceDepot, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
@@ -323,6 +325,7 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 		"P4PORT="+host,
 		"P4USER="+username,
 		"P4PASSWD="+password,
+		"HOME="+p4home,
 	)
 
 	out, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd))
@@ -368,15 +371,15 @@ func specifyCommandInErrorMessage(errorMsg string, command *exec.Cmd) string {
 }
 
 // p4testWithTrust attempts to test the Perforce server and performs a trust operation when needed.
-func p4testWithTrust(ctx context.Context, host, username, password string) error {
+func p4testWithTrust(ctx context.Context, host, username, password, p4home string) error {
 	// Attempt to check connectivity, may be prompted to trust.
-	err := p4test(ctx, host, username, password)
+	err := p4test(ctx, host, username, password, p4home)
 	if err == nil {
 		return nil // The test worked, session still valid for the user
 	}
 
 	if strings.Contains(err.Error(), "To allow connection use the 'p4 trust' command.") {
-		err := p4trust(ctx, host)
+		err := p4trust(ctx, host, p4home)
 		if err != nil {
 			return errors.Wrap(err, "trust")
 		}

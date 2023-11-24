@@ -22,10 +22,6 @@ import (
 // the algorithm
 const costEstimateVersion = 2
 
-const MaxAliasCount = 500        // SECURITY: prevent too many aliased queries
-const MaxFieldCount = 500 * 1000 // SECURITY: prevent deeply nested or overly broad queries
-const maxDepth = 30              // SECURITY: prevent deep queries that consume too many resources
-
 type QueryCost struct {
 	FieldCount int
 	MaxDepth   int
