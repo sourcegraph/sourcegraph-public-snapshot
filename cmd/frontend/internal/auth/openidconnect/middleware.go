@@ -225,7 +225,7 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 		desc := "Authentication failed. Try signing in again (and clearing cookies for the current site). No OpenID Connect state query parameter specified."
 		return nil,
 			desc,
-			http.StatusBadRequest,
+			http.StatusUnauthorized,
 			errors.New(desc)
 	}
 
@@ -233,14 +233,14 @@ func AuthCallback(db database.DB, r *http.Request, usernamePrefix string, getPro
 	if err := session.GetData(r, "oidcState", &oidcState); err != nil {
 		return nil,
 			"Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: no state cookie found.",
-			http.StatusBadRequest,
+			http.StatusUnauthorized,
 			errors.New("no state found (possible request forgery).")
 	}
 
 	if oidcState != stateParam {
 		return nil,
 			"Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: state parameter did not match the expected value (possible request forgery).",
-			http.StatusBadRequest,
+			http.StatusUnauthorized,
 			errors.New("state mismatch (possible request forgery)")
 	}
 
