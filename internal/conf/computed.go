@@ -1029,6 +1029,8 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
 		ExcludeChunkOnError:        pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
 		Qdrant:                     computedQdrantConfig,
+		PerCommunityUserEmbeddingsMonthlyLimit:      embeddingsConfig.PerCommunityUserEmbeddingsMonthlyLimit,
+		PerProUserEmbeddingsMonthlyLimit:            embeddingsConfig.PerProUserEmbeddingsMonthlyLimit,
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {
