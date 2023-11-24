@@ -7,6 +7,7 @@ import {
     CloneInProgressError,
     RepoNotFoundError,
     RepoSeeOtherError,
+    RepoDeniedError,
     RevisionNotFoundError,
 } from '@sourcegraph/shared/src/backend/errors'
 import {
@@ -124,6 +125,9 @@ export const resolveRepoRevision = memoizeObservable(
             { repoName, revision: revision || '' }
         ).pipe(
             map(({ data, errors }) => {
+                if (errors?.length === 1 && errors[0].extensions?.['code'] === 'ErrRepoDenied') {
+                    throw new RepoDeniedError(errors[0].message)
+                }
                 if (!data) {
                     throw createAggregateError(errors)
                 }

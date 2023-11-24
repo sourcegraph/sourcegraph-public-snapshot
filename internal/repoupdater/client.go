@@ -153,6 +153,11 @@ func (c *Client) RepoLookup(
 			return res, &ErrUnauthorized{Repo: args.Repo, NoAuthz: true}
 		case resp.GetErrorTemporarilyUnavailable():
 			return res, &ErrTemporary{Repo: args.Repo, IsTemporary: true}
+		case resp.GetErrorRepoDenied() != "":
+			return res, &ErrRepoDenied{
+				Repo:   args.Repo,
+				Reason: resp.GetErrorRepoDenied(),
+			}
 		}
 		return res, nil
 	}
@@ -191,6 +196,11 @@ func (c *Client) RepoLookup(
 			err = &ErrTemporary{
 				Repo:        args.Repo,
 				IsTemporary: true,
+			}
+		case result.ErrorRepoDenied != "":
+			err = &ErrRepoDenied{
+				Repo:   args.Repo,
+				Reason: result.ErrorRepoDenied,
 			}
 		}
 	}
