@@ -238,7 +238,6 @@ func (s *BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (Source, 
 	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
-
 }
 
 // ValidateAuthenticator validates the currently set authenticator is usable.
