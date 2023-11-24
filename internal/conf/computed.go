@@ -461,6 +461,7 @@ func PasswordPolicyEnabled() bool {
 }
 
 func RateLimits() schema.RateLimits {
+	// TODO add default for new variables
 	rl := schema.RateLimits{
 		GraphQLMaxAliases:    500,
 		GraphQLMaxFieldCount: 500_000,

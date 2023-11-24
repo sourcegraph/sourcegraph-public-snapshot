@@ -23,10 +23,12 @@ import (
 const costEstimateVersion = 2
 
 type QueryCost struct {
-	FieldCount int
-	MaxDepth   int
-	AliasCount int
-	Version    int
+	FieldCount             int
+	MaxDepth               int
+	MaxDuplicateFieldCount int // TODO implement in schema
+	MaxUniqueFieldCount    int // TODO implement in schema
+	AliasCount             int
+	Version                int
 }
 
 // EstimateQueryCost estimates the cost of the query before it is actually
@@ -184,6 +186,8 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 	nonNullVariables := make(map[string]any)
 	defaultValues := make(map[string]any)
 
+	countNodes := make(map[string]int)
+
 	v := &visitor.VisitorOptions{
 		Enter: func(p visitor.VisitFuncParams) (string, any) {
 			switch node := p.Node.(type) {
@@ -201,6 +205,12 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 				// Values that won't appear in the result
 				case "nodes", "__typename":
 					return visitor.ActionNoChange, nil
+				default:
+					countNodes[node.Name.Value]++
+					if countNodes[node.Name.Value] > 500 {
+						// TODO return error instead of panic
+						panic("foo")
+					}
 				}
 				if inlineFragmentDepth > 0 {
 					// We don't count fields inside of inline fragments as we need to count all fragments
