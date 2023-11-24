@@ -87,7 +87,7 @@ var srcInstanceCommand = &cli.Command{
 				name := cmd.Args().First()
 				instance, ok := sc.Instances[name]
 				if !ok {
-					std.Out.WriteFailuref("Instance not found, register one with 'sg src register-instance'")
+					std.Out.WriteFailuref("Instance not found, register one with 'sg src-instance register'")
 					return errors.New("instance not found")
 				}
 				sc.Current = name
@@ -132,12 +132,12 @@ var srcCommand = &cli.Command{
 		}
 		instanceName := sc.Current
 		if instanceName == "" {
-			std.Out.WriteFailuref("Instance not found, register one with 'sg src register-instance'")
+			std.Out.WriteFailuref("Instance not found, register one with 'sg src-instance register'")
 			return errors.New("set an instance with sg src-instance use [instance-name]")
 		}
 		instance, ok := sc.Instances[instanceName]
 		if !ok {
-			std.Out.WriteFailuref("Instance not found, register one with 'sg src register-instance'")
+			std.Out.WriteFailuref("Instance not found, register one with 'sg src-instance register'")
 			return errors.New("instance not found")
 		}
 
