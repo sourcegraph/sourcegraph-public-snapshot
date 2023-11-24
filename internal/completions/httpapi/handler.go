@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"net/http"
 	"strconv"
 	"time"
@@ -73,12 +77,27 @@ func newCompletionsHandler(
 			Build()
 		defer done()
 
+		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled
+		accessToken := completionsConfig.AccessToken
+		if envvar.SourcegraphDotComMode() &&
+			featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) &&
+			completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph {
+			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+			}
+			accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusUnauthorized)
+			}
+		}
+
 		completionClient, err := client.Get(
 			logger,
 			events,
 			completionsConfig.Endpoint,
 			completionsConfig.Provider,
-			completionsConfig.AccessToken,
+			accessToken,
 		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
