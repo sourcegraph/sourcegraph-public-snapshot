@@ -16,6 +16,7 @@ go_library(
         "//lib/errors",
         "//lib/managedservicesplatform/runtime/internal/opentelemetry",
         "//lib/pointers",
+        "@com_github_getsentry_sentry_go//:sentry-go",
         "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_jackc_pgx_v5//stdlib",
         "@com_github_sourcegraph_log//:log",
