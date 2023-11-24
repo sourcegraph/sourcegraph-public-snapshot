@@ -60,7 +60,6 @@ mocha_test(
     timeout = "moderate",
     env = {
         "INCLUDE_ADMIN_ONBOARDING": "false",
-        "GH_TOKEN": "$(GH_TOKEN)",
     },
     node_toolchain = select({
         "//:darwin_docker_e2e_go": "@nodejs_darwin_arm64//:node_toolchain",
