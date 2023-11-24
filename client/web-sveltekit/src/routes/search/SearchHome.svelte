@@ -2,7 +2,7 @@
     import { setContext } from 'svelte'
 
     import { logoLight, logoDark } from '$lib/images'
-    import SearchBox from '$lib/search/SearchBox.svelte'
+    import SearchInput from '$lib/search/input/SearchInput.svelte'
     import type { QueryStateStore } from '$lib/search/state'
     import type { SearchPageContext } from '$lib/search/utils'
     import { isLightTheme } from '$lib/stores'
@@ -20,9 +20,8 @@
     <div class="content">
         <img class="logo" src={$isLightTheme ? logoLight : logoDark} alt="Sourcegraph Logo" />
         <div class="search">
-            <SearchBox autoFocus {queryState} />
+            <SearchInput {queryState} />
         </div>
-        <slot />
     </div>
 </section>
 
@@ -43,7 +42,6 @@
         align-items: center;
         width: 100%;
         max-width: 64rem;
-        overflow-x: hidden;
 
         :global(.search-box) {
             align-self: stretch;

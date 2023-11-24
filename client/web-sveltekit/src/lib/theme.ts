@@ -51,7 +51,6 @@ export const humanTheme = createMappingStore(
         }
     },
     value => {
-        console.log(value)
         switch (value) {
             case 'Light': {
                 return Theme.Light
