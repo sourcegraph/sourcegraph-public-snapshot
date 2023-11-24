@@ -594,14 +594,14 @@ type Completions struct {
 	FastChatModelMaxTokens int `json:"fastChatModelMaxTokens,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model,omitempty"`
-	// PerCommunityUserChatMonthlyLimit description: If > 0, limits the number of completions requests allowed for a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.
-	PerCommunityUserChatMonthlyLimit int `json:"perCommunityUserChatMonthlyLimit,omitempty"`
-	// PerCommunityUserCodeCompletionsMonthlyLimit description: If > 0, limits the number of code completions requests allowed for a Community user in a month.  This is for Self-serve Cody and applies to Dotcom only.
-	PerCommunityUserCodeCompletionsMonthlyLimit int `json:"perCommunityUserCodeCompletionsMonthlyLimit,omitempty"`
-	// PerProUserChatDailyLimit description: If > 0, limits the number of completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.
-	PerProUserChatDailyLimit int `json:"perProUserChatDailyLimit,omitempty"`
-	// PerProUserCodeCompletionsDailyLimit description: If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.
-	PerProUserCodeCompletionsDailyLimit int `json:"perProUserCodeCompletionsDailyLimit,omitempty"`
+	// PerCommunityUserChatMonthlyLLMRequestLimit description: If > 0, limits the number of completions requests allowed for a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.
+	PerCommunityUserChatMonthlyLLMRequestLimit int `json:"perCommunityUserChatMonthlyLLMRequestLimit,omitempty"`
+	// PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit description: If > 0, limits the number of code completions requests allowed for a Community user in a month.  This is for Self-serve Cody and applies to Dotcom only.
+	PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit int `json:"perCommunityUserCodeCompletionsMonthlyLLMRequestLimit,omitempty"`
+	// PerProUserChatDailyLLMRequestLimit description: If > 0, limits the number of completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.
+	PerProUserChatDailyLLMRequestLimit int `json:"perProUserChatDailyLLMRequestLimit,omitempty"`
+	// PerProUserCodeCompletionsDailyLLMRequestLimit description: If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.
+	PerProUserCodeCompletionsDailyLLMRequestLimit int `json:"perProUserCodeCompletionsDailyLLMRequestLimit,omitempty"`
 	// PerUserCodeCompletionsDailyLimit description: If > 0, limits the number of code completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.
 	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
 	// PerUserDailyLimit description: If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.

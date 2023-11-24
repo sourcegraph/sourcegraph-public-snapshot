@@ -2795,22 +2795,22 @@
           "type": "integer",
           "default": 0
         },
-        "perCommunityUserChatMonthlyLimit": {
+        "perCommunityUserChatMonthlyLLMRequestLimit": {
           "description": "If > 0, limits the number of completions requests allowed for a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
-        "perCommunityUserCodeCompletionsMonthlyLimit": {
+        "perCommunityUserCodeCompletionsMonthlyLLMRequestLimit": {
           "description": "If > 0, limits the number of code completions requests allowed for a Community user in a month.  This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
-        "perProUserChatDailyLimit": {
+        "perProUserChatDailyLLMRequestLimit": {
           "description": "If > 0, limits the number of completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
-        "perProUserCodeCompletionsDailyLimit": {
+        "perProUserCodeCompletionsDailyLLMRequestLimit": {
           "description": "If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
