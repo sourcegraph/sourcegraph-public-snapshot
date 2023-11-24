@@ -25,4 +25,7 @@ import (
 
 	// Used to generate schema
 	_ "github.com/pseudomuto/protoc-gen-doc"
+
+	// Brings in the TypeScript gazelle plugin
+	_ "aspect.build/cli/gazelle/js"
 )
