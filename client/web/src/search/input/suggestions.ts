@@ -170,6 +170,7 @@ const SEARCH_CONTEXT_QUERY = gql`
 `
 
 interface Repo {
+    id: string
     name: string
     stars: number
 }
