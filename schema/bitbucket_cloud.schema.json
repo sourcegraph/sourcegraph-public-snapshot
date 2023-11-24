@@ -7,6 +7,25 @@
   "type": "object",
   "additionalProperties": false,
   "required": ["url"],
+  "oneOf": [
+    {
+      "allOf": [
+        {
+          "required": ["accessToken"]
+        },
+        {
+          "not": { "required": ["username"] }
+        },
+        {
+          "not": { "required": ["appPassword"] }
+        }
+      ]
+    },
+    {
+      "required": ["username", "appPassword"],
+      "not": { "required": ["accessToken"] }
+    }
+  ],
   "properties": {
     "url": {
       "description": "URL of Bitbucket Cloud, such as https://bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.",
