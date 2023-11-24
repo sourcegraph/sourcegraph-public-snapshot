@@ -14,3 +14,4 @@ export { pluralize, numberWithCommas } from '@sourcegraph/common/src/util/string
 export { renderMarkdown } from '@sourcegraph/common/src/util/markdown/markdown'
 export { highlightNodeMultiline, highlightNode } from '@sourcegraph/common/src/util/highlightNode'
 export { logger } from '@sourcegraph/common/src/util/logger'
+export { isSafari } from '@sourcegraph/common/src/util/browserDetection'
