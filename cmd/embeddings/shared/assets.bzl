@@ -12,4 +12,3 @@ def embbedings_assets_deps():
         url = "https://storage.googleapis.com/buildkite_public_assets/query_embeddings.gob",
         sha256 = "48e816d9ad033d2661a5c2999232ceccb430427ed4ce6330824f7c123db05a03",
     )
-
