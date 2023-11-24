@@ -13,7 +13,7 @@ env:
     GIT_PAGER: ''
 tasks:
     # Checks that BUILD file content is up-to-date with sources
-    # gazelle:
+    gazelle:
     # Checks that all tests are passing
     test:
       include_eternal_tests: true

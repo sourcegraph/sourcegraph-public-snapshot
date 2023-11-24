@@ -1,2 +1,3 @@
 BAZELISK_BASE_URL=https://github.com/aspect-build/aspect-cli/releases/download
 USE_BAZEL_VERSION=aspect/5.8.5
+# Keep version in sync with go.mod aspect.build/cli dep

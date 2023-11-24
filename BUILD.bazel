@@ -183,7 +183,7 @@ eslint_test_with_types(
 # Go
 
 gazelle_binary(
-    name = "gazelle-buf",
+    name = "gazelle_bin",
     languages = [
         # Loads the native proto extension
         "@bazel_gazelle//language/proto:go_default_library",
@@ -191,14 +191,23 @@ gazelle_binary(
         # ourselves.
         "@bazel_gazelle//language/go:go_default_library",
         # Loads the Buf extension
-        "@rules_buf//gazelle/buf:buf",
         # NOTE: This needs to be loaded after the proto language
+        "@rules_buf//gazelle/buf:buf",
+        # Loads the JavaScript extension
+        "@build_aspect_cli//gazelle/js:js",
     ],
 )
 
 gazelle(
     name = "gazelle",
-    gazelle = ":gazelle-buf",
+    gazelle = ":gazelle_bin",
+    mode = "fix",
+)
+
+gazelle(
+    name = "gazelle.check",
+    gazelle = ":gazelle_bin",
+    mode = "diff",
 )
 
 go_library(

@@ -14,6 +14,9 @@ replace (
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b
+	// Bumping to a newer version of go-tree-sitter breaks //cmd/symbols/squirrel:squirrel_test. Some comments
+	// that are currently found are no longer found on the newer version.
+	github.com/smacker/go-tree-sitter => github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3
 	// We publish 'dev/ci/images' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/dev/ci/images => ./dev/ci/images
@@ -170,7 +173,7 @@ require (
 	github.com/sergi/go-diff v1.3.1
 	github.com/shurcooL/httpgzip v0.0.0-20190720172056-320755c1c1b0
 	github.com/slack-go/slack v0.10.1
-	github.com/smacker/go-tree-sitter v0.0.0-20220209044044-0d3022e933c3
+	github.com/smacker/go-tree-sitter v0.0.0-20230501083651-a7d92773b3aa
 	github.com/sourcegraph/go-ctags v0.0.0-20231024141911-299d0263dc95
 	github.com/sourcegraph/go-diff v0.6.2-0.20221123165719-f8cd299c40f3
 	github.com/sourcegraph/go-jsonschema v0.0.0-20221230021921-34aaf28fc4ac
@@ -249,6 +252,7 @@ require (
 )
 
 require (
+	aspect.build/cli v1.508.5
 	github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai v0.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.8.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
@@ -304,6 +308,9 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.1 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
+	github.com/bazelbuild/bazel-gazelle v0.33.0 // indirect
+	github.com/bazelbuild/buildtools v0.0.0-20230831140646-386244e73fc4 // indirect
+	github.com/bmatcuk/doublestar/v4 v4.6.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/cockroachdb/apd/v2 v2.0.1 // indirect
@@ -327,7 +334,6 @@ require (
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-hclog v1.2.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-slug v0.12.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
@@ -347,9 +353,9 @@ require (
 	github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
+	github.com/msolo/jsonr v0.0.0-20231023064044-62fbfc3a0313 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.7 // indirect
-	github.com/onsi/gomega v1.27.8 // indirect
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.17 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
