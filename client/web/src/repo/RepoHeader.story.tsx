@@ -8,7 +8,7 @@ import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import type { AuthenticatedUser } from '../auth'
 
-import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
+import { GoToPermalinkAction } from './actions/CopyPermalinkAction'
 import { FilePathBreadcrumbs } from './FilePathBreadcrumbs'
 import { RepoHeader, type RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoRevisionContainerBreadcrumb } from './RepoRevisionContainer'

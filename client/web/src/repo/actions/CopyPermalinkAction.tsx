@@ -30,7 +30,7 @@ import type { RepoHeaderContext } from '../RepoHeader'
 
 import styles from './actions.module.scss'
 
-interface GoToPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
+interface CopyPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
     /**
      * The current (possibly undefined or non-full-SHA) Git revision.
      */
@@ -46,14 +46,16 @@ interface GoToPermalinkActionProps extends RepoHeaderContext, TelemetryProps {
  * A repository header action that replaces the revision in the URL with the canonical 40-character
  * Git commit SHA.
  */
-export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionProps> = props => {
+export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionProps> = props => {
     const { revision, commitID, actionType, repoName, telemetryService } = props
 
     const navigate = useNavigate()
     const location = useLocation()
     const fullURL = location.pathname + location.search + location.hash
     const permalinkURL = useMemo(() => replaceRevisionInURL(fullURL, commitID || ''), [fullURL, commitID])
-    const [copied, setCopied] = useState<boolean>(false)
+    const linkURL = useMemo(() => replaceRevisionInURL(fullURL, revision || ''), [fullURL, revision])
+    const [copiedPermalink, setCopiedPermalink] = useState<boolean>(false)
+    const [copiedLink, setCopiedLink] = useState<boolean>(false)
 
     useEffect(() => {
         // Trigger the user presses 'y'.
@@ -89,28 +91,36 @@ export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionPro
     }
 
     const copyPermalink = (): void => {
-        // event.preventDefault()
-        telemetryService.log('CopyFilePath')
+        telemetryService.log('CopyPermalink')
         copy(permalinkURL)
-        setCopied(true)
-        screenReaderAnnounce('Path copied to clipboard')
+        setCopiedPermalink(true)
+        screenReaderAnnounce('Permalink copied to clipboard')
 
-        setTimeout(() => setCopied(false), 1000)
+        setTimeout(() => setCopiedPermalink(false), 1000)
     }
 
-    const copyLinkLabel = copied ? 'Copied!' : 'Copy Link'
-    const copyLinkIcon = copied ? mdiCheckBold : mdiContentCopy
+    const copyLink = (): void => {
+        telemetryService.log('CopyLink')
+        copy(linkURL)
+        setCopiedLink(true)
+        screenReaderAnnounce('Link copied to clipboard')
+
+        setTimeout(() => setCopiedLink(false), 1000)
+    }
+
+    const copyLinkLabel = copiedLink ? 'Copied!' : 'Copy Link'
+    const copyLinkIcon = copiedLink ? mdiCheckBold : mdiContentCopy
     const isRevisionTheSameAsCommitID = revision === commitID
 
     return (
         <Menu>
             <ButtonGroup>
-                <Button className={classNames('border', styles.permalinkBtn, 'pt-0 pb-0')} onClick={copyPermalink}>
+                <Button className={classNames('border', styles.permalinkBtn, 'pt-0 pb-0')} onClick={copyLink}>
                     <Icon
                         aria-hidden={true}
                         svgPath={copyLinkIcon}
                         className={classNames(styles.repoActionIcon, {
-                            [styles.checkedIcon]: copied,
+                            [styles.checkedIcon]: copiedLink,
                         })}
                     />
                     <Text className={styles.repoActionLabel}>{copyLinkLabel}</Text>
@@ -128,8 +138,22 @@ export const GoToPermalinkAction: React.FunctionComponent<GoToPermalinkActionPro
                 )}
                 {!isRevisionTheSameAsCommitID && (
                     <MenuList position={Position.bottomEnd}>
-                        <MenuItem onSelect={copyPermalink} className={styles.dropdownItem}>
-                            <Text>Copy permalink</Text>
+                        <MenuItem
+                            onSelect={copyPermalink}
+                            className={classNames(styles.dropdownItem, 'justify-content-start')}
+                        >
+                            <Icon
+                                aria-hidden={true}
+                                svgPath={copiedPermalink ? mdiCheckBold : mdiContentCopy}
+                                className={classNames(
+                                    styles.repoActionIcon,
+                                    {
+                                        [styles.checkedIcon]: copiedPermalink,
+                                    },
+                                    'mr-1'
+                                )}
+                            />
+                            <Text className="mb-0 p-0">{copiedPermalink ? 'Copied' : 'Copy permalink'}</Text>
                         </MenuItem>
                     </MenuList>
                 )}
