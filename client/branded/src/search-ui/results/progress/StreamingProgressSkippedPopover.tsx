@@ -368,7 +368,7 @@ export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props =
 
             {validationError && (
                 <Alert variant="info" withIcon={true}>
-                    unsupported query: {validationError.message}
+                    {validationError.message}
                 </Alert>
             )}
 

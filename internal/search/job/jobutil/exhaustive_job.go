@@ -41,6 +41,9 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 	b := inputs.Plan[0]
 	term, ok := b.Pattern.(query.Pattern)
 	if !ok {
+		if b.Pattern == nil {
+			return Exhaustive{}, errors.Errorf("missing pattern")
+		}
 		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got %v", b.Pattern)
 	}
 
