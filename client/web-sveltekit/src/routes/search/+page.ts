@@ -83,7 +83,11 @@ export const load: PageLoad = ({ url, depends }) => {
             },
         }
     }
-    return {}
+    return {
+        queryOptions: {
+            query: '',
+        },
+    }
 }
 
 function createCacheKey(options: StreamSearchOptions, query: string): string {
