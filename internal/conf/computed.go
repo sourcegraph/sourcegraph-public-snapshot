@@ -796,10 +796,14 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		Endpoint:                         completionsConfig.Endpoint,
 		PerUserDailyLimit:                completionsConfig.PerUserDailyLimit,
 		PerUserCodeCompletionsDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
-		PerCommunityUserChatMonthlyLLMRequestLimit:            completionsConfig.PerCommunityUserChatMonthlyLLMRequestLimit,
-		PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit: completionsConfig.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit,
-		PerProUserChatDailyLLMRequestLimit:                    completionsConfig.PerProUserChatDailyLLMRequestLimit,
-		PerProUserCodeCompletionsDailyLLMRequestLimit:         completionsConfig.PerProUserCodeCompletionsDailyLLMRequestLimit,
+		PerCommunityUserChatMonthlyLLMRequestLimit:             completionsConfig.PerCommunityUserChatMonthlyLLMRequestLimit,
+		PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit:  completionsConfig.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit,
+		PerProUserChatDailyLLMRequestLimit:                     completionsConfig.PerProUserChatDailyLLMRequestLimit,
+		PerProUserCodeCompletionsDailyLLMRequestLimit:          completionsConfig.PerProUserCodeCompletionsDailyLLMRequestLimit,
+		PerCommunityUserChatMonthlyInteractionLimit:            completionsConfig.PerCommunityUserChatMonthlyInteractionLimit,
+		PerCommunityUserCodeCompletionsMonthlyInteractionLimit: completionsConfig.PerCommunityUserCodeCompletionsMonthlyInteractionLimit,
+		PerProUserChatDailyInteractionLimit:                    completionsConfig.PerProUserChatDailyInteractionLimit,
+		PerProUserCodeCompletionsDailyInteractionLimit:         completionsConfig.PerProUserCodeCompletionsDailyInteractionLimit,
 	}
 
 	return computedConfig

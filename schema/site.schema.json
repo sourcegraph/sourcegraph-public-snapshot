@@ -2814,6 +2814,26 @@
           "description": "If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
+        },
+        "perCommunityUserChatMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserCodeCompletionsMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserChatDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserCodeCompletionsDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
         }
       },
       "examples": [
