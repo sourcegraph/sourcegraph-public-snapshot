@@ -1,10 +1,12 @@
-package service
+package runtime
 
 import (
 	"context"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/background"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime/internal/opentelemetry"
 )
 
 type Service[ConfigT any] interface {
@@ -20,21 +22,28 @@ type Service[ConfigT any] interface {
 	) (background.CombinedRoutine, error)
 }
 
-// Run handles the entire lifecycle of the program running Service.
-func Run[
+// Start handles the entire lifecycle of the program running Service, and should
+// be the only thing called in a MSP program's main package, for example:
+//
+//	runtime.Start[example.Config](example.Service{})
+//
+// Where example.Config is your runtime.ConfigLoader implementation, and
+// example.Service is your runtime.Service implementation.
+func Start[
 	ConfigT any,
 	LoaderT ConfigLoader[ConfigT],
 ](service Service[ConfigT]) {
 	passSanityCheck()
 
-	r := log.Resource{
+	// Resource representing the service
+	res := log.Resource{
 		Name:       service.Name(),
 		Version:    service.Version(),
 		Namespace:  "",
 		InstanceID: "",
 	}
 
-	liblog := log.Init(r)
+	liblog := log.Init(res)
 	defer liblog.Sync()
 
 	ctx := context.Background()
@@ -56,6 +65,13 @@ func Run[
 	if err := env.validate(); err != nil {
 		logger.Fatal("environment configuration error encountered", log.Error(err))
 	}
+
+	// Initialize things dependent on configuration being loaded
+	otelCleanup, err := opentelemetry.Init(ctx, logger, contract.opentelemetryContract, res)
+	if err != nil {
+		logger.Fatal("failed to initialize OpenTelemetry", log.Error(err))
+	}
+	defer otelCleanup()
 
 	// Initialize the service
 	routine, err := service.Initialize(
