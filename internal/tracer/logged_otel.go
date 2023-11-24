@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
-	"go.opentelemetry.io/otel/trace/embedded"
 
 	"github.com/sourcegraph/log"
 )
@@ -16,8 +15,6 @@ type loggedOtelTracerProvider struct {
 	logger   log.Logger
 	provider oteltrace.TracerProvider
 	debug    *atomic.Bool
-
-	embedded.TracerProvider
 }
 
 var _ oteltrace.TracerProvider = &loggedOtelTracerProvider{}
@@ -56,8 +53,6 @@ type loggedOtelTracer struct {
 
 	// tracer is the wrapped tracer implementation.
 	tracer oteltrace.Tracer
-
-	embedded.Tracer
 }
 
 var _ oteltrace.Tracer = &loggedOtelTracer{}

@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace"
-	"go.opentelemetry.io/otel/trace/embedded"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
@@ -101,10 +100,9 @@ func HTTPMiddleware(operation string, next http.Handler, opts ...otelhttp.Option
 //
 // To achieve that, it shims the default TracerProvider with samplingRetainTracerProvider to inject
 // the attribute at the beginning of the span, which is mandatory to perform sampling.
-type samplingRetainTracerProvider struct{ embedded.TracerProvider }
+type samplingRetainTracerProvider struct{}
 type samplingRetainTracer struct {
 	tracer trace.Tracer
-	embedded.Tracer
 }
 
 func (p *samplingRetainTracerProvider) Tracer(instrumentationName string, opts ...trace.TracerOption) trace.Tracer {

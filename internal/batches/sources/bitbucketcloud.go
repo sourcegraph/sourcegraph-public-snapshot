@@ -23,9 +23,7 @@ type BitbucketCloudSource struct {
 	client bitbucketcloud.Client
 }
 
-var (
-	_ ForkableChangesetSource = BitbucketCloudSource{}
-)
+var _ ForkableChangesetSource = BitbucketCloudSource{}
 
 func NewBitbucketCloudSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketCloudSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)

@@ -7,7 +7,6 @@ import (
 	"go.opentelemetry.io/otel"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
-	"go.opentelemetry.io/otel/trace/noop"
 )
 
 // ConfigureStaticTracerProvider sets up a static tracer provider that generates
@@ -18,7 +17,7 @@ import (
 // trace spans.
 func ConfigureStaticTracerProvider(t *testing.T) {
 	t.Cleanup(func() {
-		otel.SetTracerProvider(noop.NewTracerProvider())
+		otel.SetTracerProvider(oteltrace.NewNoopTracerProvider())
 	})
 	otel.SetTracerProvider(oteltracesdk.NewTracerProvider(
 		oteltracesdk.WithIDGenerator(StaticTraceIDGenerator{})))

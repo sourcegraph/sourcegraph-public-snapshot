@@ -12,6 +12,5 @@ go_library(
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_metric//noop",
         "@io_opentelemetry_go_otel_trace//:trace",
-        "@io_opentelemetry_go_otel_trace//embedded",
     ],
 )
