@@ -28,7 +28,6 @@ type LicenseInfo struct {
 	CodeScaleLimit         string               `json:"codeScaleLimit"`
 	CodeScaleCloseToLimit  bool                 `json:"codeScaleCloseToLimit"`
 	CodeScaleExceededLimit bool                 `json:"codeScaleExceededLimit"`
-	KnownLicenseTags       []string             `json:"knownLicenseTags"`
 	BatchChanges           *FeatureBatchChanges `json:"batchChanges"`
 }
 

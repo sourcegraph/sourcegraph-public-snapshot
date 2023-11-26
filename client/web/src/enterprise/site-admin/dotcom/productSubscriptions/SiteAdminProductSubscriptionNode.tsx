@@ -32,22 +32,12 @@ export const SiteAdminProductSubscriptionNode: React.FunctionComponent<
 > = ({ node }) => (
     <tr>
         <td className="text-nowrap">
-            <LinkOrSpan to={node.urlForSiteAdmin} className="mr-3">
+            <LinkOrSpan to={`./${node.uuid}`} className="mr-3">
                 {node.name}
             </LinkOrSpan>
         </td>
         <td className="w-100">
             <AccountName account={node.account} />
-            {node.account && (
-                <div>
-                    <small>
-                        {node.account.emails
-                            .filter(email => email.isPrimary)
-                            .map(({ email }) => email)
-                            .join(', ')}
-                    </small>
-                </div>
-            )}
         </td>
         <td className="text-nowrap">
             <ProductSubscriptionLabel productSubscription={node} className="mr-3" />

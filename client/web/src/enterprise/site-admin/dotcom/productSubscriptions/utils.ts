@@ -1,4 +1,5 @@
 import type { ApolloError } from '@apollo/client'
+import { GraphQLError } from 'graphql'
 import { isEqual } from 'lodash'
 
 /**
@@ -34,7 +35,7 @@ export function prettyInterval(seconds: number): string {
     return result.trim()
 }
 
-export function errorForPath(error: ApolloError | undefined, path: (string | number)[]): Error | undefined {
+export function errorForPath(error: ApolloError | undefined, path: (string | number)[]): GraphQLError | undefined {
     return error?.graphQLErrors.find(error => isEqual(error.path, path))
 }
 

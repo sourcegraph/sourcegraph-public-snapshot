@@ -22,14 +22,11 @@ const siteAdminProductSubscriptionFragment = gql`
     fragment SiteAdminProductSubscriptionFields on ProductSubscription {
         id
         name
+        uuid
         account {
             id
             username
             displayName
-            emails {
-                email
-                isPrimary
-            }
         }
         activeLicense {
             id
@@ -144,7 +141,9 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                 id
                 name
                 account {
-                    ...DotComProductSubscriptionEmailFields
+                    id
+                    username
+                    displayName
                 }
                 productLicenses {
                     nodes {
@@ -175,6 +174,8 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                         tags
                         userCount
                         expiresAt
+                        salesforceSubscriptionID
+                        salesforceOpportunityID
                     }
                     licenseKey
                     createdAt
@@ -187,16 +188,6 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                 isArchived
                 url
             }
-        }
-    }
-
-    fragment DotComProductSubscriptionEmailFields on User {
-        id
-        username
-        displayName
-        emails {
-            email
-            verified
         }
     }
 
@@ -238,6 +229,7 @@ const siteAdminProductLicenseFragment = gql`
         id
         subscription {
             id
+            uuid
             name
             account {
                 ...ProductLicenseSubscriptionAccount

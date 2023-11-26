@@ -10328,6 +10328,12 @@ enum PermissionNamespace {
     key-value pair metadata.
     """
     REPO_METADATA
+
+    """
+    A permission namespace representing licensing management functionality.
+    Only useful on Sourcegraph.com.
+    """
+    LICENSE_MANAGER
 }
 
 """

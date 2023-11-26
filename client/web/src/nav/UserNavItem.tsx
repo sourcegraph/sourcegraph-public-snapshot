@@ -26,6 +26,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
+import { canReadLicenseManagement } from '../rbac/check'
 import { useV2QueryInput } from '../search/useV2QueryInput'
 import { enableDevSettings, isSourcegraphDev, useDeveloperSettings } from '../stores'
 
@@ -35,7 +36,15 @@ const MAX_VISIBLE_ORGS = 5
 
 type MinimalAuthenticatedUser = Pick<
     AuthenticatedUser,
-    'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName' | 'emails'
+    | 'username'
+    | 'avatarURL'
+    | 'settingsURL'
+    | 'organizations'
+    | 'siteAdmin'
+    | 'session'
+    | 'displayName'
+    | 'emails'
+    | 'permissions'
 >
 
 export interface UserNavItemProps extends TelemetryProps {
@@ -215,6 +224,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             {authenticatedUser.siteAdmin && (
                                 <MenuLink as={Link} to="/site-admin">
                                     Site admin
+                                </MenuLink>
+                            )}
+                            {canReadLicenseManagement(authenticatedUser) && (
+                                <MenuLink as={Link} to="/license-admin/product/subscriptions">
+                                    License Management
                                 </MenuLink>
                             )}
                             <MenuLink as={Link} to="/help" target="_blank" rel="noopener">

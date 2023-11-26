@@ -2,11 +2,13 @@ import React, { useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
-import { Button, Link, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, PageHeader, Container, Tooltip } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../../auth'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import type { SiteAdminProductSubscriptionFields } from '../../../../graphql-operations'
+import { canWriteLicenseManagement } from '../../../../rbac/check'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
 import { queryProductSubscriptions } from './backend'
@@ -16,12 +18,18 @@ import {
     type SiteAdminProductSubscriptionNodeProps,
 } from './SiteAdminProductSubscriptionNode'
 
-interface Props {}
+import styles from './SiteAdminCreateProductSubscriptionPage.module.scss'
+
+interface Props {
+    authenticatedUser: AuthenticatedUser
+}
 
 /**
  * Displays the product subscriptions that have been created on Sourcegraph.com.
  */
-export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = () => {
+export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    authenticatedUser,
+}) => {
     useEffect(() => eventLogger.logViewEvent('SiteAdminProductSubscriptions'), [])
 
     return (
@@ -31,10 +39,17 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
                 headingElement="h2"
                 path={[{ text: 'Product subscriptions' }]}
                 actions={
-                    <Button to="/site-admin/dotcom/product/subscriptions/new" variant="primary" as={Link}>
-                        <Icon aria-hidden={true} svgPath={mdiPlus} />
-                        Create product subscription
-                    </Button>
+                    <Tooltip content={!canWriteLicenseManagement(authenticatedUser) ? 'No permissions' : undefined}>
+                        <Button
+                            disabled={!canWriteLicenseManagement(authenticatedUser)}
+                            to="./new"
+                            variant="primary"
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiPlus} />
+                            Create product subscription
+                        </Button>
+                    </Tooltip>
                 }
                 className="mb-3"
             />
@@ -43,6 +58,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
                 <FilteredConnection<SiteAdminProductSubscriptionFields, SiteAdminProductSubscriptionNodeProps>
                     listComponent="table"
                     listClassName="table"
+                    contentWrapperComponent={ListContentWrapper}
                     noun="product subscription"
                     pluralNoun="product subscriptions"
                     queryConnection={queryProductSubscriptions}
@@ -53,3 +69,7 @@ export const SiteAdminProductSubscriptionsPage: React.FunctionComponent<React.Pr
         </div>
     )
 }
+
+const ListContentWrapper: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
+    <div className={styles.contentWrapper}>{children}</div>
+)

@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { mdiPencil, mdiTrashCan } from '@mdi/js'
 import { parseISO } from 'date-fns'
+import { GraphQLError } from 'graphql'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { logger } from '@sourcegraph/common'
@@ -57,7 +58,7 @@ interface Props {
     productSubscriptionUUID: string
     productSubscriptionID: Scalars['ID']
     currentSourcegraphAccessToken: string | null
-    accessTokenError?: Error
+    accessTokenError?: GraphQLError
     viewerCanAdminister: boolean
     refetchSubscription: () => Promise<any>
     codyGatewayAccess: CodyGatewayAccessFields
@@ -216,7 +217,18 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                         className="mb-2"
                     />
                 )}
-                {accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />}
+                {(accessTokenError?.extensions?.['code'] === 'ErrActiveLicenseRequired' && (
+                    <Alert variant="info" className="mb-0">
+                        {viewerCanAdminister && <>Create a license key to generate an access token automatically.</>}
+                        {!viewerCanAdminister && (
+                            <>
+                                Once an active subscription has been purchased, an access token will be automatically
+                                generated.
+                            </>
+                        )}
+                    </Alert>
+                )) ||
+                    (accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />)}
             </Container>
 
             {typeof codyServicesStateChange === 'boolean' && (

@@ -14,11 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -67,8 +67,8 @@ func productSubscriptionByDBID(ctx context.Context, logger log.Logger, db databa
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Only site admins and the subscription account's user may view a product subscription.
-	grantReason, err := serviceAccountOrOwnerOrSiteAdmin(ctx, db, &v.UserID, false)
+	// 🚨 SECURITY: Only license managers and the subscription account's user may view a product subscription.
+	grantReason, err := serviceAccountOrOwnerOrLicenseManager(ctx, db, &v.UserID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -141,9 +141,9 @@ func (r *productSubscription) computeActiveLicense(ctx context.Context) (*dbLice
 }
 
 func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ProductLicenseConnection, error) {
-	// 🚨 SECURITY: Only site admins may list historical product licenses (to reduce confusion
+	// 🚨 SECURITY: Only license managers may list historical product licenses (to reduce confusion
 	// around old license reuse). Other viewers should use ProductSubscription.activeLicense.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.LicenseManagerReadPermission); err != nil {
 		return nil, err
 	}
 
@@ -156,6 +156,23 @@ func (r *productSubscription) CodyGatewayAccess() graphqlbackend.CodyGatewayAcce
 	return codyGatewayAccessResolver{sub: r}
 }
 
+func NewErrActiveLicenseRequired() error {
+	return &ErrActiveLicenseRequired{error: errors.New("an active license is required")}
+}
+
+type ErrActiveLicenseRequired struct {
+	// Embed error to please GraphQL-go.
+	error
+}
+
+func (e ErrActiveLicenseRequired) Error() string {
+	return e.error.Error()
+}
+
+func (e ErrActiveLicenseRequired) Extensions() map[string]any {
+	return map[string]any{"code": "ErrActiveLicenseRequired"}
+}
+
 func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context) (*string, error) {
 	activeLicense, err := r.computeActiveLicense(ctx)
 	if err != nil {
@@ -163,7 +180,7 @@ func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context)
 	}
 
 	if activeLicense == nil {
-		return nil, errors.New("an active license is required")
+		return nil, NewErrActiveLicenseRequired()
 	}
 
 	if !activeLicense.AccessTokenEnabled {
@@ -218,18 +235,19 @@ func (r *productSubscription) URL(ctx context.Context) (string, error) {
 }
 
 func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
-	// 🚨 SECURITY: Only site admins may see this URL. Currently it does not contain any sensitive
+	// 🚨 SECURITY: Only license managers may see this URL. Currently it does not contain any sensitive
 	// info, but there is no need to show it to non-site admins.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.LicenseManagerReadPermission); err != nil {
 		return nil
 	}
+
 	u := fmt.Sprintf("/site-admin/dotcom/product/subscriptions/%s", r.v.ID)
 	return &u
 }
 
 func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx context.Context, args *graphqlbackend.CreateProductSubscriptionArgs) (graphqlbackend.ProductSubscription, error) {
-	// 🚨 SECURITY: Only site admins may create product subscriptions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	// 🚨 SECURITY: Only license managers may create product subscriptions.
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.DB, rbac.LicenseManagerWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -245,8 +263,8 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 }
 
 func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx context.Context, args *graphqlbackend.UpdateProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins or the service accounts may update product subscriptions.
-	_, err := serviceAccountOrSiteAdmin(ctx, r.DB, true)
+	// 🚨 SECURITY: Only license managers or the service accounts may update product subscriptions.
+	_, err := serviceAccountOrLicenseManager(ctx, r.DB, true)
 	if err != nil {
 		return nil, err
 	}
@@ -265,8 +283,8 @@ func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx cont
 }
 
 func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx context.Context, args *graphqlbackend.ArchiveProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may archive product subscriptions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	// 🚨 SECURITY: Only license managers may archive product subscriptions.
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.DB, rbac.LicenseManagerWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -299,9 +317,9 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 		accountUserID = &id
 	}
 
-	// 🚨 SECURITY: Users may only list their own product subscriptions. Site admins may list
+	// 🚨 SECURITY: Users may only list their own product subscriptions. License managers may list
 	// licenses for all users, or for any other user.
-	grantReason, err := serviceAccountOrOwnerOrSiteAdmin(ctx, r.DB, accountUserID, false)
+	grantReason, err := serviceAccountOrOwnerOrLicenseManager(ctx, r.DB, accountUserID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -321,12 +339,13 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 	}
 
 	if args.Query != nil {
-		// 🚨 SECURITY: Only site admins may query or view license for all users, or for any other user.
+		// 🚨 SECURITY: Only license managers may query or view license for all users, or for any other user.
 		// Note this check is currently repetitive with the check above. However, it is duplicated here to
 		// ensure it remains in effect if the code path above chagnes.
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+		if err := rbac.CheckCurrentUserHasPermission(ctx, r.DB, rbac.LicenseManagerReadPermission); err != nil {
 			return nil, err
 		}
+
 		opt.Query = *args.Query
 	}
 

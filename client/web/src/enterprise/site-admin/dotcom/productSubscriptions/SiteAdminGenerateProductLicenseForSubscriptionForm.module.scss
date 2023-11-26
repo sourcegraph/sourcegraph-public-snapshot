@@ -1,0 +1,10 @@
+.modal {
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+    max-height: 90vh;
+}
+
+.modal-container {
+    overflow-y: auto;
+}

@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
+import { Link } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
@@ -14,14 +15,15 @@ import {
     H3,
     Icon,
     Label,
-    LinkOrSpan,
     Text,
 } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../../../auth'
 import { CopyableText } from '../../../../components/CopyableText'
 import { LoaderButton } from '../../../../components/LoaderButton'
 import type { ProductLicenseFields, RevokeLicenseResult, RevokeLicenseVariables } from '../../../../graphql-operations'
 import { isProductLicenseExpired } from '../../../../productSubscription/helpers'
+import { canWriteLicenseManagement } from '../../../../rbac/check'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductLicenseValidity } from '../../../dotcom/productSubscriptions/ProductLicenseValidity'
 import { ProductLicenseInfoDescription } from '../../../productSubscription/ProductLicenseInfoDescription'
@@ -36,6 +38,7 @@ export interface SiteAdminProductLicenseNodeProps {
     showSubscription: boolean
     defaultExpanded?: boolean
     onRevokeCompleted: () => void
+    authenticatedUser: AuthenticatedUser
 }
 
 /**
@@ -43,7 +46,7 @@ export interface SiteAdminProductLicenseNodeProps {
  */
 export const SiteAdminProductLicenseNode: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminProductLicenseNodeProps>
-> = ({ node, showSubscription, onRevokeCompleted, defaultExpanded = false }) => {
+> = ({ node, showSubscription, onRevokeCompleted, authenticatedUser, defaultExpanded = false }) => {
     const [revoke, { loading, error }] = useMutation<RevokeLicenseResult, RevokeLicenseVariables>(REVOKE_LICENSE)
 
     const onRevoke = useCallback(() => {
@@ -87,9 +90,13 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                                 <div className="text-truncate d-flex">
                                     <H3>
                                         License in{' '}
-                                        <LinkOrSpan to={node.subscription.urlForSiteAdmin} className="mr-3">
+                                        <Link
+                                            to={`../subscriptions/${node.subscription.uuid}`}
+                                            relative="path"
+                                            className="mr-3"
+                                        >
                                             {node.subscription.name}
-                                        </LinkOrSpan>
+                                        </Link>
                                     </H3>
                                     <span className="mr-3">
                                         <AccountName account={node.subscription.account} />
@@ -99,19 +106,16 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                             {!loading && error && (
                                 <Alert variant="danger">Error revoking license: {error.message}</Alert>
                             )}
-                            <div className="d-flex align-items-baseline mb-2">
+                            <div className="mb-1">
                                 {node.info && (
                                     <ProductLicenseInfoDescription licenseInfo={node.info} className="mb-0" />
                                 )}
-                                <Text className="ml-3 mb-0">
-                                    <small className="text-muted">
-                                        Created <Timestamp date={node.createdAt} />
-                                    </small>
-                                </Text>
-                                <Text className="ml-3 mb-0 text-muted">
-                                    <small>v{node.version}</small>
-                                </Text>
                             </div>
+                            <Text className="mb-2">
+                                <small className="text-muted">
+                                    Created <Timestamp date={node.createdAt} />
+                                </small>
+                            </Text>
                             <ProductLicenseValidity license={node} />
                         </div>
                         {!node?.revokedAt && !isProductLicenseExpired(node?.info?.expiresAt ?? 0) && (
@@ -119,6 +123,7 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                                 className="ml-auto"
                                 variant="danger"
                                 label="Revoke"
+                                disabled={!canWriteLicenseManagement(authenticatedUser)}
                                 onClick={onRevoke}
                                 loading={loading}
                             />
@@ -129,6 +134,10 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                         <div className="d-flex">
                             <Label>License Key ID</Label>
                             <Text className="ml-3">{uuid}</Text>
+                        </div>
+                        <div className="d-flex">
+                            <Label>Key Version</Label>
+                            <Text className="ml-3">{node.version}</Text>
                         </div>
                         {node.version > 1 && (
                             <>

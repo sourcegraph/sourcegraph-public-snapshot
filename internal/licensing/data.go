@@ -81,19 +81,6 @@ const (
 	FeatureCodeSearch BasicFeature = "code-search"
 )
 
-var AllFeatures = []Feature{
-	FeatureSSO,
-	FeatureACLs,
-	FeatureExplicitPermissionsAPI,
-	FeatureCodeInsights,
-	&FeatureBatchChanges{},
-	FeatureSCIM,
-	FeatureAllowAirGapped,
-	FeatureCodeMonitors,
-	FeatureNotebooks,
-	FeatureCodeSearch,
-}
-
 type PlanDetails struct {
 	Features []Feature
 }
