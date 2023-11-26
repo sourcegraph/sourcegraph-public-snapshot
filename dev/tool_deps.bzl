@@ -5,6 +5,7 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file"
 DOCSITE_VERSION = "1.9.4"
 SRC_CLI_VERSION = "5.2.1"
 CTAGS_VERSION = "6.0.0.2783f009"
+PACKER_VERSION = "1.8.3"
 
 SRC_CLI_BUILDFILE = """
 filegroup(
@@ -22,6 +23,14 @@ GCLOUD_PATCH_CMDS = [
     "ln -s google-cloud-sdk/bin/bq bq",
     "ln -s google-cloud-sdk/bin/git-credential-gcloud.sh git-credential-gcloud",
 ]
+
+PACKER_BUILDFILE = """
+filegroup(
+    name = "packer-{}",
+    srcs = ["packer"],
+    visibility = ["//visibility:public"],
+)
+"""
 
 def tool_deps():
     "Repository rules to fetch third party tooling used for dev purposes"
@@ -118,4 +127,18 @@ def tool_deps():
         patch_cmds = GCLOUD_PATCH_CMDS,
         sha256 = "5f9ed1862a82f393be3b16634309e9e8edb6da13a8704952be9c4c59963f9cd4",
         url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-linux-x86_64.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_archive(
+        name = "packer-linux-amd64",
+        build_file_content = PACKER_BUILDFILE.format("linux-amd64"),
+        sha256 = "0587f7815ed79589cd9c2b754c82115731c8d0b8fd3b746fe40055d969facba5",
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_linux_amd64.zip".format(PACKER_VERSION)
+    )
+
+    http_archive(
+        name = "packer-darwin-arm64",
+        build_file_content = PACKER_BUILDFILE.format("darwin-arm64"),
+        sha256 = "5cc53abbc345fc5f714c8ebe46fd79d5f503f29375981bee6c77f89e5ced92d3",
+        url = "https://releases.hashicorp.com/packer/{0}/packer_{0}_darwin_arm64.zip".format(PACKER_VERSION)
     )

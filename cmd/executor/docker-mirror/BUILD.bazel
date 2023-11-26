@@ -1,0 +1,21 @@
+genrule(
+    name = "ami",
+    srcs = [
+        "aws_regions.json",
+        "build.sh",
+        "docker-mirror.pkr.hcl",
+        "install.sh",
+    ],
+    outs = ["logs"],
+    cmd = """\
+    mkdir workdir
+    cp $(location docker-mirror.pkr.hcl) workdir/
+    cp $(location aws_regions.json) workdir/
+    cp $(location install.sh) workdir/
+    """,
+    env = {
+        "IMAGE_FAMILY": "",
+        "EXECUTOR_IS_TAGGED_RELEASE": "false",
+    },
+    tools = ["//dev/tools:packer"],
+)
