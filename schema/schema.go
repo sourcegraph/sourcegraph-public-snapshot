@@ -2767,7 +2767,7 @@ type SiteConfiguration struct {
 	ScimAuthToken string `json:"scim.authToken,omitempty"`
 	// ScimIdentityProvider description: Identity provider used for SCIM support.  "STANDARD" should be used unless a more specific value is available
 	ScimIdentityProvider string `json:"scim.identityProvider,omitempty"`
-	// SearchIndexShardConcurrency description: The number of threads each indexserver should use to index shards. If not set, indexserver will use the number of available CPUs. Cannot be more than 4 times the available CPUs.
+	// SearchIndexShardConcurrency description: The number of threads each indexserver should use to index shards. If not set, indexserver will use the number of available CPUs. This is exposed as a safeguard and should usually not require being set.
 	SearchIndexShardConcurrency int `json:"search.index.shardConcurrency,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
