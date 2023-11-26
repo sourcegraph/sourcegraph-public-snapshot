@@ -71,7 +71,8 @@ push_prod=false
 # ok: main-dry-run
 # ok: main-dry-run-123
 # no: main-foo
-if [[ "$BUILDKITE_BRANCH" =~ ^main(-dry-run/)?.* ]] || [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
+# TODO(rfc795)
+if [[ "$BUILDKITE_BRANCH" =~ ^main(-dry-run/)?.* ]] || [[ "$BUILDKITE_BRANCH" =~ ^rfc795/main ]]|| [[ "$BUILDKITE_BRANCH" =~ ^docker-images-candidates-notest/.* ]]; then
   dev_tags+=("insiders")
   prod_tags+=("insiders")
   push_prod=true
