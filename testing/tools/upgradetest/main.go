@@ -36,6 +36,9 @@ func main() {
 	args := os.Args
 	fmt.Println(args[1])
 	fmt.Println(args[2])
+	fmt.Println(args[3])
+	// run.Cmd(ctx, "ls", args[3]).Run().Stream(os.Stdout)
+	// run.Cmd(ctx, "cat", args[3]+"/_schema.json").Run().Stream(os.Stdout)
 
 	if err := standardUpgradeTest(ctx, latestMinorVersion, latestVersion); err != nil {
 		fmt.Println("--- 🚨 Standard Upgrade Test Failed: ", err)
@@ -591,6 +594,10 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 		}
 		// versions at least two behind the current latest version
 		if v.Major() == latestFullVer.Major() && v.Minor() >= latestFullVer.Minor()-2 {
+			continue
+		}
+		// skip version v4.3 which is affected by a known bug. See https://docs.sourcegraph.com/admin/updates/docker_compose#v4-3-v4-4-1
+		if v == semver.MustParse("v4.3") || v == semver.MustParse("v4.4.1") {
 			continue
 		}
 
