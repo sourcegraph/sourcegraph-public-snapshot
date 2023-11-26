@@ -81,6 +81,14 @@ func (s Spec) GetEnvironment(id string) *EnvironmentSpec {
 	return nil
 }
 
+func (s Spec) ListEnvironmentIDs() []string {
+	var ids []string
+	for _, e := range s.Environments {
+		ids = append(ids, e.ID)
+	}
+	return ids
+}
+
 // MarshalYAML marshals the spec to YAML using our YAML library of choice.
 func (s Spec) MarshalYAML() ([]byte, error) {
 	return yaml.Marshal(s)

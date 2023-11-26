@@ -301,10 +301,12 @@ type BitbucketCloudAuthorization struct {
 
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
+	// AccessToken description: The workspace access token to use when authenticating with Bitbucket Cloud.
+	AccessToken string `json:"accessToken,omitempty"`
 	// ApiURL description: The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	ApiURL string `json:"apiURL,omitempty"`
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
-	AppPassword string `json:"appPassword"`
+	AppPassword string `json:"appPassword,omitempty"`
 	// Authorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
 	Authorization *BitbucketCloudAuthorization `json:"authorization,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "teams" configuration.
@@ -332,7 +334,7 @@ type BitbucketCloudConnection struct {
 	// Url description: URL of Bitbucket Cloud, such as https://bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
-	Username string `json:"username"`
+	Username string `json:"username,omitempty"`
 	// WebhookSecret description: A shared secret used to authenticate incoming webhooks (minimum 12 characters).
 	WebhookSecret string `json:"webhookSecret,omitempty"`
 }
@@ -592,6 +594,14 @@ type Completions struct {
 	FastChatModelMaxTokens int `json:"fastChatModelMaxTokens,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model,omitempty"`
+	// PerCommunityUserChatMonthlyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.
+	PerCommunityUserChatMonthlyLimit int `json:"perCommunityUserChatMonthlyLimit,omitempty"`
+	// PerCommunityUserCodeCompletionsMonthlyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.
+	PerCommunityUserCodeCompletionsMonthlyLimit int `json:"perCommunityUserCodeCompletionsMonthlyLimit,omitempty"`
+	// PerProUserChatDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerProUserChatDailyLimit int `json:"perProUserChatDailyLimit,omitempty"`
+	// PerProUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerProUserCodeCompletionsDailyLimit int `json:"perProUserCodeCompletionsDailyLimit,omitempty"`
 	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
 	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
 	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.

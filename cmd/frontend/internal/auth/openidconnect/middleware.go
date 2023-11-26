@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -267,7 +266,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 	}
 
 	// Exchange the code for an access token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(r.Context(), oauth2.HTTPClient, httpcli.ExternalClient), r.URL.Query().Get("code"))
+	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(r.Context(), oauth2.HTTPClient, p.httpClient), r.URL.Query().Get("code"))
 	if err != nil {
 		return nil,
 			"Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.",
@@ -308,7 +307,7 @@ func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePref
 			errors.New("nonce is incorrect (possible replay attach)")
 	}
 
-	userInfo, err := p.oidcUserInfo(oidc.ClientContext(r.Context(), httpcli.ExternalClient), oauth2.StaticTokenSource(oauth2Token))
+	userInfo, err := p.oidcUserInfo(oidc.ClientContext(r.Context(), p.httpClient), oauth2.StaticTokenSource(oauth2Token))
 	if err != nil {
 		return nil,
 			"Failed to get userinfo: " + err.Error(),
