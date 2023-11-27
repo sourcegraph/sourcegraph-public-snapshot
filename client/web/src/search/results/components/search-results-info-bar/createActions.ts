@@ -5,11 +5,11 @@ import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/que
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import type { IconType } from '@sourcegraph/wildcard'
 
-import type { AuthenticatedUser } from '../../auth'
-import { BatchChangesIcon } from '../../batches/icons'
-import { CodeMonitoringLogo } from '../../code-monitoring/CodeMonitoringLogo'
-import type { SearchPatternType } from '../../graphql-operations'
-import { CodeInsightsIcon } from '../../insights/Icons'
+import type { AuthenticatedUser } from '../../../../auth'
+import { BatchChangesIcon } from '../../../../batches/icons'
+import { CodeMonitoringLogo } from '../../../../code-monitoring/CodeMonitoringLogo'
+import type { SearchPatternType } from '../../../../graphql-operations'
+import { CodeInsightsIcon } from '../../../../insights/Icons'
 
 export interface CreateAction {
     url: string

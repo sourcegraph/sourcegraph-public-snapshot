@@ -1,11 +1,11 @@
-import React from 'react'
+import React, { ReactElement } from 'react'
 
 import classNames from 'classnames'
 
 import type { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 import type { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 
-import { formatRepositoryStarCount } from '../util/stars'
+import { formatRepositoryStarCount } from '../util'
 
 import { CodeHostIcon } from './CodeHostIcon'
 import { LastSyncedIcon } from './LastSyncedIcon'
@@ -24,6 +24,7 @@ export interface ResultContainerProps {
     repoName?: string
     className?: string
     rankingDebug?: string
+    actions?: ReactElement | boolean
     onResultClicked?: () => void
 }
 
@@ -55,9 +56,10 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         repoName,
         className,
         rankingDebug,
+        actions,
+        repoLastFetched,
         as: Component = 'div',
         onResultClicked,
-        repoLastFetched,
     } = props
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -84,6 +86,8 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                     >
                         {title}
                     </div>
+
+                    {actions}
                     {formattedRepositoryStarCount && (
                         <span className="d-flex align-items-center">
                             <SearchResultStar aria-label={`${repoStars} stars`} />
