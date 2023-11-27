@@ -2711,5 +2711,4 @@ func TestExternalServices_CleanupSyncJobs(t *testing.T) {
 			FinishedAt:        now.Add(-10 * 24 * time.Hour),
 		},
 	}, syncJobs)
-
 }
