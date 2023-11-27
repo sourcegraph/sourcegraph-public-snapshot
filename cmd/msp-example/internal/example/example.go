@@ -12,7 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/background"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/service"
+	"github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime"
 )
 
 type Config struct {
@@ -20,21 +20,21 @@ type Config struct {
 	Variable      string
 }
 
-func (c *Config) Load(env *service.Env) {
+func (c *Config) Load(env *runtime.Env) {
 	c.StatelessMode = env.GetBool("STATELESS_MODE", "false", "if true, disable dependencies")
 	c.Variable = env.Get("VARIABLE", "13", "variable value")
 }
 
 type Service struct{}
 
-var _ service.Service[Config] = Service{}
+var _ runtime.Service[Config] = Service{}
 
 func (s Service) Name() string    { return "example" }
 func (s Service) Version() string { return "dev" }
 func (s Service) Initialize(
 	ctx context.Context,
 	logger log.Logger,
-	contract service.Contract,
+	contract runtime.Contract,
 	config Config,
 ) (background.CombinedRoutine, error) {
 	logger.Info("starting service")
@@ -83,7 +83,7 @@ func (s *httpRoutine) Stop() {
 // initDB connects to a database 'primary' based on a DSN provided by contract.
 // It then sets up a few example databases using Gorm, in a manner similar to
 // https://github.com/sourcegraph/accounts.sourcegraph.com
-func initDB(ctx context.Context, contract service.Contract) error {
+func initDB(ctx context.Context, contract runtime.Contract) error {
 	sqlDB, err := contract.GetPostgreSQLDB(ctx, "primary")
 	if err != nil {
 		return errors.Wrap(err, "GetPostgreSQLDB")

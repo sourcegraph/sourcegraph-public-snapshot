@@ -166,7 +166,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	)
 
 	if envvar.SourcegraphDotComMode() {
-		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
+		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(1, 1))
 		routines = append(routines, syncer.NewSyncReposWithLastErrorsWorker(ctx, rateLimiter))
 	}
 

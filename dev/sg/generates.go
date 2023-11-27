@@ -71,27 +71,24 @@ func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
 		return proto.Generate(ctx, args, verbose)
 	}
 
+	// If we're not in CI, we check for proto file changes
+	if os.Getenv("CI") != "true" {
+		out, err := exec.Command("git", "diff", "--name-only", "main").Output()
+		if err != nil {
+			return &generate.Report{Err: errors.Wrap(err, "git diff failed")} // should never happen
+		}
+
+		if !strings.Contains(string(out), ".proto") {
+			return &generate.Report{Output: "No .proto files changed or not in CI. Skipping buf gen.\n"}
+		}
+	}
+
 	// By default, we will run buf generate in every directory with buf.gen.yaml
 	bufGenFilePaths, err := buf.PluginConfigurationFiles()
 	if err != nil {
 		return &generate.Report{Err: errors.Wrapf(err, "finding plugin configuration files")}
 	}
 
-	// Always run in CI
-	if os.Getenv("CI") == "true" {
-		return proto.Generate(ctx, bufGenFilePaths, verbose)
-	}
-
-	// Otherwise, only run if any .proto files are changed
-	out, err := exec.Command("git", "diff", "--name-only", "main...HEAD").Output()
-	if err != nil {
-		return &generate.Report{Err: errors.Wrap(err, "git diff failed")} // should never happen
-	}
-
-	// Don't run buf gen if no .proto files changed or not in CI
-	if !strings.Contains(string(out), ".proto") {
-		return &generate.Report{Output: "No .proto files changed or not in CI. Skipping buf gen.\n"}
-	}
 	// Run buf gen by default
 	return proto.Generate(ctx, bufGenFilePaths, verbose)
 }
