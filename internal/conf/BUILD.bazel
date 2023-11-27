@@ -5,6 +5,7 @@ go_library(
     name = "conf",
     srcs = [
         "auth.go",
+        "batch_changes.go",
         "client.go",
         "cody_validators.go",
         "computed.go",
