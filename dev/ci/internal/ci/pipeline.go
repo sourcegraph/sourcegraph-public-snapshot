@@ -89,7 +89,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// We generate the pipeline slightly differently when running as part of the Aspect Workflows pipeline.
 	// Primarily, we don't run any `bazel test` since Aspect has got that covered
-	isAspectWorkflowBuild := os.Getenv("ASPECT_WORKFLOWS_BUILD") != "1"
+	isAspectWorkflowBuild := os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1"
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
 	const minimumUpgradeableVersion = "5.2.0"
