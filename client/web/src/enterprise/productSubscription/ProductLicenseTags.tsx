@@ -53,8 +53,6 @@ const knownLicenseTags = [
 
 // TODO: Add MAU switch.
 
-// TODO: Implement Batch Changes, Insights toggles.
-
 // TODO: Should team-0 still exist? If so, we should simplify
 // Teams Licenses: Only applicable for team license renewals. Add plan:team-0,acls,monitoring, plus the customer name, to all Teams licenses.
 // from https://handbook.sourcegraph.com/departments/technical-success/ce/process/license_keys

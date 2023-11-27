@@ -24,6 +24,7 @@ import {
     H4,
     Icon,
     Tooltip,
+    Label,
 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
@@ -38,7 +39,7 @@ import { ExpirationDate } from '../../../productSubscription/ExpirationDate'
 import { hasUnknownTags, ProductLicenseTags, UnknownTagWarning } from '../../../productSubscription/ProductLicenseTags'
 
 import { GENERATE_PRODUCT_LICENSE } from './backend'
-import { ALL_PLANS, TAG_AIR_GAPPED, TAG_TRIAL, TAG_TRUEUP } from './plandata'
+import { ALL_PLANS, TAG_AIR_GAPPED, TAG_BATCH_CHANGES, TAG_CODE_INSIGHTS, TAG_TRIAL, TAG_TRUEUP } from './plandata'
 
 import styles from './SiteAdminGenerateProductLicenseForSubscriptionForm.module.scss'
 
@@ -65,6 +66,8 @@ interface FormData {
     trueUp: boolean
     trial: boolean
     airGapped: boolean
+    batchChanges: boolean
+    codeInsights: boolean
 }
 
 const getEmptyFormData = (account: string, latestLicense: License | undefined): FormData => ({
@@ -80,6 +83,8 @@ const getEmptyFormData = (account: string, latestLicense: License | undefined): 
     trial: latestLicense?.info?.tags.includes(TAG_TRIAL.tagValue) ?? false,
     trueUp: latestLicense?.info?.tags.includes(TAG_TRUEUP.tagValue) ?? false,
     airGapped: latestLicense?.info?.tags.includes(TAG_AIR_GAPPED.tagValue) ?? false,
+    batchChanges: latestLicense?.info?.tags.includes(TAG_BATCH_CHANGES.tagValue) ?? false,
+    codeInsights: latestLicense?.info?.tags.includes(TAG_CODE_INSIGHTS.tagValue) ?? false,
 })
 
 const DURATION_LINKS = [
@@ -102,6 +107,8 @@ const getTagsFromFormData = (formData: FormData): string[] => [
     ...(formData.trueUp ? [TAG_TRUEUP.tagValue] : []),
     ...(formData.trial ? [TAG_TRIAL.tagValue] : []),
     ...(formData.airGapped ? [TAG_AIR_GAPPED.tagValue] : []),
+    ...(formData.batchChanges ? [TAG_BATCH_CHANGES.tagValue] : []),
+    ...(formData.codeInsights ? [TAG_CODE_INSIGHTS.tagValue] : []),
     ...tagsFromString(formData.tags),
 ]
 
@@ -158,6 +165,16 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
 
     const onAirGappedChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
         event => setFormData(formData => ({ ...formData, airGapped: event.target.checked })),
+        []
+    )
+
+    const onBatchChangesChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event => setFormData(formData => ({ ...formData, batchChanges: event.target.checked })),
+        []
+    )
+
+    const onCodeInsightsChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
+        event => setFormData(formData => ({ ...formData, codeInsights: event.target.checked })),
         []
     )
 
@@ -300,14 +317,16 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
 
                             {selectedPlan && (
                                 <>
-                                    <Checkbox
-                                        id="productSubscription__trial"
-                                        aria-label="Is trial"
-                                        label="Is trial"
-                                        disabled={loading}
-                                        checked={formData.trial}
-                                        onChange={onIsTrialChange}
-                                    />
+                                    <div className="form-group mb-2">
+                                        <Checkbox
+                                            id="productSubscription__trial"
+                                            aria-label="Is trial"
+                                            label="Is trial"
+                                            disabled={loading}
+                                            checked={formData.trial}
+                                            onChange={onIsTrialChange}
+                                        />
+                                    </div>
 
                                     <Input
                                         id="site-admin-create-product-subscription-page__customer_input"
@@ -369,20 +388,58 @@ export const SiteAdminGenerateProductLicenseForSubscriptionForm: React.FunctionC
                                             </>
                                         }
                                     />
-                                    <Checkbox
-                                        id="productSubscription__trueup"
-                                        aria-label="Whether true up is allowed"
-                                        label="TrueUp"
-                                        checked={formData.trueUp}
-                                        onChange={onTrueUpChange}
-                                    />
-                                    <Checkbox
-                                        id="productSubscription__airgapped"
-                                        aria-label="Whether the instance may be air gapped"
-                                        label="Allow air gapped"
-                                        checked={formData.airGapped}
-                                        onChange={onAirGappedChange}
-                                    />
+                                    <Label>Additional Options</Label>
+                                    {/* TODO: Render none instead */}
+                                    {selectedPlan.additionalTags?.find(tag => tag.tagValue === TAG_TRUEUP.tagValue) && (
+                                        <div className="form-group mb-2">
+                                            <Checkbox
+                                                id="productSubscription__trueup"
+                                                aria-label="Whether true up is allowed"
+                                                label="TrueUp"
+                                                checked={formData.trueUp}
+                                                onChange={onTrueUpChange}
+                                            />
+                                        </div>
+                                    )}
+                                    {selectedPlan.additionalTags?.find(
+                                        tag => tag.tagValue === TAG_AIR_GAPPED.tagValue
+                                    ) && (
+                                        <div className="form-group mb-2">
+                                            <Checkbox
+                                                id="productSubscription__airgapped"
+                                                aria-label="Whether the instance may be air gapped"
+                                                label="Allow air gapped"
+                                                checked={formData.airGapped}
+                                                onChange={onAirGappedChange}
+                                            />
+                                        </div>
+                                    )}
+                                    {selectedPlan.additionalTags?.find(
+                                        tag => tag.tagValue === TAG_BATCH_CHANGES.tagValue
+                                    ) && (
+                                        <div className="form-group mb-2">
+                                            <Checkbox
+                                                id="productSubscription__batches"
+                                                aria-label="Whether the instance may use Batch Changes unrestrictedly"
+                                                label="Allow unrestricted Batch Changes"
+                                                checked={formData.batchChanges}
+                                                onChange={onBatchChangesChange}
+                                            />
+                                        </div>
+                                    )}
+                                    {selectedPlan.additionalTags?.find(
+                                        tag => tag.tagValue === TAG_CODE_INSIGHTS.tagValue
+                                    ) && (
+                                        <div className="form-group mb-2">
+                                            <Checkbox
+                                                id="productSubscription__codeinsights"
+                                                aria-label="Whether the instance may use Code Insights"
+                                                label="Allow Code Insights"
+                                                checked={formData.codeInsights}
+                                                onChange={onCodeInsightsChange}
+                                            />
+                                        </div>
+                                    )}
                                     <Input
                                         type="date"
                                         description="When this license expires. Sourcegraph will disable beyond this date. Usually the end date of the contract."
