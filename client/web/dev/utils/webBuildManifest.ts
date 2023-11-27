@@ -1,5 +1,10 @@
 type Entry = 'src/enterprise/main' | 'src/enterprise/embed/embedMain' | 'src/enterprise/app/main'
 
+export function isEntry(value: string): value is Entry {
+    return ['src/enterprise/main', 'src/enterprise/embed/embedMain', 'src/enterprise/app/main'].includes(value)
+}
+
+
 export interface WebBuildManifest {
     /** Base URL for asset paths. */
     url?: string
