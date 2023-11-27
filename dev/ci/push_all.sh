@@ -23,6 +23,9 @@ function create_push_command() {
   if [[ "$target" == "//docker-images/syntax-highlighter:scip-ctags_candidate_push" ]]; then
     repository="scip-ctags"
   fi
+  if [[ "$target" == "//cmd/migrator:airgapped_candidate_push" ]]; then
+    repository="migrator-airgapped"
+  fi
 
   repositories_args=""
   for registry in "${registries[@]}"; do

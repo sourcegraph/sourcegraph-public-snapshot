@@ -162,5 +162,5 @@ oci_push(
 oci_push(
     name = "airgapped_candidate_push",
     image = ":image_airgapped",
-    repository = image_repository("migrator"),
+    repository = image_repository("migrator-airgapped"),
 )
