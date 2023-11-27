@@ -26,8 +26,8 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../graphql-operations'
-import { buildSearchURLQueryFromQueryState } from '../../stores'
+import { SearchPatternType } from '../../../graphql-operations'
+import { buildSearchURLQueryFromQueryState } from '../../../stores'
 
 export interface UnownedResultsAlertProps
     extends SearchPatternTypeProps,

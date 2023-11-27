@@ -56,7 +56,7 @@ import { linkify } from './codemirror/links'
 import { lockFirstVisibleLine } from './codemirror/lock-line'
 import { navigateToLineOnAnyClickExtension } from './codemirror/navigate-to-any-line-on-click'
 import { scipSnapshot } from './codemirror/scip-snapshot'
-import { search } from './codemirror/search'
+import { search, SearchPanelConfig } from './codemirror/search'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { HovercardView } from './codemirror/tooltips/HovercardView'
@@ -112,6 +112,7 @@ export interface BlobProps
     blameHunks?: BlameHunkData
 
     activeURL?: string
+    searchPanelConfig?: SearchPanelConfig
 }
 
 export interface BlobPropsFacet extends BlobProps {
@@ -185,6 +186,9 @@ const staticExtensions: Extension = [
         '.highlighted-line': {
             backgroundColor: 'var(--code-selection-bg)',
         },
+        '.cm-panels-top': {
+            borderBottom: '1px solid var(--border-color)',
+        },
     }),
     hideEmptyLastLine,
     linkify,
@@ -204,6 +208,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         navigateToLineOnAnyClick,
 
         overrideBrowserSearchKeybinding,
+        searchPanelConfig,
         'data-testid': dataTestId,
     } = props
 
@@ -343,14 +348,6 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                           : undefined
                   )
                 : [],
-            search({
-                // useFileSearch is not a dependency because the search
-                // extension manages its own state. This is just the initial
-                // value
-                overrideBrowserFindInPageShortcut: useFileSearch,
-                onOverrideBrowserFindInPageToggle: setUseFileSearch,
-                navigate,
-            }),
             pinnedTooltip,
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension(navigate) : codeIntelExtension,
             syntaxHighlight.of(blobInfo),
@@ -370,6 +367,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 // value
                 overrideBrowserFindInPageShortcut: useFileSearch,
                 onOverrideBrowserFindInPageToggle: setUseFileSearch,
+                initialState: searchPanelConfig,
                 navigate,
             }),
         ],

@@ -5,7 +5,7 @@ import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/se
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, Alert, H3, H4, Markdown } from '@sourcegraph/wildcard'
 
-import { SearchPatternType } from '../../graphql-operations'
+import { SearchPatternType } from '../../../graphql-operations'
 
 interface SearchAlertProps {
     alert: Required<AggregateStreamingSearchResults>['alert']
