@@ -87,6 +87,10 @@ fi
 if [[ "$BUILDKITE_BRANCH" =~ ^[0-9]+\.[0-9]+$ ]]; then
   push_prod=true
 fi
+# TODO(rfc795)
+if [[ "$BUILDKITE_BRANCH" =~ ^rfc795/v[0-9.]+$ ]]; then
+  push_prod=true
+fi
 
 # ok: v5.1.0
 # ok: v5.1.0-rc.5
