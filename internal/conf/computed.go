@@ -1022,13 +1022,15 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		Endpoint:    embeddingsConfig.Endpoint,
 		Dimensions:  embeddingsConfig.Dimensions,
 		// This is definitely set at this point.
-		Incremental:                *embeddingsConfig.Incremental,
-		FileFilters:                fileFilters,
-		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
-		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
-		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
-		ExcludeChunkOnError:        pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
-		Qdrant:                     computedQdrantConfig,
+		Incremental:                            *embeddingsConfig.Incremental,
+		FileFilters:                            fileFilters,
+		MaxCodeEmbeddingsPerRepo:               embeddingsConfig.MaxCodeEmbeddingsPerRepo,
+		MaxTextEmbeddingsPerRepo:               embeddingsConfig.MaxTextEmbeddingsPerRepo,
+		PolicyRepositoryMatchLimit:             embeddingsConfig.PolicyRepositoryMatchLimit,
+		ExcludeChunkOnError:                    pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
+		Qdrant:                                 computedQdrantConfig,
+		PerCommunityUserEmbeddingsMonthlyLimit: embeddingsConfig.PerCommunityUserEmbeddingsMonthlyLimit,
+		PerProUserEmbeddingsMonthlyLimit:       embeddingsConfig.PerProUserEmbeddingsMonthlyLimit,
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {
