@@ -74,16 +74,19 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
                 repositories: [
                     {
                         __typename: 'Repository',
+                        id: 'repo1',
                         name: 'github.com/Algorilla/manta-ray',
                         stars: 1,
                     },
                     {
                         __typename: 'Repository',
+                        id: 'repo1',
                         name: 'github.com/Algorilla/manta-ray-2',
                         stars: 2,
                     },
                     {
                         __typename: 'Repository',
+                        id: 'repo1',
                         name: 'github.com/Algorilla/manta-ray-3',
                         stars: 3,
                     },

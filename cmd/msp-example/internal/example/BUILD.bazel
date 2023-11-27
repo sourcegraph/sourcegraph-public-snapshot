@@ -11,7 +11,7 @@ go_library(
     deps = [
         "//lib/background",
         "//lib/errors",
-        "//lib/managedservicesplatform/service",
+        "//lib/managedservicesplatform/runtime",
         "@com_github_sourcegraph_log//:log",
         "@io_gorm_driver_postgres//:postgres",
         "@io_gorm_gorm//:gorm",

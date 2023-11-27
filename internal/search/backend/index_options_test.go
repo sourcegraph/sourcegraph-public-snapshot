@@ -440,3 +440,24 @@ func TestGetIndexOptions_batch(t *testing.T) {
 		t.Fatal("mismatch (-want, +got):\n", diff)
 	}
 }
+func TestGetIndexOptions_concurrency(t *testing.T) {
+	repos := []api.RepoID{1, 2, 3}
+	getRepoIndexOptions := func(repo api.RepoID) (*RepoIndexOptions, error) {
+		return &RepoIndexOptions{
+			GetVersion: func(branch string) (string, error) {
+				return fmt.Sprintf("!%s-%d", branch, repo), nil
+			},
+		}, nil
+	}
+	getSearchContextRevs := func(api.RepoID) ([]string, error) { return nil, nil }
+
+	wantConcurrency := 27
+	config := &schema.SiteConfiguration{SearchIndexShardConcurrency: wantConcurrency}
+	options := GetIndexOptions(config, getRepoIndexOptions, getSearchContextRevs, repos...)
+
+	for _, got := range options {
+		if wantConcurrency != int(got.ShardConcurrency) {
+			t.Fatalf("wrong shard concurrency, want: %d, got: %d", wantConcurrency, got.ShardConcurrency)
+		}
+	}
+}

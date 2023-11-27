@@ -1,17 +1,21 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "service",
+    name = "runtime",
     srcs = [
         "config.go",
+        "contract.go",
+        "env.go",
         "sanitycheck.go",
         "service.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/service",
+    importpath = "github.com/sourcegraph/sourcegraph/lib/managedservicesplatform/runtime",
     visibility = ["//visibility:public"],
     deps = [
         "//lib/background",
         "//lib/errors",
+        "//lib/managedservicesplatform/runtime/internal/opentelemetry",
+        "//lib/pointers",
         "@com_github_jackc_pgx_v5//:pgx",
         "@com_github_jackc_pgx_v5//stdlib",
         "@com_github_sourcegraph_log//:log",

@@ -11,7 +11,7 @@ require (
 	github.com/prometheus/prometheus v0.40.5
 	github.com/sourcegraph/log v0.0.0-20231018134238-fbadff7458bb
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230613175844-f031949c72f5
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	github.com/urfave/cli/v2 v2.23.7
 	golang.org/x/text v0.14.0
 	gopkg.in/yaml.v2 v2.4.0

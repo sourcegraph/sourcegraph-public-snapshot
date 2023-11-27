@@ -57,7 +57,7 @@ as embedding all repositories without discrimination can consume significant res
 
 ### Lifecycle of an embeddings policy
 
-A worker process periodically checks the embeddings policies and resolves them into a list of repositories to index.
+Every 5 minutes, a worker process checks the embeddings policies and resolves them into a list of repositories to index.
 
 Another worker then creates a new index job for each repository and queues it for processing.
 A repository cannot be queued for processing if:
