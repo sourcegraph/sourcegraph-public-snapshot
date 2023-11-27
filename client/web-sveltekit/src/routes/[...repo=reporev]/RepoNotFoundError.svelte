@@ -14,8 +14,8 @@
 <HeroPage title="Repository not found" svgIconPath={mdiMapSearch}>
     {#if viewerCanAdminister}
         <p>
-            As a site admin, you can add <Code>{repo}</Code> to Sourcegraph to allow users to search and
-            view it by <a href="/site-admin/external-services">connecting an external service</a> referencing it.
+            As a site admin, you can add <Code>{repo}</Code> to Sourcegraph to allow users to search and view it by
+            <a href="/site-admin/external-services">connecting an external service</a> referencing it.
         </p>
     {:else}
         <p>To access this repository, contact the Sourcegraph admin.</p>

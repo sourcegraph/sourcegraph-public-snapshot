@@ -55,6 +55,7 @@ go_library(
         "//internal/actor",
         "//internal/featureflag",
         "//internal/requestclient",
+        "//internal/requestinteraction",
         "//internal/trace",
         "//lib/pointers",
         "@com_github_google_uuid//:uuid",
