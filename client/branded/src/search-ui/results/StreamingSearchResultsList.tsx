@@ -33,7 +33,6 @@ import { OwnerSearchResult } from '../components/OwnerSearchResult'
 import { RepoSearchResult } from '../components/RepoSearchResult'
 import { SymbolSearchResult } from '../components/SymbolSearchResult'
 
-import { NoResultsPage } from './NoResultsPage'
 import { StreamingSearchResultFooter } from './StreamingSearchResultsFooter'
 import { useItemsToShow } from './use-items-to-show'
 import { useSearchResultsKeyboardNavigation } from './useSearchResultsKeyboardNavigation'
@@ -296,27 +295,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                 Press <span className={styles.focusInputMessageSlash}>/</span> to focus the search input
             </div>
 
-            {itemsToShow >= resultsNumber && (
-                <StreamingSearchResultFooter results={results}>
-                    <>
-                        {results?.state === 'complete' && resultsNumber === 0 && (
-                            <NoResultsPage
-                                searchContextsEnabled={searchContextsEnabled}
-                                isSourcegraphDotCom={isSourcegraphDotCom}
-                                telemetryService={telemetryService}
-                                showSearchContext={searchContextsEnabled}
-                                showQueryExamples={showQueryExamplesOnNoResultsPage}
-                                setQueryState={setQueryState}
-                                searchMode={searchMode}
-                                setSearchMode={setSearchMode}
-                                submitSearch={submitSearch}
-                                caseSensitive={caseSensitive}
-                                searchQueryFromURL={searchQueryFromURL}
-                            />
-                        )}
-                    </>
-                </StreamingSearchResultFooter>
-            )}
+            {itemsToShow >= resultsNumber && <StreamingSearchResultFooter results={results} />}
         </>
     )
 }
