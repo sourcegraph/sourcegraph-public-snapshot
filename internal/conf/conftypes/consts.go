@@ -35,19 +35,21 @@ const (
 )
 
 type EmbeddingsConfig struct {
-	Provider                   EmbeddingsProviderName
-	AccessToken                string
-	Model                      string
-	Endpoint                   string
-	Dimensions                 int
-	Incremental                bool
-	MinimumInterval            time.Duration
-	FileFilters                EmbeddingsFileFilters
-	MaxCodeEmbeddingsPerRepo   int
-	MaxTextEmbeddingsPerRepo   int
-	PolicyRepositoryMatchLimit *int
-	ExcludeChunkOnError        bool
-	Qdrant                     QdrantConfig
+	Provider                               EmbeddingsProviderName
+	AccessToken                            string
+	Model                                  string
+	Endpoint                               string
+	Dimensions                             int
+	Incremental                            bool
+	MinimumInterval                        time.Duration
+	FileFilters                            EmbeddingsFileFilters
+	MaxCodeEmbeddingsPerRepo               int
+	MaxTextEmbeddingsPerRepo               int
+	PolicyRepositoryMatchLimit             *int
+	ExcludeChunkOnError                    bool
+	Qdrant                                 QdrantConfig
+	PerCommunityUserEmbeddingsMonthlyLimit int
+	PerProUserEmbeddingsMonthlyLimit       int
 }
 
 type QdrantConfig struct {
