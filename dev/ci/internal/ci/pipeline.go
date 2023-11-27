@@ -87,6 +87,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		Env:     env,
 	}
 
+	// We generate the pipeline slightly differently when running as part of the Aspect Workflows pipeline.
+	// Primarily, we don't run any `bazel test` since Aspect has got that covered
+	isAspectWorkflowBuild := os.Getenv("ASPECT_WORKFLOWS_BUILD") != "1"
+
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
 	const minimumUpgradeableVersion = "5.2.0"
 
@@ -136,7 +140,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CreateBundleSizeDiff:      true,
-			AspectWorkflows:           os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
+			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 
 		securityOps := operations.NewNamedSet("Security Scanning")
@@ -167,7 +171,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = BazelOpsSet(buildOptions,
 			CoreTestOperationsOptions{
 				IsMainBranch:    buildOptions.Branch == "main",
-				AspectWorkflows: os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
+				AspectWorkflows: isAspectWorkflowBuild,
 			},
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			wait,
@@ -179,7 +183,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops = BazelOpsSet(buildOptions,
 			CoreTestOperationsOptions{
 				IsMainBranch:    buildOptions.Branch == "main",
-				AspectWorkflows: os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
+				AspectWorkflows: isAspectWorkflowBuild,
 			},
 			recordBrowserExtensionIntegrationTests,
 			wait,
@@ -227,7 +231,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Test images
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
-			AspectWorkflows:           os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
+			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 		// Publish images after everything is done
 		ops.Append(
@@ -285,7 +289,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
 			IsMainBranch:              true,
-			AspectWorkflows:           os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
+			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 
 		// Security scanning - sonarcloud
