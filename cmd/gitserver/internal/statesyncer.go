@@ -52,6 +52,7 @@ func NewRepoStateSyncer(
 ) goroutine.BackgroundRoutine {
 	var previousAddrs string
 	var previousPinned string
+	fullSync := true
 
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
@@ -61,7 +62,8 @@ func NewRepoStateSyncer(
 			// We turn addrs into a string here for easy comparison and storage of previous
 			// addresses since we'd need to take a copy of the slice anyway.
 			currentAddrs := strings.Join(addrs, ",")
-			fullSync := currentAddrs != previousAddrs
+			// If the addresses changed, we need to do a full sync.
+			fullSync = fullSync || currentAddrs != previousAddrs
 			previousAddrs = currentAddrs
 
 			// We turn PinnedServers into a string here for easy comparison and storage
@@ -72,12 +74,19 @@ func NewRepoStateSyncer(
 			}
 			sort.Strings(pinnedServerPairs)
 			currentPinned := strings.Join(pinnedServerPairs, ",")
+			// If the pinned repos changed, we need to do a full sync.
 			fullSync = fullSync || currentPinned != previousPinned
 			previousPinned = currentPinned
 
 			if err := syncRepoState(ctx, logger, db, locker, shardID, reposDir, gitServerAddrs, batchSize, perSecond, fullSync); err != nil {
+				// after a failed full sync, we should attempt it again in the next
+				// invocation.
+				fullSync = true
 				return errors.Wrap(err, "syncing repo state")
 			}
+
+			// Last full sync was a success, so next time we can be more optimistic.
+			fullSync = false
 
 			return nil
 		}),
