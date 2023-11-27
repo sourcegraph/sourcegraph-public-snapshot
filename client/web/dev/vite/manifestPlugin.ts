@@ -64,8 +64,8 @@ export function manifestPlugin(pluginConfig: ManifestPluginConfig): Plugin {
                     typeof inputOptions === 'string'
                         ? { [inputOptions]: inputOptions }
                         : Array.isArray(inputOptions)
-                            ? Object.fromEntries(inputOptions.map(path => [path, path]))
-                            : inputOptions
+                          ? Object.fromEntries(inputOptions.map(path => [path, path]))
+                          : inputOptions
 
                 const manifest: WebBuildManifest = {
                     url: url,
