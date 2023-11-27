@@ -81,11 +81,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Build options for pipeline operations that spawn more build steps
 	buildOptions := bk.BuildOptions{
-		Message:     os.Getenv("BUILDKITE_MESSAGE"),
-		Commit:      c.Commit,
-		Branch:      c.Branch,
-		Env:         env,
-		AspectBuild: os.Getenv("BUILDKITE_AGENT_META_DATA_QUEUE") == "aspect-default",
+		Message: os.Getenv("BUILDKITE_MESSAGE"),
+		Commit:  c.Commit,
+		Branch:  c.Branch,
+		Env:     env,
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
@@ -137,6 +136,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CreateBundleSizeDiff:      true,
+			AspectWorkflows:           os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
 		}))
 
 		securityOps := operations.NewNamedSet("Security Scanning")
@@ -165,6 +165,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
 		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch:    buildOptions.Branch == "main",
+				AspectWorkflows: os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
+			},
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			wait,
 			addBrowserExtensionReleaseSteps)
@@ -173,6 +177,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
 		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch:    buildOptions.Branch == "main",
+				AspectWorkflows: os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
+			},
 			recordBrowserExtensionIntegrationTests,
 			wait,
 			addBrowserExtensionE2ESteps)
@@ -219,6 +227,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Test images
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			AspectWorkflows:           os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
 		}))
 		// Publish images after everything is done
 		ops.Append(
@@ -276,6 +285,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
 			IsMainBranch:              true,
+			AspectWorkflows:           os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1",
 		}))
 
 		// Security scanning - sonarcloud
@@ -403,10 +413,9 @@ func withAgentLostRetries(s *bk.Step) {
 	})
 }
 
-func BazelOpsSet(buildOptions bk.BuildOptions, extra ...operations.Operation) *operations.Set {
-	var isMain = buildOptions.Branch == "main"
+func BazelOpsSet(buildOptions bk.BuildOptions, opts CoreTestOperationsOptions, extra ...operations.Operation) *operations.Set {
 	ops := operations.NewSet(
-		BazelOperations(buildOptions, isMain)...,
+		BazelOperations(buildOptions, opts)...,
 	)
 	ops.Append(extra...)
 	return ops

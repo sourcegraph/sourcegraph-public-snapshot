@@ -74,12 +74,11 @@ type Group struct {
 }
 
 type BuildOptions struct {
-	Message     string            `json:"message,omitempty"`
-	Commit      string            `json:"commit,omitempty"`
-	Branch      string            `json:"branch,omitempty"`
-	MetaData    map[string]any    `json:"meta_data,omitempty"`
-	Env         map[string]string `json:"env,omitempty"`
-	AspectBuild bool
+	Message  string            `json:"message,omitempty"`
+	Commit   string            `json:"commit,omitempty"`
+	Branch   string            `json:"branch,omitempty"`
+	MetaData map[string]any    `json:"meta_data,omitempty"`
+	Env      map[string]string `json:"env,omitempty"`
 }
 
 func (bo BuildOptions) MarshalJSON() ([]byte, error) {

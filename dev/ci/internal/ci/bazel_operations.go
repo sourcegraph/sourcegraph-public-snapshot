@@ -15,16 +15,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func BazelOperations(buildOpts bk.BuildOptions, isMain bool) []operations.Operation {
+func BazelOperations(buildOpts bk.BuildOptions, opts CoreTestOperationsOptions) []operations.Operation {
 	ops := []operations.Operation{}
-	if buildOpts.OmitBazel {
-		return ops
-	}
 	ops = append(ops, bazelPrechecks())
-	if isMain {
-		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
-	} else {
-		ops = append(ops, bazelTest("//...", "//client/web:test"))
+	if !opts.AspectWorkflows {
+		if opts.IsMainBranch {
+			ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
+		} else {
+			ops = append(ops, bazelTest("//...", "//client/web:test"))
+		}
 	}
 
 	ops = append(ops, triggerBackCompatTest(buildOpts), bazelGoModTidy())
