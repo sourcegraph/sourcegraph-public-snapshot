@@ -17,8 +17,8 @@ import (
 
 func BazelOperations(buildOpts bk.BuildOptions, opts CoreTestOperationsOptions) []operations.Operation {
 	ops := []operations.Operation{}
-	ops = append(ops, bazelPrechecks())
 	if !opts.AspectWorkflows {
+		ops = append(ops, bazelPrechecks())
 		if opts.IsMainBranch {
 			ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
 		} else {
@@ -345,7 +345,7 @@ func legacyBuildCandidateDockerImage(app string, version string, tag string, rt 
 		cmds = append(cmds,
 			bk.Key(candidateImageStepKey(app)),
 			bk.Env("VERSION", version),
-			bk.Agent("queue", "stateless"),
+			bk.Agent("queue", "bazel"),
 		)
 
 		// Allow all build scripts to emit info annotations
