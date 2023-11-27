@@ -182,7 +182,10 @@ eslint_test_with_types(
 
 buildifier(
     name = "buildifier",
-    exclude_patterns = ["./.git/*", "cmd/symbols/squirrel/test_repos/starlark/**/*"],
+    exclude_patterns = [
+        "./.git/*",
+        "cmd/symbols/squirrel/test_repos/starlark/**/*",
+    ],
     # TODO: enable these lint checks
     # lint_mode = "fix",
     mode = "fix",
@@ -190,7 +193,10 @@ buildifier(
 
 buildifier(
     name = "buildifier.check",
-    exclude_patterns = ["./.git/*", "cmd/symbols/squirrel/test_repos/starlark/**/*"],
+    exclude_patterns = [
+        "./.git/*",
+        "cmd/symbols/squirrel/test_repos/starlark/**/*",
+    ],
     # TODO: enable these lint checks
     # lint_mode = "warn",
     mode = "diff",
