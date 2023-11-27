@@ -3,7 +3,6 @@ import { ComponentType } from 'react'
 import { CiSettings, CiTextAlignLeft } from 'react-icons/ci'
 import { FaCss3Alt, FaJava, FaSass } from 'react-icons/fa'
 import { GoDatabase, GoTerminal } from 'react-icons/go'
-import { IoDocumentTextOutline } from 'react-icons/io5'
 import { PiFilePngLight } from 'react-icons/pi'
 import {
     SiApachegroovy,
@@ -80,7 +79,6 @@ export enum FileExtension {
     CSHARP = 'cs',
     CSS = 'css',
     DART = 'dart',
-    DEFAULT = 'default',
     DOCKERFILE = 'Dockerfile',
     DOCKERIGNORE = 'dockerignore',
     FORTRAN_F = 'f',
@@ -163,7 +161,6 @@ export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.CSHARP, { icon: SiCsharp, iconClass: styles.blue }],
     [FileExtension.CSS, { icon: FaCss3Alt, iconClass: styles.blue }],
     [FileExtension.DART, { icon: SiDart, iconClass: styles.blue }],
-    [FileExtension.DEFAULT, { icon: IoDocumentTextOutline, iconClass: styles.defaultIcon }],
     [FileExtension.DOCKERFILE, { icon: SiDocker, iconClass: styles.blue }],
     [FileExtension.DOCKERIGNORE, { icon: SiDocker, iconClass: styles.blue }],
     [FileExtension.FORTRAN_F, { icon: SiFortran, iconClass: styles.defaultIcon }],

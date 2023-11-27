@@ -474,7 +474,7 @@ function renderNode({
                 }
             }}
         >
-            <div className={classNames(styles.iconContainer)}>
+            <div className={styles.iconContainer}>
                 {fileIcon ? (
                     <Icon
                         as={fileIcon.icon}

@@ -1,5 +1,3 @@
-import { includes } from 'lodash'
-
 import { type GitCommitFields, RepositoryType } from '../graphql-operations'
 
 import { CodeHostType, FileExtension } from './constants'
@@ -54,13 +52,11 @@ export interface FileInfo {
 }
 
 export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
-    const fileInfo: FileInfo = { isTest: false }
+    const fileInfo = { extension: '' as FileExtension, isTest: false }
     fileInfo.isTest = isDirectory ? false : containsTest(file)
-
     if (isDirectory) {
         return fileInfo
     }
-
     const f = file.split('.')
     // Last item in 'f' is file extension string
     fileInfo.extension = f.pop() as FileExtension
@@ -69,14 +65,15 @@ export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
 
 export const containsTest = (file: string): boolean => {
     const f = file.split('.')
-    const matchTest1 = '_test'
-    const matchTest2 = 'test_'
-    const matchTest3 = '_spec'
+    // To account for other test file path structures
+    // adjust this regular expression.
+    const isTest = /^(test|spec|tests)(\b|_)|(\b|_)(test|spec|tests)$/
+
     for (const i of f) {
         if (i === 'test') {
             return true
         }
-        if (includes(i, matchTest1) || includes(i, matchTest2) || includes(i, matchTest3)) {
+        if (isTest.test(i)) {
             return true
         }
     }

@@ -20,12 +20,22 @@ describe('containsTest', () => {
             expected: true,
         },
         {
+            name: 'returns true if "_spec" exists in file name',
+            file: 'myfile_spec.go',
+            expected: true,
+        },
+        {
+            name: 'returns true if "spec_" exists in file name',
+            file: 'spec_myfile.go',
+            expected: true,
+        },
+        {
             name: 'works with sub-extensions',
             file: 'myreactcomponent.test.tsx',
             expected: true,
         },
         {
-            name: 'returns false if if not a test file',
+            name: 'returns false if not a test file',
             file: 'mytestcomponent.java',
             expected: false,
         },
