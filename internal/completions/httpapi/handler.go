@@ -77,7 +77,7 @@ func newCompletionsHandler(
 			Build()
 		defer done()
 
-		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled
+		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
 		if envvar.SourcegraphDotComMode() &&
 			featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) &&
