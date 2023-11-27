@@ -372,7 +372,7 @@ function createBlobPageData<T extends BlobInfo>({
         WebGraphQlOperations,
         'ResolveRepoRev' | 'FileTreeEntries' | 'FileExternalLinks' | 'Blob' | 'FileNames'
     > &
-        Pick<SharedGraphQlOperations, 'TreeEntries' | 'LegacyRepositoryIntrospection' | 'LegacyResolveRepo2'>
+        Pick<SharedGraphQlOperations, 'TreeEntries' | 'LegacyResolveRepo2'>
     filePaths: { [k in keyof T]: string }
 } {
     const repositorySourcegraphUrl = `/${repoName}`
@@ -399,15 +399,6 @@ function createBlobPageData<T extends BlobInfo>({
                         __typename: 'GitCommit',
                         fileNames,
                     },
-                },
-            }),
-            LegacyRepositoryIntrospection: () => ({
-                __type: {
-                    fields: [
-                        {
-                            name: 'noFork',
-                        },
-                    ],
                 },
             }),
             LegacyResolveRepo2: () => ({
