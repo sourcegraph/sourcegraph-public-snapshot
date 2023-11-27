@@ -32,8 +32,8 @@ func TestComputeRunType(t *testing.T) {
 	}, {
 		name: "tagged release",
 		args: args{
-			branch: "1.3",
-			tag:    "v1.2.3",
+			branch: "rfc795/v1.2.3",
+			// tag:    "v1.2.3",
 		},
 		want: TaggedRelease,
 	}, {

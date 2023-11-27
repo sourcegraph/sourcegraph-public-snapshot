@@ -128,7 +128,7 @@ func NewConfig(now time.Time) Config {
 }
 
 // versionFromTag constructs the Sourcegraph version from the given build state.
-func versionFromTag(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
+func versionFromTag(runType runtype.RunType, _ string, commit string, buildNumber int, branch string, now time.Time) string {
 	if runType.Is(runtype.TaggedRelease) {
 		// This tag is used for publishing versioned releases.
 		//
