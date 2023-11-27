@@ -52,14 +52,14 @@ export interface FileInfo {
 }
 
 export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
-    const fileInfo = { extension: '' as FileExtension, isTest: false }
+    const fileInfo = { extension: 'default' as FileExtension, isTest: false }
     fileInfo.isTest = isDirectory ? false : containsTest(file)
     if (isDirectory) {
         return fileInfo
     }
     const f = file.split('.')
     // Last item in 'f' is file extension string
-    fileInfo.extension = f.pop() as FileExtension
+    fileInfo.extension = f[f.length - 1] as FileExtension;
     return fileInfo
 }
 

@@ -38,6 +38,7 @@ import {
     SiRuby,
     SiRust,
     SiScala,
+    SiSvelte,
     SiSvg,
     SiSwift,
     SiTypescript,
@@ -79,6 +80,7 @@ export enum FileExtension {
     CSHARP = 'cs',
     CSS = 'css',
     DART = 'dart',
+    DEFAULT = 'default',
     DOCKERFILE = 'Dockerfile',
     DOCKERIGNORE = 'dockerignore',
     FORTRAN_F = 'f',
@@ -125,6 +127,7 @@ export enum FileExtension {
     SCALA = 'scala',
     SASS = 'scss',
     SQL = 'sql',
+    SVELTE = 'svelte',
     SVG = 'svg',
     SWIFT = 'swift',
     TEST = 'test',
@@ -146,7 +149,7 @@ interface IconInfo {
  * 1) Many of mdi's programming language icons will be deprecated soon.
  * 2) They are missing quite a few icons that are needed when displaying file types.
  */
-export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
+export const FILE_ICONS: Map<FileExtension, IconInfo | null> = new Map([
     [FileExtension.ASSEMBLY, { icon: SiAssemblyscript, iconClass: styles.defaultIcon }],
     [FileExtension.BASH, { icon: GoTerminal, iconClass: styles.defaultIcon }],
     [FileExtension.BASIC, { icon: SiVisualbasic, iconClass: styles.defaultIcon }],
@@ -161,6 +164,7 @@ export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.CSHARP, { icon: SiCsharp, iconClass: styles.blue }],
     [FileExtension.CSS, { icon: FaCss3Alt, iconClass: styles.blue }],
     [FileExtension.DART, { icon: SiDart, iconClass: styles.blue }],
+    [FileExtension.DEFAULT, null],
     [FileExtension.DOCKERFILE, { icon: SiDocker, iconClass: styles.blue }],
     [FileExtension.DOCKERIGNORE, { icon: SiDocker, iconClass: styles.blue }],
     [FileExtension.FORTRAN_F, { icon: SiFortran, iconClass: styles.defaultIcon }],
@@ -207,6 +211,7 @@ export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.SCALA, { icon: SiScala, iconClass: styles.red }],
     [FileExtension.SASS, { icon: FaSass, iconClass: styles.pink }],
     [FileExtension.SQL, { icon: GoDatabase, iconClass: styles.blue }],
+    [FileExtension.SVELTE, { icon: SiSvelte, iconClass: styles.red }],
     [FileExtension.SVG, { icon: SiSvg, iconClass: styles.blue }],
     [FileExtension.SWIFT, { icon: SiSwift, iconClass: styles.blue }],
     [FileExtension.TYPESCRIPT, { icon: SiTypescript, iconClass: styles.blue }],
