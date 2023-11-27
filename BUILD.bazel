@@ -201,6 +201,13 @@ gazelle(
     gazelle = ":gazelle-buf",
 )
 
+sh_binary(
+    name = "configure",
+    srcs = ["//dev/ci:bazel-configure.sh"],
+    data = ["@go_sdk//:bin/go"],
+    env = {"GO": "$(rootpath @go_sdk//:bin/go)"},
+)
+
 go_library(
     name = "sourcegraph",
     srcs = [
