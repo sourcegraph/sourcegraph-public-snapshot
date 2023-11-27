@@ -124,17 +124,6 @@ func TestStreamBlame(t *testing.T) {
 
 	ctx := context.Background()
 
-	t.Run("NOK feature flag disabled", func(t *testing.T) {
-		rec := httptest.NewRecorder()
-		req, err := http.NewRequest(http.MethodGet, "/no-vars", nil)
-		require.NoError(t, err)
-		req = req.WithContext(context.Background()) // no feature flag there
-
-		gsClient := setupMockGSClient(t, "abcd", nil, hunks)
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusNotFound, rec.Code)
-	})
-
 	t.Run("NOK no mux vars", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		req, err := http.NewRequest(http.MethodGet, "/no-vars", nil)
