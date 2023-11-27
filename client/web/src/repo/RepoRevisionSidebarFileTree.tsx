@@ -392,7 +392,7 @@ function renderNode({
     const submodule = entry?.submodule
     const url = entry?.url
     const fileInfo = getFileInfo(name, isBranch)
-    const fileIcon = FILE_ICONS.get(fileInfo.extension)
+    const fileIcon = fileInfo.extension && FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />

@@ -57,9 +57,11 @@ export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
     if (isDirectory) {
         return fileInfo
     }
+
     const f = file.split('.')
     // Last item in 'f' is file extension string
-    fileInfo.extension = f[f.length - 1] as FileExtension;
+    // Code Search linter prefers at() to x[x.length - 1]
+    fileInfo.extension = f.at(-1)?.trim() as FileExtension
     return fileInfo
 }
 
