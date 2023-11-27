@@ -81,10 +81,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	// Build options for pipeline operations that spawn more build steps
 	buildOptions := bk.BuildOptions{
-		Message: os.Getenv("BUILDKITE_MESSAGE"),
-		Commit:  c.Commit,
-		Branch:  c.Branch,
-		Env:     env,
+		Message:     os.Getenv("BUILDKITE_MESSAGE"),
+		Commit:      c.Commit,
+		Branch:      c.Branch,
+		Env:         env,
+		AspectBuild: os.Getenv("BUILDKITE_AGENT_META_DATA_QUEUE") == "aspect-default",
 	}
 
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
@@ -213,7 +214,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		ops = operations.NewSet(
-			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
+			legacyBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
@@ -234,13 +235,13 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet(
-			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
+			legacyBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
 			wait,
 			publishFinalDockerImage(c, patchImage))
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
-			bazelBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
+			legacyBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
