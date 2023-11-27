@@ -12,7 +12,6 @@ export const FEATURE_FLAGS = [
     'admin-analytics-cache-disabled',
     'search-input-show-history',
     'search-results-keyboard-navigation',
-    'enable-streaming-git-blame',
     'plg-enable-add-codehost-widget',
     'accessible-file-tree',
     'accessible-symbol-tree',
