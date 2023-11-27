@@ -194,6 +194,7 @@ func TestMiddleware(t *testing.T) {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
+		session.SetData(respRecorder, req, "oidcState", validState)
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
@@ -284,7 +285,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
 		invalidState := (&AuthnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
 		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(invalidState), "", nil, false)
-		if want := http.StatusBadRequest; resp.StatusCode != want {
+		if want := http.StatusUnauthorized; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
 	})
@@ -385,6 +386,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 			req.AddCookie(cookie)
 		}
 		respRecorder := httptest.NewRecorder()
+		session.SetData(respRecorder, req, "oidcState", state)
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
