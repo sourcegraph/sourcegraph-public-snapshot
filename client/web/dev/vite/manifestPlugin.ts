@@ -4,7 +4,7 @@ import os from 'os'
 
 import { Plugin, normalizePath } from 'vite'
 
-import { WebBuildManifest } from '../utils/webBuildManifest'
+import { WebBuildManifest, isEntry } from '../utils/webBuildManifest'
 
 export interface ManifestPluginConfig {
     fileName: string
@@ -64,8 +64,8 @@ export function manifestPlugin(pluginConfig: ManifestPluginConfig): Plugin {
                     typeof inputOptions === 'string'
                         ? { [inputOptions]: inputOptions }
                         : Array.isArray(inputOptions)
-                        ? Object.fromEntries(inputOptions.map(path => [path, path]))
-                        : inputOptions
+                            ? Object.fromEntries(inputOptions.map(path => [path, path]))
+                            : inputOptions
 
                 const manifest: WebBuildManifest = {
                     url: url,
@@ -81,9 +81,11 @@ export function manifestPlugin(pluginConfig: ManifestPluginConfig): Plugin {
                         <script type="module" src="${url}@vite/client"></script>`,
                 }
                 for (const [entryAlias, entryPath] of Object.entries(inputs)) {
-                    const relativeEntryAlias = normalizePath(path.relative(root, entryAlias))
-                    manifest.assets[noExt(relativeEntryAlias)] = {
-                        js: simplifyPath(entryPath),
+                    const relativeEntryAlias = noExt(normalizePath(path.relative(root, entryAlias)))
+                    if (isEntry(relativeEntryAlias)) {
+                        manifest.assets[relativeEntryAlias] = {
+                            js: simplifyPath(entryPath),
+                        }
                     }
                 }
 
@@ -101,14 +103,17 @@ export function manifestPlugin(pluginConfig: ManifestPluginConfig): Plugin {
             const manifest: WebBuildManifest = { assets: {} }
             for (const chunk of Object.values(bundle)) {
                 if (chunk.type === 'chunk' && chunk.isEntry && chunk.facadeModuleId) {
-                    let entryAlias = normalizePath(path.relative(root, chunk.facadeModuleId))
+                    let entryAlias = noExt(normalizePath(path.relative(root, chunk.facadeModuleId)))
                     const css = chunk.viteMetadata ? Array.from(chunk.viteMetadata?.importedCss.values()) : []
                     if (css.length >= 2) {
                         throw new Error('multiple CSS asset files not supported')
                     }
-                    manifest.assets[noExt(entryAlias)] = {
-                        js: chunk.fileName,
-                        css: css.length === 1 ? css[0] : undefined,
+
+                    if (isEntry(entryAlias)) {
+                        manifest.assets[entryAlias] = {
+                            js: chunk.fileName,
+                            css: css.length === 1 ? css[0] : undefined,
+                        }
                     }
                 }
             }
