@@ -133,7 +133,9 @@ func versionFromTag(runType runtype.RunType, tag string, commit string, buildNum
 		// This tag is used for publishing versioned releases.
 		//
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
-		return strings.TrimPrefix(tag, "v")
+		// return strings.TrimPrefix(tag, "v")
+		// TODO(rfc795)
+		return strings.TrimPrefix(branch, "rfc795/v")
 	}
 
 	// "main" branch is used for continuous deployment and has a special-case format

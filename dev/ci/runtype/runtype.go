@@ -121,7 +121,10 @@ func (t RunType) Matcher() *RunTypeMatcher {
 
 	case TaggedRelease:
 		return &RunTypeMatcher{
-			TagPrefix: "v",
+			// TagPrefix: "v",
+			// TODO(@jhchabran) RFC795
+			Branch:       `rfc795/v[0-9]+\.[0-9]+\.[0-9]+$`,
+			BranchRegexp: true,
 		}
 	case ReleaseBranch:
 		return &RunTypeMatcher{
