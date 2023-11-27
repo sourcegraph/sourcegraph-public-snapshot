@@ -327,7 +327,7 @@ func heartbeatLoop(logger log.Logger, db database.DB) (func(), error) {
 
 func checkForDisconnects(ctx context.Context, _ log.Logger, db database.DB) (remaining []string, err error) {
 	query := sqlf.Sprintf(`SELECT DISTINCT(application_name) FROM pg_stat_activity
-			WHERE application_name <> '' AND application_name <> %s AND application_name <> 'psql'`,
+	WHERE application_name <> '' AND application_name <> %s AND application_name <> 'psql' AND datname <> '' AND datname <> %s`,
 		appName)
 	store := basestore.NewWithHandle(db.Handle())
 	remaining, err = basestore.ScanStrings(store.Query(ctx, query))
