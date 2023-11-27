@@ -40,5 +40,5 @@ const stencilQuery = gql`
 export type StencilFn = (uri: string) => Promise<sourcegraph.Range[] | undefined>
 
 export const makeStencilFn = (
-    queryGraphQL: QueryGraphQLFn<GenericLSIFResponse<{ stencil: sourcegraph.Range[] }>>,
+    queryGraphQL: QueryGraphQLFn<GenericLSIFResponse<{ stencil: sourcegraph.Range[] }>>
 ): StencilFn => cache(uri => stencil(uri, queryGraphQL), { max: 10 })

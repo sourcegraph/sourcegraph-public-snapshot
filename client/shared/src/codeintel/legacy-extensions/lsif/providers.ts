@@ -151,7 +151,7 @@ function references(
     textDocument: sourcegraph.TextDocument,
     position: sourcegraph.Position
 ) => AsyncGenerator<sourcegraph.Location[] | null, void, undefined> {
-    return async function*(
+    return async function* (
         textDocument: sourcegraph.TextDocument,
         position: sourcegraph.Position
     ): AsyncGenerator<sourcegraph.Location[] | null, void, undefined> {
@@ -206,7 +206,7 @@ function implementations(
     textDocument: sourcegraph.TextDocument,
     position: sourcegraph.Position
 ) => AsyncGenerator<sourcegraph.Location[] | null, void, undefined> {
-    return async function*(
+    return async function* (
         textDocument: sourcegraph.TextDocument,
         position: sourcegraph.Position
     ): AsyncGenerator<sourcegraph.Location[] | null, void, undefined> {
