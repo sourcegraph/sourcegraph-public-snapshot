@@ -45,8 +45,33 @@ interface SearchSidebarProps extends HTMLAttributes<HTMLElement> {
  * Also provides shared through context internal state for compound SearchSidebarSection
  * components.
  */
-export const SearchSidebar: FC<PropsWithChildren<SearchSidebarProps>> = props => {
+export const StickySearchSidebar: FC<PropsWithChildren<SearchSidebarProps>> = props => {
     const { children, className, onClose, ...attributes } = props
+
+    return (
+        <aside
+            {...attributes}
+            className={classNames(styles.sidebar, className)}
+            role="region"
+            aria-label="Search sidebar"
+        >
+            <StickyBox className={styles.stickyBox} offsetTop={8}>
+                <div className={styles.header}>
+                    <H4 as={H2} className="mb-0">
+                        Filters
+                    </H4>
+                    <Button variant="icon" onClick={onClose}>
+                        <Icon svgPath={mdiChevronDoubleUp} aria-label="Hide sidebar" />
+                    </Button>
+                </div>
+
+                {children}
+            </StickyBox>
+        </aside>
+    )
+}
+
+export const PersistSidebarStoreProvider: FC<PropsWithChildren<{}>> = props => {
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
 
     const persistToggleState = useCallback(
@@ -67,34 +92,14 @@ export const SearchSidebar: FC<PropsWithChildren<SearchSidebarProps>> = props =>
         [collapsedSections, persistToggleState]
     )
 
-    return (
-        <aside
-            {...attributes}
-            className={classNames(styles.sidebar, className)}
-            role="region"
-            aria-label="Search sidebar"
-        >
-            <StickyBox className={styles.stickyBox} offsetTop={8}>
-                <div className={styles.header}>
-                    <H4 as={H2} className="mb-0">
-                        Filters
-                    </H4>
-                    <Button variant="icon" onClick={onClose}>
-                        <Icon svgPath={mdiChevronDoubleUp} aria-label="Hide sidebar" />
-                    </Button>
-                </div>
+    // collapsedSections is undefined on first render. To prevent the sections
+    // being rendered open and immediately closing them, we render them only after
+    // we got the settings.
+    if (!collapsedSections) {
+        return null
+    }
 
-                {
-                    // collapsedSections is undefined on first render. To prevent the sections
-                    // being rendered open and immediately closing them, we render them only after
-                    // we got the settings.
-                    collapsedSections && (
-                        <SearchSidebarContext.Provider value={sidebarStore}>{children}</SearchSidebarContext.Provider>
-                    )
-                }
-            </StickyBox>
-        </aside>
-    )
+    return <SearchSidebarContext.Provider value={sidebarStore}>{props.children}</SearchSidebarContext.Provider>
 }
 
 interface SearchSidebarSectionProps

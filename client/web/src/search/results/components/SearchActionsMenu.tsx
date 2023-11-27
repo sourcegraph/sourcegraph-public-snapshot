@@ -17,11 +17,11 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import type { AuthenticatedUser } from '../../auth'
+import type { AuthenticatedUser } from '../../../auth'
 
-import type { CreateAction } from './createActions'
+import type { CreateAction } from './search-results-info-bar/createActions'
 
-import navStyles from './SearchResultsInfoBar.module.scss'
+import navStyles from './search-results-info-bar/SearchResultsInfoBar.module.scss'
 
 interface SearchActionsMenuProps {
     results?: AggregateStreamingSearchResults
