@@ -30,11 +30,24 @@ const (
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
 // on the license info.
-// TODO: Adjust this function to reflect new plan product names.
 func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 	if !hasLicense {
 		return "Sourcegraph Free"
 	}
+
+	info := &Info{
+		Info: license.Info{
+			Tags: licenseTags,
+		},
+	}
+	plan := info.Plan()
+
+	details, ok := planDetails[plan]
+	if !ok {
+		return "Unrecognized plan"
+	}
+
+	name := details.DisplayName
 
 	hasTag := func(tag string) bool {
 		for _, t := range licenseTags {
@@ -43,32 +56,6 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 			}
 		}
 		return false
-	}
-
-	baseName := "Sourcegraph Enterprise"
-	var name string
-
-	info := &Info{
-		Info: license.Info{
-			Tags: licenseTags,
-		},
-	}
-	plan := info.Plan()
-	// Identify known plans first
-	switch {
-	case strings.HasPrefix(string(plan), "team-"):
-		baseName = "Sourcegraph Team"
-	case strings.HasPrefix(string(plan), "enterprise-"):
-		baseName = "Sourcegraph Enterprise"
-	case strings.HasPrefix(string(plan), "business-"):
-		baseName = "Sourcegraph Business"
-
-	default:
-		if hasTag("team") {
-			baseName = "Sourcegraph Team"
-		} else if hasTag("starter") {
-			name = " Starter"
-		}
 	}
 
 	var misc []string
@@ -85,5 +72,5 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 		name += " (" + strings.Join(misc, ", ") + ")"
 	}
 
-	return baseName + name
+	return name
 }

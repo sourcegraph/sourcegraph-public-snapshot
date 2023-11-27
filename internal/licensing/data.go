@@ -28,6 +28,8 @@ const (
 
 	// PlanAirGappedEnterprise is the same PlanEnterprise1 but with FeatureAllowAirGapped, and works starting from 5.1.
 	PlanAirGappedEnterprise Plan = "enterprise-air-gap-0"
+
+	PlanCodeSearchPro Plan = "code-search-pro"
 )
 
 var AllPlans = []Plan{
@@ -42,6 +44,7 @@ var AllPlans = []Plan{
 	PlanFree0,
 	PlanFree1,
 	PlanAirGappedEnterprise,
+	PlanCodeSearchPro,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
@@ -82,12 +85,14 @@ const (
 )
 
 type PlanDetails struct {
-	Features []Feature
+	DisplayName string
+	Features    []Feature
 }
 
 // planDetails defines the features that are enabled for each plan.
 var planDetails = map[Plan]PlanDetails{
 	PlanOldEnterpriseStarter: {
+		DisplayName: "Sourcegraph Enterprise Starter",
 		Features: []Feature{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
@@ -97,6 +102,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanOldEnterprise: {
+		DisplayName: "Sourcegraph Enterprise",
 		Features: []Feature{
 			FeatureSSO,
 			FeatureACLs,
@@ -112,6 +118,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanTeam0: {
+		DisplayName: "Sourcegraph Team",
 		Features: []Feature{
 			FeatureACLs,
 			FeatureExplicitPermissionsAPI,
@@ -124,6 +131,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanEnterprise0: {
+		DisplayName: "Sourcegraph Enterprise",
 		Features: []Feature{
 			FeatureACLs,
 			FeatureExplicitPermissionsAPI,
@@ -139,6 +147,7 @@ var planDetails = map[Plan]PlanDetails{
 	},
 
 	PlanBusiness0: {
+		DisplayName: "Sourcegraph Business",
 		Features: []Feature{
 			FeatureACLs,
 			&FeatureBatchChanges{Unrestricted: true},
@@ -153,6 +162,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanEnterprise1: {
+		DisplayName: "Sourcegraph Enterprise",
 		Features: []Feature{
 			FeatureACLs,
 			FeatureCodeInsights,
@@ -168,6 +178,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanEnterpriseExtension: {
+		DisplayName: "Sourcegraph Enterprise",
 		Features: []Feature{
 			FeatureACLs,
 			FeatureCodeInsights,
@@ -183,6 +194,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanFree0: {
+		DisplayName: "Sourcegraph Free",
 		Features: []Feature{
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
@@ -193,6 +205,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanFree1: {
+		DisplayName: "Sourcegraph Free",
 		Features: []Feature{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
@@ -202,6 +215,7 @@ var planDetails = map[Plan]PlanDetails{
 		},
 	},
 	PlanAirGappedEnterprise: {
+		DisplayName: "Sourcegraph Enterprise",
 		Features: []Feature{
 			FeatureACLs,
 			FeatureCodeInsights,
@@ -215,6 +229,16 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCodeMonitors,
 			FeatureNotebooks,
 			FeatureCodeSearch,
+		},
+	},
+	PlanCodeSearchPro: {
+		DisplayName: "Code Search Pro",
+		Features: []Feature{
+			FeatureACLs,
+			&FeaturePrivateRepositories{MaxNumPrivateRepos: 250}, // TODO: Should be private and public repos. Also limit to one code host connection.
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+			FeatureSCIM,
 		},
 	},
 }
