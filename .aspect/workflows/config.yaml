@@ -12,6 +12,8 @@ env:
     REDIS_CACHE_ENDPOINT: ":6379"
     GIT_PAGER: ''
 tasks:
+    # Checks that BUILD files are formatted
+    buildifier:
     # Checks that BUILD file content is up-to-date with sources
     gazelle:
         target: //:configure
