@@ -8,6 +8,14 @@ export const defaultMocks: TypeMocks = {
     Int: () => faker.number.int(2 ** 31),
     String: () => faker.string.alpha(10),
     ID: () => faker.string.uuid(),
+    Boolean: () => faker.helpers.arrayElement([true, false]),
+
+    // Our own scalar types
+    JSONCString: () => '{}',
+    DateTime: () => faker.date.past().toISOString(),
+    GitObjectID: () => faker.git.commitSha(),
+    BigInt: () => String(faker.number.int(2 ** 53)),
+
     // Ensure some simple business logic
 
     // In Ranges the start line is always smaller than the end line.
@@ -38,6 +46,11 @@ export const defaultMocks: TypeMocks = {
         }
     },
 
+    Signature: () => ({
+        // 'date' is typed as a string field but it will always be a date value.
+        date: faker.date.past().toISOString(),
+    }),
+
     User: () => ({
         username: faker.internet.userName(),
     }),
@@ -51,5 +64,9 @@ export const defaultMocks: TypeMocks = {
 
     UserEmail: () => ({
         email: faker.internet.email(),
+    }),
+
+    SettingsCascade: () => ({
+        final: '{}', // JSON value
     }),
 }

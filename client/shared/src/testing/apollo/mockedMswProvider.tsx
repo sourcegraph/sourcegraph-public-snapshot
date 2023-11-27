@@ -4,7 +4,12 @@ import { ApolloClient, ApolloProvider } from '@apollo/client'
 
 import { generateCache } from '../../backend/apolloCache'
 
-export const MockedMSWProvider: FC<PropsWithChildren<{}>> = ({ children }) => {
+/**
+ * A provider that sets up an Apollo client with a mocked backend. The mock backed is provided by MSW
+ * and needs to be set up in the test file via {@link setupMockServer} from
+ * `@sourcegraph/shared/src/testing/graphql/vitest`.
+ */
+export const AutomockGraphQLProvider: FC<PropsWithChildren<{}>> = ({ children }) => {
     const client = useMemo(
         () =>
             new ApolloClient({

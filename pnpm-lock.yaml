@@ -12,6 +12,11 @@ overrides:
 
 packageExtensionsChecksum: 769402dc957b3bd672d434d157a19e86
 
+patchedDependencies:
+  '@graphql-tools/mock@9.0.0':
+    hash: ma5p7b2xex6bvisjfxkgd3dn2u
+    path: patches/@graphql-tools__mock@9.0.0.patch
+
 importers:
 
   .:
@@ -487,7 +492,7 @@ importers:
         version: 4.0.1(graphql@15.4.0)
       '@graphql-tools/mock':
         specifier: ^9.0.0
-        version: 9.0.0(graphql@15.4.0)
+        version: 9.0.0(patch_hash=ma5p7b2xex6bvisjfxkgd3dn2u)(graphql@15.4.0)
       '@graphql-tools/schema':
         specifier: ^10.0.0
         version: 10.0.0(graphql@15.4.0)
@@ -4393,7 +4398,7 @@ packages:
       tslib: 2.1.0
     dev: true
 
-  /@graphql-tools/mock@9.0.0(graphql@15.4.0):
+  /@graphql-tools/mock@9.0.0(patch_hash=ma5p7b2xex6bvisjfxkgd3dn2u)(graphql@15.4.0):
     resolution: {integrity: sha512-Vbb4RNTT9T3fXjmzACcflOh79vKBaC/J21eCJ0eug1ZdaM2QXVHQ3lxE6HNOlAENHXjwJINz1AnKsvF3bpeSKA==}
     engines: {node: '>=16.0.0'}
     peerDependencies:
@@ -4405,6 +4410,7 @@ packages:
       graphql: 15.4.0
       tslib: 2.1.0
     dev: true
+    patched: true
 
   /@graphql-tools/optimize@1.3.1(graphql@15.4.0):
     resolution: {integrity: sha512-5j5CZSRGWVobt4bgRRg7zhjPiSimk+/zIuColih8E8DxuFOaJ+t0qu7eZS5KXWBkjcd4BPNuhUPpNlEmHPqVRQ==}

@@ -2,8 +2,8 @@ import { cleanup, fireEvent } from '@testing-library/react'
 import delay from 'delay'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { MockedMSWProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
-import { installMockServer } from '@sourcegraph/shared/src/testing/msw/vitest'
+import { AutomockGraphQLProvider, waitForNextApolloResponse } from '@sourcegraph/shared/src/testing/apollo'
+import { setupMockServer } from '@sourcegraph/shared/src/testing/graphql/vitest'
 import { type RenderWithBrandedContextResult, renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import {
@@ -24,7 +24,7 @@ const sidebarProps: RepoRevisionSidebarSymbolsProps = {
     onHandleSymbolClick: () => {},
 }
 
-const mockServer = installMockServer()
+const mockServer = setupMockServer()
 const symbolsMock = mockServer.mockGraphql({
     query: SYMBOLS_QUERY,
     mocks: {
@@ -37,7 +37,6 @@ const symbolsMock = mockServer.mockGraphql({
             ],
         }),
     },
-    inspect: true,
 })
 
 describe('RepoRevisionSidebarSymbols', () => {
@@ -47,9 +46,9 @@ describe('RepoRevisionSidebarSymbols', () => {
     beforeEach(async () => {
         mockServer.use(symbolsMock)
         renderResult = renderWithBrandedContext(
-            <MockedMSWProvider>
+            <AutomockGraphQLProvider>
                 <RepoRevisionSidebarSymbols {...sidebarProps} />
-            </MockedMSWProvider>,
+            </AutomockGraphQLProvider>,
             { route }
         )
         await waitForNextApolloResponse()

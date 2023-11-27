@@ -166,16 +166,14 @@ if (require.main === module) {
                 if (!(configName in ALL_INPUTS)) {
                     throw new Error(`Unknown config name: ${args[0]}`)
                 }
-                inputs = [{...ALL_INPUTS[configName], outputPath: args[1]}]
+                inputs = [{ ...ALL_INPUTS[configName], outputPath: args[1] }]
                 break
             }
             default: {
                 throw new Error('Usage: [<configName> <outputPath>]')
             }
         }
-        await generate(
-            createCodegenConfig(inputs)
-        )
+        await generate(createCodegenConfig(inputs))
     }
     main(process.argv.slice(2)).catch(error => {
         console.error(error)
