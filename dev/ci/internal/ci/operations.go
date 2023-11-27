@@ -496,6 +496,11 @@ func buildExecutorBinary(c Config) operations.Operation {
 
 func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
+		// TODO(rfc795) because we don't have a real testbed for those, let's not push
+		// those amis for now.
+		if strings.Contains(c.Branch, "rfc795/v") {
+			return
+		}
 		candidateBuildStep := candidateImageStepKey("executor.vm-image")
 		imageFamily := executorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
@@ -521,6 +526,11 @@ func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 
 func publishExecutorBinary(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
+		// TODO(rfc795) because we don't have a real testbed for those, let's not push
+		// those amis for now.
+		if strings.Contains(c.Branch, "rfc795/v") {
+			return
+		}
 		candidateBuildStep := candidateImageStepKey("executor.binary")
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
@@ -568,6 +578,11 @@ func buildExecutorDockerMirror(c Config) operations.Operation {
 
 func publishExecutorDockerMirror(c Config) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
+		// TODO(rfc795) because we don't have a real testbed for those, let's not push
+		// those amis for now.
+		if strings.Contains(c.Branch, "rfc795/v") {
+			return
+		}
 		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
 		imageFamily := executorDockerMirrorImageFamilyForConfig(c)
 		stepOpts := []bk.StepOpt{
