@@ -236,7 +236,7 @@ require (
 	golang.org/x/time v0.4.0
 	// golang.org/x/tools should not be upgraded until https://github.com/bazelbuild/bazel-gazelle/issues/1579
 	// is resolved.
-	golang.org/x/tools v0.10.0
+	golang.org/x/tools v0.15.0
 	gonum.org/v1/gonum v0.13.0
 	google.golang.org/api v0.150.0
 	google.golang.org/genproto v0.0.0-20231030173426-d783a09b4405 // indirect
@@ -594,7 +594,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.16.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
-	golang.org/x/mod v0.12.0
+	golang.org/x/mod v0.14.0
 	golang.org/x/term v0.14.0 // indirect
 	golang.org/x/text v0.14.0
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
