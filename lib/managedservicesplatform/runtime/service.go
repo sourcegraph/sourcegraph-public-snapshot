@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/background"
@@ -43,7 +44,7 @@ func Start[
 		InstanceID: "",
 	}
 
-	liblog := log.Init(res)
+	liblog := log.Init(res, log.NewSentrySink())
 	defer liblog.Sync()
 
 	ctx := context.Background()
@@ -60,6 +61,19 @@ func Start[
 	// Load configuration variables from environment
 	config.Load(env)
 	contract := newContract(env)
+
+	// Enable Sentry error log reporting
+	if contract.sentryDSN != nil {
+		liblog.Update(func() log.SinksConfig {
+			return log.SinksConfig{
+				Sentry: &log.SentrySink{
+					ClientOptions: sentry.ClientOptions{
+						Dsn: *contract.sentryDSN,
+					},
+				},
+			}
+		})()
+	}
 
 	// Check for environment errors
 	if err := env.validate(); err != nil {

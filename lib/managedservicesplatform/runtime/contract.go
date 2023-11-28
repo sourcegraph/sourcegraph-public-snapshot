@@ -33,6 +33,8 @@ type Contract struct {
 	postgreSQLContract
 
 	opentelemetryContract opentelemetry.Config
+
+	sentryDSN *string
 }
 
 type postgreSQLContract struct {
@@ -62,6 +64,7 @@ func newContract(env *Env) Contract {
 				env.GetOptional("OTEL_GCP_PROJECT_ID", "GCP project ID for OpenTelemetry export"),
 				defaultGCPProjectID),
 		},
+		sentryDSN: env.GetOptional("SENTRY_DSN", "Sentry error reporting DSN"),
 	}
 }
 
