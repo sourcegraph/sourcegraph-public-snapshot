@@ -26,7 +26,8 @@ func BazelOperations(buildOpts bk.BuildOptions, opts CoreTestOperationsOptions) 
 		}
 	}
 
-	ops = append(ops, triggerBackCompatTest(buildOpts), bazelGoModTidy())
+	runBackcompatAsync := !opts.AspectWorkflows
+	ops = append(ops, triggerBackCompatTest(buildOpts, runBackcompatAsync), bazelGoModTidy())
 	return ops
 }
 
@@ -180,9 +181,10 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 }
 
-func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
+func triggerBackCompatTest(buildOpts bk.BuildOptions, async bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddTrigger(":bazel::snail: Async BackCompat Tests", "sourcegraph-backcompat",
+			bk.Async(async),
 			bk.Key("trigger-backcompat"),
 			bk.DependsOn("bazel-prechecks"),
 			bk.AllowDependencyFailure(),
