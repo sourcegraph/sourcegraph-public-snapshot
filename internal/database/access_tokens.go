@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -168,11 +167,6 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 		return 0, "", errors.New("access tokens without scopes are not supported")
 	}
 
-	// Feature flag new token format
-	// Disable by default until all Cody extensions support the new format
-	flags := featureflag.FromContext(ctx)
-	includeInstanceIdentifier := flags.GetBoolOr("access-tokens-include-instance-identifier", false)
-
 	config := conf.Get().SiteConfig()
 
 	var isDevInstance bool
@@ -183,7 +177,7 @@ func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32,
 		isDevInstance = licensing.IsLicensePublicKeyOverridden()
 	}
 
-	token, b, err := accesstoken.GeneratePersonalAccessToken(includeInstanceIdentifier, config.LicenseKey, isDevInstance)
+	token, b, err := accesstoken.GeneratePersonalAccessToken(config.LicenseKey, isDevInstance)
 	if err != nil {
 		return 0, "", err
 	}
