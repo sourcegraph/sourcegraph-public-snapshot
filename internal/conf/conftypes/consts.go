@@ -12,15 +12,19 @@ type CompletionsConfig struct {
 	CompletionModel          string
 	CompletionModelMaxTokens int
 
-	AccessToken                                 string
-	Provider                                    CompletionsProviderName
-	Endpoint                                    string
-	PerUserDailyLimit                           int
-	PerUserCodeCompletionsDailyLimit            int
-	PerCommunityUserChatMonthlyLimit            int
-	PerCommunityUserCodeCompletionsMonthlyLimit int
-	PerProUserChatDailyLimit                    int
-	PerProUserCodeCompletionsDailyLimit         int
+	AccessToken                                            string
+	Provider                                               CompletionsProviderName
+	Endpoint                                               string
+	PerUserDailyLimit                                      int
+	PerUserCodeCompletionsDailyLimit                       int
+	PerCommunityUserChatMonthlyLLMRequestLimit             int
+	PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit  int
+	PerProUserChatDailyLLMRequestLimit                     int
+	PerProUserCodeCompletionsDailyLLMRequestLimit          int
+	PerCommunityUserChatMonthlyInteractionLimit            int
+	PerCommunityUserCodeCompletionsMonthlyInteractionLimit int
+	PerProUserChatDailyInteractionLimit                    int
+	PerProUserCodeCompletionsDailyInteractionLimit         int
 }
 
 type CompletionsProviderName string

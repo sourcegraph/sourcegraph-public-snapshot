@@ -141,6 +141,8 @@ func InitRouter(db database.DB) {
 		{path: "/search/cody", name: "cody-search", title: "Search (Cody)", index: false},
 		{path: "/app/coming-soon", name: "app-coming-soon", title: "Coming soon", index: false},
 		{path: "/app/auth/callback", name: "app-auth-callback", title: "Auth callback", index: false},
+		{path: "/cody/manage", name: "cody", title: "Cody Manage", index: false},
+		{path: "/cody/subscription", name: "cody", title: "Cody Pricing", index: false},
 		{path: "/cody/chat", name: "cody", title: "Cody", index: false},
 		{path: "/cody/chat/{chatID}", name: "cody-chat", title: "Cody", index: false},
 		// TODO: [TEMPORARY] remove this redirect route when the marketing page is added.

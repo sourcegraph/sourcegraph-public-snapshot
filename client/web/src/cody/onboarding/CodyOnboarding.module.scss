@@ -1,0 +1,26 @@
+.modal {
+    width: 50rem;
+}
+
+.step {
+    background: #343a4d;
+    color: #ffffff;
+    padding: 0.25rem 0.675rem;
+    border-radius: 50%;
+}
+
+.responsive-container {
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+        align-items: center;
+
+        > div {
+            border: none !important;
+            align-items: center;
+        }
+    }
+}
+
+.ide-name {
+    font-size: 1rem;
+}
