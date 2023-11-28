@@ -5,7 +5,7 @@ import { Routes, Route } from 'react-router-dom'
 import { spy, assert } from 'sinon'
 import { vi, afterAll, beforeAll, describe, it } from 'vitest'
 
-import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
+import { renderWithBrandedContext } from '../../testing'
 
 import { useScrollManager } from './useScrollManager'
 

@@ -437,7 +437,7 @@ require (
 	github.com/cockroachdb/redact v1.1.5
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/coreos/go-iptables v0.6.0
-	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
 	github.com/dave/jennifer v1.6.1 // indirect
 	github.com/di-wu/xsd-datetime v1.0.0
 	github.com/djherbis/buffer v1.2.0 // indirect
@@ -569,7 +569,7 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231121191755-214be625af21
 	github.com/sourcegraph/mountinfo v0.0.0-20231018142932-e00da332dac5
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20231121165958-0959170c1623
+	github.com/sourcegraph/zoekt v0.0.0-20231122214222-d982320abe7b
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect

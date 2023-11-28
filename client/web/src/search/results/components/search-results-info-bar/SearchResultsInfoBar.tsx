@@ -1,20 +1,27 @@
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState, FC, useCallback } from 'react'
 
 import { mdiChevronDoubleDown, mdiChevronDoubleUp, mdiThumbUp, mdiThumbDown, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import type { CaseSensitivityProps, SearchPatternTypeProps } from '@sourcegraph/shared/src/search'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import type { AggregateStreamingSearchResults, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Icon, Alert, useSessionStorage, Link, Text } from '@sourcegraph/wildcard'
 
-import type { AuthenticatedUser } from '../../auth'
-import { canWriteBatchChanges, NO_ACCESS_BATCH_CHANGES_WRITE, NO_ACCESS_SOURCEGRAPH_COM } from '../../batches/utils'
-import { eventLogger } from '../../tracking/eventLogger'
-import { DOTCOM_URL } from '../../tracking/util'
+import type { AuthenticatedUser } from '../../../../auth'
+import {
+    canWriteBatchChanges,
+    NO_ACCESS_BATCH_CHANGES_WRITE,
+    NO_ACCESS_SOURCEGRAPH_COM,
+} from '../../../../batches/utils'
+import { SavedSearchModal } from '../../../../savedSearches/SavedSearchModal'
+import { eventLogger } from '../../../../tracking/eventLogger'
+import { DOTCOM_URL } from '../../../../tracking/util'
+import { SearchResultsCsvExportModal } from '../../export/SearchResultsCsvExportModal'
+import { SearchActionsMenu } from '../SearchActionsMenu'
 
 import {
     type CreateAction,
@@ -23,17 +30,18 @@ import {
     getInsightsCreateAction,
     getSearchContextCreateAction,
 } from './createActions'
-import { SearchActionsMenu } from './SearchActionsMenu'
 
 import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends TelemetryProps,
-        PlatformContextProps<'settings' | 'sourcegraphURL'>,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
     /** The currently authenticated user or null */
-    authenticatedUser: Pick<AuthenticatedUser, 'id' | 'displayName' | 'emails' | 'permissions'> | null
+    authenticatedUser: Pick<
+        AuthenticatedUser,
+        'id' | 'displayName' | 'emails' | 'permissions' | 'organizations' | 'username'
+    > | null
 
     enableCodeInsights?: boolean
     enableCodeMonitoring: boolean
@@ -51,12 +59,6 @@ export interface SearchResultsInfoBarProps
     allExpanded: boolean
     onExpandAllResultsToggle: () => void
 
-    // Saved queries
-    onSaveQueryClick: () => void
-
-    // Download CSV of search results
-    onExportCsvClick: () => void
-
     className?: string
 
     stats: JSX.Element
@@ -67,15 +69,22 @@ export interface SearchResultsInfoBarProps
     setSidebarCollapsed: (collapsed: boolean) => void
 
     isSourcegraphDotCom: boolean
+    patternType: SearchPatternType
+    sourcegraphURL: string
 }
 
 /**
  * The info bar shown over the search results list that displays metadata
  * and a few actions like expand all and save query
  */
-export const SearchResultsInfoBar: React.FunctionComponent<
-    React.PropsWithChildren<SearchResultsInfoBarProps>
-> = props => {
+export const SearchResultsInfoBar: FC<SearchResultsInfoBarProps> = props => {
+    const { query, patternType, authenticatedUser, results, options, sourcegraphURL, telemetryService } = props
+
+    const navigate = useNavigate()
+
+    const [showSavedSearchModal, setShowSavedSearchModal] = useState(false)
+    const [showCsvExportModal, setShowCsvExportModal] = useState(false)
+
     const globalTypeFilter = useMemo(
         () => (props.query ? findFilter(props.query, 'type', FilterKind.Global)?.value?.value : undefined),
         [props.query]
@@ -136,8 +145,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     }
 
     const location = useLocation()
-    const dotcomHost = DOTCOM_URL.href
-    const isPrivateInstance = window.location.host !== dotcomHost
+    const isPrivateInstance = window.location.host !== DOTCOM_URL.href
     const refFromCodySearch = new URLSearchParams(location.search).get('ref') === 'cody-search'
     const [codySearchInputString] = useSessionStorage<string>('cody-search-input', '')
     const codySearchInput: { input?: string; translatedQuery?: string } = JSON.parse(codySearchInputString || '{}')
@@ -155,6 +163,11 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         )
         setCodyFeedback(positive)
     }
+
+    const onSaveQueryModalClose = useCallback(() => {
+        setShowSavedSearchModal(false)
+        telemetryService.log('SavedQueriesToggleCreating', { queries: { creating: false } })
+    }, [telemetryService])
 
     return (
         <aside
@@ -219,8 +232,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         results={props.results}
                         allExpanded={props.allExpanded}
                         onExpandAllResultsToggle={props.onExpandAllResultsToggle}
-                        onSaveQueryClick={props.onSaveQueryClick}
-                        onExportCsvClick={props.onExportCsvClick}
+                        onSaveQueryClick={() => setShowSavedSearchModal(true)}
+                        onExportCsvClick={() => setShowCsvExportModal(true)}
                     />
                 </ul>
 
@@ -259,6 +272,26 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     </Button>
                 )}
             </div>
+
+            {showSavedSearchModal && (
+                <SavedSearchModal
+                    navigate={navigate}
+                    patternType={patternType}
+                    query={query}
+                    authenticatedUser={authenticatedUser}
+                    onDidCancel={onSaveQueryModalClose}
+                />
+            )}
+            {showCsvExportModal && (
+                <SearchResultsCsvExportModal
+                    query={query}
+                    options={options}
+                    results={results}
+                    sourcegraphURL={sourcegraphURL}
+                    telemetryService={telemetryService}
+                    onClose={() => setShowCsvExportModal(false)}
+                />
+            )}
         </aside>
     )
 }

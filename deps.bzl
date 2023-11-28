@@ -1418,8 +1418,8 @@ def go_dependencies():
         name = "com_github_cpuguy83_go_md2man_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/cpuguy83/go-md2man/v2",
-        sum = "h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=",
-        version = "v2.0.2",
+        sum = "h1:qMCsGGgs+MAzDFyp9LpAe1Lqy/fY/qCovCm0qnXZOBM=",
+        version = "v2.0.3",
     )
     go_repository(
         name = "com_github_creack_pty",
@@ -6030,8 +6030,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:Pn9dVnAOZ7z8p+4BH32G1U9XtMCBVATy8vAq0ObHFdo=",
-        version = "v0.0.0-20231121165958-0959170c1623",
+        sum = "h1:2xAotLrNXGdj1x8I5yPh89qsesICseLEfEdKpmY3V90=",
+        version = "v0.0.0-20231122214222-d982320abe7b",
     )
 
     go_repository(

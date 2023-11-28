@@ -31117,6 +31117,9 @@ type MockExternalServiceStore struct {
 	// CancelSyncJobFunc is an instance of a mock function object
 	// controlling the behavior of the method CancelSyncJob.
 	CancelSyncJobFunc *ExternalServiceStoreCancelSyncJobFunc
+	// CleanupSyncJobsFunc is an instance of a mock function object
+	// controlling the behavior of the method CleanupSyncJobs.
+	CleanupSyncJobsFunc *ExternalServiceStoreCleanupSyncJobsFunc
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
 	CountFunc *ExternalServiceStoreCountFunc
@@ -31192,6 +31195,11 @@ func NewMockExternalServiceStore() *MockExternalServiceStore {
 	return &MockExternalServiceStore{
 		CancelSyncJobFunc: &ExternalServiceStoreCancelSyncJobFunc{
 			defaultHook: func(context.Context, database.ExternalServicesCancelSyncJobOptions) (r0 error) {
+				return
+			},
+		},
+		CleanupSyncJobsFunc: &ExternalServiceStoreCleanupSyncJobsFunc{
+			defaultHook: func(context.Context, database.ExternalServicesCleanupSyncJobsOptions) (r0 error) {
 				return
 			},
 		},
@@ -31318,6 +31326,11 @@ func NewStrictMockExternalServiceStore() *MockExternalServiceStore {
 				panic("unexpected invocation of MockExternalServiceStore.CancelSyncJob")
 			},
 		},
+		CleanupSyncJobsFunc: &ExternalServiceStoreCleanupSyncJobsFunc{
+			defaultHook: func(context.Context, database.ExternalServicesCleanupSyncJobsOptions) error {
+				panic("unexpected invocation of MockExternalServiceStore.CleanupSyncJobs")
+			},
+		},
 		CountFunc: &ExternalServiceStoreCountFunc{
 			defaultHook: func(context.Context, database.ExternalServicesListOptions) (int, error) {
 				panic("unexpected invocation of MockExternalServiceStore.Count")
@@ -31438,6 +31451,9 @@ func NewMockExternalServiceStoreFrom(i database.ExternalServiceStore) *MockExter
 	return &MockExternalServiceStore{
 		CancelSyncJobFunc: &ExternalServiceStoreCancelSyncJobFunc{
 			defaultHook: i.CancelSyncJob,
+		},
+		CleanupSyncJobsFunc: &ExternalServiceStoreCleanupSyncJobsFunc{
+			defaultHook: i.CleanupSyncJobs,
 		},
 		CountFunc: &ExternalServiceStoreCountFunc{
 			defaultHook: i.Count,
@@ -31613,6 +31629,114 @@ func (c ExternalServiceStoreCancelSyncJobFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ExternalServiceStoreCancelSyncJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ExternalServiceStoreCleanupSyncJobsFunc describes the behavior when the
+// CleanupSyncJobs method of the parent MockExternalServiceStore instance is
+// invoked.
+type ExternalServiceStoreCleanupSyncJobsFunc struct {
+	defaultHook func(context.Context, database.ExternalServicesCleanupSyncJobsOptions) error
+	hooks       []func(context.Context, database.ExternalServicesCleanupSyncJobsOptions) error
+	history     []ExternalServiceStoreCleanupSyncJobsFuncCall
+	mutex       sync.Mutex
+}
+
+// CleanupSyncJobs delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockExternalServiceStore) CleanupSyncJobs(v0 context.Context, v1 database.ExternalServicesCleanupSyncJobsOptions) error {
+	r0 := m.CleanupSyncJobsFunc.nextHook()(v0, v1)
+	m.CleanupSyncJobsFunc.appendCall(ExternalServiceStoreCleanupSyncJobsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CleanupSyncJobs
+// method of the parent MockExternalServiceStore instance is invoked and the
+// hook queue is empty.
+func (f *ExternalServiceStoreCleanupSyncJobsFunc) SetDefaultHook(hook func(context.Context, database.ExternalServicesCleanupSyncJobsOptions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CleanupSyncJobs method of the parent MockExternalServiceStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ExternalServiceStoreCleanupSyncJobsFunc) PushHook(hook func(context.Context, database.ExternalServicesCleanupSyncJobsOptions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ExternalServiceStoreCleanupSyncJobsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, database.ExternalServicesCleanupSyncJobsOptions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ExternalServiceStoreCleanupSyncJobsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, database.ExternalServicesCleanupSyncJobsOptions) error {
+		return r0
+	})
+}
+
+func (f *ExternalServiceStoreCleanupSyncJobsFunc) nextHook() func(context.Context, database.ExternalServicesCleanupSyncJobsOptions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ExternalServiceStoreCleanupSyncJobsFunc) appendCall(r0 ExternalServiceStoreCleanupSyncJobsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ExternalServiceStoreCleanupSyncJobsFuncCall
+// objects describing the invocations of this function.
+func (f *ExternalServiceStoreCleanupSyncJobsFunc) History() []ExternalServiceStoreCleanupSyncJobsFuncCall {
+	f.mutex.Lock()
+	history := make([]ExternalServiceStoreCleanupSyncJobsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ExternalServiceStoreCleanupSyncJobsFuncCall is an object that describes
+// an invocation of method CleanupSyncJobs on an instance of
+// MockExternalServiceStore.
+type ExternalServiceStoreCleanupSyncJobsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.ExternalServicesCleanupSyncJobsOptions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ExternalServiceStoreCleanupSyncJobsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ExternalServiceStoreCleanupSyncJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

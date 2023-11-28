@@ -1,27 +1,26 @@
 import { noop } from 'lodash'
-import { NEVER } from 'rxjs'
 import { describe, expect, test } from 'vitest'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
-import { SearchPatternType } from '../../graphql-operations'
+import { SearchPatternType } from '../../../../graphql-operations'
 
 import { SearchResultsInfoBar, type SearchResultsInfoBarProps } from './SearchResultsInfoBar'
 
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
-    platformContext: { settings: NEVER, sourcegraphURL: 'https://sourcegraph.com' },
     authenticatedUser: {
         id: 'userID',
+        username: 'chuckcheese',
         displayName: 'Chuck Cheese',
         emails: [{ email: 'chuck@chuckeecheese.com', isPrimary: true, verified: true }],
         permissions: { nodes: [] },
+        organizations: { nodes: [] },
     },
+    sourcegraphURL: '',
     allExpanded: true,
     onExpandAllResultsToggle: noop,
-    onSaveQueryClick: noop,
-    onExportCsvClick: noop,
     stats: <div />,
     telemetryService: NOOP_TELEMETRY_SERVICE,
     patternType: SearchPatternType.standard,

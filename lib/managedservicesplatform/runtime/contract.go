@@ -26,6 +26,9 @@ type Contract struct {
 	Port int
 	// ExternalDNSName is the DNS name the service uses, if one is configured.
 	ExternalDNSName *string
+	// RedisEndpoint is the full Redis address, including any prerequisite
+	// authentication.
+	RedisEndpoint *string
 
 	postgreSQLContract
 
@@ -48,6 +51,7 @@ func newContract(env *Env) Contract {
 		MSP:             env.GetBool("MSP", "false", "indicates if we are running in a MSP environment"),
 		Port:            env.GetInt("PORT", "", "service port"),
 		ExternalDNSName: env.GetOptional("EXTERNAL_DNS_NAME", "external DNS name provisioned for the service"),
+		RedisEndpoint:   env.GetOptional("REDIS_ENDPOINT", "full Redis address, including any prerequisite authentication"),
 		postgreSQLContract: postgreSQLContract{
 			customDSNTemplate: env.GetOptional("PGDSN",
 				"custom PostgreSQL DSN with templatized database, e.g. 'user=foo database={{ .Database }}'"),
