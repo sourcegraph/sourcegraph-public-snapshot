@@ -128,6 +128,7 @@ http_archive(
     strip_prefix = "buildifier-prebuilt-6.1.0",
     urls = ["https://github.com/keith/buildifier-prebuilt/archive/6.1.0.tar.gz"],
 )
+
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.1.2"
 
