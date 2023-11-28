@@ -73,25 +73,21 @@ func ServicesAndEnvironmentsCompletion() cli.BashCompleteFunc {
 	if err != nil {
 		return nil
 	}
-	return func(c *cli.Context) {
-		switch c.Args().Len() {
-		case 0: // service not yet provided, try to complete service
-			completions.CompleteOptions(func() (options []string) {
+	return completions.CompletePositionalArgs(
+		func(args cli.Args) (options []string) {
+			services, _ := listServicesFromRoot(repoRoot)
+			return services
+		},
+		func(args cli.Args) (options []string) {
+			svc, err := spec.Open(filepath.Join(repoRoot, ServiceYAMLPath(args.First())))
+			if err != nil {
+				// try to complete services as a fallback
 				services, _ := listServicesFromRoot(repoRoot)
 				return services
-			})(c)
-		case 1: // service already provided, try to complete environment
-			completions.CompleteOptionsOnly(func() (options []string) {
-				svc, err := spec.Open(filepath.Join(repoRoot, ServiceYAMLPath(c.Args().First())))
-				if err != nil {
-					// try to complete services as a fallback
-					services, _ := listServicesFromRoot(repoRoot)
-					return services
-				}
-				return svc.ListEnvironmentIDs()
-			})(c)
-		}
-	}
+			}
+			return svc.ListEnvironmentIDs()
+		},
+	)
 }
 
 func ServiceYAMLPath(serviceID string) string {
