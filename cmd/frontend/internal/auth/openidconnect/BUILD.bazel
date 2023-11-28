@@ -29,7 +29,7 @@ go_library(
         "//lib/errors",
         "//schema",
         "@com_github_coreos_go_oidc//:go-oidc",
-        "@com_github_gorilla_csrf//:csrf",
+        "@com_github_gofrs_uuid//:uuid",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_x_oauth2//:oauth2",
