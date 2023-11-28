@@ -320,11 +320,12 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	return UserByIDInt32(ctx, r.db, userID)
 }
 
-type upgradeToCodyProArgs struct {
+type changeCodyPlanArgs struct {
 	User graphql.ID
+	Pro  bool
 }
 
-func (r *schemaResolver) UpgradeToCodyPro(ctx context.Context, args *upgradeToCodyProArgs) (*UserResolver, error) {
+func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPlanArgs) (*UserResolver, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
@@ -343,7 +344,7 @@ func (r *schemaResolver) UpgradeToCodyPro(ctx context.Context, args *upgradeToCo
 		return nil, err
 	}
 
-	if err := r.db.Users().UpgradeToCodyPro(ctx, userID); err != nil {
+	if err := r.db.Users().ChangeCodyPlan(ctx, userID, args.Pro); err != nil {
 		return nil, err
 	}
 

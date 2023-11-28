@@ -33,6 +33,7 @@ export const FEATURE_FLAGS = [
     'search-debug',
     'cody-chat-mock-test',
     'signup-survey-enabled',
+    'cody-pro',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]
