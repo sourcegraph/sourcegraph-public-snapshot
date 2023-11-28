@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -311,7 +310,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	// Create a cancel-free context to avoid interrupting the insert when
 	// the parent context is cancelled, and add our own timeout on the insert
 	// to make sure things don't get stuck in an unbounded manner.
-	insertCtx, cancel := context.WithTimeout(xcontext.Detach(ctx), 5*time.Minute)
+	insertCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
 	defer cancel()
 
 	return batch.InsertValues(

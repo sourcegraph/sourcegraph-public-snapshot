@@ -16,7 +16,6 @@ go_library(
         "//internal/profiler",
         "//internal/service",
         "//internal/singleprogram",
-        "//internal/syncx",
         "//internal/tracer",
         "//internal/version",
         "@com_github_getsentry_sentry_go//:sentry-go",
