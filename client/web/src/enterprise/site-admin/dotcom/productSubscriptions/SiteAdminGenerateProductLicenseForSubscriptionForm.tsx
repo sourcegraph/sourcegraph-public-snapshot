@@ -70,22 +70,36 @@ interface FormData {
     codeInsights: boolean
 }
 
-const getEmptyFormData = (account: string, latestLicense: License | undefined): FormData => ({
-    tags:
-        latestLicense?.info?.tags.filter(tag => !tag.startsWith('plan:') && !tag.startsWith('customer:')).join(',') ??
-        '',
-    customer: account,
-    salesforceSubscriptionID: latestLicense?.info?.salesforceSubscriptionID ?? '',
-    salesforceOpportunityID: latestLicense?.info?.salesforceOpportunityID ?? '',
-    plan: latestLicense?.info?.tags.find(tag => tag.startsWith('plan:'))?.substring('plan:'.length) ?? '',
-    userCount: latestLicense?.info?.userCount ?? 1,
-    expiresAt: endOfDay(Date.now()),
-    trial: latestLicense?.info?.tags.includes(TAG_TRIAL.tagValue) ?? false,
-    trueUp: latestLicense?.info?.tags.includes(TAG_TRUEUP.tagValue) ?? false,
-    airGapped: latestLicense?.info?.tags.includes(TAG_AIR_GAPPED.tagValue) ?? false,
-    batchChanges: latestLicense?.info?.tags.includes(TAG_BATCH_CHANGES.tagValue) ?? false,
-    codeInsights: latestLicense?.info?.tags.includes(TAG_CODE_INSIGHTS.tagValue) ?? false,
-})
+const getEmptyFormData = (account: string, latestLicense: License | undefined): FormData => {
+    const formData: FormData = {
+        tags: '',
+        customer: account,
+        salesforceSubscriptionID: latestLicense?.info?.salesforceSubscriptionID ?? '',
+        salesforceOpportunityID: latestLicense?.info?.salesforceOpportunityID ?? '',
+        plan: latestLicense?.info?.tags.find(tag => tag.startsWith('plan:'))?.substring('plan:'.length) ?? '',
+        userCount: latestLicense?.info?.userCount ?? 1,
+        expiresAt: endOfDay(Date.now()),
+        trial: latestLicense?.info?.tags.includes(TAG_TRIAL.tagValue) ?? false,
+        trueUp: latestLicense?.info?.tags.includes(TAG_TRUEUP.tagValue) ?? false,
+        airGapped: latestLicense?.info?.tags.includes(TAG_AIR_GAPPED.tagValue) ?? false,
+        batchChanges: latestLicense?.info?.tags.includes(TAG_BATCH_CHANGES.tagValue) ?? false,
+        codeInsights: latestLicense?.info?.tags.includes(TAG_CODE_INSIGHTS.tagValue) ?? false,
+    }
+
+    if (latestLicense?.info) {
+        // Based on the tag-less formData created above, generate the list of tags to add.
+        // We then only add additional tags for the things that aren't yet expressed,
+        // to avoid duplicates and let the specific flags on form data handle addition
+        // of their tag values.
+        const presentTags = getTagsFromFormData(formData)
+        formData.tags =
+            latestLicense?.info?.tags
+                .filter(tag => !tag.startsWith('plan:') && !tag.startsWith('customer:') && !presentTags.includes(tag))
+                .join(',') ?? ''
+    }
+
+    return formData
+}
 
 const DURATION_LINKS = [
     { label: '7 days', days: 7 },
@@ -101,16 +115,19 @@ const tagsFromString = (tagString: string): string[] =>
         .map(item => item.trim())
         .filter(tag => tag !== '')
 
-const getTagsFromFormData = (formData: FormData): string[] => [
-    `customer:${formData.customer}`,
-    ...(formData.plan ? [`plan:${formData.plan}`] : []),
-    ...(formData.trueUp ? [TAG_TRUEUP.tagValue] : []),
-    ...(formData.trial ? [TAG_TRIAL.tagValue] : []),
-    ...(formData.airGapped ? [TAG_AIR_GAPPED.tagValue] : []),
-    ...(formData.batchChanges ? [TAG_BATCH_CHANGES.tagValue] : []),
-    ...(formData.codeInsights ? [TAG_CODE_INSIGHTS.tagValue] : []),
-    ...tagsFromString(formData.tags),
-]
+const getTagsFromFormData = (formData: FormData): string[] =>
+    Array.from(
+        new Set([
+            `customer:${formData.customer}`,
+            ...(formData.plan ? [`plan:${formData.plan}`] : []),
+            ...(formData.trueUp ? [TAG_TRUEUP.tagValue] : []),
+            ...(formData.trial ? [TAG_TRIAL.tagValue] : []),
+            ...(formData.airGapped ? [TAG_AIR_GAPPED.tagValue] : []),
+            ...(formData.batchChanges ? [TAG_BATCH_CHANGES.tagValue] : []),
+            ...(formData.codeInsights ? [TAG_CODE_INSIGHTS.tagValue] : []),
+            ...tagsFromString(formData.tags),
+        ])
+    )
 
 const HANDBOOK_INFO_URL =
     'https://handbook.sourcegraph.com/ce/license_keys#how-to-create-a-license-key-for-a-new-prospect-or-new-customer'

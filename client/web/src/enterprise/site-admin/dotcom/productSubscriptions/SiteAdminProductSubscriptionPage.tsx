@@ -39,7 +39,6 @@ import type {
 } from '../../../../graphql-operations'
 import { canWriteLicenseManagement } from '../../../../rbac/check'
 import { eventLogger } from '../../../../tracking/eventLogger'
-import { AccountEmailAddresses } from '../../../dotcom/productSubscriptions/AccountEmailAddresses'
 import { AccountName } from '../../../dotcom/productSubscriptions/AccountName'
 import { ProductSubscriptionLabel } from '../../../dotcom/productSubscriptions/ProductSubscriptionLabel'
 import { LicenseGenerationKeyWarning } from '../../../productSubscription/LicenseGenerationKeyWarning'
@@ -145,6 +144,11 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     headingElement="h2"
                     // TODO: Fix link.
                     path={[{ text: 'Product subscriptions', to: '..' }, { text: productSubscription.name }]}
+                    description={
+                        <span className="text-muted">
+                            Created <Timestamp date={productSubscription.createdAt} />
+                        </span>
+                    }
                     actions={
                         <Tooltip content={!canWriteLicenseManagement(authenticatedUser) ? 'No permission' : undefined}>
                             <Button
@@ -214,12 +218,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                                         productSubscription.activeLicense.info?.salesforceSubscriptionID !== null && (
                                             <>{productSubscription.activeLicense.info?.salesforceSubscriptionID}</>
                                         )}
-                                </td>
-                            </tr>
-                            <tr>
-                                <th className="text-nowrap">Created at</th>
-                                <td className="w-100">
-                                    <Timestamp date={productSubscription.createdAt} />
                                 </td>
                             </tr>
                         </tbody>
