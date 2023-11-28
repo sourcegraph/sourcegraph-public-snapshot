@@ -67,10 +67,10 @@ http_archive(
 
 http_archive(
     name = "rules_buf",
-    sha256 = "523a4e06f0746661e092d083757263a249fedca535bd6dd819a8c50de074731a",
-    strip_prefix = "rules_buf-0.1.1",
+    sha256 = "bc2488ee497c3fbf2efee19ce21dceed89310a08b5a9366cc133dd0eb2118498",
+    strip_prefix = "rules_buf-0.2.0",
     urls = [
-        "https://github.com/bufbuild/rules_buf/archive/refs/tags/v0.1.1.zip",
+        "https://github.com/bufbuild/rules_buf/archive/refs/tags/v0.2.0.zip",
     ],
 )
 
@@ -250,11 +250,10 @@ load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_to
 
 rules_buf_dependencies()
 
-rules_buf_toolchains(version = "v1.11.0")
-
-load("@rules_buf//gazelle/buf:repositories.bzl", "gazelle_buf_dependencies")
-
-gazelle_buf_dependencies()
+rules_buf_toolchains(
+    sha256 = "05dfb45d2330559d258e1230f5a25e154f0a328afda2a434348b5ba4c124ece7",
+    version = "v1.28.1",
+)
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
@@ -276,7 +275,7 @@ go_repository(
     build_file_proto_mode = "disable_global",
     importpath = "google.golang.org/protobuf",
     sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
-    version = "v1.29.1",
+    version = "v1.31.1",
 )  # keep
 
 # Pin protoc-gen-go-grpc to 1.3.0
@@ -303,9 +302,10 @@ linter_dependencies()
 
 gazelle_dependencies()
 
-# load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
 #
-# protobuf_deps()
+protobuf_deps()
 
 # rust toolchain setup
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains", "rust_repository_set")
