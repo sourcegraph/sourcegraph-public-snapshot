@@ -397,7 +397,9 @@ load("@rules_proto_grpc//doc:repositories.bzl", rules_proto_grpc_doc_repos = "do
 rules_proto_grpc_toolchains()
 
 rules_proto_grpc_repos()
+
 rules_proto_grpc_go_repos()
+
 rules_proto_grpc_doc_repos()
 
 load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
