@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"net/http"
 	"strconv"
 	"time"
@@ -73,12 +77,32 @@ func newCompletionsHandler(
 			Build()
 		defer done()
 
+		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
+		accessToken := completionsConfig.AccessToken
+		isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
+		isDotcom := envvar.SourcegraphDotComMode()
+		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
+		if isCodyProEnabled && isDotcom && isProviderCodyGateway {
+			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
+			if err != nil {
+				trace.Logger(ctx, logger).Info("Error parsing auth header", log.String("Authorization header", r.Header.Get("Authorization")), log.Error(err))
+				http.Error(w, "Error parsing auth header", http.StatusUnauthorized)
+				return
+			}
+			accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
+			if err != nil {
+				trace.Logger(ctx, logger).Info("Access token generation failed", log.String("API token", apiToken), log.Error(err))
+				http.Error(w, "Access token generation failed", http.StatusUnauthorized)
+				return
+			}
+		}
+
 		completionClient, err := client.Get(
 			logger,
 			events,
 			completionsConfig.Endpoint,
 			completionsConfig.Provider,
-			completionsConfig.AccessToken,
+			accessToken,
 		)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
