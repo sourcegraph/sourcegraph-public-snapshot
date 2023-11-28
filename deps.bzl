@@ -9267,8 +9267,8 @@ def go_dependencies():
         name = "org_golang_x_term",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/term",
-        sum = "h1:F9tnn/DA/Im8nCwm+fX+1/eBwi4qFjRT++MhtVC4ZX0=",
-        version = "v0.11.0",
+        sum = "h1:bb+I9cTfFazGW51MZqBVmZy7+JEJMouUHTUSKVQLBek=",
+        version = "v0.13.0",
     )
     go_repository(
         name = "org_golang_x_text",
