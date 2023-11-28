@@ -302,7 +302,7 @@ Once done, go to **Site admin > Site configuration** (`/site-admin/configuration
 
 For the access token, you can either:
 
-- Leave it empty and rely on Environmental, Workload Identity or Managed Identity credentials configured for the `frontend` and `worker` services
+- As of 5.2.4 the access token can be left empty and it will rely on Environmental, Workload Identity or Managed Identity credentials configured for the `frontend` and `worker` services
 - Set it to `<API_KEY>` if directly configuring the credentials using the API key specified in the Azure portal
 
 
