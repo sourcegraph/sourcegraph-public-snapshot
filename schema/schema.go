@@ -594,17 +594,25 @@ type Completions struct {
 	FastChatModelMaxTokens int `json:"fastChatModelMaxTokens,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model,omitempty"`
-	// PerCommunityUserChatMonthlyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.
-	PerCommunityUserChatMonthlyLimit int `json:"perCommunityUserChatMonthlyLimit,omitempty"`
-	// PerCommunityUserCodeCompletionsMonthlyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.
-	PerCommunityUserCodeCompletionsMonthlyLimit int `json:"perCommunityUserCodeCompletionsMonthlyLimit,omitempty"`
-	// PerProUserChatDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
-	PerProUserChatDailyLimit int `json:"perProUserChatDailyLimit,omitempty"`
-	// PerProUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
-	PerProUserCodeCompletionsDailyLimit int `json:"perProUserCodeCompletionsDailyLimit,omitempty"`
-	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
+	// PerCommunityUserChatMonthlyInteractionLimit description: If > 0, enables the maximum number of completions interactions allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.
+	PerCommunityUserChatMonthlyInteractionLimit int `json:"perCommunityUserChatMonthlyInteractionLimit,omitempty"`
+	// PerCommunityUserChatMonthlyLLMRequestLimit description: If > 0, limits the number of completions requests allowed for a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.
+	PerCommunityUserChatMonthlyLLMRequestLimit int `json:"perCommunityUserChatMonthlyLLMRequestLimit,omitempty"`
+	// PerCommunityUserCodeCompletionsMonthlyInteractionLimit description: If > 0, enables the maximum number of code completions interactions allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.
+	PerCommunityUserCodeCompletionsMonthlyInteractionLimit int `json:"perCommunityUserCodeCompletionsMonthlyInteractionLimit,omitempty"`
+	// PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit description: If > 0, limits the number of code completions requests allowed for a Community user in a month.  This is for Self-serve Cody and applies to Dotcom only.
+	PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit int `json:"perCommunityUserCodeCompletionsMonthlyLLMRequestLimit,omitempty"`
+	// PerProUserChatDailyInteractionLimit description: If > 0, enables the maximum number of completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerProUserChatDailyInteractionLimit int `json:"perProUserChatDailyInteractionLimit,omitempty"`
+	// PerProUserChatDailyLLMRequestLimit description: If > 0, limits the number of completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.
+	PerProUserChatDailyLLMRequestLimit int `json:"perProUserChatDailyLLMRequestLimit,omitempty"`
+	// PerProUserCodeCompletionsDailyInteractionLimit description: If > 0, enables the maximum number of code completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerProUserCodeCompletionsDailyInteractionLimit int `json:"perProUserCodeCompletionsDailyInteractionLimit,omitempty"`
+	// PerProUserCodeCompletionsDailyLLMRequestLimit description: If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.
+	PerProUserCodeCompletionsDailyLLMRequestLimit int `json:"perProUserCodeCompletionsDailyLLMRequestLimit,omitempty"`
+	// PerUserCodeCompletionsDailyLimit description: If > 0, limits the number of code completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.
 	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
-	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
+	// PerUserDailyLimit description: If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.
 	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
 	// Provider description: The external completions provider. Defaults to 'sourcegraph'.
 	Provider string `json:"provider,omitempty"`
@@ -690,6 +698,10 @@ type Embeddings struct {
 	MinimumInterval string `json:"minimumInterval,omitempty"`
 	// Model description: The model used for embedding. A default model will be used for each provider, if not set.
 	Model string `json:"model,omitempty"`
+	// PerCommunityUserEmbeddingsMonthlyLimit description: If > 0, limits the number of tokens allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.
+	PerCommunityUserEmbeddingsMonthlyLimit int `json:"perCommunityUserEmbeddingsMonthlyLimit,omitempty"`
+	// PerProUserEmbeddingsMonthlyLimit description: If > 0, limits the number of tokens allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.
+	PerProUserEmbeddingsMonthlyLimit int `json:"perProUserEmbeddingsMonthlyLimit,omitempty"`
 	// PolicyRepositoryMatchLimit description: The maximum number of repositories that can be matched by a global embeddings policy
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
@@ -2560,6 +2572,8 @@ type SiteConfiguration struct {
 	BatchChangesEnabled *bool `json:"batchChanges.enabled,omitempty"`
 	// BatchChangesEnforceForks description: When enabled, all branches created by batch changes will be pushed to forks of the original repository.
 	BatchChangesEnforceForks bool `json:"batchChanges.enforceForks,omitempty"`
+	// BatchChangesRejectUnverifiedCommit description: Reject unverified commits when creating a Batch Change
+	BatchChangesRejectUnverifiedCommit *bool `json:"batchChanges.rejectUnverifiedCommit,omitempty"`
 	// BatchChangesRestrictToAdmins description: When enabled, only site admins can create and apply batch changes.
 	BatchChangesRestrictToAdmins *bool `json:"batchChanges.restrictToAdmins,omitempty"`
 	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.
@@ -2834,6 +2848,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")
 	delete(m, "batchChanges.enforceForks")
+	delete(m, "batchChanges.rejectUnverifiedCommit")
 	delete(m, "batchChanges.restrictToAdmins")
 	delete(m, "batchChanges.rolloutWindows")
 	delete(m, "branding")

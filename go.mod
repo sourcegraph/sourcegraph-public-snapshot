@@ -437,7 +437,7 @@ require (
 	github.com/cockroachdb/redact v1.1.5
 	github.com/containerd/typeurl v1.0.2 // indirect
 	github.com/coreos/go-iptables v0.6.0
-	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
 	github.com/dave/jennifer v1.6.1 // indirect
 	github.com/di-wu/xsd-datetime v1.0.0
 	github.com/djherbis/buffer v1.2.0 // indirect

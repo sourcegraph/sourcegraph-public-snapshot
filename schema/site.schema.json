@@ -1968,6 +1968,14 @@
         }
       ]
     },
+    "batchChanges.rejectUnverifiedCommit": {
+      "description": "Reject unverified commits when creating a Batch Change",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      }
+    },
     "gitserver.diskUsageWarningThreshold": {
       "description": "Disk usage threshold at which to display warning notification. Value is a percentage.",
       "type": "integer",
@@ -2500,6 +2508,16 @@
           "type": "string",
           "format": "uri"
         },
+        "perCommunityUserEmbeddingsMonthlyLimit": {
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserEmbeddingsMonthlyLimit": {
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
         "fileFilters": {
           "description": "Filters that allow you to specify which files in a repository should get embedded.",
           "type": "object",
@@ -2776,32 +2794,52 @@
           "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "description": "If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
           "type": "integer",
           "default": 0
         },
         "perUserCodeCompletionsDailyLimit": {
-          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "description": "If > 0, limits the number of code completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
           "type": "integer",
           "default": 0
         },
-        "perCommunityUserChatMonthlyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.",
+        "perCommunityUserChatMonthlyLLMRequestLimit": {
+          "description": "If > 0, limits the number of completions requests allowed for a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
-        "perCommunityUserCodeCompletionsMonthlyLimit": {
-          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.",
+        "perCommunityUserCodeCompletionsMonthlyLLMRequestLimit": {
+          "description": "If > 0, limits the number of code completions requests allowed for a Community user in a month.  This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
-        "perProUserChatDailyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+        "perProUserChatDailyLLMRequestLimit": {
+          "description": "If > 0, limits the number of completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         },
-        "perProUserCodeCompletionsDailyLimit": {
-          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+        "perProUserCodeCompletionsDailyLLMRequestLimit": {
+          "description": "If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserChatMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserCodeCompletionsMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserChatDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserCodeCompletionsDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         }

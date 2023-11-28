@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.5.1
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.41.0
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.17.0
+	github.com/getsentry/sentry-go v0.25.0
 	github.com/jackc/pgx/v5 v5.5.0
 	github.com/prometheus/client_golang v1.16.0
 	github.com/sourcegraph/conc v0.2.0
@@ -38,7 +39,6 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
 	github.com/cockroachdb/redact v1.1.5 // indirect
 	github.com/fatih/color v1.15.0 // indirect
-	github.com/getsentry/sentry-go v0.25.0 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect

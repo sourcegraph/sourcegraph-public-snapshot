@@ -90,11 +90,11 @@ type Mutation {
     """
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
-    Upgrades the user to Cody Pro.
+    Updates the user's Cody plan to Pro or Community.
 
     Only the user may perform this mutation.
     """
-    upgradeToCodyPro(user: ID!): User!
+    changeCodyPlan(user: ID!, pro: Boolean!): User!
     """
     Creates an organization. The caller is added as a member of the newly created organization.
 
@@ -6539,6 +6539,22 @@ type User implements Node & SettingsSubject & Namespace {
     The date when the user enrolled for Cody Pro.
     """
     codyProEnabledAt: DateTime
+    """
+    The start date of current billing period of Cody.
+    """
+    codyCurrentPeriodStartDate: DateTime
+    """
+    The end date of current billing period of Cody.
+    """
+    codyCurrentPeriodEndDate: DateTime
+    """
+    The count of Cody chats in the current billing period.
+    """
+    codyCurrentPeriodChatUsage: Int
+    """
+    The count of Cody code completions in the current billing period.
+    """
+    codyCurrentPeriodCodeUsage: Int
 }
 
 """
