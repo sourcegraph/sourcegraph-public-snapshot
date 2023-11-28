@@ -2,6 +2,7 @@
 /* eslint-disable no-restricted-imports */
 
 export { parseSearchURL } from '@sourcegraph/web/src/search/index'
+export { createSuggestionsSource } from '@sourcegraph/web/src/search/input/suggestions'
 export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
 
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'

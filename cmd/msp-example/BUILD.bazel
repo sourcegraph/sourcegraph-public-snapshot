@@ -1,0 +1,63 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+go_library(
+    name = "msp-example_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/msp-example/internal/example",
+        "//lib/managedservicesplatform/runtime",
+    ],
+)
+
+go_binary(
+    name = "msp-example",
+    embed = [":msp-example_lib"],
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tar_msp-example",
+    srcs = [":msp-example"],
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/msp-example",
+    ],
+    tars = [":tar_msp-example"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["msp-example:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("msp-example"),
+)

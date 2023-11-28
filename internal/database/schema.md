@@ -1974,7 +1974,7 @@ Triggers:
 ```
     Column    |  Type  | Collation | Nullable | Default 
 --------------+--------+-----------+----------+---------
- shard_id     | text   |           | not null | 
+ shard_id     | text   |           |          | 
  total        | bigint |           | not null | 0
  not_cloned   | bigint |           | not null | 0
  cloning      | bigint |           | not null | 0
@@ -1982,7 +1982,7 @@ Triggers:
  failed_fetch | bigint |           | not null | 0
  corrupted    | bigint |           | not null | 0
 Indexes:
-    "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
+    "gitserver_repos_statistics_shard_id" btree (shard_id)
 
 ```
 
@@ -2345,6 +2345,7 @@ Indexes:
     "lsif_indexes_dequeue_order_idx" btree ((enqueuer_user_id > 0) DESC, queued_at DESC, id) WHERE state = 'queued'::text OR state = 'errored'::text
     "lsif_indexes_queued_at_id" btree (queued_at DESC, id)
     "lsif_indexes_repository_id_commit" btree (repository_id, commit)
+    "lsif_indexes_repository_id_indexer" btree (repository_id, indexer)
     "lsif_indexes_state" btree (state)
 Check constraints:
     "lsif_uploads_commit_valid_chars" CHECK (commit ~ '^[a-z0-9]{40}$'::text)
@@ -2573,6 +2574,7 @@ Indexes:
     "lsif_uploads_committed_at" btree (committed_at) WHERE state = 'completed'::text
     "lsif_uploads_last_reconcile_at" btree (last_reconcile_at, id) WHERE state = 'completed'::text
     "lsif_uploads_repository_id_commit" btree (repository_id, commit)
+    "lsif_uploads_repository_id_indexer" btree (repository_id, indexer)
     "lsif_uploads_state" btree (state)
     "lsif_uploads_uploaded_at_id" btree (uploaded_at DESC, id) WHERE state <> 'deleted'::text
 Check constraints:
@@ -3662,6 +3664,7 @@ Foreign-key constraints:
  revision          | text                     |           | not null | 
 Indexes:
     "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+    "repo_embedding_jobs_repo" btree (repo_id, revision)
 Referenced by:
     TABLE "repo_embedding_job_stats" CONSTRAINT "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
 

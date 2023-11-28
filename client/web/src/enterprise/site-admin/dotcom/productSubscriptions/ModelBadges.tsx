@@ -30,6 +30,8 @@ function modelBadgeVariant(model: string, mode: 'completions' | 'embeddings'): '
             case 'anthropic/claude-v1.3':
             case 'anthropic/claude-v1.3-100k':
             case 'anthropic/claude-2':
+            case 'anthropic/claude-2.0':
+            case 'anthropic/claude-2.1':
             case 'anthropic/claude-instant-v1':
             case 'anthropic/claude-instant-1':
             case 'anthropic/claude-instant-v1-100k':

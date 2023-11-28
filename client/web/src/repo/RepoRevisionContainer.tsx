@@ -219,9 +219,9 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
             </Routes>
             {resolvedRevision && !isPackage && (
                 <RepoHeaderContributionPortal
-                    position="right"
-                    priority={3}
                     id="go-to-permalink"
+                    priority={3}
+                    position="right"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
                     {context => (

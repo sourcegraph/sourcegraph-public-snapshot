@@ -64,7 +64,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// to be reported here - instead, use parseResponseAndUsage to extract usage,
 	// which for some providers we can only know after the fact based on what
 	// upstream tells us.
-	getRequestMetadata func(ReqT) (model string, additionalMetadata map[string]any)
+	getRequestMetadata func(context.Context, log.Logger, *actor.Actor, ReqT) (model string, additionalMetadata map[string]any)
 	// parseResponseAndUsage should extract details from the response we get back from
 	// upstream as well as overall usage for tracking purposes.
 	//
@@ -229,7 +229,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			model, requestMetadata := methods.getRequestMetadata(body)
+			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -352,6 +352,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 					log.Error(errors.New(resp.Status)), // real error needed for Sentry reporting
 					log.String("resp.headers", headers.String()))
 				resolvedStatusCode = http.StatusServiceUnavailable
+			}
+
+			// This handles upstream 429 responses as well, since they get
+			// resolved to http.StatusServiceUnavailable.
+			if resolvedStatusCode == http.StatusServiceUnavailable {
 				// Propagate retry-after in case it is handle-able by the client,
 				// or write our default. 503 errors can have retry-after as well.
 				if upstreamRetryAfter := resp.Header.Get("retry-after"); upstreamRetryAfter != "" {

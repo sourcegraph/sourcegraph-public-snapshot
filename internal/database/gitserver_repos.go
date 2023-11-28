@@ -122,22 +122,33 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 }
 
 const updateGitserverReposQueryFmtstr = `
+WITH update_data AS (
+	SELECT * FROM (
+		VALUES
+		-- (<repo_id>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <corrupted_at>, <repo_size_bytes>),
+			%s
+	) AS tmp(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, corrupted_at, repo_size_bytes)
+),
+locked_data AS (
+	SELECT update_data.*
+	FROM update_data
+	JOIN gitserver_repos gr ON gr.repo_id = update_data.repo_id
+	ORDER BY update_data.repo_id ASC
+	FOR UPDATE OF gr
+)
 UPDATE gitserver_repos AS gr
 SET
-	clone_status = tmp.clone_status,
-	shard_id = tmp.shard_id,
-	last_error = tmp.last_error,
-	last_fetched = tmp.last_fetched,
-	last_changed = tmp.last_changed,
-	corrupted_at = tmp.corrupted_at,
-	repo_size_bytes = tmp.repo_size_bytes,
+	clone_status = locked_data.clone_status,
+	shard_id = locked_data.shard_id,
+	last_error = locked_data.last_error,
+	last_fetched = locked_data.last_fetched,
+	last_changed = locked_data.last_changed,
+	corrupted_at = locked_data.corrupted_at,
+	repo_size_bytes = locked_data.repo_size_bytes,
 	updated_at = NOW()
-FROM (VALUES
-	-- (<repo_id>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <corrupted_at>, <repo_size_bytes>),
-		%s
-	) AS tmp(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, corrupted_at, repo_size_bytes)
-	WHERE
-		tmp.repo_id = gr.repo_id
+FROM locked_data
+WHERE
+	locked_data.repo_id = gr.repo_id
 `
 
 func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
@@ -684,19 +695,29 @@ func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, r
 }
 
 const updateRepoSizesQueryFmtstr = `
+WITH update_data AS (
+	SELECT * FROM (VALUES
+		-- (<repo_name>, <repo_size_bytes>),
+		%s
+	) AS tmp(repo_name, repo_size_bytes)
+),
+locked_data AS (
+	SELECT update_data.*, gr.repo_id
+	FROM update_data
+	JOIN gitserver_repos gr ON gr.repo_id = (SELECT r.id FROM repo r WHERE r.name = update_data.repo_name)
+	WHERE
+		update_data.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes
+	ORDER BY gr.repo_id ASC
+	FOR UPDATE OF gr
+)
+
 UPDATE gitserver_repos AS gr
 SET
-    repo_size_bytes = tmp.repo_size_bytes,
+    repo_size_bytes = locked_data.repo_size_bytes,
 	updated_at = NOW()
-FROM (VALUES
--- (<repo_name>, <repo_size_bytes>),
-    %s
-) AS tmp(repo_name, repo_size_bytes)
-JOIN repo ON repo.name = tmp.repo_name
+FROM locked_data
 WHERE
-	repo.id = gr.repo_id
-AND
-	tmp.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes
+	locked_data.repo_id = gr.repo_id
 `
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be

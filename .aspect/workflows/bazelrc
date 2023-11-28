@@ -1,0 +1,3 @@
+common --remote_download_minimal
+common --nobuild_runfile_links
+common --noexperimental_reuse_sandbox_directories

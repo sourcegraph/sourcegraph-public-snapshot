@@ -39,6 +39,9 @@ var (
 				tid, _ := (tracetest.StaticTraceIDGenerator{}).NewIDs(context.Background())
 				return pointers.Ptr(tid.String())
 			}(),
+			Geolocation: &telemetrygatewayv1.EventInteraction_Geolocation{
+				CountryCode: "US",
+			},
 		},
 		Source: &telemetrygatewayv1.EventSource{
 			Server: &telemetrygatewayv1.EventSource_Server{

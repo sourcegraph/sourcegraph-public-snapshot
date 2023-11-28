@@ -14,12 +14,12 @@ export enum SearchMode {
 type Update<T> = T | ((value: T) => T)
 
 interface Options {
-    caseSensitive: boolean
-    regularExpression: boolean
-    patternType: SearchPatternType
-    searchMode: SearchMode
-    query: string
-    searchContext: string
+    readonly caseSensitive: boolean
+    readonly regularExpression: boolean
+    readonly patternType: SearchPatternType
+    readonly searchMode: SearchMode
+    readonly query: string
+    readonly searchContext: string
 }
 
 type QuerySettings = Pick<
@@ -31,11 +31,11 @@ export type QueryOptions = Pick<Options, 'patternType' | 'caseSensitive' | 'sear
 export class QueryState {
     private defaultCaseSensitive = false
     private defaultPatternType = SearchPatternType.standard
-    private defaultSearchMode = SearchMode.SmartSearch
+    private defaultSearchMode = SearchMode.Precise
     private defaultQuery = ''
     private defaultSearchContext = 'global'
 
-    private constructor(private options: Partial<Options>, public settings: QuerySettings) {}
+    private constructor(public readonly options: Partial<Options>, public settings: QuerySettings) {}
 
     public static init(options: Partial<Options>, settings: QuerySettings): QueryState {
         return new QueryState(options, settings)
@@ -134,7 +134,7 @@ export function queryStateStore(initial: Partial<Options> = {}, settings: QueryS
             update(state => state.setMode(mode))
         },
         set(options: Partial<Options>) {
-            update(state => QueryState.init(options, state.settings))
+            update(state => QueryState.init({ ...state.options, ...options }, state.settings))
         },
     }
 }
