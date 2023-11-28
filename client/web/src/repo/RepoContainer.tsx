@@ -57,6 +57,7 @@ import { useV2QueryInput } from '../search/useV2QueryInput'
 import { useNavbarQueryState } from '../stores'
 import { EventName } from '../util/constants'
 import type { RouteV6Descriptor } from '../util/contributions'
+import { useBreakpoint } from '../util/dom'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
@@ -332,6 +333,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
     const { extensionsController, repoContainerRoutes, authenticatedUser, selectedSearchContextSpec } = props
 
     const location = useLocation()
+    const isLarge = useBreakpoint('sm')
 
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
@@ -485,7 +487,10 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
             <RepoHeaderContributionPortal
                 position="right"
-                priority={10}
+                // We switch the priority based on the screen size because we want to change the order
+                // of arrangement on mobile view. The AskCody button should be the last item in the
+                // dropdown when on mobile.
+                priority={isLarge ? 10 : 0}
                 id="cody"
                 {...repoHeaderContributionsLifecycleProps}
             >
