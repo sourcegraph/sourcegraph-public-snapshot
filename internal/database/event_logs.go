@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type EventLogStore interface {
@@ -1193,10 +1194,10 @@ func (l *eventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.C
 		}
 
 		byLanguage[language] = CodeIntelligenceRepositoryCountsForLanguage{
-			NumRepositoriesWithUploadRecords:      safeDerefIntPtr(numRepositoriesWithUploadRecords),
-			NumRepositoriesWithFreshUploadRecords: safeDerefIntPtr(numRepositoriesWithFreshUploadRecords),
-			NumRepositoriesWithIndexRecords:       safeDerefIntPtr(numRepositoriesWithIndexRecords),
-			NumRepositoriesWithFreshIndexRecords:  safeDerefIntPtr(numRepositoriesWithFreshIndexRecords),
+			NumRepositoriesWithUploadRecords:      pointers.DerefZero(numRepositoriesWithUploadRecords),
+			NumRepositoriesWithFreshUploadRecords: pointers.DerefZero(numRepositoriesWithFreshUploadRecords),
+			NumRepositoriesWithIndexRecords:       pointers.DerefZero(numRepositoriesWithIndexRecords),
+			NumRepositoriesWithFreshIndexRecords:  pointers.DerefZero(numRepositoriesWithFreshIndexRecords),
 		}
 	}
 	if err := rows.Err(); err != nil {
@@ -1204,14 +1205,6 @@ func (l *eventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.C
 	}
 
 	return byLanguage, nil
-}
-
-func safeDerefIntPtr(v *int) int {
-	if v != nil {
-		return *v
-	}
-
-	return 0
 }
 
 var codeIntelligenceRepositoryCountsByLanguageQuery = `
