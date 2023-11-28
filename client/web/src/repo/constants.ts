@@ -1,6 +1,6 @@
 import { ComponentType } from 'react'
 
-import { CiSettings, CiTextAlignLeft } from 'react-icons/ci'
+import { CiSettings, CiTextAlignLeft, CiWarning } from 'react-icons/ci'
 import { FaCss3Alt, FaJava, FaSass } from 'react-icons/fa'
 import { GoDatabase, GoTerminal } from 'react-icons/go'
 import { PiFilePngLight } from 'react-icons/pi'
@@ -149,7 +149,7 @@ interface IconInfo {
  * 1) Many of mdi's programming language icons will be deprecated soon.
  * 2) They are missing quite a few icons that are needed when displaying file types.
  */
-export const FILE_ICONS: Map<FileExtension, IconInfo | null> = new Map([
+export const FILE_ICONS: Map<FileExtension, IconInfo> = new Map([
     [FileExtension.ASSEMBLY, { icon: SiAssemblyscript, iconClass: styles.defaultIcon }],
     [FileExtension.BASH, { icon: GoTerminal, iconClass: styles.defaultIcon }],
     [FileExtension.BASIC, { icon: SiVisualbasic, iconClass: styles.defaultIcon }],
@@ -164,7 +164,7 @@ export const FILE_ICONS: Map<FileExtension, IconInfo | null> = new Map([
     [FileExtension.CSHARP, { icon: SiCsharp, iconClass: styles.blue }],
     [FileExtension.CSS, { icon: FaCss3Alt, iconClass: styles.blue }],
     [FileExtension.DART, { icon: SiDart, iconClass: styles.blue }],
-    [FileExtension.DEFAULT, null],
+    [FileExtension.DEFAULT, { icon: CiWarning, iconClass: styles.red }],
     [FileExtension.DOCKERFILE, { icon: SiDocker, iconClass: styles.blue }],
     [FileExtension.DOCKERIGNORE, { icon: SiDocker, iconClass: styles.blue }],
     [FileExtension.FORTRAN_F, { icon: SiFortran, iconClass: styles.defaultIcon }],

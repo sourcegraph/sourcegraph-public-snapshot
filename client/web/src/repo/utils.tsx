@@ -47,22 +47,25 @@ export const stringToCodeHostType = (codeHostType: string): CodeHostType => {
 }
 
 export interface FileInfo {
-    extension?: FileExtension
+    extension: FileExtension
     isTest: boolean
 }
 
-export const getFileInfo = (file: string, isDirectory: boolean): FileInfo => {
-    const fileInfo = { extension: 'default' as FileExtension, isTest: false }
-    fileInfo.isTest = isDirectory ? false : containsTest(file)
-    if (isDirectory) {
-        return fileInfo
+export const getFileInfo = (file: string): FileInfo => {
+    const extension = file.split('.').at(-1)
+    const isValidExtension = Object.values(FileExtension).includes(extension as FileExtension)
+
+    if (extension && isValidExtension) {
+        return {
+            extension: extension as FileExtension,
+            isTest: containsTest(file),
+        }
     }
 
-    const f = file.split('.')
-    // Last item in 'f' is file extension string
-    // Code Search linter prefers at() to x[x.length - 1]
-    fileInfo.extension = f.at(-1)?.trim() as FileExtension
-    return fileInfo
+    return {
+        extension: 'default' as FileExtension,
+        isTest: false,
+    }
 }
 
 export const containsTest = (file: string): boolean => {

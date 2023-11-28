@@ -27,7 +27,7 @@ import {
 
 import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 
-import { FILE_ICONS } from './constants'
+import { FILE_ICONS, FileExtension } from './constants'
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
 import { getFileInfo } from './utils'
 
@@ -391,8 +391,8 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const fileInfo = getFileInfo(name, isBranch)
-    const fileIcon = fileInfo.extension && FILE_ICONS.get(fileInfo.extension)
+    const fileInfo = getFileInfo(name)
+    const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -475,10 +475,10 @@ function renderNode({
             }}
         >
             <div className={styles.iconContainer}>
-                {fileIcon ? (
+                {fileInfo.extension !== FileExtension.DEFAULT ? (
                     <Icon
-                        as={fileIcon.icon}
-                        className={classNames('mr-1', styles.icon, fileIcon.iconClass)}
+                        as={fileIcon?.icon}
+                        className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
                         aria-hidden={true}
                     />
                 ) : (

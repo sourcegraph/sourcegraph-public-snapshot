@@ -77,13 +77,20 @@ describe('getFileInfo', () => {
             expectedExtension: 'tsx' as FileExtension,
             expectedIsTest: true,
         },
+        {
+            name: 'returns isTest as true if file name contains test',
+            file: '.eslintrc',
+            isDirectory: false,
+            expectedExtension: 'default' as FileExtension,
+            expectedIsTest: false,
+        },
     ]
 
     for (const t of tests) {
         it(t.name, () => {
-            let e = getFileInfo(t.file, t.isDirectory)
-            expect(e.extension).toBe(t.expectedExtension)
-            expect(e.isTest).toBe(t.expectedIsTest)
+            const fileInfo = getFileInfo(t.file)
+            expect(fileInfo.extension).toBe(t.expectedExtension)
+            expect(fileInfo.isTest).toBe(t.expectedIsTest)
         })
     }
 })
