@@ -163,14 +163,14 @@ const CodySurveyToastInner: React.FC<
 }
 
 const CodyQualificationSurveryToastInner: React.FC<
-    { onSubmitEnd: () => void; userId: string; hasVerifiedEmail: boolean } & TelemetryProps
-> = ({ onSubmitEnd, telemetryService, userId, hasVerifiedEmail }) => {
+    { onSubmitEnd: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps
+> = ({ onSubmitEnd, telemetryService, authenticatedUser }) => {
     const [updatePostSignupCompletion, { error: setPostSignupError }] = useMutation<
         SetCompletedPostSignupResult,
         SetCompletedPostSignupVariables
     >(SET_COMPLETED_POST_SIGNUP, {
         variables: {
-            userID: userId,
+            userID: authenticatedUser.id,
         },
     })
 
@@ -197,9 +197,11 @@ const CodyQualificationSurveryToastInner: React.FC<
         [telemetryService]
     )
 
+    const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
+
     const handleSubmit = useCallback(async () => {
         try {
-            if (hasVerifiedEmail) {
+            if (authenticatedUser.hasVerifiedEmail) {
                 await updatePostSignupCompletion()
             }
 
@@ -208,7 +210,7 @@ const CodyQualificationSurveryToastInner: React.FC<
             /* eslint-disable no-console */
             console.error(error)
         }
-    }, [hasVerifiedEmail, onSubmitEnd, updatePostSignupCompletion])
+    }, [authenticatedUser.hasVerifiedEmail, onSubmitEnd, updatePostSignupCompletion])
 
     useEffect(() => {
         telemetryService.log('ViewCodyforWorkorPersonalForm')
@@ -222,9 +224,15 @@ const CodyQualificationSurveryToastInner: React.FC<
             data-testid="cody-qualification-survey-form"
             containerClassName={styles.modalOverlay}
         >
+            <H3 className="mb-4 d-flex align-items-center">
+                <CodyColorIcon className={styles.codyIcon} />
+                <span>Quick question...</span>
+            </H3>
+            <Text>How will you be using Cody, our AI assistant?</Text>
             <HubSpotForm
                 onFormSubmitted={handleSubmit}
-                userId={userId}
+                userId={authenticatedUser?.id}
+                userEmail={primaryEmail}
                 onFormReady={handleFormReady}
                 masterFormName="qualificationSurvey"
             />
@@ -355,8 +363,7 @@ export const CodySurveyToast: React.FC<
             <CodyQualificationSurveryToastInner
                 telemetryService={telemetryService}
                 onSubmitEnd={handleSubmitEnd}
-                userId={authenticatedUser.id}
-                hasVerifiedEmail={authenticatedUser.hasVerifiedEmail}
+                authenticatedUser={authenticatedUser}
             />
         )
     }
