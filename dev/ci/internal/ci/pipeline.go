@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -208,7 +209,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if err != nil {
 			panic(fmt.Sprintf("ExtractBranchArgument: %s", err))
 		}
-		if !contains(images.SourcegraphDockerImages, patchImage) {
+		if !slices.Contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 
@@ -230,7 +231,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if err != nil {
 			panic(fmt.Sprintf("ExtractBranchArgument: %s", err))
 		}
-		if !contains(images.SourcegraphDockerImages, patchImage) {
+		if !slices.Contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 		ops = operations.NewSet(

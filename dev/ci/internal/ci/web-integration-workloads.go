@@ -9,15 +9,6 @@ import (
 
 // Code in this file is used to split web integration tests workloads.
 
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
 func getWebIntegrationFileNames() []string {
 	var fileNames []string
 
