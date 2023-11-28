@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"sync"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
