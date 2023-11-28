@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	sgservice "github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/singleprogram"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
@@ -233,7 +232,7 @@ func run(
 			obctx := observation.ContextWithLogger(log.Scoped(service.Name()), obctx)
 
 			// ensure ready is only called once and always call it.
-			ready := syncx.OnceFunc(allReadyWG.Done)
+			ready := sync.OnceFunc(allReadyWG.Done)
 			defer ready()
 
 			// Don't run executors for Cody App

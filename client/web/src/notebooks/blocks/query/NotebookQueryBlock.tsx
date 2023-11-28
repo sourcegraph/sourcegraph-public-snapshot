@@ -203,6 +203,7 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 submitSearch={submitSearch}
                                 caseSensitive={caseSensitive}
                                 searchQueryFromURL={submittedURLQuery}
+                                showQueryExamplesOnNoResultsPage={false}
                             />
                         </div>
                     )}

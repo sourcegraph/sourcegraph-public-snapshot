@@ -724,6 +724,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		s.ObsvCtx.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
 		fallthrough
 	case 1: // Existing repo, update.
+		wasDeleted := !stored[0].DeletedAt.IsZero()
 		s.ObsvCtx.Logger.Debug("existing repo")
 		if err := UpdateRepoLicenseHook(ctx, tx, stored[0], sourced); err != nil {
 			return types.RepoSyncDiff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
@@ -739,8 +740,13 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		}
 
 		*sourced = *stored[0]
-		d.Modified = append(d.Modified, types.RepoModified{Repo: stored[0], Modified: modified})
-		s.ObsvCtx.Logger.Debug("appended to modified repos")
+		if wasDeleted {
+			d.Added = append(d.Added, stored[0])
+			s.ObsvCtx.Logger.Debug("revived soft-deleted repo")
+		} else {
+			d.Modified = append(d.Modified, types.RepoModified{Repo: stored[0], Modified: modified})
+			s.ObsvCtx.Logger.Debug("appended to modified repos")
+		}
 	case 0: // New repo, create.
 		s.ObsvCtx.Logger.Debug("new repo")
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"io"
 	"net/http"
 
@@ -58,7 +59,7 @@ func NewOpenAIHandler(
 				// We forward the actor ID to support tracking.
 				body.User = identifier
 			},
-			getRequestMetadata: func(body openaiRequest) (model string, additionalMetadata map[string]any) {
+			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, body openaiRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{"stream": body.Stream}
 			},
 			transformRequest: func(r *http.Request) {

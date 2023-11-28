@@ -1,3 +1,5 @@
+"Third party dev tooling dependencies"
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
 DOCSITE_VERSION = "1.9.4"
@@ -12,7 +14,18 @@ filegroup(
 )
 """
 
+GCLOUD_VERSION = "415.0.0"
+GCLOUD_BUILDFILE = """package(default_visibility = ["//visibility:public"])\nexports_files(["gcloud", "gsutil", "bq", "git-credential-gcloud"])"""
+GCLOUD_PATCH_CMDS = [
+    "ln -s google-cloud-sdk/bin/gcloud gcloud",
+    "ln -s google-cloud-sdk/bin/gsutil gsutil",
+    "ln -s google-cloud-sdk/bin/bq bq",
+    "ln -s google-cloud-sdk/bin/git-credential-gcloud.sh git-credential-gcloud",
+]
+
 def tool_deps():
+    "Repository rules to fetch third party tooling used for dev purposes"
+
     # Docsite #
     http_file(
         name = "docsite_darwin_amd64",
@@ -81,4 +94,28 @@ def tool_deps():
         sha256 = "e99b942754ce9d55c9445513236c010753d26decbb38ed932780bec098ac0809",
         url = "https://storage.googleapis.com/universal_ctags/x86_64-linux/dist/universal-ctags-{0}".format(CTAGS_VERSION),
         executable = True,
+    )
+
+    http_archive(
+        name = "gcloud-darwin-arm64",
+        build_file_content = GCLOUD_BUILDFILE,
+        patch_cmds = GCLOUD_PATCH_CMDS,
+        sha256 = "974ed4f37f8bde2f7a9731eba90b033f7c97d24d835ecc62b58eee87c8f29776",
+        url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-arm.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_archive(
+        name = "gcloud-darwin-amd64",
+        build_file_content = GCLOUD_BUILDFILE,
+        patch_cmds = GCLOUD_PATCH_CMDS,
+        sha256 = "f05cc45ffc6c1f3ff73854989f3ea3d6bee40287d23047917e4c845aeb027f98",
+        url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-darwin-x86_64.tar.gz".format(GCLOUD_VERSION),
+    )
+
+    http_archive(
+        name = "gcloud-linux-amd64",
+        build_file_content = GCLOUD_BUILDFILE,
+        patch_cmds = GCLOUD_PATCH_CMDS,
+        sha256 = "5f9ed1862a82f393be3b16634309e9e8edb6da13a8704952be9c4c59963f9cd4",
+        url = "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-{}-linux-x86_64.tar.gz".format(GCLOUD_VERSION),
     )

@@ -26,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -85,6 +84,9 @@ type EventLogStore interface {
 
 	// CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
 	CodeIntelligenceWAUs(ctx context.Context) (int, error)
+
+	// CountBySQL gets a count of event logged based on the query.
+	CountBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error)
 
 	// CountByUserID gets a count of events logged by a given user.
 	CountByUserID(ctx context.Context, userID int32) (int, error)
@@ -308,7 +310,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 	// Create a cancel-free context to avoid interrupting the insert when
 	// the parent context is cancelled, and add our own timeout on the insert
 	// to make sure things don't get stuck in an unbounded manner.
-	insertCtx, cancel := context.WithTimeout(xcontext.Detach(ctx), 5*time.Minute)
+	insertCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
 	defer cancel()
 
 	return batch.InsertValues(
@@ -414,15 +416,15 @@ func (l *eventLogStore) LatestPing(ctx context.Context) (*Event, error) {
 }
 
 func (l *eventLogStore) CountByUserID(ctx context.Context, userID int32) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
+	return l.CountBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
 func (l *eventLogStore) CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name = %s", userID, name))
+	return l.CountBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name = %s", userID, name))
 }
 
 func (l *eventLogStore) CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name LIKE %s", userID, namePrefix+"%"))
+	return l.CountBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name LIKE %s", userID, namePrefix+"%"))
 }
 
 func (l *eventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error) {
@@ -430,11 +432,11 @@ func (l *eventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID i
 	for _, v := range names {
 		items = append(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name IN (%s)", userID, sqlf.Join(items, ",")))
+	return l.CountBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name IN (%s)", userID, sqlf.Join(items, ",")))
 }
 
-// countBySQL gets a count of event logs.
-func (l *eventLogStore) countBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
+// CountBySQL gets a count of event logs.
+func (l *eventLogStore) CountBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM event_logs %s", querySuffix)
 	r := l.QueryRow(ctx, q)
 	var count int

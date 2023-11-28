@@ -132,7 +132,7 @@ sg start -describe single-program
 				Destination: &onlyServices,
 			},
 		},
-		BashComplete: completions.CompleteOptions(func() (options []string) {
+		BashComplete: completions.CompleteArgs(func() (options []string) {
 			config, _ := getConfig()
 			if config == nil {
 				return

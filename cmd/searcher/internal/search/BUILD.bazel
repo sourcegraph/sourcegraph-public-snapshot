@@ -43,7 +43,6 @@ go_library(
         "//internal/search/zoekt",
         "//internal/searcher/v1:searcher",
         "//internal/trace",
-        "//internal/xcontext",
         "//lib/errors",
         "//schema",
         "@com_github_bmatcuk_doublestar//:doublestar",

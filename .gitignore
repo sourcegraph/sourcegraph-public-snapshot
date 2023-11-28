@@ -98,6 +98,7 @@ sourcegraph-webapp-*.tgz
 *.tsbuildinfo
 graphql-operations.ts
 *.module.scss.d.ts
+*.module.css.d.ts
 dll-bundle
 
 # Extensions

@@ -36,6 +36,11 @@ export const enum EventName {
     JOIN_IDE_WAITLIST = 'JoinIDEWaitlist',
     DOWNLOAD_IDE = 'DownloadIDE',
     DOWNLOAD_APP = 'DownloadApp',
+
+    CODY_MANAGEMENT_PAGE_VIEWED = 'web:codyManagement:pageViewed',
+    CODY_SUBSCRIPTION_PAGE_VIEWED = 'web:codySubscription:pageViewed',
+    CODY_ONBOARDING_PURPOSE_WORK = 'web:codyOnboarding:purpose:work',
+    CODY_ONBOARDING_PURPOSE_PERSONAL = 'web:codyOnboarding:purpose:personal',
 }
 
 export const enum EventLocation {
