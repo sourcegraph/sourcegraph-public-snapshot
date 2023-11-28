@@ -10,6 +10,18 @@ export const USER_CODY_PLAN = gql`
     }
 `
 
+export const USER_CODY_USAGE = gql`
+    query UserCodyUsage {
+        currentUser {
+            id
+            codyCurrentPeriodChatUsage
+            codyCurrentPeriodCodeUsage
+            codyCurrentPeriodChatLimit
+            codyCurrentPeriodCodeLimit
+        }
+    }
+`
+
 export const CHANGE_CODY_PLAN = gql`
     mutation ChangeCodyPlan($id: ID!, $pro: Boolean!) {
         changeCodyPlan(user: $id, pro: $pro) {

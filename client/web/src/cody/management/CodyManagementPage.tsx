@@ -5,19 +5,35 @@ import { mdiHelpCircleOutline, mdiTrendingUp, mdiDownload, mdiInformation } from
 import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Icon, PageHeader, Link, H4, H2, Text, ButtonLink, Modal, useSearchParameters } from '@sourcegraph/wildcard'
+import {
+    Icon,
+    PageHeader,
+    Link,
+    H4,
+    H2,
+    Text,
+    ButtonLink,
+    Modal,
+    useSearchParameters,
+    LoadingSpinner,
+} from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
+import type {
+    UserCodyPlanResult,
+    UserCodyPlanVariables,
+    UserCodyUsageResult,
+    UserCodyUsageVariables,
+} from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { CodyOnboarding, editorGroups, IEditor } from '../onboarding/CodyOnboarding'
+import { CodyOnboarding, editorGroups, type IEditor } from '../onboarding/CodyOnboarding'
 import { ProTierIcon } from '../subscription/CodySubscriptionPage'
-import { USER_CODY_PLAN } from '../subscription/queries'
+import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
 
 import styles from './CodyManagementPage.module.scss'
 
@@ -35,6 +51,8 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
     }, [utm_source])
 
     const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
+
+    const { data: usageData } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(USER_CODY_USAGE, {})
 
     const [isEnabled] = useFeatureFlag('cody-pro', false)
 
@@ -100,15 +118,21 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
                                         Unlimited
                                     </Text>
-                                ) : (
+                                ) : usageData?.currentUser ? (
                                     <>
                                         <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
-                                            345 /
+                                            {Math.min(
+                                                usageData?.currentUser?.codyCurrentPeriodCodeUsage || 0,
+                                                usageData?.currentUser?.codyCurrentPeriodCodeLimit || 0
+                                            )}{' '}
+                                            /
                                         </Text>{' '}
                                         <Text className="text-muted d-inline b-0" size="small">
-                                            500
+                                            {usageData?.currentUser?.codyCurrentPeriodCodeLimit || 0}
                                         </Text>
                                     </>
+                                ) : (
+                                    <LoadingSpinner />
                                 )}
                             </div>
                             <H4 className="mb-0">Autocompletes</H4>
@@ -125,15 +149,21 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
                                         Unlimited
                                     </Text>
-                                ) : (
+                                ) : usageData?.currentUser ? (
                                     <>
                                         <Text weight="bold" className={classNames('d-inline mb-0', styles.counter)}>
-                                            345 /
+                                            {Math.min(
+                                                usageData?.currentUser?.codyCurrentPeriodChatUsage || 0,
+                                                usageData?.currentUser?.codyCurrentPeriodChatLimit || 0
+                                            )}{' '}
+                                            /
                                         </Text>{' '}
                                         <Text className="text-muted d-inline b-0" size="small">
-                                            500
+                                            {usageData?.currentUser?.codyCurrentPeriodChatLimit || 0}
                                         </Text>
                                     </>
+                                ) : (
+                                    <LoadingSpinner />
                                 )}
                             </div>
                             <H4 className="mb-0">Chat Messages</H4>
