@@ -85,12 +85,14 @@ func newCompletionsHandler(
 		if isCodyProEnabled && isDotcom && isProviderCodyGateway {
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				trace.Logger(ctx, logger).Info("Error parsing auth header", log.String("Authorization header", r.Header.Get("Authorization")), log.Error(err))
+				http.Error(w, "Error parsing auth header", http.StatusUnauthorized)
 				return
 			}
 			accessToken, err = accesstoken.GenerateDotcomUserGatewayAccessToken(apiToken)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				trace.Logger(ctx, logger).Info("Access token generation failed", log.String("API token", apiToken), log.Error(err))
+				http.Error(w, "Access token generation failed", http.StatusUnauthorized)
 				return
 			}
 		}
