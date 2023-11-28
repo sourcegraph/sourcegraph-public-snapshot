@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -14,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -87,7 +87,7 @@ type packageRepoReferenceConnectionResolver struct {
 }
 
 func (r *packageRepoReferenceConnectionResolver) Nodes(ctx context.Context) ([]*packageRepoReferenceResolver, error) {
-	once := syncx.OnceValues(func() (map[api.RepoName]*types.Repo, error) {
+	once := sync.OnceValues(func() (map[api.RepoName]*types.Repo, error) {
 		allNames := make([]string, 0, len(r.deps))
 		for _, dep := range r.deps {
 			name, err := dependencyRepoToRepoName(dep)

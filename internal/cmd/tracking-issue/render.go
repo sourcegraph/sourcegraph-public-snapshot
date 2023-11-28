@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -440,7 +441,7 @@ func (ar *AssigneeRenderer) resetDisplayFlags() {
 // doRenderIssue returns the given issue rendered in markdown.
 func (ar *AssigneeRenderer) doRenderIssue(issue *Issue, milestone string) string {
 	url := issue.URL
-	if issue.Milestone != milestone && contains(issue.Labels, fmt.Sprintf("planned/%s", milestone)) {
+	if issue.Milestone != milestone && slices.Contains(issue.Labels, fmt.Sprintf("planned/%s", milestone)) {
 		// deprioritized
 		url = fmt.Sprintf("~%s~", url)
 	}

@@ -194,10 +194,3 @@ func getConfiguredLimit(ctx context.Context, db database.DB, scope types.Complet
 
 	return 0, nil
 }
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

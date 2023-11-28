@@ -4,6 +4,7 @@ import (
 	"context"
 	"math"
 	"strconv"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/search"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -69,7 +69,7 @@ func (s *Server) searchWithObservability(ctx context.Context, tr trace.Trace, ar
 		}
 	}()
 
-	observeLatency := syncx.OnceFunc(func() {
+	observeLatency := sync.OnceFunc(func() {
 		searchLatency.Observe(time.Since(searchStart).Seconds())
 	})
 

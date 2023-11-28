@@ -26,7 +26,6 @@ go_library(
         "//dev/managedservicesplatform/internal/stack/options/googleprovider",
         "//dev/managedservicesplatform/internal/stack/options/randomprovider",
         "//dev/managedservicesplatform/spec",
-        "//internal/syncx",
         "//lib/errors",
         "//lib/pointers",
         "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",

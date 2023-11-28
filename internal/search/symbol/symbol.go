@@ -3,6 +3,7 @@ package symbol
 import (
 	"context"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
+	"sync"
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -28,7 +28,7 @@ const DefaultSymbolLimit = 100
 // NOTE: this lives inside a syncx.OnceValue because search.Indexed depends on
 // conf.Get, and running conf.Get() at init time can cause a deadlock. So,
 // we construct it lazily instead.
-var DefaultZoektSymbolsClient = syncx.OnceValue(func() *ZoektSymbolsClient {
+var DefaultZoektSymbolsClient = sync.OnceValue(func() *ZoektSymbolsClient {
 	return &ZoektSymbolsClient{
 		subRepoPermsChecker: authz.DefaultSubRepoPermsChecker,
 		zoektStreamer:       search.Indexed(),
