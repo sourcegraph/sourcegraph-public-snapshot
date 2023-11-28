@@ -54,14 +54,6 @@ func chunkItems(items []string, size int) [][]string {
 	return chunks
 }
 
-func min(x int, y int) int {
-	if x < y {
-		return x
-	}
-
-	return y
-}
-
 // getChunkedWebIntegrationFileNames gets web integration test filenames and splits them in chunks for parallelizing client integration tests.
 func getChunkedWebIntegrationFileNames(chunkSize int) []string {
 	testFiles := getWebIntegrationFileNames()

@@ -196,14 +196,6 @@ func nodeLength(node *sitter.Node) int {
 	return length
 }
 
-// Of course.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 // When generic?
 func contains(slice []string, str string) bool {
 	for _, s := range slice {
