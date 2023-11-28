@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"strconv"
+	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -13,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -252,14 +252,14 @@ func newOutboundWebhookConnectionResolver(
 ) OutboundWebhookConnectionResolver {
 	limit := opts.Limit
 
-	nodes := syncx.OnceValues(func() ([]*types.OutboundWebhook, error) {
+	nodes := sync.OnceValues(func() ([]*types.OutboundWebhook, error) {
 		opts.Limit += 1
 		return store.List(ctx, opts)
 	})
 
 	return &outboundWebhookConnectionResolver{
 		nodes: nodes,
-		resolvers: syncx.OnceValues(func() ([]OutboundWebhookResolver, error) {
+		resolvers: sync.OnceValues(func() ([]OutboundWebhookResolver, error) {
 			webhooks, err := nodes()
 			if err != nil {
 				return nil, err
@@ -276,7 +276,7 @@ func newOutboundWebhookConnectionResolver(
 
 			return resolvers, nil
 		}),
-		totalCount: syncx.OnceValues(func() (int32, error) {
+		totalCount: sync.OnceValues(func() (int32, error) {
 			count, err := store.Count(ctx, opts.OutboundWebhookCountOpts)
 			return int32(count), err
 		}),
@@ -327,7 +327,7 @@ func newOutboundWebhookResolverFromDatabase(ctx context.Context, store database.
 	return &outboundWebhookResolver{
 		store: store,
 		id:    marshalOutboundWebhookID(id),
-		webhook: syncx.OnceValues(func() (*types.OutboundWebhook, error) {
+		webhook: sync.OnceValues(func() (*types.OutboundWebhook, error) {
 			return store.GetByID(ctx, id)
 		}),
 	}
