@@ -48,9 +48,9 @@ func init() {
 	// All 'sg msp ...' subcommands
 	Command.Subcommands = []*cli.Command{
 		{
-			Name:        "init",
-			ArgsUsage:   "<service ID>",
-			Description: "Initialize a template Managed Services Platform service spec",
+			Name:      "init",
+			ArgsUsage: "<service ID>",
+			Usage:     "Initialize a template Managed Services Platform service spec",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:  "kind",
@@ -186,11 +186,11 @@ func init() {
 			},
 		},
 		{
-			Name:        "generate",
-			Aliases:     []string{"gen"},
-			ArgsUsage:   "<service ID>",
-			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
-			Usage: `Optionally use '-all' to sync all environments for a service.
+			Name:      "generate",
+			Aliases:   []string{"gen"},
+			ArgsUsage: "<service ID>",
+			Usage:     "Generate Terraform assets for a Managed Services Platform service spec.",
+			Description: `Optionally use '-all' to sync all environments for a service.
 
 Supports completions on services and environments.`,
 			UsageText: `
@@ -267,15 +267,15 @@ sg msp generate -all <service>
 			},
 		},
 		{
-			Name:        "terraform-cloud",
-			Aliases:     []string{"tfc"},
-			Description: "Manage Terraform Cloud workspaces for a service",
-			Before:      msprepo.UseManagedServicesRepo,
+			Name:    "terraform-cloud",
+			Aliases: []string{"tfc"},
+			Usage:   "Manage Terraform Cloud workspaces for a service",
+			Before:  msprepo.UseManagedServicesRepo,
 			Subcommands: []*cli.Command{
 				{
-					Name:        "sync",
-					Description: "Create or update all required Terraform Cloud workspaces for an environment",
-					Usage: `Optionally use '-all' to sync all environments for a service.
+					Name:  "sync",
+					Usage: "Create or update all required Terraform Cloud workspaces for an environment",
+					Description: `Optionally use '-all' to sync all environments for a service.
 
 Supports completions on services and environments.`,
 					ArgsUsage: "<service ID> [environment ID]",
@@ -366,8 +366,8 @@ Supports completions on services and environments.`,
 			},
 		},
 		{
-			Name:        "schema",
-			Description: "Generate JSON schema definition for service specification",
+			Name:  "schema",
+			Usage: "Generate JSON schema definition for service specification",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:    "output",
