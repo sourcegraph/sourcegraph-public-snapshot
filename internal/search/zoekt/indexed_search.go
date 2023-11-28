@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -596,7 +595,7 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 // contextWithoutDeadline returns a context which will cancel if the cOld is
 // canceled.
 func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
-	cNew := xcontext.Detach(cOld)
+	cNew := context.WithoutCancel(cOld)
 	cNew, cancel := context.WithCancel(cNew)
 
 	go func() {

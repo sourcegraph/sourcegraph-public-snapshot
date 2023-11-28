@@ -1841,6 +1841,7 @@ ts_project(
         "//:node_modules/react-circular-progressbar",
         "//:node_modules/react-dom",
         "//:node_modules/react-grid-layout",
+        "//:node_modules/react-icons",
         "//:node_modules/react-router-dom",
         "//:node_modules/react-spring",
         "//:node_modules/react-sticky-box",

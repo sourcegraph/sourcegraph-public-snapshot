@@ -288,22 +288,22 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	switch scope {
 	case types.CompletionsFeatureChat:
 		if isProUser {
-			if cfg.PerProUserChatDailyLimit > 0 {
-				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserChatDailyLimit), nil
+			if cfg.PerProUserChatDailyLLMRequestLimit > 0 {
+				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserChatDailyLLMRequestLimit), nil
 			}
 		} else {
-			if cfg.PerCommunityUserChatMonthlyLimit > 0 {
-				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserChatMonthlyLimit), nil
+			if cfg.PerCommunityUserChatMonthlyLLMRequestLimit > 0 {
+				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserChatMonthlyLLMRequestLimit), nil
 			}
 		}
 	case types.CompletionsFeatureCode:
 		if isProUser {
-			if cfg.PerProUserCodeCompletionsDailyLimit > 0 {
-				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserCodeCompletionsDailyLimit), nil
+			if cfg.PerProUserCodeCompletionsDailyLLMRequestLimit > 0 {
+				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserCodeCompletionsDailyLLMRequestLimit), nil
 			}
 		} else {
-			if cfg.PerCommunityUserCodeCompletionsMonthlyLimit > 0 {
-				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserCodeCompletionsMonthlyLimit), nil
+			if cfg.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit > 0 {
+				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit), nil
 			}
 		}
 	}
@@ -315,7 +315,7 @@ func allowedModels(scope types.CompletionsFeature) []string {
 	case types.CompletionsFeatureChat:
 		return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	case types.CompletionsFeatureCode:
-		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
+		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "fireworks/accounts/fireworks/models/starcoder-7b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-7b", "fireworks/accounts/fireworks/models/starcoder-16b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-16b"}
 	default:
 		return []string{}
 	}
