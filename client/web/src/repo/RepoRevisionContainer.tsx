@@ -221,12 +221,12 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                 <RepoHeaderContributionPortal
                     position="right"
                     priority={1}
-                    id="go-to-permalink"
+                    id="copy-permalink"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
                     {context => (
                         <CopyPermalinkAction
-                            key="go-to-permalink"
+                            key="copy-permalink"
                             telemetryService={props.telemetryService}
                             revision={props.revision}
                             commitID={resolvedRevision?.commitID}
