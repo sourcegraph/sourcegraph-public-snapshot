@@ -31,6 +31,10 @@ const (
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
 
+	// RFC795
+
+	RFC795InternalRelease // Internal release
+
 	// Main branches
 
 	MainBranch // main branch build
@@ -85,6 +89,12 @@ func (t RunType) Is(oneOfTypes ...RunType) bool {
 // Matcher returns the requirements for a build to be considered of this RunType.
 func (t RunType) Matcher() *RunTypeMatcher {
 	switch t {
+	case RFC795InternalRelease:
+		return &RunTypeMatcher{
+			EnvIncludes: map[string]string{
+				"RELEASE_INTERNAL": "true",
+			},
+		}
 	case ReleaseNightly:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
@@ -121,10 +131,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 
 	case TaggedRelease:
 		return &RunTypeMatcher{
-			// TagPrefix: "v",
-			// TODO(@jhchabran) RFC795
-			Branch:       `rfc795/v[0-9]+\.[0-9]+\.[0-9]+$`,
-			BranchRegexp: true,
+			TagPrefix: "v",
 		}
 	case ReleaseBranch:
 		return &RunTypeMatcher{
@@ -224,6 +231,8 @@ func (t RunType) String() string {
 		return "Backend integration tests"
 	case BazelDo:
 		return "Bazel command"
+	case RFC795InternalRelease:
+		return "Internal release"
 	}
 	return ""
 }

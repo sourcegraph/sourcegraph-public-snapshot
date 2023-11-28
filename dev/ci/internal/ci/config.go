@@ -69,6 +69,7 @@ func NewConfig(now time.Time) Config {
 			"RELEASE_NIGHTLY":    os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":       os.Getenv("VSCE_NIGHTLY"),
 			"WOLFI_BASE_REBUILD": os.Getenv("WOLFI_BASE_REBUILD"),
+			"RELEASE_INTERNAL":   os.Getenv("RELEASE_INTERNAL"),
 		})
 		// defaults to 0
 		buildNumber, _ = strconv.Atoi(os.Getenv("BUILDKITE_BUILD_NUMBER"))
@@ -128,14 +129,17 @@ func NewConfig(now time.Time) Config {
 }
 
 // versionFromTag constructs the Sourcegraph version from the given build state.
-func versionFromTag(runType runtype.RunType, _ string, commit string, buildNumber int, branch string, now time.Time) string {
+func versionFromTag(runType runtype.RunType, tag string, commit string, buildNumber int, branch string, now time.Time) string {
 	if runType.Is(runtype.TaggedRelease) {
 		// This tag is used for publishing versioned releases.
 		//
 		// The Git tag "v1.2.3" should map to the Docker image "1.2.3" (without v prefix).
-		// return strings.TrimPrefix(tag, "v")
-		// TODO(rfc795)
-		return strings.TrimPrefix(branch, "rfc795/v")
+		return strings.TrimPrefix(tag, "v")
+	}
+	if runType.Is(runtype.RFC795InternalRelease) {
+		// TODO(RFC795)
+		// Hardcoded for now
+		return "5.2.666"
 	}
 
 	// "main" branch is used for continuous deployment and has a special-case format

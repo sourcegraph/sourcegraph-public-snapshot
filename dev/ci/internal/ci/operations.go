@@ -402,7 +402,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 
 		var imgs []string
 		for _, image := range []string{publishImage, devImage} {
-			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
+			if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
 				imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
 			}
 
@@ -446,7 +446,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 // build.
 func executorImageFamilyForConfig(c Config) string {
 	imageFamily := "sourcegraph-executors-nightly"
-	if c.RunType.Is(runtype.TaggedRelease) {
+	if c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease) {
 		ver, err := semver.NewVersion(c.Version)
 		if err != nil {
 			panic("cannot parse version")
@@ -464,7 +464,7 @@ func buildExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 			bk.Key(candidateImageStepKey("executor.vm-image")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
-			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease))),
 		}
 		if !skipHashCompare {
 			compareHashScript := "./dev/ci/scripts/compare-hash.sh"
@@ -485,7 +485,7 @@ func buildExecutorBinary(c Config) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			bk.Key(candidateImageStepKey("executor.binary")),
 			bk.Env("VERSION", c.Version),
-			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./cmd/executor/build_binary.sh"))
@@ -507,7 +507,7 @@ func publishExecutorVM(c Config, skipHashCompare bool) operations.Operation {
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
-			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease))),
 		}
 		if !skipHashCompare {
 			// Publish iff not soft-failed on previous step
@@ -535,7 +535,7 @@ func publishExecutorBinary(c Config) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", c.Version),
-			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./cmd/executor/release_binary.sh"))
@@ -549,7 +549,7 @@ func publishExecutorBinary(c Config) operations.Operation {
 // build.
 func executorDockerMirrorImageFamilyForConfig(c Config) string {
 	imageFamily := "sourcegraph-executors-docker-mirror-nightly"
-	if c.RunType.Is(runtype.TaggedRelease) {
+	if c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease) {
 		ver, err := semver.NewVersion(c.Version)
 		if err != nil {
 			panic("cannot parse version")
@@ -567,7 +567,7 @@ func buildExecutorDockerMirror(c Config) operations.Operation {
 			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
-			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./cmd/executor/docker-mirror/build.sh"))
@@ -589,7 +589,7 @@ func publishExecutorDockerMirror(c Config) operations.Operation {
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", c.Version),
 			bk.Env("IMAGE_FAMILY", imageFamily),
-			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease))),
+			bk.Env("EXECUTOR_IS_TAGGED_RELEASE", strconv.FormatBool(c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease))),
 		}
 		stepOpts = append(stepOpts,
 			bk.Cmd("./cmd/executor/docker-mirror/release.sh"))
