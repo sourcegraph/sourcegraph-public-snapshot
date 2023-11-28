@@ -60,7 +60,7 @@ func Start[
 
 	// Load configuration variables from environment
 	config.Load(env)
-	contract := newContract(service.Name(), env)
+	contract := newContract(env)
 
 	// Enable Sentry error log reporting
 	if contract.sentryDSN != nil {

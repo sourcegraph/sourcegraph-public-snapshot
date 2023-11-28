@@ -41,7 +41,7 @@ type postgreSQLContract struct {
 	user                   *string
 }
 
-func newContract(serviceName string, env *Env) Contract {
+func newContract(env *Env) Contract {
 	defaultGCPProjectID := pointers.Deref(env.GetOptional("GOOGLE_CLOUD_PROJECT", "GCP project ID"), "")
 
 	return Contract{
