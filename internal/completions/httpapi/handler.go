@@ -79,9 +79,10 @@ func newCompletionsHandler(
 
 		// Use the user's access token for Cody Gateway on dotcom if PLG is enabled.
 		accessToken := completionsConfig.AccessToken
-		if envvar.SourcegraphDotComMode() &&
-			featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) &&
-			completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph {
+		isCodyProEnabled := featureflag.FromContext(ctx).GetBoolOr("cody-pro", false)
+		isDotcom := envvar.SourcegraphDotComMode()
+		isProviderCodyGateway := completionsConfig.Provider == conftypes.CompletionsProviderNameSourcegraph
+		if isCodyProEnabled && isDotcom && isProviderCodyGateway {
 			apiToken, _, err := authz.ParseAuthorizationHeader(r.Header.Get("Authorization"))
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusUnauthorized)
