@@ -6539,6 +6539,22 @@ type User implements Node & SettingsSubject & Namespace {
     The date when the user enrolled for Cody Pro.
     """
     codyProEnabledAt: DateTime
+    """
+    The start date of current billing period of Cody.
+    """
+    codyCurrentPeriodStartDate: DateTime
+    """
+    The end date of current billing period of Cody.
+    """
+    codyCurrentPeriodEndDate: DateTime
+    """
+    The count of Cody chats in the current billing period.
+    """
+    codyCurrentPeriodChatUsage: Int
+    """
+    The count of Cody code completions in the current billing period.
+    """
+    codyCurrentPeriodCodeUsage: Int
 }
 
 """
