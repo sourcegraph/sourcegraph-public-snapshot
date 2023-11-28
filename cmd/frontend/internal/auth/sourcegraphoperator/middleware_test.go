@@ -116,7 +116,7 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 	return httptest.NewServer(s), &email
 }
 
-type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response
+type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, authed bool, state string) *http.Response
 
 type mockDetails struct {
 	usersStore            *dbmocks.MockUserStore
@@ -149,7 +149,7 @@ func newMockDBAndRequester() mockDetails {
 	authedHandler.Handle("/.api/", Middleware(db).API(h))
 	authedHandler.Handle("/", Middleware(db).App(h))
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
+	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool, state string) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
@@ -158,6 +158,9 @@ func newMockDBAndRequester() mockDetails {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
 		}
 		resp := httptest.NewRecorder()
+		if state != "" {
+			session.SetData(resp, req, "oidcState", state)
+		}
 		authedHandler.ServeHTTP(resp, req)
 		return resp.Result()
 	}
@@ -195,7 +198,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("unauthenticated API request should pass through", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		resp := mocks.doRequest(http.MethodGet, "http://example.com/.api/foo", "", nil, false)
+		resp := mocks.doRequest(http.MethodGet, "http://example.com/.api/foo", "", nil, false, "")
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
@@ -203,7 +206,7 @@ func TestMiddleware(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
 		urlStr := fmt.Sprintf("http://example.com%s/login?pc=%s", authPrefix, mockProvider.ConfigID().ID)
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false, "")
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 
 		location := resp.Header.Get("Location")
@@ -227,8 +230,8 @@ func TestMiddleware(t *testing.T) {
 			ProviderID: mockProvider.ConfigID().ID,
 		}
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, badState.Encode())
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false)
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false, badState.Encode())
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	})
 
 	t.Run("callback with good CSRF should set auth cookie", func(t *testing.T) {
@@ -268,7 +271,7 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, state.Redirect, resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
@@ -304,7 +307,7 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	})
 
@@ -341,7 +344,7 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, "/", resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
@@ -384,7 +387,7 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
 		body, err := io.ReadAll(resp.Body)
