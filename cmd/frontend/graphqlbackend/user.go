@@ -197,7 +197,7 @@ func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (*int32, 
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate()
+	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (*int32, 
 		return nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
-	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate()
+	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -230,50 +230,43 @@ func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (*int32, 
 	return &intCount, err
 }
 
-func (r *UserResolver) CodyCurrentPeriodStartDate() (*gqlutil.DateTime, error) {
-	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
-	}
+func (r *UserResolver) CodyCurrentPeriodStartDate(ctx context.Context) (*gqlutil.DateTime, error) {
+	startDate, _, err := r.codyCurrentPeriodDateRange(ctx)
 
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// settings, because they may contain secrets or other sensitive data.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return nil, err
-	}
-
-	subscriptionStartDate := r.user.CreatedAt
-	if r.user.CodyProEnabledAt != nil {
-		subscriptionStartDate = *r.user.CodyProEnabledAt
-	}
-
-	currentDate := time.Now()
-	startMonth := currentDate
-	startDayOfTheMonth := subscriptionStartDate.Day()
-
-	// Check if the current day is smaller than the target day
-	if currentDate.Day() < startDayOfTheMonth {
-		// Set to target day of the previous month
-		startMonth = currentDate.AddDate(0, -1, 0)
-	}
-
-	daysInMonth := time.Date(startMonth.Year(), startMonth.Month()+1, 0, 0, 0, 0, 0, startMonth.Location()).Day()
-
-	if startDayOfTheMonth > daysInMonth {
-		startDayOfTheMonth = daysInMonth
-	}
-
-	return &gqlutil.DateTime{Time: time.Date(startMonth.Year(), startMonth.Month(), startDayOfTheMonth, 0, 0, 0, 0, startMonth.Location())}, nil
+	return startDate, err
 }
 
-func (r *UserResolver) CodyCurrentPeriodEndDate() (*gqlutil.DateTime, error) {
+func (r *UserResolver) CodyCurrentPeriodEndDate(ctx context.Context) (*gqlutil.DateTime, error) {
+	_, endDate, err := r.codyCurrentPeriodDateRange(ctx)
+
+	return endDate, err
+}
+
+type currentTimeCtxKey int
+
+const mockCurrentTimeKey currentTimeCtxKey = iota
+
+func currentTimeFromCtx(ctx context.Context) time.Time {
+	t, ok := ctx.Value(mockCurrentTimeKey).(*time.Time)
+	if !ok || t == nil {
+		return time.Now()
+	}
+	return *t
+}
+
+func withCurrentTimeMock(ctx context.Context, t time.Time) context.Context {
+	return context.WithValue(ctx, mockCurrentTimeKey, &t)
+}
+
+func (r *UserResolver) codyCurrentPeriodDateRange(ctx context.Context) (*gqlutil.DateTime, *gqlutil.DateTime, error) {
 	if !envvar.SourcegraphDotComMode() {
-		return nil, errors.New("this feature is only available on sourcegraph.com")
+		return nil, nil, errors.New("this feature is only available on sourcegraph.com")
 	}
 
 	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// settings, because they may contain secrets or other sensitive data.
+	// settings because they may contain secrets or other sensitive data.
 	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	subscriptionStartDate := r.user.CreatedAt
@@ -281,23 +274,36 @@ func (r *UserResolver) CodyCurrentPeriodEndDate() (*gqlutil.DateTime, error) {
 		subscriptionStartDate = *r.user.CodyProEnabledAt
 	}
 
-	currentDate := time.Now()
+	// to allow mocking current time during tests
+	currentDate := currentTimeFromCtx(ctx)
+	targetDay := subscriptionStartDate.Day()
+	startDayOfTheMonth := targetDay
+	endDayOfTheMonth := targetDay - 1
+	startMonth := currentDate
 	endMonth := currentDate
-	endDayOfTheMonth := subscriptionStartDate.Day()
 
-	// Check if the current day is smaller than the target day
-	if currentDate.Day() >= endDayOfTheMonth {
+	if currentDate.Day() < targetDay {
+		// Set to target day of the previous month
+		startMonth = currentDate.AddDate(0, -1, 0)
+	} else {
 		// Set to target day of the next month
 		endMonth = currentDate.AddDate(0, 1, 0)
 	}
 
-	daysInMonth := time.Date(endMonth.Year(), endMonth.Month()+1, 0, 0, 0, 0, 0, endMonth.Location()).Day()
-
-	if endDayOfTheMonth > daysInMonth {
-		endDayOfTheMonth = daysInMonth
+	daysInStartingMonth := time.Date(startMonth.Year(), startMonth.Month()+1, 0, 0, 0, 0, 0, startMonth.Location()).Day()
+	if startDayOfTheMonth > daysInStartingMonth {
+		startDayOfTheMonth = daysInStartingMonth
 	}
 
-	return &gqlutil.DateTime{Time: time.Date(endMonth.Year(), endMonth.Month(), endDayOfTheMonth, 0, 0, 0, 0, endMonth.Location())}, nil
+	daysInEndingMonth := time.Date(endMonth.Year(), endMonth.Month()+1, 0, 0, 0, 0, 0, endMonth.Location()).Day()
+	if endDayOfTheMonth > daysInEndingMonth {
+		endDayOfTheMonth = daysInEndingMonth
+	}
+
+	startDate := &gqlutil.DateTime{Time: time.Date(startMonth.Year(), startMonth.Month(), startDayOfTheMonth, 0, 0, 0, 0, startMonth.Location())}
+	endDate := &gqlutil.DateTime{Time: time.Date(endMonth.Year(), endMonth.Month(), endDayOfTheMonth, 23, 59, 59, 59, endMonth.Location())}
+
+	return startDate, endDate, nil
 }
 
 func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {
