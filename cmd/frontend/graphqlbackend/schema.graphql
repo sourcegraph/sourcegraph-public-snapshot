@@ -6555,6 +6555,14 @@ type User implements Node & SettingsSubject & Namespace {
     The count of Cody code completions in the current billing period.
     """
     codyCurrentPeriodCodeUsage: Int
+    """
+    The limit of Cody chats for the current billing period.
+    """
+    codyCurrentPeriodChatLimit: Int
+    """
+    The limit of Cody code completions for the current billing period.
+    """
+    codyCurrentPeriodCodeLimit: Int
 }
 
 """

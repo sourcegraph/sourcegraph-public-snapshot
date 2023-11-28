@@ -192,6 +192,38 @@ func (r *UserResolver) CodyProEnabled(ctx context.Context) bool {
 	return r.CodyProEnabledAt(ctx) != nil
 }
 
+func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (*int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	if r.user.CodyProEnabledAt != nil {
+		return nil, nil
+	}
+
+	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+
+	limit := int32(cfg.PerCommunityUserChatMonthlyInteractionLimit)
+
+	return &limit, nil
+}
+
+func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (*int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	if r.user.CodyProEnabledAt != nil {
+		return nil, nil
+	}
+
+	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+
+	limit := int32(cfg.PerCommunityUserCodeCompletionsMonthlyInteractionLimit)
+
+	return &limit, nil
+}
+
 func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (*int32, error) {
 	if !envvar.SourcegraphDotComMode() {
 		return nil, errors.New("this feature is only available on sourcegraph.com")
