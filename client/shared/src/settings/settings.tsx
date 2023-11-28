@@ -308,7 +308,7 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     showMultilineSearchConsole: false,
     codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
-    showFullTreeContext: true,
+    showFullTreeContext: false,
     codeInsightsCompute: false,
     editor: 'codemirror6',
     codeInsightsRepoUI: 'search-query-or-strict-list',
