@@ -82,6 +82,8 @@ func main() {
 func previewPipeline(w io.Writer, c ci.Config, pipeline *buildkite.Pipeline) {
 	fmt.Fprintf(w, "- **Detected run type:** %s\n", c.RunType.String())
 	fmt.Fprintf(w, "- **Detected diffs:** %s\n", c.Diff.String())
+	fmt.Fprintf(w, "- **Computed variables:**\n")
+	fmt.Fprintf(w, "  - VERSION=%s\n", c.Version)
 	fmt.Fprintf(w, "- **Computed build steps:**\n")
 	printPipeline(w, "", pipeline)
 }
