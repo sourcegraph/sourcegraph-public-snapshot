@@ -165,7 +165,7 @@ func opsUpdateImages(
 		var registry images.Registry
 		switch registryType {
 		case "internal":
-			gcr := images.NewGCR("us.gcr.io", "sourcegraph-dev")
+			gcr := images.NewGCR("us-central1-docker.pkg.dev", "sourcegraph-ci/rfc795-public")
 			if err := gcr.LoadToken(); err != nil {
 				return err
 			}
