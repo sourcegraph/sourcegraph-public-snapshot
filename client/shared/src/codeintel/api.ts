@@ -236,25 +236,12 @@ export function injectNewCodeintel(
     old: FlatExtensionHostAPI,
     codeintelContext: sourcegraph.CodeIntelContext
 ): FlatExtensionHostAPI {
-    const codeintelOverrides = newCodeIntelExtensionHostAPI(codeintelContext)
-
-    return new Proxy(old, {
-        get(target, prop) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-            const codeintelFunction = (codeintelOverrides as any)[prop]
-            if (codeintelFunction) {
-                return codeintelFunction
-            }
-            // eslint-disable-next-line prefer-rest-params
-            return Reflect.get(target, prop, ...arguments)
-        },
-    })
+    const api = createCodeIntelAPI(codeintelContext)
+    const codeintelOverrides = newCodeIntelExtensionHostAPI(api)
+    return { ...old, ...codeintelOverrides }
 }
 
-export function newCodeIntelExtensionHostAPI(
-    codeintelContext: sourcegraph.CodeIntelContext
-): CodeIntelExtensionHostAPI {
-    const codeintel = createCodeIntelAPI(codeintelContext)
+export function newCodeIntelExtensionHostAPI(codeintel: CodeIntelAPI): CodeIntelExtensionHostAPI {
     function thenMaybeLoadingResult<T>(promise: Observable<T>): Observable<MaybeLoadingResult<T>> {
         return promise.pipe(
             map(result => {
