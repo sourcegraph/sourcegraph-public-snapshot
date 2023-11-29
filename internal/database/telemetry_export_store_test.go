@@ -102,7 +102,7 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		Action:    "View",
 		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 1, 0, 0, 0, time.UTC)),
 		Parameters: &telemetrygatewayv1.EventParameters{
-			Metadata: map[string]int64{"public": 1},
+			Metadata: map[string]float64{"public": 1},
 		},
 	}, {
 		Id:        "2",
