@@ -130,9 +130,18 @@ message EventParameters {
   // event's metadata, beginning at 0. Useful for denoting if the shape of
   // metadata has changed in any way.
   int32 version = 1;
+
+  // Legacy metadata format that only accepted int64 - use the new metadata
+  // field instead, which accepts float values. Values sent through this proto
+  // field will be merged into the new metadata attributes.
+  //
+  // We don't use a [deprecated = true] tag because we use this field to handle
+  // accepting exporters sending metadata in this format.
+  map<string, int64> legacy_metadata = 2;
   // Strictly typed metadata, restricted to integer values to avoid accidentally
   // exporting sensitive or private data.
-  map<string, int64> metadata = 2;
+  map<string, double> metadata = 5;
+
   // Additional potentially sensitive metadata - i.e. not restricted to integer
   // values.
   //
