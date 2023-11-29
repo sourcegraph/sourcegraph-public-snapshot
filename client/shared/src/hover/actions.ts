@@ -36,7 +36,6 @@ import type { FlatExtensionHostAPI } from '../api/contract'
 import type { WorkspaceRootWithMetadata } from '../api/extension/extensionHostApi'
 import { syncRemoteSubscription } from '../api/util'
 import { resolveRawRepoName } from '../backend/repo'
-import { languageSpecs } from '../codeintel/legacy-extensions/language-specs/languages'
 import { getContributedActionItems } from '../contributions/contributions'
 import type { Controller, ExtensionsControllerProps } from '../extensions/controller'
 import type { PlatformContext, PlatformContextProps, URLToFileContext } from '../platform/context'
@@ -487,61 +486,7 @@ export function registerHoverContributions({
             })
             subscriptions.add(syncRemoteSubscription(referencesContributionPromise))
 
-            let implementationsContributionPromise: Promise<unknown> = Promise.resolve()
-            /**
-             * Register find implementations contributions only for Sourcegraph web app.
-             * Other client applications (browser extension, VSCode extension) use code-intel extensions bundles with
-             * "Find implementations" action defined (see https://github.com/sourcegraph/sourcegraph/pull/49025 description).
-             */
-            if (clientApplication === 'sourcegraph') {
-                const promise = extensionHostAPI.registerContributions({
-                    actions: [
-                        ...languageSpecs.map(spec => ({
-                            actionItem: { label: 'Find implementations' },
-                            command: 'open',
-                            commandArguments: [
-                                "${get(context, 'implementations_" +
-                                    spec.languageID +
-                                    "') && get(context, 'panel.url') && sub(get(context, 'panel.url'), 'panelID', 'implementations_" +
-                                    spec.languageID +
-                                    "') || 'noop'}",
-                            ],
-                            id: 'findImplementations_' + spec.languageID,
-                            title: 'Find implementations',
-                        })),
-                    ],
-                    menus: {
-                        hover: languageSpecs.map(spec => ({
-                            action: 'findImplementations_' + spec.languageID,
-                            when:
-                                "resource.language == '" +
-                                spec.languageID +
-                                // eslint-disable-next-line no-template-curly-in-string
-                                "' && get(context, `implementations_${resource.language}`) && (goToDefinition.showLoading || goToDefinition.url || goToDefinition.error)",
-                        })),
-                    },
-                })
-                implementationsContributionPromise = promise
-                subscriptions.add(syncRemoteSubscription(promise))
-                for (const spec of languageSpecs) {
-                    if (spec.textDocumentImplemenationSupport) {
-                        extensionHostAPI
-                            .updateContext({
-                                [`implementations_${spec.languageID}`]: true,
-                            })
-                            .then(
-                                () => {},
-                                () => {}
-                            )
-                    }
-                }
-            }
-
-            return Promise.all([
-                definitionContributionsPromise,
-                referencesContributionPromise,
-                implementationsContributionPromise,
-            ])
+            return Promise.all([definitionContributionsPromise, referencesContributionPromise])
         })
         // Don't expose remote subscriptions, only sync subscriptions bag
         .then(() => undefined)
