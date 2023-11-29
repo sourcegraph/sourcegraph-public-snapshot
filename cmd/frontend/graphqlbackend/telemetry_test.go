@@ -59,7 +59,7 @@ func TestTelemetryRecordEvents(t *testing.T) {
 			},
 		},
 		{
-			name: "object privateMetadata",
+			name: "metadata with standard object privateMetadata",
 			gqlEventsInput: `
 				{
 					feature: "cody.fixup"
@@ -96,6 +96,11 @@ func TestTelemetryRecordEvents(t *testing.T) {
 				// Sanity check strucpb marshalling used in cmd/frontend/internal/telemetry/resolvers
 				_, err := structpb.NewStruct(v)
 				require.NoError(t, err)
+
+				md := *gotEvents[0].Parameters.Metadata
+				require.Len(t, md, 2)
+				assert.Equal(t, int32(1), md[0].Value.Value)
+				assert.Equal(t, int32(0), md[1].Value.Value)
 			},
 		},
 		{
@@ -110,16 +115,6 @@ func TestTelemetryRecordEvents(t *testing.T) {
 					}
 					parameters: {
 						version: 0
-						metadata: [
-							{
-								key: "contextSelection",
-								value: 1
-							},
-							{
-								key: "chatPredictions",
-								value: 0
-							},
-						]
 						privateMetadata: "some value"
 					}
 				}
@@ -150,16 +145,6 @@ func TestTelemetryRecordEvents(t *testing.T) {
 					}
 					parameters: {
 						version: 0
-						metadata: [
-							{
-								key: "contextSelection",
-								value: 1
-							},
-							{
-								key: "chatPredictions",
-								value: 0
-							},
-						]
 						privateMetadata: 12
 					}
 				}
@@ -176,6 +161,45 @@ func TestTelemetryRecordEvents(t *testing.T) {
 				// Sanity check strucpb marshalling used in cmd/frontend/internal/telemetry/resolvers
 				_, err := structpb.NewValue(value)
 				require.NoError(t, err)
+			},
+		},
+		{
+			name: "different numeric values in metadata",
+			gqlEventsInput: `
+				{
+					feature: "cody.fixup"
+					action: "applied"
+					source: {
+						client: "VSCode.Cody",
+						clientVersion: "0.14.1"
+					}
+					parameters: {
+						version: 0
+						metadata: [
+							{
+								key: "contextSelection",
+								value: 1
+							},
+							{
+								key: "chatPredictions",
+								value: 0
+							},
+							{
+								key: "fooBar",
+								value: 3.14
+							},
+						]
+					}
+				}
+			`,
+			assert: func(t *testing.T, gotEvents []TelemetryEventInput) {
+				// Check PrivateMetadata
+				require.Len(t, gotEvents, 1)
+				md := *gotEvents[0].Parameters.Metadata
+				require.Len(t, md, 3)
+				assert.Equal(t, int32(1), md[0].Value.Value)
+				assert.Equal(t, int32(0), md[1].Value.Value)
+				assert.Equal(t, 3.14, md[2].Value.Value)
 			},
 		},
 	} {

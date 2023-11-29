@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// newTelemetryGatewayEvents converts GraphQL telemetry input to the Telemetry
+// Gateway wire format.
 func newTelemetryGatewayEvents(
 	ctx context.Context,
 	now time.Time,
@@ -32,6 +34,31 @@ func newTelemetryGatewayEvents(
 				event.Interaction = &telemetrygatewayv1.EventInteraction{}
 			}
 			event.Interaction.InteractionId = gqlEvent.Parameters.InteractionID
+		}
+
+		// Parse metadata
+		var metadata map[string]float64
+		if gqlEvent.Parameters.Metadata != nil && len(*gqlEvent.Parameters.Metadata) != 0 {
+			metadata = make(map[string]float64, len(*gqlEvent.Parameters.Metadata))
+			for _, kv := range *gqlEvent.Parameters.Metadata {
+				switch v := kv.Value.Value.(type) {
+				case int:
+					metadata[kv.Key] = float64(v)
+				case int8:
+					metadata[kv.Key] = float64(v)
+				case int32:
+					metadata[kv.Key] = float64(v)
+				case int64:
+					metadata[kv.Key] = float64(v)
+				case float32:
+					metadata[kv.Key] = float64(v)
+				case float64:
+					metadata[kv.Key] = v
+				default:
+					return gatewayEvents,
+						errors.Newf("metadata %q has invalid value type %T", kv.Key, v)
+				}
+			}
 		}
 
 		// Parse private metadata
@@ -60,17 +87,8 @@ func newTelemetryGatewayEvents(
 
 		// Configure parameters
 		event.Parameters = &telemetrygatewayv1.EventParameters{
-			Version: gqlEvent.Parameters.Version,
-			Metadata: func() map[string]int64 {
-				if gqlEvent.Parameters.Metadata == nil || len(*gqlEvent.Parameters.Metadata) == 0 {
-					return nil
-				}
-				metadata := make(map[string]int64, len(*gqlEvent.Parameters.Metadata))
-				for _, kv := range *gqlEvent.Parameters.Metadata {
-					metadata[kv.Key] = int64(kv.Value)
-				}
-				return metadata
-			}(),
+			Version:         gqlEvent.Parameters.Version,
+			Metadata:        metadata,
 			PrivateMetadata: privateMetadata,
 			BillingMetadata: func() *telemetrygatewayv1.EventBillingMetadata {
 				if gqlEvent.Parameters.BillingMetadata == nil {
