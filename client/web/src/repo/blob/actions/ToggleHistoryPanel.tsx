@@ -1,7 +1,6 @@
 import * as React from 'react'
 
 import { mdiHistory } from '@mdi/js'
-import classNames from 'classnames'
 import type { Location, NavigateFunction, To } from 'react-router-dom'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
