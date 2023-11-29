@@ -60,6 +60,7 @@ export const APP_ROUTES: RouteObject[] = [
                         sideBarGroups={props.siteAdminSideBarGroups}
                         overviewComponents={props.siteAdminOverviewComponents}
                         codeInsightsEnabled={!!props.codeInsightsEnabled}
+                        telemetryRecorder={window.context.telemetryRecorder}
                     />
                 )}
             />

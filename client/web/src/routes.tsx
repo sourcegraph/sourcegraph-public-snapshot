@@ -120,6 +120,7 @@ export const routes: RouteObject[] = [
                         sideBarGroups={props.siteAdminSideBarGroups}
                         overviewComponents={props.siteAdminOverviewComponents}
                         codeInsightsEnabled={window.context.codeInsightsEnabled}
+                        telemetryRecorder={window.context.telemetryRecorder}
                     />
                 )}
             />
@@ -155,8 +156,11 @@ export const routes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => (
-                    <CodySidebarStoreProvider authenticatedUser={props.authenticatedUser}>
-                        <RepoContainer {...props} />
+                    <CodySidebarStoreProvider
+                        authenticatedUser={props.authenticatedUser}
+                        telemetryRecorder={window.context.telemetryRecorder}
+                    >
+                        <RepoContainer {...props} telemetryRecorder={window.context.telemetryRecorder} />
                     </CodySidebarStoreProvider>
                 )}
             />

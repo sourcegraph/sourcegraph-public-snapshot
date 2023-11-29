@@ -1,5 +1,6 @@
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import type { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { TelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import type { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
 import type { TemporarySettingsResult } from './graphql-operations'
@@ -282,6 +283,8 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
+
+    telemetryRecorder: TelemetryRecorder
 }
 
 export interface BrandAssets {

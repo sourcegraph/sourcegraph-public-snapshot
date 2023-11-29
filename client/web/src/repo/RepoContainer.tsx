@@ -24,7 +24,7 @@ import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { EditorHint, type SearchContextProps } from '@sourcegraph/shared/src/search'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
+import { TelemetryRecorder, TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -133,6 +133,7 @@ interface RepoContainerProps
     authenticatedUser: AuthenticatedUser | null
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
+    telemetryRecorder: TelemetryRecorder
 }
 
 export interface HoverThresholdProps {
