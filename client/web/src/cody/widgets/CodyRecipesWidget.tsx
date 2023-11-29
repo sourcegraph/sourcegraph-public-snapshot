@@ -17,7 +17,8 @@ import { Recipes } from './components/Recipes'
 
 export const CodyRecipesWidget: React.FC<{ editor?: CodeMirrorEditor }> = ({ editor }) => {
     useEffect(() => {
-        eventLogger.log(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED)
+        window.context.telemetryRecorder.recordEvent(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED, 'viewed')
+        eventLogger.log(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED, { hasV2Telemetry: true })
     }, [])
 
     // dirty fix becasue it is rendered under a separate React DOM tree.
