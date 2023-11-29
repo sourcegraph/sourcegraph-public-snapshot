@@ -16,19 +16,28 @@ func newTelemetryGatewayEvents(
 	ctx context.Context,
 	now time.Time,
 	newUUID func() string,
-	events []graphqlbackend.TelemetryEventInput,
+	gqlEvents []graphqlbackend.TelemetryEventInput,
 ) ([]*telemetrygatewayv1.Event, error) {
-	gatewayEvents := make([]*telemetrygatewayv1.Event, len(events))
-	for i, e := range events {
+	gatewayEvents := make([]*telemetrygatewayv1.Event, len(gqlEvents))
+	for i, gqlEvent := range gqlEvents {
 		event := telemetrygatewayv1.NewEventWithDefaults(ctx, now, newUUID)
 
-		event.Feature = e.Feature
-		event.Action = e.Action
+		event.Feature = gqlEvent.Feature
+		event.Action = gqlEvent.Action
+
+		// Override interaction ID, or just set it, if an interaction ID is
+		// explicitly provided as part of event data.
+		if gqlEvent.Parameters.InteractionID != nil && len(*gqlEvent.Parameters.InteractionID) > 0 {
+			if event.Interaction == nil {
+				event.Interaction = &telemetrygatewayv1.EventInteraction{}
+			}
+			event.Interaction.InteractionId = gqlEvent.Parameters.InteractionID
+		}
 
 		// Parse private metadata
 		var privateMetadata *structpb.Struct
-		if e.Parameters.PrivateMetadata != nil {
-			switch v := e.Parameters.PrivateMetadata.Value.(type) {
+		if gqlEvent.Parameters.PrivateMetadata != nil {
+			switch v := gqlEvent.Parameters.PrivateMetadata.Value.(type) {
 			// If the input is an object, turn it into proto struct as-is
 			case map[string]any:
 				var err error
@@ -51,25 +60,25 @@ func newTelemetryGatewayEvents(
 
 		// Configure parameters
 		event.Parameters = &telemetrygatewayv1.EventParameters{
-			Version: e.Parameters.Version,
+			Version: gqlEvent.Parameters.Version,
 			Metadata: func() map[string]int64 {
-				if e.Parameters.Metadata == nil || len(*e.Parameters.Metadata) == 0 {
+				if gqlEvent.Parameters.Metadata == nil || len(*gqlEvent.Parameters.Metadata) == 0 {
 					return nil
 				}
-				metadata := make(map[string]int64, len(*e.Parameters.Metadata))
-				for _, kv := range *e.Parameters.Metadata {
+				metadata := make(map[string]int64, len(*gqlEvent.Parameters.Metadata))
+				for _, kv := range *gqlEvent.Parameters.Metadata {
 					metadata[kv.Key] = int64(kv.Value)
 				}
 				return metadata
 			}(),
 			PrivateMetadata: privateMetadata,
 			BillingMetadata: func() *telemetrygatewayv1.EventBillingMetadata {
-				if e.Parameters.BillingMetadata == nil {
+				if gqlEvent.Parameters.BillingMetadata == nil {
 					return nil
 				}
 				return &telemetrygatewayv1.EventBillingMetadata{
-					Product:  e.Parameters.BillingMetadata.Product,
-					Category: e.Parameters.BillingMetadata.Category,
+					Product:  gqlEvent.Parameters.BillingMetadata.Product,
+					Category: gqlEvent.Parameters.BillingMetadata.Category,
 				}
 			}(),
 		}
@@ -78,21 +87,21 @@ func newTelemetryGatewayEvents(
 				Version: version.Version(),
 			},
 			Client: &telemetrygatewayv1.EventSource_Client{
-				Name:    e.Source.Client,
-				Version: e.Source.ClientVersion,
+				Name:    gqlEvent.Source.Client,
+				Version: gqlEvent.Source.ClientVersion,
 			},
 		}
 
-		if e.MarketingTracking != nil {
+		if gqlEvent.MarketingTracking != nil {
 			event.MarketingTracking = &telemetrygatewayv1.EventMarketingTracking{
-				Url:             e.MarketingTracking.Url,
-				FirstSourceUrl:  e.MarketingTracking.FirstSourceURL,
-				CohortId:        e.MarketingTracking.CohortID,
-				Referrer:        e.MarketingTracking.Referrer,
-				LastSourceUrl:   e.MarketingTracking.LastSourceURL,
-				DeviceSessionId: e.MarketingTracking.DeviceSessionID,
-				SessionReferrer: e.MarketingTracking.SessionReferrer,
-				SessionFirstUrl: e.MarketingTracking.SessionFirstURL,
+				Url:             gqlEvent.MarketingTracking.Url,
+				FirstSourceUrl:  gqlEvent.MarketingTracking.FirstSourceURL,
+				CohortId:        gqlEvent.MarketingTracking.CohortID,
+				Referrer:        gqlEvent.MarketingTracking.Referrer,
+				LastSourceUrl:   gqlEvent.MarketingTracking.LastSourceURL,
+				DeviceSessionId: gqlEvent.MarketingTracking.DeviceSessionID,
+				SessionReferrer: gqlEvent.MarketingTracking.SessionReferrer,
+				SessionFirstUrl: gqlEvent.MarketingTracking.SessionFirstURL,
 			}
 		}
 
