@@ -186,14 +186,15 @@ func triggerBackCompatTest(buildOpts bk.BuildOptions, isAspectWorkflows bool) fu
 	}
 	return func(pipeline *bk.Pipeline) {
 		steps := []bk.StepOpt{
-			bk.Async(true),
 			bk.Key("trigger-backcompat"),
 			bk.AllowDependencyFailure(),
 			bk.Build(buildOpts),
 		}
 
 		if !isAspectWorkflows {
-			steps = append(steps, bk.DependsOn("bazel-prechecks"))
+			steps = append(steps, bk.Async(true), bk.DependsOn("bazel-prechecks"))
+		} else {
+			steps = append(steps, bk.Async(false))
 		}
 		pipeline.AddTrigger(":bazel::snail: Async BackCompat Tests", "sourcegraph-backcompat", steps...)
 	}
