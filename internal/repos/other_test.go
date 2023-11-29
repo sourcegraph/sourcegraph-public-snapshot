@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -158,7 +159,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(fmt.Sprintf(`{"url": %q, "repos": ["%s"]}`, s.URL, "src-expose")),
-	}, nil, nil)
+	}, httpcli.TestExternalClientFactory, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,7 +334,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 		ID:     1,
 		Kind:   extsvc.KindOther,
 		Config: extsvc.NewUnencryptedConfig(string(config)),
-	}, nil, nil)
+	}, httpcli.TestExternalClientFactory, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
