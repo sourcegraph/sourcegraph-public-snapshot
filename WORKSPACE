@@ -368,10 +368,6 @@ load("//dev:oci_deps.bzl", "oci_deps")
 
 oci_deps()
 
-load("//cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
-
-embbedings_assets_deps()
-
 load("@container_structure_test//:repositories.bzl", "container_structure_test_register_toolchain")
 
 container_structure_test_register_toolchain(name = "cst")
