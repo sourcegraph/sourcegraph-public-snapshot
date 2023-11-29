@@ -30,6 +30,7 @@ interface CodeSearchPageProps {
 
 export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ authenticatedUser }) => {
     useEffect(() => {
+        window.context.telemetryRecorder.recordEvent('CodySearch', 'viewed')
         eventLogger.logPageView('CodySearch')
     }, [])
 
@@ -64,6 +65,9 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
             !isPrivateInstance ? { input: sanitizedInput } : null,
             !isPrivateInstance ? { input: sanitizedInput } : null
         )
+        window.context.telemetryRecorder.recordEvent('web.codySearch', 'submitted', {
+            privateMetadata: { input: !isPrivateInstance ? { input: sanitizedInput } : null },
+        })
         setLoading(true)
         translateToQuery(sanitizedInput, authenticatedUser).then(
             query => {
@@ -75,6 +79,11 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                         !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null,
                         !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null
                     )
+                    window.context.telemetryRecorder.recordEvent('web.codySearch.submit', 'succeeded', {
+                        privateMetadata: {
+                            input: !isPrivateInstance ? { input: sanitizedInput, translatedQuery: query } : null,
+                        },
+                    })
                     setCodySearchInput(JSON.stringify({ input: sanitizedInput, translatedQuery: query }))
                     navigate({
                         pathname: '/search',
@@ -86,6 +95,11 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                         !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null,
                         !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null
                     )
+                    window.context.telemetryRecorder.recordEvent('web.codySearch.submit', 'failed', {
+                        privateMetadata: {
+                            input: !isPrivateInstance ? { input: sanitizedInput, reason: 'untranslatable' } : null,
+                        },
+                    })
                     setInputError('Cody does not understand this query. Try rephrasing it.')
                 }
             },
@@ -107,6 +121,17 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
                           }
                         : null
                 )
+                window.context.telemetryRecorder.recordEvent('web.codySearch.submit', 'failed', {
+                    privateMetadata: {
+                        input: !isPrivateInstance
+                            ? {
+                                  input: sanitizedInput,
+                                  reason: 'unreachable',
+                                  error: error?.message,
+                              }
+                            : null,
+                    },
+                })
                 setLoading(false)
                 setInputError(`Unable to reach Cody. Error: ${error?.message}`)
             }
