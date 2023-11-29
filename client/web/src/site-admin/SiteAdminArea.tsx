@@ -7,6 +7,7 @@ import { Routes, Route } from 'react-router-dom'
 import type { SiteSettingFields } from '@sourcegraph/shared/src/graphql-operations'
 import type { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { PageHeader, LoadingSpinner } from '@sourcegraph/wildcard'
 
@@ -48,7 +49,8 @@ export interface SiteAdminAreaRouteContext
     extends PlatformContextProps,
         SettingsCascadeProps,
         BatchChangesProps,
-        TelemetryProps {
+        TelemetryProps,
+        TelemetryV2Props {
     site: Pick<SiteSettingFields, '__typename' | 'id'>
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
@@ -64,7 +66,12 @@ export interface SiteAdminAreaRouteContext
 
 export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
 
-interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps, BatchChangesProps, TelemetryProps {
+interface SiteAdminAreaProps
+    extends PlatformContextProps,
+        SettingsCascadeProps,
+        BatchChangesProps,
+        TelemetryProps,
+        TelemetryV2Props {
     routes: readonly SiteAdminAreaRoute[]
     sideBarGroups: SiteAdminSideBarGroups
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -136,6 +143,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
         telemetryService: props.telemetryService,
+        telemetryRecorder: props.telemetryRecorder,
         codeInsightsEnabled: props.codeInsightsEnabled,
         endUserOnboardingEnabled,
     }
