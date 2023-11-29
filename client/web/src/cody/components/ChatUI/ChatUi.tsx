@@ -39,7 +39,10 @@ import styles from './ChatUi.module.scss'
 
 export const SCROLL_THRESHOLD = 100
 
-const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
+const onFeedbackSubmit = (feedback: string): void => {
+    eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
+    window.context.telemetryRecorder.recordEvent(`web.cody.feedbacksubmit.${feedback}`, 'submitted')
+}
 
 interface IChatUIProps {
     codyChatStore: CodyChatStore
@@ -279,7 +282,12 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
             <Link
                 to="/get-cody"
                 className="d-inline-block w-100 ml-auto text-right font-italic"
-                onClick={() => eventLogger.log(EventName.CODY_CTA, { location: EventLocation.CHAT_RESPONSE })}
+                onClick={() => {
+                    eventLogger.log(EventName.CODY_CTA, { location: EventLocation.CHAT_RESPONSE })
+                    window.context.telemetryRecorder.recordEvent(EventName.CODY_CTA, 'clicked', {
+                        privateMetadata: { location: EventLocation.CHAT_RESPONSE },
+                    })
+                }}
             >
                 Use commands, autocomplete and more in your IDE.
             </Link>
