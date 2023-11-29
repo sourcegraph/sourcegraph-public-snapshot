@@ -3,7 +3,13 @@ package requestclient
 import (
 	"net/http"
 	"strings"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
+
+var useCloudflareHeaders = env.MustGetBool("SRC_USE_CLOUDFLARE_HEADERS",
+	envvar.SourcegraphDotComMode(), "Use Cloudflare headers for request metadata")
 
 const (
 	// Sourcegraph-specific client IP header key
@@ -65,9 +71,8 @@ func InternalHTTPMiddleware(next http.Handler) http.Handler {
 // incoming requests to the request header.
 //
 // In Sourcegraph.com and Sourcegraph Cloud, we have a more reliable headers from
-// Cloudflare via Cloudflare WAF. When creating an externally-facing handler, we
-// always try to find these Cloudflare headers - as this is a best-effort, we just
-// hope they are not spoofed in a non-Cloudflare environment. We have a debug endpoint
+// Cloudflare via Cloudflare WAF, so environments that use Cloudflare can opt-in
+// to Cloudflare-provided headers on external handlers. We have a debug endpoint
 // that lets you confirm the presence of various headers:
 //
 //	curl --silent https://sourcegraph.com/-/debug/headers | grep Cf-
@@ -76,7 +81,7 @@ func InternalHTTPMiddleware(next http.Handler) http.Handler {
 // https://developers.cloudflare.com/fundamentals/reference/http-request-headers
 func httpMiddleware(next http.Handler, external bool) http.Handler {
 	forwardedForHeaders := []string{headerKeyForwardedFor}
-	if external {
+	if external && useCloudflareHeaders {
 		// Try to find trusted Cloudflare-provided connecting client IP.
 		// https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#x-forwarded-for
 		forwardedForHeaders = []string{"Cf-Connecting-Ip", headerKeyForwardedFor}
@@ -92,7 +97,7 @@ func httpMiddleware(next http.Handler, external bool) http.Handler {
 		}
 
 		var wafIPCountryCode string
-		if external {
+		if external && useCloudflareHeaders {
 			// Try to find trusted Cloudflare-provided country code of the request.
 			// https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#cf-ipcountry
 			//
