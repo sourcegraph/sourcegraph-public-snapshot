@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"net/http"
 	"strconv"
@@ -30,6 +32,7 @@ const maxRequestDuration = time.Minute
 
 func newCompletionsHandler(
 	logger log.Logger,
+	userStore database.UserStore,
 	events *telemetry.EventRecorder,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
@@ -104,6 +107,7 @@ func newCompletionsHandler(
 			completionsConfig.Provider,
 			accessToken,
 		)
+		l := trace.Logger(ctx, logger)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -113,10 +117,25 @@ func newCompletionsHandler(
 		err = rl.TryAcquire(ctx)
 		if err != nil {
 			if unwrap, ok := err.(RateLimitExceededError); ok {
+				actor := sgactor.FromContext(ctx)
+				user, err := actor.User(ctx, userStore)
+				if err != nil {
+					l.Error("Error while fetching user", log.Error(err))
+					http.Error(w, "Internal server error", http.StatusInternalServerError)
+					return
+				}
+				if isDotcom && isCodyProEnabled {
+					if user.CodyProEnabledAt != nil {
+						w.Header().Set("x-is-cody-pro-user", "true")
+					} else {
+						w.Header().Set("x-is-cody-pro-user", "false")
+					}
+				}
 				respondRateLimited(w, unwrap)
 				return
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			l.Warn("Rate limit error", log.Error(err))
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
