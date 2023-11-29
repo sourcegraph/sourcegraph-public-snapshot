@@ -474,8 +474,8 @@ function renderNode({
                 }
             }}
         >
-            <div className={styles.iconContainer}>
-                <div className={styles.fileContainer}>
+            <div className={styles.fileContainer}>
+                <div className={styles.iconContainer}>
                     {fileInfo.extension !== FileExtension.DEFAULT ? (
                         <Icon
                             as={fileIcon?.icon}
@@ -485,7 +485,11 @@ function renderNode({
                     ) : (
                         <Icon
                             svgPath={
-                                isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline
+                                isBranch
+                                    ? isExpanded
+                                        ? mdiFolderOpenOutline
+                                        : mdiFolderOutline
+                                    : mdiFileDocumentOutline
                             }
                             className={classNames('mr-1', styles.icon)}
                             aria-hidden={true}
