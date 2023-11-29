@@ -209,7 +209,6 @@ def oci_deps():
     )
     _legacy_image_deps()
 
-
 def _legacy_image_deps():
     oci_pull(
         name = "legacy_alpine-3.14_base",
@@ -241,4 +240,3 @@ def _legacy_image_deps():
         digest = "sha256:dcc32a6d845356288186f2ced62346cf7e0120977ff1a0d6758f4e11120401f7",
         image = "index.docker.io/sourcegraph/postgres-12-alpine",
     )
-

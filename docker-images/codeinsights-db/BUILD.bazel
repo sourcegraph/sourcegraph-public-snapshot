@@ -1,4 +1,4 @@
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball", "oci_push")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("//dev:oci_defs.bzl", "image_repository")
@@ -81,4 +81,3 @@ oci_push(
     image = ":legacy_image",
     repository = image_repository("codeinsights-db"),
 )
-

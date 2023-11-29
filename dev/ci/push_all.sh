@@ -136,6 +136,7 @@ echo "-- jobfile"
 cat "$job_file"
 echo "--- done"
 
+exit 1
 echo "--- :bazel::docker: Pushing images..."
 log_file=$(mktemp)
 # shellcheck disable=SC2064
