@@ -85,6 +85,8 @@ export interface TemporarySettingsSchema {
     'admin.hasDismissedCodeHostPrivacyWarning': boolean
     'admin.hasCompletedLicenseCheck': boolean
     'simple.search.toggle': boolean
+    'cody.onboarding.completed': boolean
+    'cody.onboarding.step': number
 }
 
 /**
@@ -146,6 +148,8 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'admin.hasDismissedCodeHostPrivacyWarning': null,
     'admin.hasCompletedLicenseCheck': null,
     'simple.search.toggle': null,
+    'cody.onboarding.completed': null,
+    'cody.onboarding.step': null,
 }
 
 export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as readonly (keyof TemporarySettings)[]

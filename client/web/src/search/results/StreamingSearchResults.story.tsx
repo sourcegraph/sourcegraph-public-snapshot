@@ -45,7 +45,7 @@ const defaultProps: StreamingSearchResultsProps = {
         subjects: null,
         final: null,
     },
-    platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' },
+    platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' } as any,
 
     streamSearch: () => of(streamingSearchResult),
 
@@ -55,6 +55,7 @@ const defaultProps: StreamingSearchResultsProps = {
     searchAggregationEnabled: true,
     codeMonitoringEnabled: true,
     ownEnabled: true,
+    extensionsController: {} as any,
 }
 
 const decorator: Decorator = Story => {

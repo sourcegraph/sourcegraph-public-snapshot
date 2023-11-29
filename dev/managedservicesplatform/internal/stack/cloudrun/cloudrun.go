@@ -5,13 +5,18 @@ import (
 	"html/template"
 	"strconv"
 	"strings"
+	"sync"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
+
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/bigquery"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/cloudsql"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/postgresqlroles"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/privatenetwork"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/random"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/redis"
@@ -149,26 +154,26 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 		Description: "Resolved image tag to deploy",
 	})
 
-	// Set up build configuration.
-	cloudRunBuildVars := builder.Variables{
-		Service:           vars.Service,
-		Image:             vars.Image,
-		ResolvedImageTag:  *imageTag.StringValue,
-		Environment:       vars.Environment,
-		GCPProjectID:      vars.ProjectID,
-		GCPRegion:         gcpRegion,
-		ServiceAccount:    vars.CloudRunWorkloadServiceAccount,
-		DiagnosticsSecret: diagnosticsSecret,
-		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
-	}
-
-	if vars.Environment.Resources.NeedsCloudRunConnector() {
-		cloudRunBuildVars.PrivateNetwork = privatenetwork.New(stack, privatenetwork.Config{
+	// privateNetworkEnabled indicates if privateNetwork has been instantiated
+	// before.
+	var privateNetworkEnabled bool
+	// privateNetwork is only instantiated if used, and is only instantiated
+	// once. If called, it always returns a non-nil value.
+	privateNetwork := sync.OnceValue(func() *privatenetwork.Output {
+		privateNetworkEnabled = true
+		return privatenetwork.New(stack, privatenetwork.Config{
 			ProjectID: vars.ProjectID,
 			ServiceID: vars.Service.ID,
 			Region:    gcpRegion,
 		})
-	}
+	})
+
+	// Add MSP env var indicating that the service is running in a Managed
+	// Services Platform environment.
+	cloudRunBuilder.AddEnv("MSP", "true")
+
+	// For SSL_CERT_DIR, configure right before final build
+	sslCertDirs := []string{"/etc/ssl/certs"}
 
 	// redisInstance is only created and non-nil if Redis is configured for the
 	// environment.
@@ -177,13 +182,14 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			resourceid.New("redis"),
 			redis.Config{
 				ProjectID: vars.ProjectID,
-				Network:   cloudRunBuildVars.PrivateNetwork.Network,
 				Region:    gcpRegion,
 				Spec:      *vars.Environment.Resources.Redis,
+				Network:   privateNetwork().Network,
 			})
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to render Redis instance")
 		}
+
 		// We don't use serviceEnvVarPrefix here because this is a
 		// Sourcegraph-wide convention.
 		cloudRunBuilder.AddEnv("REDIS_ENDPOINT", redisInstance.Endpoint)
@@ -200,7 +206,45 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 			292, // 0444 read-only
 		)
 		cloudRunBuilder.AddVolumeMount(caCertVolumeName, "/etc/ssl/custom-certs")
-		cloudRunBuilder.AddEnv("SSL_CERT_DIR", "/etc/ssl/certs:/etc/ssl/custom-certs")
+		sslCertDirs = append(sslCertDirs, "/etc/ssl/custom-certs")
+	}
+
+	if vars.Environment.Resources != nil && vars.Environment.Resources.PostgreSQL != nil {
+		sqlInstance, err := cloudsql.New(stack, resourceid.New("postgresql"), cloudsql.Config{
+			ProjectID: vars.ProjectID,
+			Region:    gcpRegion,
+			Spec:      *vars.Environment.Resources.PostgreSQL,
+			Network:   privateNetwork().Network,
+
+			WorkloadIdentity: *vars.CloudRunWorkloadServiceAccount,
+
+			// ServiceNetworkingConnection is required for Cloud SQL to connect
+			// to the private network, so we must wait for it to be provisioned.
+			// See https://cloud.google.com/sql/docs/mysql/private-ip#network_requirements
+			DependsOn: []cdktf.ITerraformDependable{
+				privateNetwork().ServiceNetworkingConnection,
+			},
+		})
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render Cloud SQL instance")
+		}
+
+		// Add parameters required for authentication
+		cloudRunBuilder.AddEnv("PGINSTANCE", *sqlInstance.Instance.ConnectionName())
+		cloudRunBuilder.AddEnv("PGUSER", *sqlInstance.WorkloadUser.Name())
+		// NOTE: https://pkg.go.dev/cloud.google.com/go/cloudsqlconn#section-readme
+		// magically handles certs for us, so we don't need to mount certs in
+		// Cloud Run.
+
+		// Apply additional runtime configuration
+		pgRoles, err := postgresqlroles.New(stack, id.Group("postgresqlroles"), sqlInstance)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to render Cloud SQL PostgreSQL roles")
+		}
+
+		// We need the workload superuser role to be granted before Cloud Run
+		// can correctly use the database instance
+		cloudRunBuilder.AddDependency(pgRoles.WorkloadSuperuserGrant)
 	}
 
 	// bigqueryDataset is only created and non-nil if BigQuery is configured for
@@ -219,8 +263,25 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	}
 
 	// Finalize output of builder
-	if _, err := cloudRunBuilder.Build(stack, cloudRunBuildVars); err != nil {
-		return nil, err
+	cloudRunBuilder.AddEnv("SSL_CERT_DIR", strings.Join(sslCertDirs, ":"))
+	if _, err := cloudRunBuilder.Build(stack, builder.Variables{
+		Service:           vars.Service,
+		Image:             vars.Image,
+		ResolvedImageTag:  *imageTag.StringValue,
+		Environment:       vars.Environment,
+		GCPProjectID:      vars.ProjectID,
+		GCPRegion:         gcpRegion,
+		ServiceAccount:    vars.CloudRunWorkloadServiceAccount,
+		DiagnosticsSecret: diagnosticsSecret,
+		ResourceLimits:    makeContainerResourceLimits(vars.Environment.Instances.Resources),
+		PrivateNetwork: func() *privatenetwork.Output {
+			if privateNetworkEnabled {
+				return privateNetwork()
+			}
+			return nil
+		}(),
+	}); err != nil {
+		return nil, errors.Wrapf(err, "build Cloud Run resource kind %q", cloudRunBuilder.Kind())
 	}
 
 	// Collect outputs

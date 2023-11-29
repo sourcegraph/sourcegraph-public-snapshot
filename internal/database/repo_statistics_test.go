@@ -486,6 +486,86 @@ func TestRepoStatistics_Compaction(t *testing.T) {
 	}
 }
 
+func TestGitserverReposStatistics_Compaction(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+
+	shards := []string{
+		"shard-1",
+		"shard-2",
+		"shard-3",
+	}
+	repos := types.Repos{
+		&types.Repo{Name: "repo1"},
+		&types.Repo{Name: "repo2"},
+		&types.Repo{Name: "repo3"},
+		&types.Repo{Name: "repo4"},
+		&types.Repo{Name: "repo5"},
+		&types.Repo{Name: "repo6"},
+	}
+
+	// Trigger 21 insertions into gitserver_repos_statistics table:
+	// 6 repos added: 6 rows
+	createTestRepos(ctx, t, db, repos)
+	// 6 clone status changes and shard assignments: 12 rows
+	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[2].Name, shards[1], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[3].Name, shards[1], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[4].Name, shards[2], types.CloneStatusCloning)
+	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloning)
+	// 2 errors: 2 rows
+	setLastError(t, db, repos[0].Name, shards[0], "internet broke repo-1")
+	setLastError(t, db, repos[4].Name, shards[2], "internet broke repo-5")
+	// 1 corruption: 1 row
+	logCorruption(t, db, repos[2].Name, shards[1], "runaway corruption repo-3")
+
+	// Safety check that the counts are right:
+	wantRepoStatistics := RepoStatistics{Total: 6, Cloning: 6, FailedFetch: 2, Corrupted: 1}
+	wantGitserverReposStatistics := []GitserverReposStatistic{
+		{ShardID: ""},
+		{ShardID: shards[0], Total: 2, Cloning: 2, FailedFetch: 1},
+		{ShardID: shards[1], Total: 2, Cloning: 2, FailedFetch: 0, Corrupted: 1},
+		{ShardID: shards[2], Total: 2, Cloning: 2, FailedFetch: 1},
+	}
+	assertRepoStatistics(t, ctx, s, wantRepoStatistics, wantGitserverReposStatistics)
+
+	wantCount := 21
+	count := queryGitserverReposStatisticsCount(t, ctx, s)
+	if count != wantCount {
+		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	}
+
+	// Now we compact the rows into a single row:
+	if err := s.CompactGitserverReposStatistics(ctx); err != nil {
+		t.Fatalf("GetRepoStatistics failed: %s", err)
+	}
+
+	// We should be left with 4 rows: one for each shard, plus empty shard
+	wantCount = 4
+	count = queryGitserverReposStatisticsCount(t, ctx, s)
+	if count != wantCount {
+		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	}
+
+	// And counts should still be the same
+	assertRepoStatistics(t, ctx, s, wantRepoStatistics, wantGitserverReposStatistics)
+
+	// Safety check: add another event and make sure row count goes up again
+	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloned)
+	wantCount = 5
+	count = queryGitserverReposStatisticsCount(t, ctx, s)
+	if count != wantCount {
+		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	}
+}
+
 func queryRepoName(t *testing.T, ctx context.Context, s *repoStatisticsStore, repoID api.RepoID) api.RepoName {
 	t.Helper()
 	var name api.RepoName
@@ -502,6 +582,15 @@ func queryRepoStatisticsCount(t *testing.T, ctx context.Context, s *repoStatisti
 	err := s.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM repo_statistics;")).Scan(&count)
 	if err != nil {
 		t.Fatalf("failed to query repo name: %s", err)
+	}
+	return count
+}
+
+func queryGitserverReposStatisticsCount(t *testing.T, ctx context.Context, s *repoStatisticsStore) int {
+	t.Helper()
+	count, err := basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM gitserver_repos_statistics;")))
+	if err != nil {
+		t.Fatalf("failed to query gitserver_repos_statistics count: %s", err)
 	}
 	return count
 }

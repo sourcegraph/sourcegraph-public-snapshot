@@ -154,16 +154,16 @@ func TestMergeSettings(t *testing.T) {
 	}, {
 		name: "merge int",
 		left: &schema.Settings{
-			SearchContextLines:                        0,
-			CodeIntelligenceAutoIndexPopularRepoLimit: 1,
+			SearchContextLines:     0,
+			HistoryDefaultPageSize: 1,
 		},
 		right: &schema.Settings{
-			SearchContextLines:                        1,
-			CodeIntelligenceAutoIndexPopularRepoLimit: 0, // This is the zero value, so will not override a previous non-zero value
+			SearchContextLines:     1,
+			HistoryDefaultPageSize: 0, // This is the zero value, so will not override a previous non-zero value
 		},
 		expected: &schema.Settings{
-			SearchContextLines:                        1,
-			CodeIntelligenceAutoIndexPopularRepoLimit: 1, // This is the zero value, so will not override a previous non-zero value
+			SearchContextLines:     1,
+			HistoryDefaultPageSize: 1, // This is the zero value, so will not override a previous non-zero value
 		},
 	}, {
 		name: "deep merge struct pointer",

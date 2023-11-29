@@ -6,7 +6,26 @@
   "allowComments": true,
   "type": "object",
   "additionalProperties": false,
-  "required": ["url", "username", "appPassword"],
+  "required": ["url"],
+  "oneOf": [
+    {
+      "allOf": [
+        {
+          "required": ["accessToken"]
+        },
+        {
+          "not": { "required": ["username"] }
+        },
+        {
+          "not": { "required": ["appPassword"] }
+        }
+      ]
+    },
+    {
+      "required": ["username", "appPassword"],
+      "not": { "required": ["accessToken"] }
+    }
+  ],
   "properties": {
     "url": {
       "description": "URL of Bitbucket Cloud, such as https://bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.",
@@ -70,6 +89,10 @@
     },
     "appPassword": {
       "description": "The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding \"username\" field.",
+      "type": "string"
+    },
+    "accessToken": {
+      "description": "The workspace access token to use when authenticating with Bitbucket Cloud.",
       "type": "string"
     },
     "gitURLType": {

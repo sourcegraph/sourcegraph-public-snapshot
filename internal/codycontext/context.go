@@ -3,7 +3,6 @@ package context
 import (
 	"context"
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 	"sync"
@@ -393,14 +392,4 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 		StartLine: startLine,
 		EndLine:   endLine,
 	}}
-}
-
-func max(vals ...int) int {
-	res := math.MinInt32
-	for _, val := range vals {
-		if val > res {
-			res = val
-		}
-	}
-	return res
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // compactor is a worker responsible for compacting rows in the repo_statistics table.
@@ -60,7 +61,15 @@ var (
 )
 
 func (h *handler) Handle(ctx context.Context) error {
-	return h.store.CompactRepoStatistics(ctx)
+	var errs error
+	if err := h.store.CompactRepoStatistics(ctx); err != nil {
+		errs = errors.Append(errs, errors.Wrap(err, "error compacting repo statistics"))
+	}
+
+	if err := h.store.CompactGitserverReposStatistics(ctx); err != nil {
+		errs = errors.Append(errs, errors.Wrap(err, "error compacting gitserver repos statistics"))
+	}
+	return errs
 }
 
 func (h *handler) HandleError(err error) {

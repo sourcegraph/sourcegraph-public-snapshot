@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"io"
 	"net/http"
 
@@ -157,7 +158,7 @@ func NewAnthropicHandler(
 					UserID: identifier,
 				}
 			},
-			getRequestMetadata: func(body anthropicRequest) (model string, additionalMetadata map[string]any) {
+			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, body anthropicRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{
 					"stream":               body.Stream,
 					"max_tokens_to_sample": body.MaxTokensToSample,

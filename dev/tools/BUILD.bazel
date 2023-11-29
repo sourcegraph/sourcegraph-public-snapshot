@@ -27,3 +27,23 @@ sh_binary(
     }),
     visibility = ["//visibility:public"],
 )
+
+sh_binary(
+    name = "gcloud",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@gcloud-darwin-amd64//:gcloud"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@gcloud-darwin-arm64//:gcloud"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@gcloud-linux-amd64//:gcloud"],
+    }),
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "gsutil",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@gcloud-darwin-amd64//:gsutil"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@gcloud-darwin-arm64//:gsutil"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@gcloud-linux-amd64//:gsutil"],
+    }),
+    visibility = ["//visibility:public"],
+)

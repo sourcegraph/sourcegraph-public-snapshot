@@ -150,7 +150,6 @@ go_library(
         "//internal/trace",
         "//internal/types",
         "//internal/version",
-        "//internal/xcontext",
         "//lib/errors",
         "//lib/pointers",
         "//schema",

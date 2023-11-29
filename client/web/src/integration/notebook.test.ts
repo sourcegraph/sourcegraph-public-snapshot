@@ -73,7 +73,7 @@ const viewerSettings: Partial<WebGraphQlOperations & SharedGraphQlOperations> = 
 }
 
 const now = new Date()
-const downloadPath = process.env.TEST_TMPDIR || __dirname
+const downloadPath = process.env.TEST_TMPDIR || process.cwd()
 
 const notebookFixture = (id: string, title: string, blocks: NotebookFields['blocks']): NotebookFields => ({
     __typename: 'Notebook',
