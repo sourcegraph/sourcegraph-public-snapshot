@@ -29,25 +29,9 @@ export interface ScipParameters {
     documentOccurrences: Occurrence[]
 }
 
-/**
- * This is exposed from the extension host thread to the main thread
- * e.g. for communicating  direction "main -> ext host"
- * Note this API object lives in the extension host thread
- */
-export interface FlatExtensionHostAPI {
-    /**
-     * Updates the settings exposed to extensions.
-     */
-    syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
-
-    // Workspace
-    addWorkspaceRoot: (root: clientType.WorkspaceRoot) => void
-    getWorkspaceRoots: () => ProxySubscribable<clientType.WorkspaceRoot[]>
-    removeWorkspaceRoot: (uri: string) => void
-
-    setSearchContext: (searchContext: string | undefined) => void
-
-    // Languages
+// Extracted from FlatExtensionHostAPI so it can be implemented separately.
+// The goal is to unify this with the CodeIntelAPI in client/shared/src/codeintel/api.ts
+export interface CodeIntelExtensionHostAPI {
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
     getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
     getDefinition: (
@@ -65,6 +49,25 @@ export interface FlatExtensionHostAPI {
     ) => ProxySubscribable<MaybeLoadingResult<clientType.Location[]>>
 
     hasReferenceProvidersForDocument: (parameters: TextDocumentPositionParameters) => ProxySubscribable<boolean>
+}
+
+/**
+ * This is exposed from the extension host thread to the main thread
+ * e.g. for communicating  direction "main -> ext host"
+ * Note this API object lives in the extension host thread
+ */
+export interface FlatExtensionHostAPI extends CodeIntelExtensionHostAPI {
+    /**
+     * Updates the settings exposed to extensions.
+     */
+    syncSettingsData: (data: Readonly<SettingsCascade<object>>) => void
+
+    // Workspace
+    addWorkspaceRoot: (root: clientType.WorkspaceRoot) => void
+    getWorkspaceRoots: () => ProxySubscribable<clientType.WorkspaceRoot[]>
+    removeWorkspaceRoot: (uri: string) => void
+
+    setSearchContext: (searchContext: string | undefined) => void
 
     // CONTEXT + CONTRIBUTIONS
 
