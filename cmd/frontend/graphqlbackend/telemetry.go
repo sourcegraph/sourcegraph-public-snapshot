@@ -31,12 +31,12 @@ type ExportedEventsArgs struct {
 type ExportedEventResolver interface {
 	ID() graphql.ID
 	ExportedAt() *graphql.Time
-	Payload() json.RawMessage
+	Payload() (json.RawMessage, error)
 }
 
 type ExportedEventsConnectionResolver interface {
 	Nodes() []ExportedEventResolver
-	TotalCount() int32
+	TotalCount() (int32, error)
 	PageInfo() *graphqlutil.PageInfo
 }
 

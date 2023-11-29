@@ -17,6 +17,7 @@ import (
 
 type mockTelemetryResolver struct {
 	events []TelemetryEventInput
+	TelemetryResolver
 }
 
 func (m *mockTelemetryResolver) RecordEvents(_ context.Context, args *RecordEventsArgs) (*EmptyResponse, error) {

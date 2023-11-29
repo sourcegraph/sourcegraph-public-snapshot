@@ -8,6 +8,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
@@ -17,6 +19,7 @@ import (
 // Resolver is the GraphQL resolver of all things related to telemetry V2.
 type Resolver struct {
 	logger   log.Logger
+	db       database.DB
 	teestore *teestore.Store
 }
 
@@ -26,12 +29,44 @@ var _ graphqlbackend.TelemetryResolver = &Resolver{}
 func New(logger log.Logger, db database.DB) graphqlbackend.TelemetryResolver {
 	return &Resolver{
 		logger:   logger,
+		db:       db,
 		teestore: teestore.NewStore(db.TelemetryEventsExportQueue(), db.EventLogs()),
 	}
 }
 
 func (r *Resolver) ExportedEvents(ctx context.Context, args *graphqlbackend.ExportedEventsArgs) (graphqlbackend.ExportedEventsConnectionResolver, error) {
-	return &ExportedEventsConnectionResolver{}, nil
+	// 🚨 SECURITY: Caller must be a site admin.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	first := int(args.First)
+	if first == 0 {
+		first = 50
+	}
+	var before *time.Time
+	if args.After != nil {
+		cursor, err := graphqlutil.DecodeCursor(args.After)
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid cursor")
+		}
+		t, err := time.Parse(time.RFC3339, cursor)
+		if err != nil {
+			return nil, errors.Wrap(err, "invalid cursor data")
+		}
+		before = &t
+	}
+
+	exported, err := r.db.TelemetryEventsExportQueue().ListRecentlyExported(ctx, first, before)
+	if err != nil {
+		return nil, errors.Wrap(err, "ListRecentlyExported")
+	}
+
+	return &ExportedEventsConnectionResolver{
+		ctx:         ctx,
+		diagnostics: r.db.TelemetryEventsExportQueue(),
+		exported:    exported,
+	}, nil
 }
 
 func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.RecordEventsArgs) (*graphqlbackend.EmptyResponse, error) {
