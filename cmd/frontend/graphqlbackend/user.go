@@ -482,6 +482,10 @@ func (r *schemaResolver) ChangeCodyPlan(ctx context.Context, args *changeCodyPla
 		return nil, errors.New("this feature is not enabled")
 	}
 
+	if featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
+		return nil, errors.New("this user is not allowed to change their plan")
+	}
+
 	userID, err := UnmarshalUserID(args.User)
 	if err != nil {
 		return nil, err
