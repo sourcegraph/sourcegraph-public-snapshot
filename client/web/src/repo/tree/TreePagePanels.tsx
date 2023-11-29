@@ -179,7 +179,7 @@ export const FilesCard: FC<FilePanelProps> = ({ entries, historyEntries, classNa
             </thead>
             <tbody>
                 {entries.map(entry => {
-                    const fileInfo = getFileInfo(entry.name)
+                    const fileInfo = getFileInfo(entry.name, entry.isDirectory)
                     const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
                     return (
