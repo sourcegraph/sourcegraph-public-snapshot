@@ -227,7 +227,7 @@ func TestToEventLogs(t *testing.T) {
 					},
 				},
 				Parameters: &telemetrygatewayv1.EventParameters{
-					Metadata: map[string]int64{"public": 2},
+					Metadata: map[string]float64{"public": 2},
 					PrivateMetadata: &structpb.Struct{Fields: map[string]*structpb.Value{
 						"private": structpb.NewStringValue("sensitive-data"),
 					}},
@@ -295,7 +295,7 @@ func TestToEventLogs(t *testing.T) {
 					},
 				},
 				Parameters: &telemetrygatewayv1.EventParameters{
-					Metadata: map[string]int64{"public": 2},
+					Metadata: map[string]float64{"public": 2},
 					PrivateMetadata: &structpb.Struct{Fields: map[string]*structpb.Value{
 						"private": structpb.NewStringValue("sensitive-data"),
 					}},
