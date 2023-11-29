@@ -124,14 +124,8 @@ func newCompletionsHandler(
 					http.Error(w, "Internal server error", http.StatusInternalServerError)
 					return
 				}
-				if isDotcom && isCodyProEnabled {
-					if user.CodyProEnabledAt != nil {
-						w.Header().Set("x-is-cody-pro-user", "true")
-					} else {
-						w.Header().Set("x-is-cody-pro-user", "false")
-					}
-				}
-				respondRateLimited(w, unwrap)
+				isProUser := user.CodyProEnabledAt != nil
+				respondRateLimited(w, unwrap, isDotcom, isCodyProEnabled, isProUser)
 				return
 			}
 			l.Warn("Rate limit error", log.Error(err))
@@ -143,11 +137,18 @@ func newCompletionsHandler(
 	})
 }
 
-func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError) {
+func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDotcom, isCodyProEnabled, isProUser bool) {
 	// Rate limit exceeded, write well known headers and return correct status code.
 	w.Header().Set("x-ratelimit-limit", strconv.Itoa(err.Limit))
 	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(err.Limit-err.Used, 0)))
 	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC1123))
+	if isDotcom && isCodyProEnabled {
+		if isProUser {
+			w.Header().Set("x-is-cody-pro-user", "true")
+		} else {
+			w.Header().Set("x-is-cody-pro-user", "false")
+		}
+	}
 	http.Error(w, err.Error(), http.StatusTooManyRequests)
 }
 
