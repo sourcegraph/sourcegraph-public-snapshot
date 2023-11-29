@@ -27,7 +27,9 @@ import {
 
 import type { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
 
+import { FILE_ICONS, FileExtension } from './constants'
 import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFocusableTree'
+import { getFileInfo } from './utils'
 
 import styles from './RepoRevisionSidebarFileTree.module.scss'
 
@@ -389,6 +391,8 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
+    const fileInfo = getFileInfo(name)
+    const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
         return <ErrorAlert {...props} className={classNames(props.className, 'm-0')} variant="note" error={error} />
@@ -470,12 +474,25 @@ function renderNode({
                 }
             }}
         >
-            <Icon
-                svgPath={isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline}
-                className={classNames('mr-1', styles.icon)}
-                aria-hidden={true}
-            />
-            {name}
+            <div className={styles.iconContainer}>
+                {fileInfo.extension !== FileExtension.DEFAULT ? (
+                    <Icon
+                        as={fileIcon?.icon}
+                        className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
+                        aria-hidden={true}
+                    />
+                ) : (
+                    <Icon
+                        svgPath={
+                            isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline
+                        }
+                        className={classNames('mr-1', styles.icon)}
+                        aria-hidden={true}
+                    />
+                )}
+                {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
+                {name}
+            </div>
         </Link>
     )
 }

@@ -51,10 +51,19 @@ http_archive(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "51dc53293afe317d2696d4d6433a4c33feedb7748a9e352072e2ec3c0dafd2c6",
+    sha256 = "d6ab6b57e48c09523e93050f13698f708428cfd5e619252e369d377af6597707",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.40.1/rules_go-v0.40.1.zip",
-        "https://github.com/bazelbuild/rules_go/releases/download/v0.40.1/rules_go-v0.40.1.zip",
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.43.0/rules_go-v0.43.0.zip",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.43.0/rules_go-v0.43.0.zip",
+    ],
+)
+
+http_archive(
+    name = "rules_proto",
+    sha256 = "dc3fb206a2cb3441b485eb1e423165b231235a1ea9b031b4433cf7bc1fa460dd",
+    strip_prefix = "rules_proto-5.3.0-21.7",
+    urls = [
+        "https://github.com/bazelbuild/rules_proto/archive/refs/tags/5.3.0-21.7.tar.gz",
     ],
 )
 
@@ -67,19 +76,19 @@ http_archive(
 
 http_archive(
     name = "rules_buf",
-    sha256 = "523a4e06f0746661e092d083757263a249fedca535bd6dd819a8c50de074731a",
-    strip_prefix = "rules_buf-0.1.1",
+    sha256 = "bc2488ee497c3fbf2efee19ce21dceed89310a08b5a9366cc133dd0eb2118498",
+    strip_prefix = "rules_buf-0.2.0",
     urls = [
-        "https://github.com/bufbuild/rules_buf/archive/refs/tags/v0.1.1.zip",
+        "https://github.com/bufbuild/rules_buf/archive/refs/tags/v0.2.0.zip",
     ],
 )
 
 http_archive(
     name = "bazel_gazelle",
-    sha256 = "ecba0f04f96b4960a5b250c8e8eeec42281035970aa8852dda73098274d14a1d",
+    sha256 = "b7387f72efb59f876e4daae42f1d3912d0d45563eac7cb23d1de0b094ab588cf",
     urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.29.0/bazel-gazelle-v0.29.0.tar.gz",
-        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.29.0/bazel-gazelle-v0.29.0.tar.gz",
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-gazelle/releases/download/v0.34.0/bazel-gazelle-v0.34.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-gazelle/releases/download/v0.34.0/bazel-gazelle-v0.34.0.tar.gz",
     ],
 )
 
@@ -230,32 +239,8 @@ esbuild_register_toolchains(
 )
 
 # Go toolchain setup
-load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
 
-rules_proto_grpc_toolchains()
-
-rules_proto_grpc_repos()
-
-load("@rules_proto_grpc//doc:repositories.bzl", rules_proto_grpc_doc_repos = "doc_repos")
-
-rules_proto_grpc_doc_repos()
-
-load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
-
-rules_proto_dependencies()
-
-rules_proto_toolchains()
-
-load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
-
-rules_buf_dependencies()
-
-rules_buf_toolchains(version = "v1.11.0")
-
-load("@rules_buf//gazelle/buf:repositories.bzl", "gazelle_buf_dependencies")
-
-gazelle_buf_dependencies()
-
+load("@rules_buf//buf:defs.bzl", "buf_dependencies")
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 load("//:linter_deps.bzl", "linter_dependencies")
@@ -276,7 +261,7 @@ go_repository(
     build_file_proto_mode = "disable_global",
     importpath = "google.golang.org/protobuf",
     sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
-    version = "v1.29.1",
+    version = "v1.31.1",
 )  # keep
 
 # Pin protoc-gen-go-grpc to 1.3.0
@@ -296,16 +281,12 @@ go_rules_dependencies()
 
 go_register_toolchains(
     nogo = "@//:sg_nogo",
-    version = "1.20.10",
+    version = "1.21.4",
 )
 
 linter_dependencies()
 
 gazelle_dependencies()
-
-load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
-
-protobuf_deps()
 
 # rust toolchain setup
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains", "rust_repository_set")
@@ -407,3 +388,38 @@ buildifier_prebuilt_deps()
 load("@buildifier_prebuilt//:defs.bzl", "buildifier_prebuilt_register_toolchains")
 
 buildifier_prebuilt_register_toolchains()
+
+load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_proto_toolchains")
+
+rules_proto_dependencies()
+
+rules_proto_toolchains()
+
+load("@rules_proto_grpc//:repositories.bzl", "rules_proto_grpc_repos", "rules_proto_grpc_toolchains")
+load("@rules_proto_grpc//go:repositories.bzl", rules_proto_grpc_go_repos = "go_repos")
+load("@rules_proto_grpc//doc:repositories.bzl", rules_proto_grpc_doc_repos = "doc_repos")
+
+rules_proto_grpc_toolchains()
+
+rules_proto_grpc_repos()
+
+rules_proto_grpc_go_repos()
+
+rules_proto_grpc_doc_repos()
+
+load("@rules_buf//buf:repositories.bzl", "rules_buf_dependencies", "rules_buf_toolchains")
+
+rules_buf_dependencies()
+
+rules_buf_toolchains(
+    sha256 = "05dfb45d2330559d258e1230f5a25e154f0a328afda2a434348b5ba4c124ece7",
+    version = "v1.28.1",
+)
+
+load("@rules_buf//gazelle/buf:repositories.bzl", "gazelle_buf_dependencies")
+
+gazelle_buf_dependencies()
+
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+
+protobuf_deps()

@@ -1,15 +1,9 @@
 package changed
 
-import "path/filepath"
-
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
+import (
+	"path/filepath"
+	"slices"
+)
 
 // Changes in the root directory files should trigger client tests.
 var clientRootFiles = []string{
@@ -25,5 +19,5 @@ var clientRootFiles = []string{
 }
 
 func isRootClientFile(p string) bool {
-	return filepath.Dir(p) == "." && contains(clientRootFiles, p)
+	return filepath.Dir(p) == "." && slices.Contains(clientRootFiles, p)
 }

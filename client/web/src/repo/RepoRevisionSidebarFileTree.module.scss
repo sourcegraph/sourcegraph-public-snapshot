@@ -1,5 +1,54 @@
+.icon-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
 .icon {
     flex-shrink: 0;
     width: 1rem;
     height: 1rem;
+}
+
+.test-indicator {
+    border-radius: 100%;
+    width: 0.5rem;
+    height: 0.5rem;
+    margin-left: -0.65rem;
+    margin-bottom: 0.15rem;
+    margin-right: 0.15rem;
+    background-color: var(--gray-05);
+    align-self: end;
+}
+
+.blue {
+    color: var(--blue);
+}
+
+.pink {
+    color: var(--pink);
+}
+
+.yellow {
+    color: var(--yellow);
+}
+
+.red {
+    color: var(--red);
+}
+
+.gray {
+    color: var(--gray-05);
+}
+
+.green {
+    color: var(--green);
+}
+
+.cyan {
+    color: var(--cyan);
+}
+
+.default-icon {
+    color: var(--gray-07);
 }

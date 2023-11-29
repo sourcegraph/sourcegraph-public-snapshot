@@ -3,10 +3,12 @@ package graphqlbackend
 import (
 	"context"
 	"net/url"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -188,6 +190,152 @@ func (r *UserResolver) CodyProEnabledAt(ctx context.Context) *gqlutil.DateTime {
 
 func (r *UserResolver) CodyProEnabled(ctx context.Context) bool {
 	return r.CodyProEnabledAt(ctx) != nil
+}
+
+func (r *UserResolver) CodyCurrentPeriodChatLimit(ctx context.Context) (*int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	if r.user.CodyProEnabledAt != nil {
+		return nil, nil
+	}
+
+	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+
+	limit := int32(cfg.PerCommunityUserChatMonthlyInteractionLimit)
+
+	return &limit, nil
+}
+
+func (r *UserResolver) CodyCurrentPeriodCodeLimit(ctx context.Context) (*int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	if r.user.CodyProEnabledAt != nil {
+		return nil, nil
+	}
+
+	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+
+	limit := int32(cfg.PerCommunityUserCodeCompletionsMonthlyInteractionLimit)
+
+	return &limit, nil
+}
+
+func (r *UserResolver) CodyCurrentPeriodChatUsage(ctx context.Context) (*int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND (name LIKE '%%recipe%%' OR name LIKE '%%command%%' OR name LIKE '%%chat%%')`, r.user.ID, currentPeriodStartDate.Time)
+
+	count, err := r.db.EventLogs().CountBySQL(ctx, query)
+
+	intCount := int32(count)
+
+	return &intCount, err
+}
+
+func (r *UserResolver) CodyCurrentPeriodCodeUsage(ctx context.Context) (*int32, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	currentPeriodStartDate, err := r.CodyCurrentPeriodStartDate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	query := sqlf.Sprintf(`WHERE user_id = %s AND timestamp >= %s AND timestamp <= NOW() AND name LIKE '%%completion:suggested%%'`, r.user.ID, currentPeriodStartDate.Time)
+
+	count, err := r.db.EventLogs().CountBySQL(ctx, query)
+
+	intCount := int32(count)
+
+	return &intCount, err
+}
+
+func (r *UserResolver) CodyCurrentPeriodStartDate(ctx context.Context) (*gqlutil.DateTime, error) {
+	startDate, _, err := r.codyCurrentPeriodDateRange(ctx)
+
+	return startDate, err
+}
+
+func (r *UserResolver) CodyCurrentPeriodEndDate(ctx context.Context) (*gqlutil.DateTime, error) {
+	_, endDate, err := r.codyCurrentPeriodDateRange(ctx)
+
+	return endDate, err
+}
+
+type currentTimeCtxKey int
+
+const mockCurrentTimeKey currentTimeCtxKey = iota
+
+func currentTimeFromCtx(ctx context.Context) time.Time {
+	t, ok := ctx.Value(mockCurrentTimeKey).(*time.Time)
+	if !ok || t == nil {
+		return time.Now()
+	}
+	return *t
+}
+
+func withCurrentTimeMock(ctx context.Context, t time.Time) context.Context {
+	return context.WithValue(ctx, mockCurrentTimeKey, &t)
+}
+
+func (r *UserResolver) codyCurrentPeriodDateRange(ctx context.Context) (*gqlutil.DateTime, *gqlutil.DateTime, error) {
+	if !envvar.SourcegraphDotComMode() {
+		return nil, nil, errors.New("this feature is only available on sourcegraph.com")
+	}
+
+	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
+	// settings because they may contain secrets or other sensitive data.
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+		return nil, nil, err
+	}
+
+	subscriptionStartDate := r.user.CreatedAt
+	if r.user.CodyProEnabledAt != nil {
+		subscriptionStartDate = *r.user.CodyProEnabledAt
+	}
+
+	// to allow mocking current time during tests
+	currentDate := currentTimeFromCtx(ctx)
+	targetDay := subscriptionStartDate.Day()
+	startDayOfTheMonth := targetDay
+	endDayOfTheMonth := targetDay - 1
+	startMonth := currentDate
+	endMonth := currentDate
+
+	if currentDate.Day() < targetDay {
+		// Set to target day of the previous month
+		startMonth = currentDate.AddDate(0, -1, 0)
+	} else {
+		// Set to target day of the next month
+		endMonth = currentDate.AddDate(0, 1, 0)
+	}
+
+	daysInStartingMonth := time.Date(startMonth.Year(), startMonth.Month()+1, 0, 0, 0, 0, 0, startMonth.Location()).Day()
+	if startDayOfTheMonth > daysInStartingMonth {
+		startDayOfTheMonth = daysInStartingMonth
+	}
+
+	daysInEndingMonth := time.Date(endMonth.Year(), endMonth.Month()+1, 0, 0, 0, 0, 0, endMonth.Location()).Day()
+	if endDayOfTheMonth > daysInEndingMonth {
+		endDayOfTheMonth = daysInEndingMonth
+	}
+
+	startDate := &gqlutil.DateTime{Time: time.Date(startMonth.Year(), startMonth.Month(), startDayOfTheMonth, 0, 0, 0, 0, startMonth.Location())}
+	endDate := &gqlutil.DateTime{Time: time.Date(endMonth.Year(), endMonth.Month(), endDayOfTheMonth, 23, 59, 59, 59, endMonth.Location())}
+
+	return startDate, endDate, nil
 }
 
 func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {

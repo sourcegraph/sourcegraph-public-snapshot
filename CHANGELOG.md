@@ -59,6 +59,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added the ability to use Workload Identity, Managed Identity and Environmental credentials when using the Azure OpenAI completions and embeddings providers [#58289](https://github.com/sourcegraph/sourcegraph/pull/58289)
+
 ### Fixed
 
 - Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
