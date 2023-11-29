@@ -1,4 +1,5 @@
 import type { SourcegraphContext } from '../../src/jscontext'
+// eslint-disable-next-line import/no-useless-path-segments
 import { noOpTelemetryRecorder } from '../utils'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
