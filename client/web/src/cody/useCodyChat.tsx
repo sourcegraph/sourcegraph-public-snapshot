@@ -173,6 +173,10 @@ export const useCodyChat = ({
             if (!transcript) {
                 return
             }
+            const feature = eventLabel as EventName
+            window.context.telemetryRecorder.recordEvent(feature, 'clicked', {
+                privateMetadata: { transcriptId: transcript.id, ...eventProperties },
+            })
             eventLogger.log(eventLabel, { transcriptId: transcript.id, ...eventProperties })
         },
         [transcript]
@@ -228,6 +232,7 @@ export const useCodyChat = ({
             return
         }
 
+        window.context.telemetryRecorder.recordEvent(EventName.CODY_CHAT_HISTORY_CLEARED, 'cleared')
         eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
 
         const newTranscript = initializeNewChatInternal()
@@ -399,6 +404,7 @@ export const useCodyChat = ({
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
         async (recipeId, options): Promise<Transcript | null> => {
+            window.context.telemetryRecorder.recordEvent(`web.codyChat.recipe.${recipeId}`, 'executed')
             eventLogger.log(`web:codyChat:recipe:${recipeId}:executed`, { recipeId })
 
             const transcript = await executeRecipeInternal(recipeId, options)
