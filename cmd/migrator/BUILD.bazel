@@ -79,6 +79,7 @@ genrule(
     fi
     """,
     stamp = 1,
+    visibility = ["//visibility:public"],
 )
 
 pkg_tar(
