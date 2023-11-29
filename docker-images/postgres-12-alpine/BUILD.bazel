@@ -1,6 +1,7 @@
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball", "oci_push")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
 
 filegroup(
     name = "config",
@@ -60,3 +61,23 @@ container_structure_test(
 #     image = ":image",
 #     repository = image_repository("postgres-12-alpine"),  # TODO careful, this is not an alpine
 # )
+
+# The above postgres-12-alpine image is built from the wolfi base image. Where as we're still shipping the legacy
+# image built, postgres-12-alpine, for backwards compatibility.
+oci_image(
+    name = "legacy_image",
+    base = "@legacy_postgres-12-alpine_base",
+)
+
+oci_tarball(
+    name = "legacy_tarball",
+    image = ":legacy_image",
+    repo_tags = ["postgres-12-alpine:candidate"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":legacy_image",
+    repository = image_repository("postgres-12-alpine"),
+)
+
