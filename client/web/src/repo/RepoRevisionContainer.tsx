@@ -220,7 +220,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
             {!isPackage && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={1}
+                    priority={2}
                     id="copy-permalink"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >

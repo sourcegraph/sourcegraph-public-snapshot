@@ -490,7 +490,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
                 // We switch the priority based on the screen size because we want to change the order
                 // of arrangement on mobile view. The AskCody button should be the last item in the
                 // dropdown when on mobile.
-                priority={isLarge ? 10 : 0}
+                priority={1}
                 id="cody"
                 {...repoHeaderContributionsLifecycleProps}
             >
@@ -508,7 +508,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
 
             <RepoHeaderContributionPortal
                 position="right"
-                priority={2}
+                priority={3}
                 id="go-to-code-host"
                 {...repoHeaderContributionsLifecycleProps}
             >
@@ -535,7 +535,7 @@ const RepoUserContainer: FC<RepoUserContainerProps> = ({
             {isBrainDotVisible && (
                 <RepoHeaderContributionPortal
                     position="right"
-                    priority={6}
+                    priority={7}
                     id="code-intelligence-status"
                     renderInContextMenu={true}
                     {...repoHeaderContributionsLifecycleProps}
