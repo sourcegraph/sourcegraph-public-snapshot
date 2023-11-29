@@ -40,8 +40,8 @@ type TelemetryEventParametersInput struct {
 }
 
 type TelemetryEventMetadataInput struct {
-	Key   string `json:"key"`
-	Value int32  `json:"value"`
+	Key   string    `json:"key"`
+	Value JSONValue `json:"value"`
 }
 
 type TelemetryEventBillingMetadataInput struct {
