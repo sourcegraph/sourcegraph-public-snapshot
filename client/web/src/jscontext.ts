@@ -284,7 +284,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
 
-    telemetryRecorder?: TelemetryRecorder
+    telemetryRecorder: TelemetryRecorder
 }
 
 export interface BrandAssets {

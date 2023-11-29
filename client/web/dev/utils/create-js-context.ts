@@ -1,4 +1,5 @@
 import type { SourcegraphContext } from '../../src/jscontext'
+import { noOpTelemetryRecorder } from '../utils'
 
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import { getSiteConfig } from './get-site-config'
@@ -77,7 +78,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         },
         embeddingsEnabled: false,
         primaryLoginProvidersCount: 5,
-        telemetryRecorder: undefined,
+        telemetryRecorder: noOpTelemetryRecorder,
         // Site-config overrides default JS context
         ...siteConfig,
     }

@@ -56,6 +56,7 @@ ts_project(
         "//:node_modules/webpack",
         "//:node_modules/webpack-dev-server",
         "//client/web:node_modules/@sourcegraph/build-config",
+        "//client/web:node_modules/@sourcegraph/telemetry",
         "//client/web:web_lib",
     ],
 )
