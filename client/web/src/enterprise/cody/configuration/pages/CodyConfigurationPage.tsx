@@ -7,6 +7,7 @@ import { Subject } from 'rxjs'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
+import { TelemetryV2Props } from '@sourcegraph/shared/src/telemetry'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Container, ErrorAlert, Link, PageHeader } from '@sourcegraph/wildcard'
 
@@ -25,7 +26,7 @@ import { EmptyPoliciesList } from '../components/EmptyPoliciesList'
 
 import styles from '../../../codeintel/configuration/pages/CodeIntelConfigurationPage.module.scss'
 
-export interface CodyConfigurationPageProps extends TelemetryProps {
+export interface CodyConfigurationPageProps extends TelemetryProps, TelemetryV2Props {
     authenticatedUser: AuthenticatedUser | null
     queryPolicies?: typeof defaultQueryPolicies
     repo?: { id: string; name: string }
@@ -36,10 +37,12 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
     queryPolicies = defaultQueryPolicies,
     repo,
     telemetryService,
+    telemetryRecorder,
 }) => {
     useEffect(() => {
-        telemetryService.logPageView('CodyConfigurationPage')
-    }, [telemetryService])
+        telemetryService.logPageView('CodyConfigurationPage', { hasV2Event: true })
+        telemetryRecorder.recordEvent('CodyConfigurationPage', 'viewed')
+    }, [telemetryService, telemetryRecorder])
 
     const navigate = useNavigate()
     const location = useLocation()
