@@ -181,9 +181,6 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 }
 
 func triggerBackCompatTest(buildOpts bk.BuildOptions, isAspectWorkflows bool) func(*bk.Pipeline) {
-	if !isAspectWorkflows {
-		buildOpts.Message += " (Aspect)"
-	}
 	return func(pipeline *bk.Pipeline) {
 		steps := []bk.StepOpt{
 			bk.Key("trigger-backcompat"),
