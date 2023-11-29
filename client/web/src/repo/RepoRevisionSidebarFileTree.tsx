@@ -475,22 +475,24 @@ function renderNode({
             }}
         >
             <div className={styles.iconContainer}>
-                {fileInfo.extension !== FileExtension.DEFAULT ? (
-                    <Icon
-                        as={fileIcon?.icon}
-                        className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
-                        aria-hidden={true}
-                    />
-                ) : (
-                    <Icon
-                        svgPath={
-                            isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline
-                        }
-                        className={classNames('mr-1', styles.icon)}
-                        aria-hidden={true}
-                    />
-                )}
-                {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
+                <div className={styles.fileContainer}>
+                    {fileInfo.extension !== FileExtension.DEFAULT ? (
+                        <Icon
+                            as={fileIcon?.icon}
+                            className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
+                            aria-hidden={true}
+                        />
+                    ) : (
+                        <Icon
+                            svgPath={
+                                isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline
+                            }
+                            className={classNames('mr-1', styles.icon)}
+                            aria-hidden={true}
+                        />
+                    )}
+                    {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
+                </div>
                 {name}
             </div>
         </Link>

@@ -4,22 +4,27 @@
     align-items: center;
 }
 
-.icon {
-    flex-shrink: 0;
-    width: 1rem;
-    height: 1rem;
+.file-container {
+    display: flex;
+    flex-direction: row;
 }
 
 .test-indicator {
     border-radius: 100%;
     width: 0.5rem;
     height: 0.5rem;
-    margin-left: -0.65rem;
-    margin-bottom: 0.15rem;
+    margin-left: -0.75rem;
     margin-right: 0.15rem;
     background-color: var(--gray-05);
     align-self: end;
 }
+
+.icon {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+}
+
 
 .blue {
     color: var(--blue);
