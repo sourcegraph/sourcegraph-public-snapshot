@@ -67,6 +67,9 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
             description: '',
         }
         telemetryService.log(EventName.TRY_CODY_SIGNUP_INITIATED, eventArguments, eventArguments)
+        window.context.telemetryRecorder.recordEvent(EventName.TRY_CODY_SIGNUP_INITIATED, 'initiated', {
+            privateMetadata: { eventArguments },
+        })
     }
 
     const title = type === 'blob' ? 'Sign up to get Cody, our AI assistant, free' : 'Meet Cody, your AI assistant'
@@ -203,6 +206,9 @@ export const TryCodyWidget: React.FC<TryCodyWidgetProps> = ({
         }
         const eventPage = type === 'blob' ? 'BlobPage' : 'RepoPage'
         telemetryService.log(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, { type: eventPage }, { type: eventPage })
+        window.context.telemetryRecorder.recordEvent(EventName.TRY_CODY_WEB_ONBOARDING_DISPLAYED, 'clicked', {
+            privateMetadata: { type: eventPage },
+        })
     }, [isDismissed, telemetryService, type])
 
     if (isDismissed) {
