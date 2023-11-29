@@ -31,6 +31,7 @@ export interface ScipParameters {
 
 // Extracted from FlatExtensionHostAPI so it can be implemented separately.
 // The goal is to unify this with the CodeIntelAPI in client/shared/src/codeintel/api.ts
+// TODO(camdencheek)
 export interface CodeIntelExtensionHostAPI {
     getHover: (parameters: TextDocumentPositionParameters) => ProxySubscribable<MaybeLoadingResult<HoverMerged | null>>
     getDocumentHighlights: (parameters: TextDocumentPositionParameters) => ProxySubscribable<DocumentHighlight[]>
