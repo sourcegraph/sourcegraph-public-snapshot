@@ -95,7 +95,7 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
-	UpgradeToCodyPro(ctx context.Context, id int32) error
+	ChangeCodyPlan(ctx context.Context, id int32, plan bool) error
 	SetChatCompletionsQuota(ctx context.Context, id int32, quota *int) error
 	GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	SetCodeCompletionsQuota(ctx context.Context, id int32, quota *int) error
@@ -619,9 +619,12 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 
 // NOTE(naman): THIS IS TEMPORARY FOR DEC GA
 // Upgrade user to cody pro plan
-func (u *userStore) UpgradeToCodyPro(ctx context.Context, id int32) (err error) {
-	// TODO: update usage limits as well
-	query := sqlf.Sprintf("UPDATE users SET cody_pro_enabled_at=NOW() WHERE id=%d AND cody_pro_enabled_at IS NULL AND deleted_at IS NULL", id)
+func (u *userStore) ChangeCodyPlan(ctx context.Context, id int32, pro bool) (err error) {
+	query := sqlf.Sprintf("UPDATE users SET cody_pro_enabled_at=NULL WHERE id=%d AND cody_pro_enabled_at IS NOT NULL AND deleted_at IS NULL", id)
+
+	if pro {
+		query = sqlf.Sprintf("UPDATE users SET cody_pro_enabled_at=NOW() WHERE id=%d AND cody_pro_enabled_at IS NULL AND deleted_at IS NULL", id)
+	}
 
 	res, err := u.ExecResult(ctx, query)
 	if err != nil {
@@ -643,7 +646,11 @@ func (u *userStore) UpgradeToCodyPro(ctx context.Context, id int32) (err error) 
 			return userNotFoundErr{args: []any{id}}
 		}
 
-		return errors.New("user is already on Cody Pro plan")
+		if pro {
+			return errors.New("user is already on Cody Pro plan")
+		}
+
+		return errors.New("user is already on Cody Community plan")
 	}
 
 	return nil

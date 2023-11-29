@@ -42,8 +42,9 @@ type Config struct {
 	}
 
 	Fireworks struct {
-		AllowedModels []string
-		AccessToken   string
+		AllowedModels                      []string
+		AccessToken                        string
+		LogSelfServeCodeCompletionRequests bool
 	}
 
 	AllowedEmbeddingsModels []string
@@ -146,6 +147,7 @@ func (c *Config) Load() {
 			"accounts/fireworks/models/wizardcoder-15b",
 		}, ","),
 		"Fireworks models that can be used."))
+	c.Fireworks.LogSelfServeCodeCompletionRequests = c.GetBool("CODY_GATEWAY_FIREWORKS_LOG_SELF_SERVE_COMPLETION_REQUESTS", "false", "Whether we should log self-serve code completion requests.")
 	if c.Fireworks.AccessToken != "" && len(c.Fireworks.AllowedModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for Fireworks"))
 	}

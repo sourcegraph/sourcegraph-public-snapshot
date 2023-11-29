@@ -2,7 +2,6 @@ package limiter
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -104,7 +103,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 
 		if l.RateLimitAlerter != nil {
 			// Call with usage 1 for 100% (rate limit exceeded)
-			go l.RateLimitAlerter(xcontext.Detach(ctx), 1, retryAfter.Sub(l.NowFunc()))
+			go l.RateLimitAlerter(context.WithoutCancel(ctx), 1, retryAfter.Sub(l.NowFunc()))
 		}
 
 		return nil, RateLimitExceededError{
@@ -132,7 +131,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	// same time block since the TTL would have been set.
 	return func(ctx context.Context, usage int) (err error) {
 		// NOTE: This is to make sure we still commit usage even if the context was canceled.
-		ctx = xcontext.Detach(ctx)
+		ctx = context.WithoutCancel(ctx)
 
 		var incrementedTo, ttlSeconds int
 		// We need to start a new span because the previous one has ended

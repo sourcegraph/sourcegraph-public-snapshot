@@ -16,7 +16,6 @@ go_library(
         "//internal/codygateway",
         "//internal/goroutine",
         "//internal/trace",
-        "//internal/xcontext",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@com_google_cloud_go_bigquery//:bigquery",

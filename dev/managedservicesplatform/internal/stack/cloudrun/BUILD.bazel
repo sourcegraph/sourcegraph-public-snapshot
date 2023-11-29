@@ -8,7 +8,9 @@ go_library(
     deps = [
         "//dev/managedservicesplatform/googlesecretsmanager",
         "//dev/managedservicesplatform/internal/resource/bigquery",
+        "//dev/managedservicesplatform/internal/resource/cloudsql",
         "//dev/managedservicesplatform/internal/resource/gsmsecret",
+        "//dev/managedservicesplatform/internal/resource/postgresqlroles",
         "//dev/managedservicesplatform/internal/resource/privatenetwork",
         "//dev/managedservicesplatform/internal/resource/random",
         "//dev/managedservicesplatform/internal/resource/redis",
@@ -26,6 +28,7 @@ go_library(
         "//dev/managedservicesplatform/spec",
         "//lib/errors",
         "//lib/pointers",
+        "@com_github_hashicorp_terraform_cdk_go_cdktf//:cdktf",
         "@org_golang_x_exp//maps",
         "@org_golang_x_exp//slices",
     ],

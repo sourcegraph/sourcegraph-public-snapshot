@@ -295,10 +295,16 @@ Once done, go to **Site admin > Site configuration** (`/site-admin/configuration
     "fastChatModel": "<deployment name of the model>",
     "completionModel": "<deployment name of the model>",
     "endpoint": "<endpoint>",
-    "accessToken": "<key>"
+    "accessToken": "<See below>"
   }
 }
 ```
+
+For the access token, you can either:
+
+- As of 5.2.4 the access token can be left empty and it will rely on Environmental, Workload Identity or Managed Identity credentials configured for the `frontend` and `worker` services
+- Set it to `<API_KEY>` if directly configuring the credentials using the API key specified in the Azure portal
+
 
 ### Anthropic Claude through AWS Bedrock
 
