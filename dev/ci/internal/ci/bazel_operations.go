@@ -444,6 +444,10 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 			devImage := images.DevRegistryImage(app, "")
 			publishImage := images.PublishedRegistryImage(app, "")
 
+			if c.RunType.Is(runtype.RFC795InternalRelease) {
+				publishImage = images.InternalReleaseRegistry(app, "")
+			}
+
 			var imgs []string
 			for _, image := range []string{publishImage, devImage} {
 				if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.RFC795InternalRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
