@@ -137,7 +137,7 @@ func (r *schemaResolver) CreateOutboundWebhook(ctx context.Context, args CreateO
 	}
 
 	// Validate the URL
-	err = outbound.CheckAddress(args.Input.URL)
+	err = outbound.CheckURL(args.Input.URL)
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid webhook address")
 	}

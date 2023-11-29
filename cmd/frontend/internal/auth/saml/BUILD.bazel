@@ -55,6 +55,7 @@ go_test(
         "//internal/conf",
         "//internal/database/dbmocks",
         "//internal/extsvc",
+        "//internal/httpcli",
         "//internal/licensing",
         "//internal/types",
         "//lib/errors",
