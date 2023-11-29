@@ -143,9 +143,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 
-		securityOps := operations.NewNamedSet("Security Scanning")
-		securityOps.Append(sonarcloudScan())
-		ops.Merge(securityOps)
+		if !isAspectWorkflowBuild {
+			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(sonarcloudScan())
+			ops.Merge(securityOps)
+		}
 
 		// Wolfi package and base images
 		packageOps, baseImageOps := addWolfiOps(c)
@@ -293,9 +295,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// Security scanning - sonarcloud
-		securityOps := operations.NewNamedSet("Security Scanning")
-		securityOps.Append(sonarcloudScan())
-		ops.Merge(securityOps)
+		if isAspectWorkflowBuild {
+			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(sonarcloudScan())
+			ops.Merge(securityOps)
+		}
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
