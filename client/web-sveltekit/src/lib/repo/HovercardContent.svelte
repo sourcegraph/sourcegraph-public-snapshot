@@ -101,7 +101,7 @@
             font-size: 0.75rem;
         }
 
-        :globa(pre),
+        :global(pre),
         :global(code) {
             padding: 0;
             // We want code to wrap, not scroll (but whitespace needs to be preserved).
