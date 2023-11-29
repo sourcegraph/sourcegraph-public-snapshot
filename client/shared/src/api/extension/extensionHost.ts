@@ -131,7 +131,7 @@ function createExtensionAndExtensionHostAPIs(
     // Create extension host state
     const extensionHostState = createExtensionHostState(initData, proxy, mainThreadAPIInitializations)
     // Create extension host API
-    // TODO: override the codeintel bits with injectNewCodeIntel
+    // TODO: override the codeintel bits with injectNewCodeIntel or pass in CodeIntelAPI
     const extensionHostAPINew = createExtensionHostAPI(extensionHostState)
 
     // Create extension API factory
