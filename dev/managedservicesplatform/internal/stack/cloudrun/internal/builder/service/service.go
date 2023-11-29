@@ -25,6 +25,7 @@ type serviceBuilder struct {
 	env          []*cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv
 	volumes      []*cloudrunv2service.CloudRunV2ServiceTemplateVolumes
 	volumeMounts []*cloudrunv2service.CloudRunV2ServiceTemplateContainersVolumeMounts
+	dependencies []cdktf.ITerraformDependable
 }
 
 var _ builder.Builder = (*serviceBuilder)(nil)
@@ -34,6 +35,8 @@ var _ builder.Builder = (*serviceBuilder)(nil)
 func NewBuilder() builder.Builder {
 	return &serviceBuilder{}
 }
+
+func (b *serviceBuilder) Kind() spec.ServiceKind { return spec.ServiceKindService }
 
 func (b *serviceBuilder) AddEnv(key, value string) {
 	b.env = append(b.env, &cloudrunv2service.CloudRunV2ServiceTemplateContainersEnv{
@@ -75,6 +78,12 @@ func (b *serviceBuilder) AddSecretVolume(name, mountPath string, secret builder.
 	})
 }
 
+// AddDependency ensures that particular Terraform resources are provisioned
+// before the Cloud Run resource is created.
+func (b *serviceBuilder) AddDependency(dep cdktf.ITerraformDependable) {
+	b.dependencies = append(b.dependencies, dep)
+}
+
 func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variables) (builder.Resource, error) {
 	var vpcAccess *cloudrunv2service.CloudRunV2ServiceTemplateVpcAccess
 	if vars.PrivateNetwork != nil {
@@ -92,7 +101,7 @@ func (b *serviceBuilder) Build(stack cdktf.TerraformStack, vars builder.Variable
 	svc := cloudrunv2service.NewCloudRunV2Service(stack, pointers.Ptr("cloudrun"), &cloudrunv2service.CloudRunV2ServiceConfig{
 		Name:      pointers.Ptr(vars.Service.ID),
 		Location:  pointers.Ptr(vars.GCPRegion),
-		DependsOn: &vars.DependsOn,
+		DependsOn: &b.dependencies,
 
 		//  Disallows direct traffic from public internet, we have a LB set up for that.
 		Ingress: pointers.Ptr("INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"),

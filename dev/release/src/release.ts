@@ -1073,7 +1073,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
     },
     {
         id: 'release:deactivate-release',
-        description: 'Activate a feature release',
+        description: 'De-activate a feature release',
         run: async config => {
             await verifyWithInput('Are you sure you want to deactivate all releases?')
             deactivateAllReleases(config)

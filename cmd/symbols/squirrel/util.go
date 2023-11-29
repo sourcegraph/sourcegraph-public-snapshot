@@ -196,24 +196,6 @@ func nodeLength(node *sitter.Node) int {
 	return length
 }
 
-// Of course.
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// When generic?
-func contains(slice []string, str string) bool {
-	for _, s := range slice {
-		if s == str {
-			return true
-		}
-	}
-	return false
-}
-
 // Node is a sitter.Node plus convenient info.
 type Node struct {
 	RepoCommitPath types.RepoCommitPath

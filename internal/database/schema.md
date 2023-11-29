@@ -1974,7 +1974,7 @@ Triggers:
 ```
     Column    |  Type  | Collation | Nullable | Default 
 --------------+--------+-----------+----------+---------
- shard_id     | text   |           | not null | 
+ shard_id     | text   |           |          | 
  total        | bigint |           | not null | 0
  not_cloned   | bigint |           | not null | 0
  cloning      | bigint |           | not null | 0
@@ -1982,7 +1982,7 @@ Triggers:
  failed_fetch | bigint |           | not null | 0
  corrupted    | bigint |           | not null | 0
 Indexes:
-    "gitserver_repos_statistics_pkey" PRIMARY KEY, btree (shard_id)
+    "gitserver_repos_statistics_shard_id" btree (shard_id)
 
 ```
 
@@ -3664,6 +3664,7 @@ Foreign-key constraints:
  revision          | text                     |           | not null | 
 Indexes:
     "repo_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+    "repo_embedding_jobs_repo" btree (repo_id, revision)
 Referenced by:
     TABLE "repo_embedding_job_stats" CONSTRAINT "repo_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES repo_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
 

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -50,7 +51,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 	ctx := context.Background()
 	soap := NewProvider(cloud.SchemaAuthProviderSourcegraphOperator{
 		ClientID: "soap_client",
-	})
+	}, httpcli.TestExternalClient)
 	serviceID := soap.ConfigID().ID
 
 	mockDB := func(siteAdmin bool) database.DB {

@@ -48,9 +48,9 @@ func init() {
 	// All 'sg msp ...' subcommands
 	Command.Subcommands = []*cli.Command{
 		{
-			Name:        "init",
-			ArgsUsage:   "<service ID>",
-			Description: "Initialize a template Managed Services Platform service spec",
+			Name:      "init",
+			ArgsUsage: "<service ID>",
+			Usage:     "Initialize a template Managed Services Platform service spec",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:  "kind",
@@ -186,9 +186,13 @@ func init() {
 			},
 		},
 		{
-			Name:        "generate",
-			ArgsUsage:   "<service ID> <environment ID>",
-			Description: "Generate Terraform assets for a Managed Services Platform service spec.",
+			Name:      "generate",
+			Aliases:   []string{"gen"},
+			ArgsUsage: "<service ID>",
+			Usage:     "Generate Terraform assets for a Managed Services Platform service spec.",
+			Description: `Optionally use '-all' to sync all environments for a service.
+
+Supports completions on services and environments.`,
 			UsageText: `
 # generate single env for a single service
 sg msp generate <service> <env>
@@ -215,6 +219,7 @@ sg msp generate -all <service>
 					Value: true,
 				},
 			},
+			BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 			Action: func(c *cli.Context) error {
 				var (
 					generateAll    = c.Bool("all")
@@ -262,17 +267,24 @@ sg msp generate -all <service>
 			},
 		},
 		{
-			Name:        "terraform-cloud",
-			Aliases:     []string{"tfc"},
-			Description: "Manage Terraform Cloud workspaces for a service",
-			Before:      msprepo.UseManagedServicesRepo,
+			Name:    "terraform-cloud",
+			Aliases: []string{"tfc"},
+			Usage:   "Manage Terraform Cloud workspaces for a service",
+			Before:  msprepo.UseManagedServicesRepo,
 			Subcommands: []*cli.Command{
 				{
-					Name:        "sync",
-					Description: "Create or update all required Terraform Cloud workspaces for a service",
-					Usage:       "Optionally provide an environment ID as well to only sync that environment.",
-					ArgsUsage:   "<service ID> [environment ID]",
+					Name:  "sync",
+					Usage: "Create or update all required Terraform Cloud workspaces for an environment",
+					Description: `Optionally use '-all' to sync all environments for a service.
+
+Supports completions on services and environments.`,
+					ArgsUsage: "<service ID> [environment ID]",
 					Flags: []cli.Flag{
+						&cli.BoolFlag{
+							Name:  "all",
+							Usage: "Generate Terraform Cloud workspaces for all environments",
+							Value: false,
+						},
 						&cli.StringFlag{
 							Name:  "workspace-run-mode",
 							Usage: "One of 'vcs', 'cli'",
@@ -284,6 +296,7 @@ sg msp generate -all <service>
 							Value: false,
 						},
 					},
+					BashComplete: msprepo.ServicesAndEnvironmentsCompletion(),
 					Action: func(c *cli.Context) error {
 						serviceID := c.Args().First()
 						if serviceID == "" {
@@ -337,6 +350,9 @@ sg msp generate -all <service>
 								return errors.Wrapf(err, "sync env %q", env.ID)
 							}
 						} else {
+							if targetEnv == "" && !c.Bool("all") {
+								return errors.New("second argument environment ID is required without the '-all' flag")
+							}
 							for _, env := range service.Environments {
 								if err := syncEnvironmentWorkspaces(c, tfcClient, service.Service, service.Build, env); err != nil {
 									return errors.Wrapf(err, "sync env %q", env.ID)
@@ -350,8 +366,8 @@ sg msp generate -all <service>
 			},
 		},
 		{
-			Name:        "schema",
-			Description: "Generate JSON schema definition for service specification",
+			Name:  "schema",
+			Usage: "Generate JSON schema definition for service specification",
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:    "output",

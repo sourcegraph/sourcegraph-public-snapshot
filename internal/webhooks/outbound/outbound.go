@@ -6,8 +6,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/grafana/regexp"
-
 	"code.gitea.io/gitea/modules/hostmatcher"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -55,63 +53,111 @@ func (s *outboundWebhookService) Enqueue(
 	return nil
 }
 
-// Based on https://www.ietf.org/archive/id/draft-chapin-rfc2606bis-00.html
-const reservedTLDs = "localhost|local|test|example|invalid|localdomain|domain|lan|home|host|corp"
+var errIllegalAddr = errors.New("Address must not be private, link-local or loopback")
 
-// CheckAddress validates the intended destination address for a webhook, checking that
-// it's not invalid, local, a bad IP, or anything else.
-func CheckAddress(address string) error {
-	// Try to interpret address as a URL, as an IP with a port, or as an IP without a port.
-	u, uErr := url.Parse(address)
-	// If it's an IP with a port, ipStr will contain the IP address without the port. If
-	// it doesn't have a port, the function will error and ipStr will be an empty string.
-	// We'll also try to parse it from the full address for that case.
-	ipStr, _, _ := net.SplitHostPort(address)
-	ip1 := net.ParseIP(ipStr)
-	ip2 := net.ParseIP(address)
+type DNSResolver interface {
+	LookupHost(hostname string) ([]string, error)
+}
 
-	if ip1 != nil || ip2 != nil {
-		// Address is likely an IP address
-		var ip net.IP
-		if ip1 != nil {
-			ip = ip1
+type resolver struct{}
+
+func (r *resolver) LookupHost(hostname string) ([]string, error) {
+	return net.LookupHost(hostname)
+}
+
+type mockResolver struct{}
+
+func (m *mockResolver) LookupHost(hostname string) ([]string, error) {
+	switch hostname {
+	case "sourcegraph.local":
+		return []string{"127.0.0.1"}, nil
+	case "localhost":
+		return []string{"127.0.0.1"}, nil
+	case "sourcegraph.com":
+		return []string{"1.2.3.4"}, nil
+	default:
+		return []string{}, errors.Newf("no such host: %s", hostname)
+	}
+}
+
+var defaultResolver DNSResolver = &resolver{}
+
+type denyRule struct {
+	pattern string
+	builtin string
+}
+
+var defaultDenylist = []denyRule{
+	{builtin: "loopback"},
+	{pattern: "169.254.169.254"},
+}
+
+var old []denyRule
+
+func SetTestDenyList() {
+	old = defaultDenylist
+	defaultDenylist = []denyRule{
+		{pattern: "169.254.169.254"},
+	}
+}
+
+func ResetDenyList() {
+	defaultDenylist = old
+}
+
+// CheckURL validates the intended destination URL for a webhook, ensuring that
+// the hostname is not invalid, a bad IP, or anything else.
+func CheckURL(dest string) error {
+	u, uErr := url.Parse(dest)
+	if uErr != nil {
+		return errors.Newf("Could not parse provided URL %s", dest)
+	}
+
+	if !strings.HasPrefix(u.Scheme, "http") || u.Host == "" {
+		return errors.Newf("Unsupported URL provided %s", dest)
+	}
+
+	// This will validate if the IP address is external. Private, loopback and other
+	// non-external IP addresses are not allowed.
+	hostAllowList := hostmatcher.ParseHostMatchList("", "")
+	for _, denyRule := range defaultDenylist {
+		if denyRule.builtin != "" {
+			hostAllowList.AppendBuiltin(denyRule.builtin)
 		} else {
-			ip = ip2
+			hostAllowList.AppendPattern(denyRule.pattern)
 		}
+	}
 
-		if ip.To4() == nil && ip.To16() == nil {
-			return errors.New("Not a valid IPv4 or IPv6 address")
+	var addrs []string
+	var err error
+
+	ip := net.ParseIP(u.Hostname())
+
+	if ip != nil {
+		if isIllegalIP(ip, hostAllowList) {
+			return errIllegalAddr
 		}
-
-		// This will match any valid non-private unicast IP, aka any public host. It will filter out:
-		// - Unspecified (zero'd) IP addresses
-		// - Link-local addresses
-		// - Loopback (localhost) addresses
-		hostAllowList := hostmatcher.ParseHostMatchList("", hostmatcher.MatchBuiltinExternal)
-
-		if !hostAllowList.MatchIPAddr(ip) {
-			return errors.New("Must not be unspecified, private, link-local, or loopback address")
-		}
-
-		return nil
-	} else if uErr != nil {
-		return errors.New("Could not parse address")
-	} else {
-		// Address is likely a URL
-		if u.Scheme != "http" && u.Scheme != "https" {
-			return errors.New("Must use http or https scheme")
-		}
-
-		if u.Hostname() == "" || u.Hostname() == "localhost" {
-			return errors.New("Must not be localhost")
-		}
-
-		parts := strings.Split(u.Hostname(), ".")
-		tld := strings.ToLower(parts[len(parts)-1])
-		if match, _ := regexp.MatchString(reservedTLDs, tld); match {
-			return errors.New("Must not be a reserved TLD")
-		}
-
 		return nil
 	}
+
+	// we have to deal with a hostname
+	addrs, err = defaultResolver.LookupHost(u.Hostname())
+	if err != nil || len(addrs) == 0 {
+		return errors.New("Could not resolve hostname")
+	}
+
+	for _, addr := range addrs {
+		if ip := net.ParseIP(addr); ip != nil {
+			if isIllegalIP(ip, hostAllowList) {
+				return errIllegalAddr
+			}
+		}
+	}
+
+	return nil
+}
+
+func isIllegalIP(ip net.IP, hostAllowList *hostmatcher.HostMatchList) bool {
+	// if we do not match the IP address, it's not in the allow list
+	return hostAllowList.MatchIPAddr(ip)
 }

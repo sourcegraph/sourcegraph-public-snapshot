@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -155,18 +156,19 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			redis: redispool.Cache,
 		},
 		&httpapi.Config{
-			RateLimitNotifier:               rateLimitNotifier,
-			AnthropicAccessToken:            config.Anthropic.AccessToken,
-			AnthropicAllowedModels:          config.Anthropic.AllowedModels,
-			AnthropicMaxTokensToSample:      config.Anthropic.MaxTokensToSample,
-			AnthropicAllowedPromptPatterns:  config.Anthropic.AllowedPromptPatterns,
-			AnthropicRequestBlockingEnabled: config.Anthropic.RequestBlockingEnabled,
-			OpenAIAccessToken:               config.OpenAI.AccessToken,
-			OpenAIOrgID:                     config.OpenAI.OrgID,
-			OpenAIAllowedModels:             config.OpenAI.AllowedModels,
-			FireworksAccessToken:            config.Fireworks.AccessToken,
-			FireworksAllowedModels:          config.Fireworks.AllowedModels,
-			EmbeddingsAllowedModels:         config.AllowedEmbeddingsModels,
+			RateLimitNotifier:                           rateLimitNotifier,
+			AnthropicAccessToken:                        config.Anthropic.AccessToken,
+			AnthropicAllowedModels:                      config.Anthropic.AllowedModels,
+			AnthropicMaxTokensToSample:                  config.Anthropic.MaxTokensToSample,
+			AnthropicAllowedPromptPatterns:              config.Anthropic.AllowedPromptPatterns,
+			AnthropicRequestBlockingEnabled:             config.Anthropic.RequestBlockingEnabled,
+			OpenAIAccessToken:                           config.OpenAI.AccessToken,
+			OpenAIOrgID:                                 config.OpenAI.OrgID,
+			OpenAIAllowedModels:                         config.OpenAI.AllowedModels,
+			FireworksAccessToken:                        config.Fireworks.AccessToken,
+			FireworksAllowedModels:                      config.Fireworks.AllowedModels,
+			FireworksLogSelfServeCodeCompletionRequests: config.Fireworks.LogSelfServeCodeCompletionRequests,
+			EmbeddingsAllowedModels:                     config.AllowedEmbeddingsModels,
 		})
 	if err != nil {
 		return errors.Wrap(err, "httpapi.NewHandler")
@@ -179,6 +181,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Cloudflare in from of Cody Gateway. This comes first.
 	hasCloudflare := !config.InsecureDev
 	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
+	handler = requestinteraction.HTTPMiddleware(handler)
 
 	// Initialize our server
 	address := fmt.Sprintf(":%d", config.Port)
