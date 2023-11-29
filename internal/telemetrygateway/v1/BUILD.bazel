@@ -54,6 +54,7 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/featureflag",
+        "//internal/requestclient",
         "//internal/trace",
         "//lib/pointers",
         "@com_github_google_uuid//:uuid",
@@ -86,6 +87,7 @@ go_test(
     embed = [":telemetrygateway"],
     deps = [
         "//internal/actor",
+        "//internal/requestclient",
         "//internal/trace",
         "//internal/trace/tracetest",
         "//lib/pointers",

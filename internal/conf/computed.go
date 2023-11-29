@@ -725,11 +725,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 			return nil
 		}
 
-		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
-		if completionsConfig.AccessToken == "" {
-			return nil
-		}
-
 		// If not chat model is set, we cannot talk to Azure OpenAI. Bail.
 		if completionsConfig.ChatModel == "" {
 			return nil
@@ -956,11 +951,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameAzureOpenAI) {
 		// If no endpoint is configured, we cannot talk to Azure OpenAI.
 		if embeddingsConfig.Endpoint == "" {
-			return nil
-		}
-
-		// If not access token is set, we cannot talk to OpenAI. Bail.
-		if embeddingsConfig.AccessToken == "" {
 			return nil
 		}
 

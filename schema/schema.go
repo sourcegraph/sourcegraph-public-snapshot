@@ -301,10 +301,12 @@ type BitbucketCloudAuthorization struct {
 
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
+	// AccessToken description: The workspace access token to use when authenticating with Bitbucket Cloud.
+	AccessToken string `json:"accessToken,omitempty"`
 	// ApiURL description: The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	ApiURL string `json:"apiURL,omitempty"`
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
-	AppPassword string `json:"appPassword"`
+	AppPassword string `json:"appPassword,omitempty"`
 	// Authorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
 	Authorization *BitbucketCloudAuthorization `json:"authorization,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "teams" configuration.
@@ -332,7 +334,7 @@ type BitbucketCloudConnection struct {
 	// Url description: URL of Bitbucket Cloud, such as https://bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
-	Username string `json:"username"`
+	Username string `json:"username,omitempty"`
 	// WebhookSecret description: A shared secret used to authenticate incoming webhooks (minimum 12 characters).
 	WebhookSecret string `json:"webhookSecret,omitempty"`
 }
@@ -2559,6 +2561,8 @@ type SiteConfiguration struct {
 	BatchChangesEnabled *bool `json:"batchChanges.enabled,omitempty"`
 	// BatchChangesEnforceForks description: When enabled, all branches created by batch changes will be pushed to forks of the original repository.
 	BatchChangesEnforceForks bool `json:"batchChanges.enforceForks,omitempty"`
+	// BatchChangesRejectUnverifiedCommit description: Reject unverified commits when creating a Batch Change
+	BatchChangesRejectUnverifiedCommit *bool `json:"batchChanges.rejectUnverifiedCommit,omitempty"`
 	// BatchChangesRestrictToAdmins description: When enabled, only site admins can create and apply batch changes.
 	BatchChangesRestrictToAdmins *bool `json:"batchChanges.restrictToAdmins,omitempty"`
 	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.
@@ -2833,6 +2837,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")
 	delete(m, "batchChanges.enforceForks")
+	delete(m, "batchChanges.rejectUnverifiedCommit")
 	delete(m, "batchChanges.restrictToAdmins")
 	delete(m, "batchChanges.rolloutWindows")
 	delete(m, "branding")
