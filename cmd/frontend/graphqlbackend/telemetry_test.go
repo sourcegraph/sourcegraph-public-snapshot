@@ -99,8 +99,8 @@ func TestTelemetryRecordEvents(t *testing.T) {
 
 				md := *gotEvents[0].Parameters.Metadata
 				require.Len(t, md, 2)
-				assert.Equal(t, 1, md[2].Value.Value)
-				assert.Equal(t, 0, md[1].Value.Value)
+				assert.Equal(t, int32(1), md[0].Value.Value)
+				assert.Equal(t, int32(0), md[1].Value.Value)
 			},
 		},
 		{
@@ -197,8 +197,8 @@ func TestTelemetryRecordEvents(t *testing.T) {
 				require.Len(t, gotEvents, 1)
 				md := *gotEvents[0].Parameters.Metadata
 				require.Len(t, md, 3)
-				assert.Equal(t, 1, md[2].Value.Value)
-				assert.Equal(t, 0, md[1].Value.Value)
+				assert.Equal(t, int32(1), md[0].Value.Value)
+				assert.Equal(t, int32(0), md[1].Value.Value)
 				assert.Equal(t, 3.14, md[2].Value.Value)
 			},
 		},
