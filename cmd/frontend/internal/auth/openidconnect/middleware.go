@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
-	"github.com/gofrs/uuid"
+	"github.com/russellhaering/gosaml2/uuid"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
