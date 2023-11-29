@@ -391,7 +391,7 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const fileInfo = getFileInfo(name)
+    const fileInfo = getFileInfo(name, isBranch)
     const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
