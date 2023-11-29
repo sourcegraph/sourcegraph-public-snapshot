@@ -27,7 +27,7 @@ type AssignedTeamSummary struct {
 }
 
 func AssignedTeamsStoreWith(other basestore.ShareableStore, logger log.Logger) AssignedTeamsStore {
-	lgr := logger.Scoped("AssignedTeamsStore", "Store for a table containing manually assigned team code owners")
+	lgr := logger.Scoped("AssignedTeamsStore")
 	return &assignedTeamsStore{Store: basestore.NewWithHandle(other.Handle()), Logger: lgr}
 }
 

@@ -41,7 +41,7 @@ func NewBitbucketCodeHost(logger log.Logger, def *CodeHostDefinition) (*Bitbucke
 	c := bitbucket.NewBasicAuthClient(def.Username, def.Password, u, bitbucket.WithTimeout(15*time.Second))
 
 	return &BitbucketCodeHost{
-		logger:  logger.Scoped("bitbucket", "client that interacts with bitbucket server rest api"),
+		logger:  logger.Scoped("bitbucket"),
 		def:     def,
 		c:       c,
 		perPage: 30,

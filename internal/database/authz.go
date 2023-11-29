@@ -54,37 +54,16 @@ type AuthzStore interface {
 	GrantPendingPermissions(ctx context.Context, args *GrantPendingPermissionsArgs) error
 	// AuthorizedRepos checks if a user is authorized to access repositories in the candidate list.
 	// The returned list must be a list of repositories that are authorized to the given user.
-	// It is a no-op in the OSS version.
 	AuthorizedRepos(ctx context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error)
 	// RevokeUserPermissions deletes both effective and pending permissions that could be related to a user.
-	// It is a no-op in the OSS version.
 	RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error
 	// Bulk "RevokeUserPermissions" action.
 	RevokeUserPermissionsList(ctx context.Context, argsList []*RevokeUserPermissionsArgs) error
 }
 
 // AuthzWith instantiates and returns a new AuthzStore using the other store
-// handle. In the OSS version, this is a no-op AuthzStore, but this constructor
-// is overridden in enterprise versions.
-var AuthzWith = func(other basestore.ShareableStore) AuthzStore {
-	return &noopAuthzStore{}
-}
-
-// noopAuthzStore is a no-op placeholder for the OSS version.
-type noopAuthzStore struct{}
-
-func (*noopAuthzStore) GrantPendingPermissions(_ context.Context, _ *GrantPendingPermissionsArgs) error {
-	return nil
-}
-func (*noopAuthzStore) AuthorizedRepos(_ context.Context, _ *AuthorizedReposArgs) ([]*types.Repo, error) {
-	return []*types.Repo{}, nil
-}
-func (*noopAuthzStore) RevokeUserPermissions(_ context.Context, _ *RevokeUserPermissionsArgs) error {
-	return nil
-}
-func (*noopAuthzStore) RevokeUserPermissionsList(_ context.Context, _ []*RevokeUserPermissionsArgs) error {
-	return nil
-}
+// handle. This constructor is overridden.
+var AuthzWith func(other basestore.ShareableStore) AuthzStore
 
 // NewAuthzStore returns an OSS AuthzStore set with enterprise implementation.
 func NewAuthzStore(logger log.Logger, db DB, clock func() time.Time) AuthzStore {

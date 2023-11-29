@@ -12,13 +12,11 @@ export const FEATURE_FLAGS = [
     'admin-analytics-cache-disabled',
     'search-input-show-history',
     'search-results-keyboard-navigation',
-    'enable-streaming-git-blame',
     'plg-enable-add-codehost-widget',
     'accessible-file-tree',
     'accessible-symbol-tree',
     'accessible-file-tree-always-load-ancestors',
     'enable-ownership-panels',
-    'search-ranking',
     'blob-page-switch-areas-shortcuts',
     'clone-progress-logging',
     'sourcegraph-operator-site-admin-hide-maintenance',
@@ -29,6 +27,13 @@ export const FEATURE_FLAGS = [
     'enable-simple-search',
     'end-user-onboarding',
     'admin-onboarding',
+    'enable-sveltekit',
+    'search-content-based-lang-detection',
+    'search-new-keyword',
+    'search-debug',
+    'cody-chat-mock-test',
+    'signup-survey-enabled',
+    'cody-pro',
 ] as const
 
 export type FeatureFlagName = typeof FEATURE_FLAGS[number]

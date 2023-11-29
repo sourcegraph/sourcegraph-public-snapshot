@@ -11,27 +11,32 @@ go_library(
     visibility = ["//:__subpackages__"],
 )
 
-GENERATED_FILES = [
-    "namespace.go",
-    "action.go",
-]
-
 genrule(
-    name = "generate_go",
+    name = "generate_namespace_go",
     srcs = [
         "//internal/rbac:schema.yaml",
     ],
-    outs = GENERATED_FILES,
-    # cmd assumes this order of the files
-    cmd = """
-    outs=($(OUTS))
+    outs = ["_namespace.go"],
+    cmd = """\
+    $(location //internal/rbac/gen:type_gen) -i $< -o $@ -lang go -kind namespace
+    $(location @go_sdk//:bin/gofmt) -s -w $@
+    """,
+    tools = [
+        "//internal/rbac/gen:type_gen",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
+)
 
-    $(location //internal/rbac/gen:type_gen) -i $< -o $${outs[0]} -lang go -kind namespace
-    $(location @go_sdk//:bin/gofmt) -s -w $${outs[0]}
-
-    $(location //internal/rbac/gen:type_gen) -i $< -o $${outs[1]} -lang go -kind action
-    $(location @go_sdk//:bin/gofmt) -s -w $${outs[1]}
-
+genrule(
+    name = "generate_action_go",
+    srcs = [
+        "//internal/rbac:schema.yaml",
+    ],
+    outs = ["_action.go"],
+    cmd = """\
+    $(location //internal/rbac/gen:type_gen) -i $< -o $@ -lang go -kind action
+    $(location @go_sdk//:bin/gofmt) -s -w $@
     """,
     tools = [
         "//internal/rbac/gen:type_gen",
@@ -41,8 +46,15 @@ genrule(
 )
 
 write_generated_to_source_files(
-    name = "write_generated",
-    src = ":generate_go",
-    files = GENERATED_FILES,
+    name = "write_generated_namespace",
+    output_files = {"namespace.go": "_namespace.go"},
     tags = ["go_generate"],
+    target = ":generate_namespace_go",
+)
+
+write_generated_to_source_files(
+    name = "write_generated_action",
+    output_files = {"action.go": "_action.go"},
+    tags = ["go_generate"],
+    target = ":generate_action_go",
 )

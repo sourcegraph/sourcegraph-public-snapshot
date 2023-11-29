@@ -30,7 +30,7 @@ func New(
 	uploadStore uploadstore.Store,
 	newSearcher NewSearcher,
 ) *Service {
-	logger := log.Scoped("searchjobs.Service", "search job service")
+	logger := log.Scoped("searchjobs.Service")
 
 	svc := &Service{
 		logger:      logger,
@@ -211,7 +211,7 @@ func (s *Service) GetSearchJobLogsWriterTo(parentCtx context.Context, id int64) 
 	defer endObservation(1, observation.Args{})
 
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
-	if _, err := s.GetSearchJob(ctx, id); err != nil {
+	if err := s.store.UserHasAccess(ctx, id); err != nil {
 		return nil, err
 	}
 
@@ -283,8 +283,7 @@ func (s *Service) DeleteSearchJob(ctx context.Context, id int64) (err error) {
 	}()
 
 	// 🚨 SECURITY: only someone with access to the job may delete data and the db entries
-	_, err = s.GetSearchJob(ctx, id)
-	if err != nil {
+	if err := s.store.UserHasAccess(ctx, id); err != nil {
 		return err
 	}
 
@@ -325,8 +324,7 @@ func (s *Service) GetSearchJobCSVWriterTo(parentCtx context.Context, id int64) (
 	defer endObservation(1, observation.Args{})
 
 	// 🚨 SECURITY: only someone with access to the job may copy the blobs
-	_, err = s.GetSearchJob(ctx, id)
-	if err != nil {
+	if err := s.store.UserHasAccess(ctx, id); err != nil {
 		return nil, err
 	}
 
@@ -400,7 +398,6 @@ func writeSearchJobCSV(ctx context.Context, iter *iterator.Iterator[string], upl
 	writeKey := func(key string, skipHeader bool) (int64, error) {
 		rc, err := uploadStore.Get(ctx, key)
 		if err != nil {
-			_ = rc.Close()
 			return 0, err
 		}
 		defer rc.Close()

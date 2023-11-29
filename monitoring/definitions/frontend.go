@@ -36,15 +36,6 @@ func Frontend() *monitoring.Dashboard {
 	grpcMethodVariableFrontendZoektConfiguration := shared.GRPCMethodVariable("zoekt_configuration", grpcZoektConfigurationServiceName)
 	grpcMethodVariableFrontendInternalAPI := shared.GRPCMethodVariable("internal_api", grpcInternalAPIServiceName)
 
-	orgMetricSpec := []struct{ name, route, description string }{
-		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
-		{"create_org", "CreateOrganization", "API requests to create an organisation"},
-		{"remove_org_member", "RemoveUserFromOrganization", "API requests to remove organisation member"},
-		{"invite_org_member", "InviteUserToOrganization", "API requests to invite a new organisation member"},
-		{"org_invite_respond", "RespondToOrganizationInvitation", "API requests to respond to an org invitation"},
-		{"org_repositories", "OrgRepositories", "API requests to list repositories owned by an org"},
-	}
-
 	return &monitoring.Dashboard{
 		Name:        "frontend",
 		Title:       "Frontend",
@@ -341,6 +332,11 @@ func Frontend() *monitoring.Dashboard {
 					},
 				},
 			},
+
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "frontend",
+				InstanceFilterRegex: `${internalInstance:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
 
 			shared.CodeIntelligence.NewResolversGroup(containerName),
 			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
@@ -655,11 +651,6 @@ func Frontend() *monitoring.Dashboard {
 				}}},
 			},
 			{
-				Title:  "Organisation GraphQL API requests",
-				Hidden: true,
-				Rows:   orgMetricRows(orgMetricSpec),
-			},
-			{
 				Title:  "Cloud KMS and cache",
 				Hidden: true,
 				Rows: []monitoring.Row{
@@ -703,7 +694,7 @@ func Frontend() *monitoring.Dashboard {
 			},
 
 			// Resource monitoring
-			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
+			shared.NewDatabaseConnectionsMonitoringGroup("frontend", monitoring.ObservableOwnerDevOps),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
@@ -1080,45 +1071,4 @@ func Frontend() *monitoring.Dashboard {
 			shared.CodeInsights.NewSearchAggregationsGroup(containerName),
 		},
 	}
-}
-
-func orgMetricRows(orgMetricSpec []struct {
-	name        string
-	route       string
-	description string
-},
-) []monitoring.Row {
-	result := []monitoring.Row{}
-	for _, m := range orgMetricSpec {
-		result = append(result, monitoring.Row{
-			{
-				Name:           m.name + "_rate",
-				Description:    "rate of " + m.description,
-				Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))`,
-				NoAlert:        true,
-				Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: `Rate (QPS) of ` + m.description,
-			},
-			{
-				Name:           m.name + "_latency_p99",
-				Description:    "99 percentile latency of " + m.description,
-				Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="` + m.route + `"}[5m])) by (le))`,
-				NoAlert:        true,
-				Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: `99 percentile latency of` + m.description,
-			},
-			{
-				Name:           m.name + "_error_rate",
-				Description:    "percentage of " + m.description + " that return an error",
-				Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="` + m.route + `",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))*100`,
-				NoAlert:        true,
-				Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: `Percentage of ` + m.description + ` that return an error`,
-			},
-		})
-	}
-	return result
 }

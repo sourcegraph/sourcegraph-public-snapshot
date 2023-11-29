@@ -53,6 +53,7 @@ go_test(
         "//internal/rcache",
         "//internal/testutil",
         "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@org_golang_x_time//rate",

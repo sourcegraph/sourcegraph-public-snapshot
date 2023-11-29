@@ -27,7 +27,7 @@ import (
 // we do a simple auth on a static secret instead that is uniquely generated per
 // deployment.
 func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string, sources *actor.Sources) http.Handler {
-	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
+	baseLogger = baseLogger.Scoped("diagnostics")
 
 	hasValidSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) (yes bool) {
 		token, err := authbearer.ExtractBearer(r.Header)

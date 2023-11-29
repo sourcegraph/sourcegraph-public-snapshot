@@ -26,7 +26,6 @@ import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { EventName, EventLocation } from '../../../util/constants'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
@@ -69,6 +68,8 @@ export const ChatUI: React.FC<IChatUIProps> = ({
         toggleIncludeInferredFile,
         abortMessageInProgress,
         fetchRepositoryNames,
+        storageQuotaExceeded,
+        clearHistory,
     } = codyChatStore
 
     const [formInput, setFormInput] = useState('')
@@ -121,6 +122,23 @@ export const ChatUI: React.FC<IChatUIProps> = ({
 
     if (!loaded) {
         return <></>
+    }
+
+    if (storageQuotaExceeded) {
+        return (
+            <div className={styles.storageQuotaError}>
+                <H2 className="text-center">Storage Limit Reached</H2>
+                <Text className="text-center mb-4">
+                    Cody can’t save your chat history right now because your browser’s storage space is full.
+                    <br />
+                    Please free up some space by clearing your browser’s storage or deleting chat history, and then give
+                    it another try.
+                </Text>
+                <Button onClick={clearHistory} variant="secondary">
+                    Clear Chat History
+                </Button>
+            </div>
+        )
     }
 
     return (
@@ -257,13 +275,6 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
                     </Button>
                 </div>
             )}
-            <Link
-                to="/get-cody"
-                className="d-inline-block w-100 ml-auto text-right font-italic"
-                onClick={() => eventLogger.log(EventName.CODY_CTA, { location: EventLocation.CHAT_RESPONSE })}
-            >
-                Use commands, autocomplete and more in your IDE.
-            </Link>
         </div>
     )
 })

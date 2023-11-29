@@ -24,7 +24,7 @@ func serveHelp(w http.ResponseWriter, r *http.Request) {
 	page := strings.TrimPrefix(r.URL.Path, "/help")
 	versionStr := version.Version()
 
-	logger := sglog.Scoped("serveHelp", "")
+	logger := sglog.Scoped("serveHelp")
 	logger.Info("redirecting to docs", sglog.String("page", page), sglog.String("versionStr", versionStr))
 
 	// For Cody App, help links are handled in the frontend. We should never get here.

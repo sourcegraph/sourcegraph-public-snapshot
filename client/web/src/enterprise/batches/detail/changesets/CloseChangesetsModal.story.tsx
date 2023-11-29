@@ -1,12 +1,12 @@
 import { action } from '@storybook/addon-actions'
-import type { Story, DecoratorFn, Meta } from '@storybook/react'
+import type { StoryFn, Decorator, Meta } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../components/WebStory'
 
 import { CloseChangesetsModal } from './CloseChangesetsModal'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/details/CloseChangesetsModal',
@@ -20,7 +20,7 @@ const closeChangesets = () => {
     return Promise.resolve()
 }
 
-export const Confirmation: Story = () => (
+export const Confirmation: StoryFn = () => (
     <WebStory>
         {props => (
             <CloseChangesetsModal

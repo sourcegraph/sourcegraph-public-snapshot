@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -84,7 +83,7 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 		return nil, err
 	}
 
-	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
+	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: db, externalService: es}, nil
 }
 
 func MarshalExternalServiceID(id int64) graphql.ID {
@@ -264,7 +263,7 @@ func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externa
 
 	source, err := repos.NewSource(
 		ctx,
-		log.Scoped("externalServiceResolver.CheckConnection", ""),
+		log.Scoped("externalServiceResolver.CheckConnection"),
 		r.db,
 		r.externalService,
 		httpcli.ExternalClientFactory,
@@ -316,6 +315,10 @@ func (r *externalServiceAvailabilityStateResolver) ImplementationNote() string {
 
 func (r *externalServiceResolver) SupportsRepoExclusion() bool {
 	return r.externalService.SupportsRepoExclusion()
+}
+
+func (r *externalServiceResolver) Unrestricted() bool {
+	return r.externalService.Unrestricted
 }
 
 type externalServiceSyncJobConnectionResolver struct {
@@ -486,19 +489,8 @@ func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context
 			return
 		}
 
-		namespacesArgs := protocol.ExternalServiceNamespacesArgs{
-			ExternalServiceID: externalServiceID,
-			Kind:              r.args.Kind,
-			Config:            config,
-		}
-
-		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, namespacesArgs)
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		r.nodes = append(r.nodes, res.Namespaces...)
+		e := newExternalServices(log.Scoped("graphql.externalservicenamespaces"), r.db)
+		r.nodes, r.err = e.ListNamespaces(ctx, externalServiceID, r.args.Kind, config)
 		r.totalCount = int32(len(r.nodes))
 	})
 
@@ -561,22 +553,8 @@ func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Contex
 			return
 		}
 
-		reposArgs := protocol.ExternalServiceRepositoriesArgs{
-			ExternalServiceID: externalServiceID,
-			Kind:              r.args.Kind,
-			Query:             r.args.Query,
-			Config:            config,
-			First:             first,
-			ExcludeRepos:      r.args.ExcludeRepos,
-		}
-
-		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, reposArgs)
-		if err != nil {
-			r.err = err
-			return
-		}
-
-		r.nodes = res.Repos
+		e := newExternalServices(log.Scoped("graphql.externalservicerepositories"), r.db)
+		r.nodes, r.err = e.DiscoverRepos(ctx, externalServiceID, r.args.Kind, config, first, r.args.Query, r.args.ExcludeRepos)
 	})
 
 	return r.nodes, r.err

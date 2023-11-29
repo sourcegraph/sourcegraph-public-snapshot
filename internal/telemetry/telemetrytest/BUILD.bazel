@@ -21,8 +21,10 @@ go_test(
     srcs = ["telemetrytest_test.go"],
     embed = [":telemetrytest"],
     deps = [
+        "//internal/telemetry",
         "//internal/telemetrygateway/v1:telemetrygateway",
         "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
 )

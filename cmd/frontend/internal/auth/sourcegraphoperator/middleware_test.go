@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -116,7 +117,7 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 	return httptest.NewServer(s), &email
 }
 
-type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response
+type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, authed bool, state string) *http.Response
 
 type mockDetails struct {
 	usersStore            *dbmocks.MockUserStore
@@ -149,7 +150,7 @@ func newMockDBAndRequester() mockDetails {
 	authedHandler.Handle("/.api/", Middleware(db).API(h))
 	authedHandler.Handle("/", Middleware(db).App(h))
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool) *http.Response {
+	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool, state string) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
 		for _, cookie := range cookies {
 			req.AddCookie(cookie)
@@ -158,6 +159,9 @@ func newMockDBAndRequester() mockDetails {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
 		}
 		resp := httptest.NewRecorder()
+		if state != "" {
+			session.SetData(resp, req, "oidcState", state)
+		}
 		authedHandler.ServeHTTP(resp, req)
 		return resp.Result()
 	}
@@ -183,7 +187,7 @@ func TestMiddleware(t *testing.T) {
 	defer oidcIDServer.Close()
 	providerConfig.Issuer = oidcIDServer.URL
 
-	mockProvider := NewProvider(providerConfig).(*provider)
+	mockProvider := NewProvider(providerConfig, httpcli.TestExternalClient).(*provider)
 	providers.MockProviders = []providers.Provider{mockProvider}
 	defer func() { providers.MockProviders = nil }()
 
@@ -195,7 +199,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("unauthenticated API request should pass through", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		resp := mocks.doRequest(http.MethodGet, "http://example.com/.api/foo", "", nil, false)
+		resp := mocks.doRequest(http.MethodGet, "http://example.com/.api/foo", "", nil, false, "")
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
@@ -203,7 +207,7 @@ func TestMiddleware(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
 		urlStr := fmt.Sprintf("http://example.com%s/login?pc=%s", authPrefix, mockProvider.ConfigID().ID)
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false, "")
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 
 		location := resp.Header.Get("Location")
@@ -227,8 +231,8 @@ func TestMiddleware(t *testing.T) {
 			ProviderID: mockProvider.ConfigID().ID,
 		}
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, badState.Encode())
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false)
-		assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false, badState.Encode())
+		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	})
 
 	t.Run("callback with good CSRF should set auth cookie", func(t *testing.T) {
@@ -256,7 +260,7 @@ func TestMiddleware(t *testing.T) {
 				CreatedAt: time.Now(),
 			}, nil
 		})
-		mocks.externalAccountsStore.CreateUserAndSaveFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ extsvc.AccountSpec, _ extsvc.AccountData) (*types.User, error) {
+		mocks.usersStore.CreateWithExternalAccountFunc.SetDefaultHook(func(_ context.Context, user database.NewUser, _ *extsvc.Account) (*types.User, error) {
 			assert.True(t, strings.HasPrefix(user.Username, usernamePrefix), "%q does not have prefix %q", user.Username, usernamePrefix)
 			return &types.User{ID: 1}, nil
 		})
@@ -268,9 +272,9 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
-		wantRedirect := fmt.Sprintf(`%s?signin=`, state.Redirect)
+		wantRedirect := fmt.Sprintf(`%s?signin=OpenIDConnect`, state.Redirect)
 		assert.Equal(t, wantRedirect, resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
 	})
@@ -305,7 +309,7 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	})
 
@@ -342,7 +346,7 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, "/", resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
@@ -385,7 +389,7 @@ func TestMiddleware(t *testing.T) {
 				Value: state.Encode(),
 			},
 		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false)
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
 		body, err := io.ReadAll(resp.Body)

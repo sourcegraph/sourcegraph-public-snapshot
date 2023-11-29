@@ -1,134 +1,138 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SiteInitPage normal 1`] = `
+exports[`SiteInitPage > normal 1`] = `
 <DocumentFragment>
   <div
-    class="siteInitPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Welcome to Sourcegraph
+    </h1>
+    <p
+      class="text-muted"
+    >
+      Create an admin account to get started
+    </p>
     <div
-      class="card content"
+      class="wrapper"
     >
       <div
-        class="cardBody p-4"
+        class="container"
       >
-        <img
-          alt="Sourcegraph logo"
-          class="w-100 mb-3"
-          src="/img/sourcegraph-logo-light.svg"
-        />
-        <h2
-          class="h2 site-init-page__header"
-        >
-          Welcome
-        </h2>
-        <p
-          class=""
-        >
-          Create an admin account to start using Sourcegraph.
-        </p>
         <form
-          class="signinSignupForm test-signup-form rounded p-4 text-left mt-4 w-100"
+          class="test-signup-form w-100"
           novalidate=""
         >
           <div
-            class="form-group d-flex flex-column align-content-start"
+            class="form-group"
           >
-            <label
-              class="label align-self-start"
-              for="email"
-            >
-              Email
-            </label>
             <div
               class="container"
             >
-              <div
-                class="container loader-input loaderInput"
+              <label
+                class="label label"
               >
-                <input
-                  aria-describedby="email-input-invalid-feedback"
-                  autocomplete="email"
-                  class="form-control with-invalid-icon"
-                  id="email"
-                  name="email"
-                  placeholder=" "
-                  required=""
-                  spellcheck="false"
-                  type="email"
-                  value=""
-                />
-              </div>
+                <div
+                  class="mb-2"
+                >
+                  Email
+                </div>
+                <div
+                  class="container loader-input loaderInput"
+                >
+                  <input
+                    aria-describedby="email-input-invalid-feedback"
+                    autocomplete="email"
+                    class="form-control with-invalid-icon"
+                    id="email"
+                    name="email"
+                    placeholder=" "
+                    required=""
+                    spellcheck="false"
+                    type="email"
+                    value=""
+                  />
+                </div>
+              </label>
             </div>
           </div>
           <div
             class="form-group d-flex flex-column align-content-start"
           >
             <label
-              class="label align-self-start"
-              for="username"
+              class="label"
             >
               Username
-            </label>
-            <div
-              class="container"
-            >
               <div
-                class="container loader-input loaderInput"
+                class="container"
               >
-                <input
-                  aria-describedby="username-input-invalid-feedback"
-                  autocapitalize="off"
-                  autocomplete="username"
-                  class="form-control with-invalid-icon"
-                  id="username"
-                  maxlength="255"
-                  name="username"
-                  pattern="^\\\\w(?:\\\\w|[.\\\\-](?=\\\\w))*-?$"
-                  placeholder=" "
-                  required=""
-                  spellcheck="false"
-                  type="text"
-                  value=""
-                />
+                <div
+                  class="container loader-input loaderInput"
+                >
+                  <input
+                    aria-describedby="username-input-invalid-feedback"
+                    autocapitalize="off"
+                    autocomplete="username"
+                    class="form-control with-invalid-icon"
+                    id="username"
+                    maxlength="255"
+                    name="username"
+                    pattern="^\\\\w(?:\\\\w|[.\\\\-](?=\\\\w))*-?$"
+                    placeholder=" "
+                    required=""
+                    spellcheck="false"
+                    type="text"
+                    value=""
+                  />
+                </div>
               </div>
-            </div>
+            </label>
           </div>
           <div
             class="form-group d-flex flex-column align-content-start"
           >
             <label
-              class="label align-self-start"
-              for="password"
+              class="label"
             >
               Password
-            </label>
-            <div
-              class="container"
-            >
               <div
-                class="container loader-input loaderInput"
+                class="container"
               >
-                <input
-                  aria-describedby="password-input-invalid-feedback password-requirements"
-                  autocomplete="new-password"
-                  class="form-control with-invalid-icon"
-                  formnovalidate=""
-                  id="password"
-                  minlength="12"
-                  name="password"
-                  placeholder=" "
-                  required=""
-                  type="password"
-                  value=""
-                />
+                <div
+                  class="container loader-input loaderInput"
+                >
+                  <input
+                    aria-describedby="password-input-invalid-feedback password-requirements"
+                    autocomplete="new-password"
+                    class="form-control with-invalid-icon"
+                    formnovalidate=""
+                    id="password"
+                    minlength="12"
+                    name="password"
+                    placeholder=" "
+                    required=""
+                    type="password"
+                    value=""
+                  />
+                </div>
+                <small
+                  class="text-muted form-text font-weight-normal descriptionBlock mt-2"
+                >
+                  At least 12 characters
+                </small>
               </div>
-            </div>
-            <small
-              class="form-help text-muted"
-              id="password-requirements"
-            >
-              At least 12 characters
-            </small>
+            </label>
           </div>
           <div
             class="form-group mb-0"
@@ -138,7 +142,7 @@ exports[`SiteInitPage normal 1`] = `
               class="btn btnPrimary btnBlock d-flex justify-content-center align-items-center"
               type="submit"
             >
-              Create admin account & continue
+              Create admin account and continue
             </button>
           </div>
           <p
@@ -175,24 +179,38 @@ exports[`SiteInitPage normal 1`] = `
 </DocumentFragment>
 `;
 
-exports[`SiteInitPage unexpected authed user 1`] = `
+exports[`SiteInitPage > unexpected authed user 1`] = `
 <DocumentFragment>
   <div
-    class="siteInitPage"
+    class="wrapper"
   >
+    <span
+      class=""
+    >
+      <img
+        alt="Sourcegraph logo"
+        class="logo"
+        src="/img/sourcegraph-mark.svg?v2"
+      />
+    </span>
+    <h1
+      class="h1"
+    >
+      Welcome to Sourcegraph
+    </h1>
+    <p
+      class="text-muted"
+    >
+      Create an admin account to get started
+    </p>
     <div
-      class="card content"
+      class="wrapper"
     >
       <div
-        class="cardBody p-4"
+        class="container"
       >
-        <img
-          alt="Sourcegraph logo"
-          class="w-100 mb-3"
-          src="/img/sourcegraph-logo-light.svg"
-        />
         <p
-          class=""
+          class="mb-0"
         >
           You're signed in as 
           <strong>

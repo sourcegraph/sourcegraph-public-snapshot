@@ -1,5 +1,5 @@
 import { mdiMagnify } from '@mdi/js'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { startCase } from 'lodash'
 
 import { ButtonLink, H1, H2, Text } from '..'
@@ -36,7 +36,7 @@ const Config: Meta = {
 
 export default Config
 
-export const Overview: Story = () => (
+export const Overview: StoryFn = () => (
     <>
         <H1>ButtonLink</H1>
         <H2>Variants</H2>

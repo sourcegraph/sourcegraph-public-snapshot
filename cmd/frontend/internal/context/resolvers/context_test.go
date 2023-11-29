@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/fs"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -34,7 +34,7 @@ func TestContextResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	repo1 := types.Repo{Name: "repo1"}
 	repo2 := types.Repo{Name: "repo2"}
 	// Create populates the IDs in the passed in types.Repo
@@ -56,10 +56,10 @@ func TestContextResolver(t *testing.T) {
 	}
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, _ api.CommitID, fileName string) (fs.FileInfo, error) {
+	mockGitserver.StatFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName, _ api.CommitID, fileName string) (fs.FileInfo, error) {
 		return fakeFileInfo{path: fileName}, nil
 	})
-	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
+	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
 		if content, ok := files[repo][fileName]; ok {
 			return content, nil
 		}
@@ -164,6 +164,8 @@ func TestContextResolver(t *testing.T) {
 	}
 	// One code result and text result from each repo
 	expected := []string{"testcode1.go", "testtext1.md", "testcode2.go", "testtext2.md"}
+	sort.Strings(expected)
+	sort.Strings(paths)
 	require.Equal(t, expected, paths)
 }
 

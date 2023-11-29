@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 
-import { type Args, useMemo } from '@storybook/addons'
-import type { Meta, Story } from '@storybook/react'
+import { useMemo } from '@storybook/addons'
+import type { Meta, StoryFn, Args } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
@@ -25,8 +25,10 @@ const config: Meta = {
     argTypes: {
         isSourcegraphDotCom: {
             control: { type: 'boolean' },
-            defaultValue: true,
         },
+    },
+    args: {
+        isSourcegraphDotCom: true,
     },
 }
 
@@ -39,6 +41,7 @@ const authenticatedUser: UserNavItemProps['authenticatedUser'] = {
     session: { canSignOut: true },
     settingsURL: '#',
     siteAdmin: true,
+    emails: [],
     organizations: {
         nodes: [
             {
@@ -82,7 +85,7 @@ const OpenByDefaultWrapper: React.FunctionComponent<{
     return children({ menuButtonRef: menuButtonReference })
 }
 
-export const SiteAdmin: Story = args => {
+export const SiteAdmin: StoryFn = args => {
     const props = useMemo(() => commonProps(args), [args])
     return (
         <OpenByDefaultWrapper>
@@ -95,7 +98,7 @@ export const SiteAdmin: Story = args => {
     )
 }
 
-export const WithAvatar: Story = args => {
+export const WithAvatar: StoryFn = args => {
     const props = useMemo(() => commonProps(args), [args])
     return (
         <OpenByDefaultWrapper>

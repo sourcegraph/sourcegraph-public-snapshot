@@ -1,4 +1,3 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -34,6 +33,7 @@ go_library(
         "//internal/rcache",
         "//internal/redispool",
         "//internal/requestclient",
+        "//internal/requestinteraction",
         "//internal/service",
         "//internal/trace",
         "//internal/trace/policy",

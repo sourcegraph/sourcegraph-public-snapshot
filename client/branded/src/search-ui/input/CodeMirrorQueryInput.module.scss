@@ -40,13 +40,6 @@
         }
 
         :global(.cm-content) {
-            caret-color: var(--search-query-text-color);
-            font-family: var(--code-font-family);
-            font-size: var(--code-font-size);
-            color: var(--search-query-text-color);
-            // Disable default padding
-            padding: 0;
-
             &:global(.focus-visible),
             &:focus-visible {
                 box-shadow: none;
@@ -62,11 +55,6 @@
                 overflow-wrap: anywhere;
                 flex-shrink: 1;
             }
-        }
-
-        :global(.cm-line) {
-            // Disable default padding
-            padding: 0;
         }
 
         :global(.cm-placeholder) {

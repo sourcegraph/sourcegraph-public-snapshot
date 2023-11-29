@@ -5,23 +5,24 @@ import (
 	"container/list"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/cloneurl"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
+	server "github.com/sourcegraph/sourcegraph/cmd/gitserver/internal"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/cloneurl"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -34,32 +35,28 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
+type LazyDebugserverEndpoint struct {
+	lockerStatusEndpoint http.HandlerFunc
+}
+
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, config *Config) error {
 	logger := observationCtx.Logger
 
 	// Load and validate configuration.
@@ -68,32 +65,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	// Prepare the file system.
-	{
-		// Ensure the ReposDir exists.
-		if err := os.MkdirAll(config.ReposDir, os.ModePerm); err != nil {
-			return errors.Wrap(err, "creating SRC_REPOS_DIR")
-		}
-		// Ensure the Perforce Dir exists.
-		p4Home := filepath.Join(config.ReposDir, server.P4HomeName)
-		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
-			return errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
-		}
-		// Ensure the tmp dir exists, is cleaned up, and TMP_DIR is set properly.
-		tmpDir, err := setupAndClearTmp(logger, config.ReposDir)
-		if err != nil {
-			return errors.Wrap(err, "failed to setup temporary directory")
-		}
-		// Additionally, set TMP_DIR so other temporary files we may accidentally
-		// create are on the faster RepoDir mount.
-		if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
-			return errors.Wrap(err, "setting TMP_DIR")
-		}
-
-		// Delete the old reposStats file, which was used on gitserver prior to
-		// 2023-08-14.
-		if err := os.Remove(filepath.Join(config.ReposDir, "repos-stats.json")); err != nil && !os.IsNotExist(err) {
-			logger.Error("failed to remove old reposStats file", log.Error(err))
-		}
+	if err := gitserverfs.InitGitserverFileSystem(logger, config.ReposDir); err != nil {
+		return err
 	}
 
 	// Create a database connection.
@@ -109,10 +82,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "initializing keyring")
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = subrepoperms.NewSubRepoPermsClient(db.SubRepoPerms())
-	if err != nil {
-		return errors.Wrap(err, "failed to create sub-repo client")
-	}
+	authz.DefaultSubRepoPermsChecker = subrepoperms.NewSubRepoPermsClient(db.SubRepoPerms())
 
 	// Setup our server megastruct.
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
@@ -125,15 +95,16 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
 			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
-		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
-			return getVCSSyncer(ctx, &newVCSSyncerOpts{
-				externalServiceStore:    db.ExternalServices(),
-				repoStore:               db.Repos(),
-				depsSvc:                 dependencies.NewService(observationCtx, db),
-				repo:                    repo,
-				reposDir:                config.ReposDir,
-				coursierCacheDir:        config.CoursierCacheDir,
-				recordingCommandFactory: recordingCommandFactory,
+		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (vcssyncer.VCSSyncer, error) {
+			return vcssyncer.NewVCSSyncer(ctx, &vcssyncer.NewVCSSyncerOpts{
+				ExternalServiceStore:    db.ExternalServices(),
+				RepoStore:               db.Repos(),
+				DepsSvc:                 dependencies.NewService(observationCtx, db),
+				Repo:                    repo,
+				ReposDir:                config.ReposDir,
+				CoursierCacheDir:        config.CoursierCacheDir,
+				RecordingCommandFactory: recordingCommandFactory,
+				Logger:                  logger,
 			})
 		},
 		Hostname:                config.ExternalAddress,
@@ -168,6 +139,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(logger, handler)
 	handler = requestclient.InternalHTTPMiddleware(handler)
+	handler = requestinteraction.HTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, &gitserver), handler)
@@ -229,6 +201,12 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 	rec.RegistrationDone()
 
+	debugserverEndpoints.lockerStatusEndpoint = func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewEncoder(w).Encode(locker.AllStatuses()); err != nil {
+			logger.Error("failed to encode locker statuses", log.Error(err))
+		}
+	}
+
 	logger.Info("git-server: listening", log.String("addr", config.ListenAddress))
 
 	// We're ready!
@@ -252,10 +230,10 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	var additionalServerOptions []grpc.ServerOption
 
 	for method, scopedLogger := range map[string]log.Logger{
-		proto.GitserverService_Exec_FullMethodName:      logger.Scoped("exec.accesslog", "exec endpoint access log"),
-		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog", "archive endpoint access log"),
-		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog", "p4-exec endpoint access log"),
-		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog", "get-object endpoint access log"),
+		proto.GitserverService_Exec_FullMethodName:      logger.Scoped("exec.accesslog"),
+		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog"),
+		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog"),
+		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog"),
 	} {
 		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
 		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
@@ -272,55 +250,6 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	})
 
 	return grpcServer
-}
-
-func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
-	// Set up default settings first
-	fc := server.FusionConfig{
-		Enabled:             false,
-		Client:              conn.P4Client,
-		LookAhead:           2000,
-		NetworkThreads:      12,
-		NetworkThreadsFetch: 12,
-		PrintBatch:          10,
-		Refresh:             100,
-		Retries:             10,
-		MaxChanges:          -1,
-		IncludeBinaries:     false,
-		FsyncEnable:         false,
-	}
-
-	if conn.FusionClient == nil {
-		return fc
-	}
-
-	// Required
-	fc.Enabled = conn.FusionClient.Enabled
-	fc.LookAhead = conn.FusionClient.LookAhead
-
-	// Optional
-	if conn.FusionClient.NetworkThreads > 0 {
-		fc.NetworkThreads = conn.FusionClient.NetworkThreads
-	}
-	if conn.FusionClient.NetworkThreadsFetch > 0 {
-		fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
-	}
-	if conn.FusionClient.PrintBatch > 0 {
-		fc.PrintBatch = conn.FusionClient.PrintBatch
-	}
-	if conn.FusionClient.Refresh > 0 {
-		fc.Refresh = conn.FusionClient.Refresh
-	}
-	if conn.FusionClient.Retries > 0 {
-		fc.Retries = conn.FusionClient.Retries
-	}
-	if conn.FusionClient.MaxChanges > 0 {
-		fc.MaxChanges = conn.FusionClient.MaxChanges
-	}
-	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
-	fc.FsyncEnable = conn.FusionClient.FsyncEnable
-
-	return fc
 }
 
 // getDB initializes a connection to the database and returns a dbutil.DB
@@ -363,131 +292,9 @@ func getRemoteURLFunc(
 			return "", err
 		}
 
-		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
+		return cloneurl.ForEncryptableConfig(ctx, logger.Scoped("repos.CloneURL"), db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
-}
-
-type newVCSSyncerOpts struct {
-	externalServiceStore    database.ExternalServiceStore
-	repoStore               database.RepoStore
-	depsSvc                 *dependencies.Service
-	repo                    api.RepoName
-	reposDir                string
-	coursierCacheDir        string
-	recordingCommandFactory *wrexec.RecordingCommandFactory
-}
-
-func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer, error) {
-	// We need an internal actor in case we are trying to access a private repo. We
-	// only need access in order to find out the type of code host we're using, so
-	// it's safe.
-	r, err := opts.repoStore.GetByName(actor.WithInternalActor(ctx), opts.repo)
-	if err != nil {
-		return nil, errors.Wrap(err, "get repository")
-	}
-
-	extractOptions := func(connection any) (string, error) {
-		for _, info := range r.Sources {
-			extSvc, err := opts.externalServiceStore.GetByID(ctx, info.ExternalServiceID())
-			if err != nil {
-				return "", errors.Wrap(err, "get external service")
-			}
-			rawConfig, err := extSvc.Config.Decrypt(ctx)
-			if err != nil {
-				return "", err
-			}
-			normalized, err := jsonc.Parse(rawConfig)
-			if err != nil {
-				return "", errors.Wrap(err, "normalize JSON")
-			}
-			if err = jsoniter.Unmarshal(normalized, connection); err != nil {
-				return "", errors.Wrap(err, "unmarshal JSON")
-			}
-			return extSvc.URN(), nil
-		}
-		return "", errors.Errorf("unexpected empty Sources map in %v", r)
-	}
-
-	switch r.ExternalRepo.ServiceType {
-	case extsvc.TypePerforce:
-		var c schema.PerforceConnection
-		if _, err := extractOptions(&c); err != nil {
-			return nil, err
-		}
-
-		p4Home := filepath.Join(opts.reposDir, server.P4HomeName)
-		// Ensure the directory exists
-		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
-			return nil, errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
-		}
-
-		return &server.PerforceDepotSyncer{
-			MaxChanges:   int(c.MaxChanges),
-			Client:       c.P4Client,
-			FusionConfig: configureFusionClient(c),
-			P4Home:       p4Home,
-		}, nil
-	case extsvc.TypeJVMPackages:
-		var c schema.JVMPackagesConnection
-		if _, err := extractOptions(&c); err != nil {
-			return nil, err
-		}
-		return server.NewJVMPackagesSyncer(&c, opts.depsSvc, opts.coursierCacheDir), nil
-	case extsvc.TypeNpmPackages:
-		var c schema.NpmPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return server.NewNpmPackagesSyncer(c, opts.depsSvc, cli), nil
-	case extsvc.TypeGoModules:
-		var c schema.GoModulesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		return server.NewGoModulesSyncer(&c, opts.depsSvc, cli), nil
-	case extsvc.TypePythonPackages:
-		var c schema.PythonPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return server.NewPythonPackagesSyncer(&c, opts.depsSvc, cli, opts.reposDir), nil
-	case extsvc.TypeRustPackages:
-		var c schema.RustPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return server.NewRustPackagesSyncer(&c, opts.depsSvc, cli), nil
-	case extsvc.TypeRubyPackages:
-		var c schema.RubyPackagesConnection
-		urn, err := extractOptions(&c)
-		if err != nil {
-			return nil, err
-		}
-		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
-		if err != nil {
-			return nil, err
-		}
-		return server.NewRubyPackagesSyncer(&c, opts.depsSvc, cli), nil
-	}
-	return server.NewGitRepoSyncer(opts.recordingCommandFactory), nil
 }
 
 // methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.
@@ -578,57 +385,4 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 		}
 		return true
 	}
-}
-
-// setupAndClearTmp sets up the tempdir for reposDir as well as clearing it
-// out. It returns the temporary directory location.
-func setupAndClearTmp(logger log.Logger, reposDir string) (string, error) {
-	logger = logger.Scoped("setupAndClearTmp", "sets up the the tempdir for ReposDir as well as clearing it out")
-
-	// Additionally, we create directories with the prefix .tmp-old which are
-	// asynchronously removed. We do not remove in place since it may be a
-	// slow operation to block on. Our tmp dir will be ${s.ReposDir}/.tmp
-	dir := filepath.Join(reposDir, server.TempDirName) // .tmp
-	oldPrefix := server.TempDirName + "-old"
-	if _, err := os.Stat(dir); err == nil {
-		// Rename the current tmp file, so we can asynchronously remove it. Use
-		// a consistent pattern so if we get interrupted, we can clean it
-		// another time.
-		oldTmp, err := os.MkdirTemp(reposDir, oldPrefix)
-		if err != nil {
-			return "", err
-		}
-		// oldTmp dir exists, so we need to use a child of oldTmp as the
-		// rename target.
-		if err := os.Rename(dir, filepath.Join(oldTmp, server.TempDirName)); err != nil {
-			return "", err
-		}
-	}
-
-	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-		return "", err
-	}
-
-	// Asynchronously remove old temporary directories.
-	// TODO: Why async?
-	files, err := os.ReadDir(reposDir)
-	if err != nil {
-		logger.Error("failed to do tmp cleanup", log.Error(err))
-	} else {
-		for _, f := range files {
-			// Remove older .tmp directories as well as our older tmp-
-			// directories we would place into ReposDir. In September 2018 we
-			// can remove support for removing tmp- directories.
-			if !strings.HasPrefix(f.Name(), oldPrefix) && !strings.HasPrefix(f.Name(), "tmp-") {
-				continue
-			}
-			go func(path string) {
-				if err := os.RemoveAll(path); err != nil {
-					logger.Error("failed to remove old temporary directory", log.String("path", path), log.Error(err))
-				}
-			}(filepath.Join(reposDir, f.Name()))
-		}
-	}
-
-	return dir, nil
 }

@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronLeft } from '@mdi/js'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { H2 } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
@@ -11,7 +11,7 @@ import { Icon } from '../Icon'
 
 import { Collapse, CollapseHeader, CollapsePanel } from './Collapse'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
@@ -24,7 +24,7 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = () => {
+export const Simple: StoryFn = () => {
     const [isOpened, setIsOpened] = useState(false)
 
     const handleOpenChange = useCallback((next: boolean) => {

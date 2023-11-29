@@ -99,7 +99,7 @@ export const LicenseKeyModal: FC<LicenseKeyModalProps> = ({
             <H3 className="m-0 pb-4">Upgrade your license</H3>
             <Text className="m-0 pb-3">Enter your license key to start your enterprise set up:</Text>
             {error && <Alert variant="danger">License key not recognized. Please try again.</Alert>}
-            {/* eslint-disable @typescript-eslint/no-misused-promises */}
+            {}
             <Form onSubmit={onSubmit}>
                 <Label htmlFor="license-key">License key</Label>
                 <Input

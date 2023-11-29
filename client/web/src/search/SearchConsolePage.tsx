@@ -1,7 +1,5 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { Prec } from '@codemirror/state'
-import { keymap } from '@codemirror/view'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { BehaviorSubject, of } from 'rxjs'
@@ -12,7 +10,6 @@ import {
     type StreamingSearchResultsListProps,
     CodeMirrorQueryInput,
     createDefaultSuggestions,
-    changeListener,
 } from '@sourcegraph/branded'
 import { LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
@@ -73,13 +70,16 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
         [isSourcegraphDotCom]
     )
 
-    const extensions = useMemo(
-        () => [
-            Prec.highest(keymap.of([{ key: 'Mod-Enter', run: () => (triggerSearch(), true) }])),
-            changeListener(value => searchQuery.next(value)),
-            autocompletion,
-        ],
-        [searchQuery, triggerSearch, autocompletion]
+    const onEnter = useCallback(() => {
+        triggerSearch()
+        return true
+    }, [triggerSearch])
+
+    const onChange = useCallback(
+        (value: string) => {
+            searchQuery.next(value)
+        },
+        [searchQuery]
     )
 
     // Fetch search results when the `q` URL query parameter changes
@@ -107,7 +107,10 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                             patternType={patternType}
                             interpretComments={true}
                             value={searchQuery.value}
-                            extensions={extensions}
+                            multiLine={true}
+                            extension={autocompletion}
+                            onEnter={onEnter}
+                            onChange={onChange}
                         />
                     </div>
                     <Button className="mt-2" onClick={triggerSearch} variant="primary">
@@ -129,6 +132,7 @@ export const SearchConsolePage: React.FunctionComponent<React.PropsWithChildren<
                                 submitSearch={submitSearch}
                                 caseSensitive={caseSensitive}
                                 searchQueryFromURL={submittedURLQuery}
+                                showQueryExamplesOnNoResultsPage={false}
                             />
                         ))}
                 </div>

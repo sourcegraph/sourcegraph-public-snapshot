@@ -112,7 +112,7 @@ func CodeMonitorsWith(other basestore.ShareableStore) *codeMonitorStore {
 // clock for timestamps.
 func CodeMonitorsWithClock(other basestore.ShareableStore, clock func() time.Time) *codeMonitorStore {
 	handle := basestore.NewWithHandle(other.Handle())
-	return &codeMonitorStore{Store: handle, userStore: UsersWith(log.Scoped("codemonitors", ""), handle), now: clock}
+	return &codeMonitorStore{Store: handle, userStore: UsersWith(log.Scoped("codemonitors"), handle), now: clock}
 }
 
 // Clock returns the clock of the underlying store.
@@ -260,7 +260,7 @@ const (
 func newTestStore(t *testing.T) (context.Context, DB, *codeMonitorStore) {
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }

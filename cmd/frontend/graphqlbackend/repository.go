@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -76,7 +75,7 @@ func NewRepositoryResolver(db database.DB, client gitserver.Client, repo *types.
 			Name: name,
 			ID:   id,
 		},
-		logger: log.Scoped("repositoryResolver", "resolve a specific repository").
+		logger: log.Scoped("repositoryResolver").
 			With(log.Object("repo",
 				log.String("name", string(name)),
 				log.Int32("id", int32(id)))),
@@ -322,7 +321,7 @@ func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (_ *GitCommitR
 		return nil, err
 	}
 
-	commit, err := r.gitserverClient.FirstEverCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name)
+	commit, err := r.gitserverClient.FirstEverCommit(ctx, repo.Name)
 	if err != nil {
 		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 			return nil, nil

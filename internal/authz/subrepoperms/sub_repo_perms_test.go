@@ -30,7 +30,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 		name     string
 		userID   int32
 		content  authz.RepoContent
-		clientFn func() (*SubRepoPermsClient, error)
+		clientFn func() *SubRepoPermsClient
 		want     authz.Perms
 	}{
 		{
@@ -40,7 +40,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "",
 			},
-			clientFn: func() (*SubRepoPermsClient, error) {
+			clientFn: func() *SubRepoPermsClient {
 				return NewSubRepoPermsClient(NewMockSubRepoPermissionsGetter())
 			},
 			want: authz.Read,
@@ -52,7 +52,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() (*SubRepoPermsClient, error) {
+			clientFn: func() *SubRepoPermsClient {
 				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 					return map[api.RepoName]authz.SubRepoPermissions{
@@ -72,7 +72,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() (*SubRepoPermsClient, error) {
+			clientFn: func() *SubRepoPermsClient {
 				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 					return map[api.RepoName]authz.SubRepoPermissions{
@@ -92,7 +92,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() (*SubRepoPermsClient, error) {
+			clientFn: func() *SubRepoPermsClient {
 				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 					return map[api.RepoName]authz.SubRepoPermissions{
@@ -112,7 +112,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() (*SubRepoPermsClient, error) {
+			clientFn: func() *SubRepoPermsClient {
 				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 					return map[api.RepoName]authz.SubRepoPermissions{
@@ -132,7 +132,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 				Repo: "sample",
 				Path: "/dev/thing",
 			},
-			clientFn: func() (*SubRepoPermsClient, error) {
+			clientFn: func() *SubRepoPermsClient {
 				getter := NewMockSubRepoPermissionsGetter()
 				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
 					return map[api.RepoName]authz.SubRepoPermissions{
@@ -149,10 +149,7 @@ func TestSubRepoPermsPermissions(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			client, err := tc.clientFn()
-			if err != nil {
-				t.Fatal(err)
-			}
+			client := tc.clientFn()
 			have, err := client.Permissions(context.Background(), tc.userID, tc.content)
 			if err != nil {
 				t.Fatal(err)
@@ -228,10 +225,8 @@ func BenchmarkFilterActorPaths(b *testing.B) {
 			},
 		}, nil
 	})
-	checker, err := NewSubRepoPermsClient(getter)
-	if err != nil {
-		b.Fatal(err)
-	}
+	checker := NewSubRepoPermsClient(getter)
+
 	a := &actor.Actor{
 		UID: 1,
 	}
@@ -338,10 +333,7 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 					},
 				}, nil
 			})
-			client, err := NewSubRepoPermsClient(getter)
-			if err != nil {
-				t.Fatal(err)
-			}
+			client := NewSubRepoPermsClient(getter)
 
 			ctx := context.Background()
 
@@ -389,10 +381,7 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 	t.Cleanup(func() { conf.Mock(nil) })
 
 	getter := NewMockSubRepoPermissionsGetter()
-	client, err := NewSubRepoPermsClient(getter)
-	if err != nil {
-		t.Fatal(err)
-	}
+	client := NewSubRepoPermsClient(getter)
 
 	ctx := context.Background()
 	content := authz.RepoContent{
@@ -402,7 +391,7 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 
 	// Should hit DB only once
 	for i := 0; i < 3; i++ {
-		_, err = client.Permissions(ctx, 1, content)
+		_, err := client.Permissions(ctx, 1, content)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -418,7 +407,7 @@ func TestSubRepoPermsPermissionsCache(t *testing.T) {
 		return defaultCacheTTL + 1
 	}
 
-	_, err = client.Permissions(ctx, 1, content)
+	_, err := client.Permissions(ctx, 1, content)
 	if err != nil {
 		t.Fatal(err)
 	}

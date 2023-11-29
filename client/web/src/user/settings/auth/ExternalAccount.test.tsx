@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
 import GithubIcon from 'mdi-react/GithubIcon'
+import { describe, expect, test } from 'vitest'
 
 import type { AuthProvider } from '../../../jscontext'
 
@@ -9,6 +10,14 @@ import type { NormalizedExternalAccount } from './ExternalAccountsSignIn'
 const mockAccount: NormalizedExternalAccount = {
     name: 'Github',
     icon: ({ className }) => <GithubIcon className={className} />,
+    authProvider: {
+        serviceType: 'github',
+        displayName: 'github',
+        isBuiltin: false,
+        authenticationURL: 'https://example.com',
+        serviceID: '123',
+        clientID: '123',
+    },
 }
 
 describe('ExternalAccountConnectionDetails', () => {

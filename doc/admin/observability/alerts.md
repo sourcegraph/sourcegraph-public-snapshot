@@ -1,6 +1,6 @@
 # Alerts reference
 
-<!-- DO NOT EDIT: generated via: bazel run //dev:write_all_generated -->
+<!-- DO NOT EDIT: generated via: bazel run //doc/admin/observability:write_monitoring_docs -->
 
 This document contains a complete reference of all alerts in Sourcegraph's monitoring, and next steps for when you find alerts that are firing.
 If your alert isn't mentioned here, or if the next steps don't help, [contact us](mailto:support@sourcegraph.com) for assistance.
@@ -607,6 +607,38 @@ Generated query for warning alert: `max((sum(increase(src_graphql_search_respons
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((sum by (alert_type) (increase(src_graphql_search_response{alert_type!~"timed_out|no_results__suggest_quotes",source="other",status="alert"}[5m])) / ignoring (alert_type) group_left () sum(increase(src_graphql_search_response{source="other",status="alert"}[5m]))) >= 5)`
+
+</details>
+
+<br />
+
+## frontend: frontend_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "frontend" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> frontend: 300s+ maximum duration since last successful site configuration update (all "frontend" instances)
+
+**Next steps**
+
+- This indicates that one or more "frontend" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "frontend" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#frontend-frontend-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_frontend_frontend_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 
@@ -1575,6 +1607,38 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 
 <br />
 
+## gitserver: gitserver_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "gitserver" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> gitserver: 300s+ maximum duration since last successful site configuration update (all "gitserver" instances)
+
+**Next steps**
+
+- This indicates that one or more "gitserver" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "gitserver" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#gitserver-gitserver-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_gitserver_gitserver_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## gitserver: mean_blocked_seconds_per_conn_request
 
 <p class="subtitle">mean blocked seconds per conn request</p>
@@ -1598,7 +1662,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -1858,103 +1922,6 @@ Generated query for warning alert: `max((max by (instance) (go_gc_duration_secon
 <summary>Technical details</summary>
 
 Generated query for critical alert: `min((sum by (app) (up{app=~".*gitserver"}) / count by (app) (up{app=~".*gitserver"}) * 100) <= 90)`
-
-</details>
-
-<br />
-
-## github: src_githubcom_concurrency_lock_waiting_requests
-
-<p class="subtitle">number of requests waiting on the global mutex</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github: 100+ number of requests waiting on the global mutex for 5m0s
-
-**Next steps**
-
-- 								- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
-								- **Check redis-store health.
-								- **Check GitHub status.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-waiting-requests).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github_src_githubcom_concurrency_lock_waiting_requests"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((max(src_githubcom_concurrency_lock_waiting_requests)) >= 100)`
-
-</details>
-
-<br />
-
-## github: src_githubcom_concurrency_lock_failed_lock_requests
-
-<p class="subtitle">number of lock failures</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github: 100+ number of lock failures for 5m0s
-
-**Next steps**
-
-- 							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
-							- **Check redis-store health.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-failed-lock-requests).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github_src_githubcom_concurrency_lock_failed_lock_requests"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(rate(src_githubcom_concurrency_lock_failed_lock_requests[5m]))) >= 100)`
-
-</details>
-
-<br />
-
-## github: src_githubcom_concurrency_lock_failed_unlock_requests
-
-<p class="subtitle">number of unlock failures</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> github: 100+ number of unlock failures for 5m0s
-
-**Next steps**
-
-- 							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
-							- **Check redis-store health.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#github-src-githubcom-concurrency-lock-failed-unlock-requests).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_github_src_githubcom_concurrency_lock_failed_unlock_requests"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(rate(src_githubcom_concurrency_lock_failed_unlock_requests[5m]))) >= 100)`
 
 </details>
 
@@ -3814,6 +3781,38 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*worker"}) / c
 
 <br />
 
+## worker: worker_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "worker" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> worker: 300s+ maximum duration since last successful site configuration update (all "worker" instances)
+
+**Next steps**
+
+- This indicates that one or more "worker" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "worker" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#worker-worker-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_worker_worker_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## repo-updater: src_repoupdater_max_sync_backoff
 
 <p class="subtitle">time since oldest sync</p>
@@ -4609,6 +4608,38 @@ Generated query for critical alert: `min((max by (name) (src_gitlab_rate_limit_r
 
 <br />
 
+## repo-updater: repo_updater_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "repo_updater" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> repo-updater: 300s+ maximum duration since last successful site configuration update (all "repo_updater" instances)
+
+**Next steps**
+
+- This indicates that one or more "repo_updater" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "repo_updater" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#repo-updater-repo-updater-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_repo-updater_repo_updater_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## repo-updater: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
@@ -4669,7 +4700,7 @@ Generated query for warning alert: `max((sum by (category) (increase(src_fronten
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
@@ -5053,6 +5084,38 @@ Generated query for warning alert: `max((sum by (instance) (rate(searcher_servic
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((sum by (code) (increase(searcher_service_request_total{code!="200",code!="canceled"}[5m])) / ignoring (code) group_left () sum(increase(searcher_service_request_total[5m])) * 100) >= 5)`
+
+</details>
+
+<br />
+
+## searcher: searcher_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "searcher" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> searcher: 300s+ maximum duration since last successful site configuration update (all "searcher" instances)
+
+**Next steps**
+
+- This indicates that one or more "searcher" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "searcher" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#searcher-searcher-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_searcher_searcher_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 
@@ -5442,6 +5505,38 @@ Generated query for warning alert: `max((max by (instance) (go_gc_duration_secon
 <summary>Technical details</summary>
 
 Generated query for critical alert: `min((sum by (app) (up{app=~".*searcher"}) / count by (app) (up{app=~".*searcher"}) * 100) <= 90)`
+
+</details>
+
+<br />
+
+## symbols: symbols_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "symbols" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> symbols: 300s+ maximum duration since last successful site configuration update (all "symbols" instances)
+
+**Next steps**
+
+- This indicates that one or more "symbols" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "symbols" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-symbols-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_symbols_symbols_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
 
 </details>
 
@@ -7418,6 +7513,140 @@ Generated query for warning alert: `max((max(src_codeintel_commit_graph_queued_d
 
 <br />
 
+## telemetry: telemetry_gateway_exporter_queue_growth
+
+<p class="subtitle">rate of growth of export queue over 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 1+ rate of growth of export queue over 30m for 1h0m0s
+- <span class="badge badge-critical">critical</span> telemetry: 1+ rate of growth of export queue over 30m for 36h0m0s
+
+**Next steps**
+
+- Check the "number of events exported per batch over 30m" dashboard panel to see if export throughput is at saturation.
+- Increase `TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE` to export more events per batch.
+- Reduce `TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL` to schedule more export jobs.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details to see if any export errors are occuring - if logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph`s Telemetry Gateway service.
+- More help interpreting this metric is available in the [dashboards reference](./dashboards.md#telemetry-telemetry-gateway-exporter-queue-growth).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetry_gateway_exporter_queue_growth",
+  "critical_telemetry_telemetry_gateway_exporter_queue_growth"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((max(deriv(src_telemetrygatewayexporter_queue_size[30m]))) > 1)`
+
+Generated query for critical alert: `max((max(deriv(src_telemetrygatewayexporter_queue_size[30m]))) > 1)`
+
+</details>
+
+<br />
+
+## telemetry: telemetrygatewayexporter_exporter_errors_total
+
+<p class="subtitle">events exporter operation errors every 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 0+ events exporter operation errors every 30m
+
+**Next steps**
+
+- Failures indicate that exporting of telemetry events from Sourcegraph are failing. This may affect the performance of the database as the backlog grows.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details. If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph`s Telemetry Gateway service.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-exporter-errors-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetrygatewayexporter_exporter_errors_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[30m]))) > 0)`
+
+</details>
+
+<br />
+
+## telemetry: telemetrygatewayexporter_queue_cleanup_errors_total
+
+<p class="subtitle">export queue cleanup operation errors every 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 0+ export queue cleanup operation errors every 30m
+
+**Next steps**
+
+- Failures indicate that pruning of already-exported telemetry events from the database is failing. This may affect the performance of the database as the export queue table grows.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-cleanup-errors-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetrygatewayexporter_queue_cleanup_errors_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[30m]))) > 0)`
+
+</details>
+
+<br />
+
+## telemetry: telemetrygatewayexporter_queue_metrics_reporter_errors_total
+
+<p class="subtitle">export backlog metrics reporting operation errors every 30m</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> telemetry: 0+ export backlog metrics reporting operation errors every 30m
+
+**Next steps**
+
+- Failures indicate that reporting of telemetry events metrics is failing. This may affect the reliability of telemetry events export metrics.
+- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-metrics-reporter-errors-total).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_telemetry_telemetrygatewayexporter_queue_metrics_reporter_errors_total"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[30m]))) > 0)`
+
+</details>
+
+<br />
+
 ## telemetry: telemetry_job_error_rate
 
 <p class="subtitle">usage data exporter operation error rate over 5m</p>
@@ -7475,100 +7704,6 @@ Generated query for warning alert: `max((sum by (op) (increase(src_telemetry_job
 <summary>Technical details</summary>
 
 Generated query for warning alert: `max((rate(src_telemetry_job_total{op="SendEvents"}[1h]) / on () group_right () src_telemetry_job_max_throughput * 100) > 90)`
-
-</details>
-
-<br />
-
-## telemetry: telemetrygatewayexporter_exporter_errors_total
-
-<p class="subtitle">events exporter operation errors every 30m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> telemetry: 0+ events exporter operation errors every 30m
-
-**Next steps**
-
-- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
-If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph`s Telemetry Gateway service.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-exporter-errors-total).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_telemetry_telemetrygatewayexporter_exporter_errors_total"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_exporter_errors_total{job=~"^worker.*"}[30m]))) > 0)`
-
-</details>
-
-<br />
-
-## telemetry: telemetrygatewayexporter_queue_cleanup_errors_total
-
-<p class="subtitle">export queue cleanup operation errors every 30m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> telemetry: 0+ export queue cleanup operation errors every 30m
-
-**Next steps**
-
-- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-cleanup-errors-total).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_telemetry_telemetrygatewayexporter_queue_cleanup_errors_total"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_queue_cleanup_errors_total{job=~"^worker.*"}[30m]))) > 0)`
-
-</details>
-
-<br />
-
-## telemetry: telemetrygatewayexporter_queue_metrics_reporter_errors_total
-
-<p class="subtitle">export backlog metrics reporting operation errors every 30m</p>
-
-**Descriptions**
-
-- <span class="badge badge-warning">warning</span> telemetry: 0+ export backlog metrics reporting operation errors every 30m
-
-**Next steps**
-
-- See worker logs in the `worker.telemetrygateway-exporter` log scope for more details.
-- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#telemetry-telemetrygatewayexporter-queue-metrics-reporter-errors-total).
-- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
-
-```json
-"observability.silenceAlerts": [
-  "warning_telemetry_telemetrygatewayexporter_queue_metrics_reporter_errors_total"
-]
-```
-
-<sub>*Managed by the [Sourcegraph Data & Analytics team](https://handbook.sourcegraph.com/departments/engineering/teams/data-analytics).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Generated query for warning alert: `max((sum(increase(src_telemetrygatewayexporter_queue_metrics_reporter_errors_total{job=~"^worker.*"}[30m]))) > 0)`
 
 </details>
 
@@ -7794,6 +7929,38 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collecto
 
 <br />
 
+## embeddings: embeddings_site_configuration_duration_since_last_successful_update_by_instance
+
+<p class="subtitle">maximum duration since last successful site configuration update (all "embeddings" instances)</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> embeddings: 300s+ maximum duration since last successful site configuration update (all "embeddings" instances)
+
+**Next steps**
+
+- This indicates that one or more "embeddings" instances have not successfully updated the site configuration in over 5 minutes. This could be due to networking issues between services or problems with the site configuration service itself.
+- Check for relevant errors in the "embeddings" logs, as well as frontend`s logs.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#embeddings-embeddings-site-configuration-duration-since-last-successful-update-by-instance).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_embeddings_embeddings_site_configuration_duration_since_last_successful_update_by_instance"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Generated query for critical alert: `max((max(max_over_time(src_conf_client_time_since_last_successful_update_seconds[1m]))) >= 300)`
+
+</details>
+
+<br />
+
 ## embeddings: mean_blocked_seconds_per_conn_request
 
 <p class="subtitle">mean blocked seconds per conn request</p>
@@ -7817,7 +7984,7 @@ Generated query for critical alert: `min((sum by (app) (up{app=~".*otel-collecto
 ]
 ```
 
-<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+<sub>*Managed by the [Sourcegraph Cody team](https://handbook.sourcegraph.com/departments/engineering/teams/cody).*</sub>
 
 <details>
 <summary>Technical details</summary>

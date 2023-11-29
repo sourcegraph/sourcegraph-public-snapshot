@@ -45,7 +45,7 @@ var _ actor.Source = &Source{}
 
 func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
-		log:               logger.Scoped("dotcomuser", "dotcom user actor source"),
+		log:               logger.Scoped("dotcomuser"),
 		cache:             cache,
 		dotcom:            dotComClient,
 		concurrencyConfig: concurrencyConfig,

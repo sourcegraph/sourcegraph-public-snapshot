@@ -26,7 +26,7 @@ var _ oobmigration.Migrator = &externalServiceWebhookMigrator{}
 
 func NewExternalServiceWebhookMigratorWithDB(store *basestore.Store, key encryption.Key, batchSize int) *externalServiceWebhookMigrator {
 	return &externalServiceWebhookMigrator{
-		logger:    log.Scoped("ExternalServiceWebhookMigrator", ""),
+		logger:    log.Scoped("ExternalServiceWebhookMigrator"),
 		store:     store,
 		batchSize: batchSize,
 		key:       key,

@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { dedupeWhitespace } from './strings'
 
 describe('utils/string', () => {

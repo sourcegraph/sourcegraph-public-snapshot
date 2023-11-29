@@ -377,7 +377,7 @@ func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessR
 	}
 
 	return &upgradeReadinessResolver{
-		logger: r.logger.Scoped("upgradeReadiness", ""),
+		logger: r.logger.Scoped("upgradeReadiness"),
 		db:     r.db,
 	}, nil
 }

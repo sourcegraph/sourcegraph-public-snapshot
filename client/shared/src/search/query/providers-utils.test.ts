@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { getSuggestionQuery } from './providers-utils'
 import { type ScanResult, scanSearchQuery, type ScanSuccess } from './scanner'
 import type { Token } from './token'

@@ -15,8 +15,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-ctags"
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -51,8 +49,6 @@ func TestIndex(t *testing.T) {
 			t.Fatal(errors.Wrap(err, message))
 		}
 	}
-
-	logger := logtest.Scoped(t)
 
 	gitDir, err := os.MkdirTemp("", "rockskip-test-index")
 	fatalIfError(err, "faiMkdirTemp")
@@ -111,7 +107,7 @@ func TestIndex(t *testing.T) {
 	fatalIfError(err, "NewSubprocessGit")
 	defer git.Close()
 
-	db := dbtest.NewDB(logger, t)
+	db := dbtest.NewDB(t)
 	defer db.Close()
 
 	createParser := func() (ctags.Parser, error) { return mockParser{}, nil }

@@ -403,7 +403,7 @@ func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlb
 	store := &adminBackfillQueueConnectionStore{
 		args:          args,
 		backfillStore: scheduler.NewBackfillStore(r.insightsDB),
-		logger:        r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver"),
+		logger:        r.logger.Scoped("backfillqueue"),
 		mainDB:        r.postgresDB,
 	}
 

@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import classNames from 'classnames'
 import { addDays } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -16,7 +16,7 @@ import styles from './BatchSpecsPage.module.scss'
 
 const NOW = () => addDays(new Date(), 1)
 
-const decorator: DecoratorFn = story => <div className={classNames(styles.specsGrid, 'p-3 container')}>{story()}</div>
+const decorator: Decorator = story => <div className={classNames(styles.specsGrid, 'p-3 container')}>{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec',
@@ -25,7 +25,7 @@ const config: Meta = {
 
 export default config
 
-export const BatchSpecNodeStory: Story = () => {
+export const BatchSpecNodeStory: StoryFn = () => {
     const mocks = new WildcardMockLink([
         {
             request: {

@@ -28,7 +28,7 @@ func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bs := basestore.NewWithHandle(db.Handle())
 
@@ -137,7 +137,7 @@ func TestStore_GetAndListSearchJobs(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bs := basestore.NewWithHandle(db.Handle())
 
 	userID, err := createUser(bs, "alice")
@@ -288,7 +288,7 @@ func TestStore_AggregateStatus(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bs := basestore.NewWithHandle(db.Handle())
 
 	_, err := createRepo(db, "repo1")

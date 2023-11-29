@@ -23,7 +23,7 @@ var numberOfSystemRoles = 2
 func TestRoleGet(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Roles()
 
 	roleName := "OPERATOR"
@@ -58,7 +58,7 @@ func TestRoleGet(t *testing.T) {
 func TestRoleList(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Roles()
 
 	roles, total := createTestRoles(ctx, t, store)
@@ -125,7 +125,7 @@ func TestRoleCreate(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Roles()
 
 	_, err := store.Create(ctx, "TESTOLE", true)
@@ -135,7 +135,7 @@ func TestRoleCreate(t *testing.T) {
 func TestRoleCount(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Roles()
 
 	user := createTestUserWithoutRoles(t, db, "test-user-1", false)
@@ -178,7 +178,7 @@ func TestRoleUpdate(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Roles()
 
 	t.Run("non-existent role", func(t *testing.T) {
@@ -207,7 +207,7 @@ func TestRoleDelete(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.Roles()
 
 	t.Run("no ID", func(t *testing.T) {

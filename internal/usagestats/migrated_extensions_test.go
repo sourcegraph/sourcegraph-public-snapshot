@@ -17,7 +17,7 @@ func TestMigratedExtensionsUsageStatistics(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	_, err := db.ExecContext(ctx, `
 		INSERT INTO event_logs

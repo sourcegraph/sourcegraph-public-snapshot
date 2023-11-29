@@ -114,6 +114,7 @@
   interfaces:
     - UserEmailsService
     - ReposService
+    - ExternalServicesService
 - filename: internal/executor/store/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/executor/store
   interfaces:
@@ -130,3 +131,7 @@
   path: github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo
   interfaces:
     - RepoEmbeddingJobsStore
+- filename: internal/gitserver/mock.go
+  path: github.com/sourcegraph/sourcegraph/internal/gitserver/v1
+  interfaces:
+    - GitserverServiceClient

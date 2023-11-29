@@ -1,6 +1,6 @@
 import React from 'react'
 
-import type { Meta, DecoratorFn } from '@storybook/react'
+import type { Meta, Decorator } from '@storybook/react'
 
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -10,7 +10,7 @@ import { authenticatedTasks } from '../../data'
 
 import { Tour } from './Tour'
 
-const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
+const decorator: Decorator = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
 
 const config: Meta = {
     title: 'web/GettingStartedTour/Tour',

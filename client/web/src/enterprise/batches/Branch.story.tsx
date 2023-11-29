@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { WebStory } from '../../components/WebStory'
 
@@ -10,13 +10,13 @@ const config: Meta = {
 
 export default config
 
-export const Forked: Story = () => (
+export const Forked: StoryFn = () => (
     <WebStory>
         {() => <BranchMerge baseRef="main" forkTarget={{ pushUser: false, namespace: 'org' }} headRef="branch" />}
     </WebStory>
 )
 
-export const WillBeForkedIntoTheUser: Story = () => (
+export const WillBeForkedIntoTheUser: StoryFn = () => (
     <WebStory>
         {() => <BranchMerge baseRef="main" forkTarget={{ pushUser: true, namespace: 'org' }} headRef="branch" />}
     </WebStory>
@@ -24,4 +24,4 @@ export const WillBeForkedIntoTheUser: Story = () => (
 
 WillBeForkedIntoTheUser.storyName = 'Will be forked into the user'
 
-export const Unforked: Story = () => <WebStory>{() => <BranchMerge baseRef="main" headRef="branch" />}</WebStory>
+export const Unforked: StoryFn = () => <WebStory>{() => <BranchMerge baseRef="main" headRef="branch" />}</WebStory>

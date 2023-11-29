@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { validateQueryForExhaustiveSearch } from './exhaustive-search-validation'
 
 describe('exhaustive search validation', () => {
@@ -9,23 +11,47 @@ describe('exhaustive search validation', () => {
         expect(validateQueryForExhaustiveSearch('context:global rev:* insights')).toStrictEqual([])
     })
 
+    test('[repo:has.content() predicate]', () => {
+        expect(validateQueryForExhaustiveSearch('context:global repo:has.content(insights) foo').length).toStrictEqual(
+            0
+        )
+    })
+
+    test('[repo:has.meta() predicate]', () => {
+        expect(validateQueryForExhaustiveSearch('context:global repo:has.meta(insights) foo').length).toStrictEqual(0)
+    })
+
     describe('works properly with invalid query', () => {
         test('[multiple rev operator case]', () => {
             expect(validateQueryForExhaustiveSearch('context:global rev:* insights rev:vk').length).toStrictEqual(1)
         })
 
-        test('[has regexp generic patter]', () => {
+        test('[has regexp generic pattern]', () => {
             expect(validateQueryForExhaustiveSearch('context:global .* patterntype:regexp').length).toStrictEqual(1)
         })
 
-        test('[repo:has.file() operator]', () => {
-            expect(validateQueryForExhaustiveSearch('context:global repo:has.file(insights)').length).toStrictEqual(1)
-        })
-
-        test('[file:has.content() operator]', () => {
+        test('[file:has.content() predicate]', () => {
             expect(validateQueryForExhaustiveSearch('context:global file:has.content(insights)').length).toStrictEqual(
                 1
             )
+        })
+
+        test('[file:has.owner() predicate]', () => {
+            expect(
+                validateQueryForExhaustiveSearch('context:global file:has.owner(insights) foo').length
+            ).toStrictEqual(1)
+        })
+
+        test('[f:has.contributor() predicate]', () => {
+            expect(
+                validateQueryForExhaustiveSearch('context:global f:has.contributor(insights) foo').length
+            ).toStrictEqual(1)
+        })
+
+        test('[f:contains.content() predicate]', () => {
+            expect(
+                validateQueryForExhaustiveSearch('context:global f:contains.content(insights) foo').length
+            ).toStrictEqual(1)
         })
 
         test('[or operator]', () => {
@@ -47,9 +73,9 @@ describe('exhaustive search validation', () => {
         test('[all cases combined]', () => {
             expect(
                 validateQueryForExhaustiveSearch(
-                    'context:global (repo:has.file(insights) rev:* ) or (file:has.content(batch-changes) rev:vk batch) or (patterntype:regexp .*)'
+                    'context:global (file:has.content(batch-changes) rev:vk batch) or (patterntype:regexp .* rev:foo)'
                 ).length
-            ).toStrictEqual(5)
+            ).toStrictEqual(4)
         })
     })
 })

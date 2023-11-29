@@ -35,8 +35,8 @@
   path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache
   interfaces:
     - ReleaseCache
-- filename: cmd/gitserver/server/vcs_syncer_mock_test.go
-  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/server
+- filename: cmd/gitserver/internal/vcssyncer/mock.go
+  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/vcssyncer
   interfaces:
     - VCSSyncer
 - filename: cmd/symbols/fetcher/mocks_test.go
@@ -301,6 +301,10 @@
     - ErrorHandler
     - Finalizer
     - Handler
+- filename: lib/background/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/lib/background
+  interfaces:
+    - Routine
 - filename: internal/oobmigration/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/oobmigration
   interfaces:
@@ -339,8 +343,8 @@
   path: github.com/sourcegraph/zoekt
   interfaces:
     - Streamer
-- filename: enterprise/cmd/worker/internal/telemetry/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry
+- filename: cmd/worker/internal/telemetry/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry
   interfaces:
     - bookmarkStore
 - filename: internal/codeintel/ranking/mocks_test.go
@@ -404,3 +408,10 @@
     - path: github.com/sourcegraph/sourcegraph/internal/telemetry
       interfaces:
         - EventsStore
+- filename: cmd/gitserver/internal/integration_tests/mocks.go
+  package: inttests
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/cmd/gitserver/internal
+      interfaces:
+        - RepositoryLocker
+        - RepositoryLock

@@ -42,7 +42,7 @@ var _ workerutil.Store[types.Job] = &Client{}
 var _ cmdlogger.ExecutionLogEntryStore = &Client{}
 
 func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
-	logger := log.Scoped("executor-api-queue-client", "The API client adapter for executors to use dbworkers over HTTP")
+	logger := log.Scoped("executor-api-queue-client")
 	client, err := apiclient.NewBaseClient(logger, options.BaseClientOptions)
 	if err != nil {
 		return nil, err

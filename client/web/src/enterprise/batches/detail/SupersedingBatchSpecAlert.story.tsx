@@ -1,11 +1,11 @@
-import type { Meta, Story, DecoratorFn } from '@storybook/react'
+import type { Meta, StoryFn, Decorator } from '@storybook/react'
 import { subDays } from 'date-fns'
 
 import { WebStory } from '../../../components/WebStory'
 
 import { SupersedingBatchSpecAlert } from './SupersedingBatchSpecAlert'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/details/SupersedingBatchSpecAlert',
@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const NonePublished: Story = () => (
+export const NonePublished: StoryFn = () => (
     <WebStory>
         {() => (
             <SupersedingBatchSpecAlert

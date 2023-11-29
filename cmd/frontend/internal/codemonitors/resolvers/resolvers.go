@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -122,14 +121,22 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		return nil, err
 	}
 
+	userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(args.Monitor.Namespace)
+	if err != nil {
+		return nil, err
+	}
+
+	// Snapshot the state of the searched repos when the monitor is created so that
+	// we can distinguish new repos. We run the snapshot outside the transaction because
+	// search requires that the DB handle is not a transaction.
+	resolvedRevisions, err := codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Query)
+	if err != nil {
+		return nil, err
+	}
+
 	// Start transaction.
 	var newMonitor *database.Monitor
 	err = r.withTransact(ctx, func(tx *Resolver) error {
-		userID, orgID, err := graphqlbackend.UnmarshalNamespaceToIDs(args.Monitor.Namespace)
-		if err != nil {
-			return err
-		}
-
 		// Create monitor.
 		m, err := tx.db.CodeMonitors().CreateMonitor(ctx, database.MonitorArgs{
 			Description:     args.Monitor.Description,
@@ -147,10 +154,9 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 			return err
 		}
 
-		if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-			// Snapshot the state of the searched repos when the monitor is created so that
-			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID)
+		// Save the snapshotted commit IDs
+		for repoID, commitIDs := range resolvedRevisions {
+			err = tx.db.CodeMonitors().UpsertLastSearched(ctx, m.ID, repoID, commitIDs)
 			if err != nil {
 				return err
 			}
@@ -245,7 +251,7 @@ func (r *Resolver) UpdateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if err = tx.createActions(ctx, monitorID, toCreate); err != nil {
 			return err
 		}
-		m, err := tx.updateCodeMonitor(ctx, args)
+		m, err := tx.updateCodeMonitor(ctx, r.db, args)
 		if err != nil {
 			return err
 		}
@@ -507,7 +513,9 @@ func splitActionIDs(args *graphqlbackend.UpdateCodeMonitorArgs, actionIDs []grap
 	return toCreate, toDelete, nil
 }
 
-func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.UpdateCodeMonitorArgs) (*monitor, error) {
+// updateCodeMonitor updates the code monitor in the database. We pass in "rawDB" because Snapshot requires that the
+// database being used is not in a transaction, and updateCodeMonitor is run with a transacted resolver.
+func (r *Resolver) updateCodeMonitor(ctx context.Context, rawDB database.DB, args *graphqlbackend.UpdateCodeMonitorArgs) (*monitor, error) {
 	// Update monitor.
 	monitorID, err := unmarshalMonitorID(args.Monitor.Id)
 	if err != nil {
@@ -534,18 +542,23 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		return nil, err
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-		currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
+	currentTrigger, err := r.db.CodeMonitors().GetQueryTriggerForMonitor(ctx, monitorID)
+	if err != nil {
+		return nil, err
+	}
+
+	// When the query is changed, take a new snapshot of the commits that currently
+	// exist so we know where to start.
+	if currentTrigger.QueryString != args.Trigger.Update.Query {
+		// Snapshot the state of the searched repos when the monitor is created so that
+		// we can distinguish new repos.
+		// NOTE: we use rawDB here because Snapshot requires that the db conn is not a transaction.
+		resolvedRevisions, err := codemonitors.Snapshot(ctx, r.logger, rawDB, args.Trigger.Update.Query)
 		if err != nil {
 			return nil, err
 		}
-
-		// When the query is changed, take a new snapshot of the commits that currently
-		// exist so we know where to start.
-		if currentTrigger.QueryString != args.Trigger.Update.Query {
-			// Snapshot the state of the searched repos when the monitor is created so that
-			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Update.Query, monitorID)
+		for repoID, commitIDs := range resolvedRevisions {
+			err = r.db.CodeMonitors().UpsertLastSearched(ctx, monitorID, repoID, commitIDs)
 			if err != nil {
 				return nil, err
 			}

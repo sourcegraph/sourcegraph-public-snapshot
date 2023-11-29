@@ -28,7 +28,7 @@
 		{{end}}
 	{{end}}
 	<title>{{.Title}}</title>
-	{{if .Manifest.AppCSSBundlePath}}<link rel="stylesheet" href="{{.Manifest.AppCSSBundlePath}}">{{end}}
+	{{if .Manifest.MainCSSBundlePath}}<link rel="stylesheet" href="{{assetURL .Manifest.MainCSSBundlePath}}">{{end}}
 	<link id='sourcegraph-chrome-webstore-item' rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/dgjhfomjieaadpoljlnidmbgkdffpack">
 	<link rel="search" href="/opensearch.xml" type="application/opensearchdescription+xml" title="Sourcegraph Search">
 	{{if .PreloadedAssets}}
@@ -107,10 +107,7 @@
 		<br>
 		You need to enable JavaScript to run this app.
 	</noscript>
-	{{if .Manifest.AppJSRuntimeBundlePath}}<script src="{{.Manifest.AppJSRuntimeBundlePath}}"></script>{{end}}
-	<script src="{{.Manifest.ReactJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
-	<script src="{{.Manifest.OpenTelemetryJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
-	<script src="{{.Manifest.AppJSBundlePath}}" {{if .Manifest.IsModule}}type="module"{{end}}></script>
+	<script src="{{assetURL .Manifest.MainJSBundlePath}}" type="module"></script>
 	{{.Injected.BodyBottom}}
 </body>
 

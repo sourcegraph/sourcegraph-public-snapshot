@@ -4,7 +4,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background/scheduler"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background/summary"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/enqueuer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/jobselector"
 )
 
@@ -20,7 +19,6 @@ type (
 
 type RepoUpdaterClient interface {
 	dependencies.RepoUpdaterClient
-	enqueuer.RepoUpdaterClient
 }
 
 type UploadService interface {

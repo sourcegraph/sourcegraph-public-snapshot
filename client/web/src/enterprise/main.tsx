@@ -1,4 +1,4 @@
-// This is the entry point for the enterprise web app
+// This is the entry point for the web app
 
 // Order is important here
 // Don't remove the empty lines between these imports
@@ -24,7 +24,6 @@ const appShellPromise = initAppShell()
 setLinkComponent(RouterLink)
 
 // It's important to have a root component in a separate file to create a react-refresh boundary and avoid page reload.
-// https://github.com/pmmmwh/react-refresh-webpack-plugin/blob/main/docs/TROUBLESHOOTING.md#edits-always-lead-to-full-reload
 window.addEventListener('DOMContentLoaded', async () => {
     const root = createRoot(document.querySelector('#root')!)
 
@@ -39,7 +38,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }
 })
 
-if (process.env.DEV_WEB_BUILDER === 'esbuild' && process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development') {
     new EventSource('/.assets/esbuild').addEventListener('change', () => {
         location.reload()
     })

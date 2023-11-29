@@ -2,7 +2,9 @@ import { MockedProvider } from '@apollo/client/testing'
 import { cleanup, screen } from '@testing-library/react'
 import { EMPTY, NEVER } from 'rxjs'
 import sinon from 'sinon'
+import { afterEach, describe, expect, it } from 'vitest'
 
+import { noOpTelemetryRecorder } from '@sourcegraph/shared/src/telemetry'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
@@ -55,6 +57,7 @@ describe('TreePage', () => {
             urlToFile: () => '',
             sourcegraphURL: 'https://sourcegraph.com',
             clientApplication: 'sourcegraph',
+            telemetryRecorder: noOpTelemetryRecorder,
         },
         telemetryService: NOOP_TELEMETRY_SERVICE,
         codeIntelligenceEnabled: false,

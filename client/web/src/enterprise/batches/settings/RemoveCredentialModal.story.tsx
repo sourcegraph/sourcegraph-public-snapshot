@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -7,7 +7,7 @@ import { WebStory } from '../../../components/WebStory'
 
 import { RemoveCredentialModal } from './RemoveCredentialModal'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/settings/RemoveCredentialModal',
@@ -29,7 +29,7 @@ const credential = {
         'ssh-rsa randorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorandorando',
 }
 
-export const NoSsh: Story = () => (
+export const NoSsh: StoryFn = () => (
     <WebStory>
         {props => (
             <RemoveCredentialModal
@@ -53,7 +53,7 @@ export const NoSsh: Story = () => (
 
 NoSsh.storyName = 'No ssh'
 
-export const RequiresSsh: Story = () => (
+export const RequiresSsh: StoryFn = () => (
     <WebStory>
         {props => (
             <RemoveCredentialModal

@@ -200,7 +200,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	if p.IsStructuralPat && p.Indexed {
 		// Execute the new structural search path that directly calls Zoekt.
 		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, s.Indexed, p, sender)
+		return structuralSearchWithZoekt(ctx, s.Log, s.Indexed, p, sender)
 	}
 
 	// Compile pattern before fetching from store incase it is bad.
@@ -231,23 +231,19 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	// structural search.
 	hybrid := !p.IsStructuralPat
 	if hybrid {
-		logger := logWithTrace(ctx, s.Log).Scoped("hybrid", "hybrid indexed and unindexed search").With(
+		logger := logWithTrace(ctx, s.Log).Scoped("hybrid").With(
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
 		)
 
 		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
 		if err != nil {
-			logger.Error("hybrid search failed",
-				log.String("repo", string(p.Repo)),
-				log.String("commit", string(p.Commit)),
-				log.Error(err))
+			// error logging is done inside of s.hybrid so we just return
+			// error here.
 			return errors.Wrap(err, "hybrid search failed")
 		}
 		if !ok {
-			logger.Debug("hybrid search is falling back to normal unindexed search",
-				log.String("repo", string(p.Repo)),
-				log.String("commit", string(p.Commit)))
+			logger.Debug("hybrid search is falling back to normal unindexed search")
 		} else {
 			// now we only need to search unsearched
 			if len(unsearched) == 0 {
@@ -281,7 +277,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	metricArchiveSize.Observe(float64(bytes))
 
 	if p.IsStructuralPat {
-		return filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
+		return filteredStructuralSearch(ctx, s.Log, zipPath, zf, &p.PatternInfo, p.Repo, sender)
 	} else {
 		return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
 	}

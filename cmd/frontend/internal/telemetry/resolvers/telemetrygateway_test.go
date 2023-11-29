@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestNewTelemetryGatewayEvents(t *testing.T) {
@@ -105,10 +104,12 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
 					Metadata: &[]graphqlbackend.TelemetryEventMetadataInput{
 						{
 							Key:   "metadata",
-							Value: 123,
+							Value: graphqlbackend.JSONValue{Value: 123},
 						},
 					},
-					PrivateMetadata: pointers.Ptr(json.RawMessage(`{"private": "super-sensitive"}`)),
+					PrivateMetadata: &graphqlbackend.JSONValue{
+						Value: map[string]any{"private": "super-sensitive"},
+					},
 					BillingMetadata: &graphqlbackend.TelemetryEventBillingMetadataInput{
 						Product:  "Product",
 						Category: "Category",
@@ -125,10 +126,72 @@ func TestNewTelemetryGatewayEvents(t *testing.T) {
       "product": "Product"
     },
     "metadata": {
-      "metadata": "123"
+      "metadata": 123
     },
     "privateMetadata": {
       "private": "super-sensitive"
+    }
+  },
+  "source": {
+    "client": {},
+    "server": {
+      "version": "0.0.0+dev"
+    }
+  },
+  "timestamp": "2023-02-24T14:48:30Z"
+}`),
+		},
+		{
+			name: "with string PrivateMetadata",
+			ctx:  context.Background(),
+			event: graphqlbackend.TelemetryEventInput{
+				Feature: "Feature",
+				Action:  "Example",
+				Parameters: graphqlbackend.TelemetryEventParametersInput{
+					Version: 0,
+					PrivateMetadata: &graphqlbackend.JSONValue{
+						Value: "some metadata",
+					},
+				},
+			},
+			expect: autogold.Expect(`{
+  "action": "Example",
+  "feature": "Feature",
+  "id": "with string PrivateMetadata",
+  "parameters": {
+    "privateMetadata": {
+      "value": "some metadata"
+    }
+  },
+  "source": {
+    "client": {},
+    "server": {
+      "version": "0.0.0+dev"
+    }
+  },
+  "timestamp": "2023-02-24T14:48:30Z"
+}`),
+		},
+		{
+			name: "with numeric PrivateMetadata",
+			ctx:  context.Background(),
+			event: graphqlbackend.TelemetryEventInput{
+				Feature: "Feature",
+				Action:  "Example",
+				Parameters: graphqlbackend.TelemetryEventParametersInput{
+					Version: 0,
+					PrivateMetadata: &graphqlbackend.JSONValue{
+						Value: 1234,
+					},
+				},
+			},
+			expect: autogold.Expect(`{
+  "action": "Example",
+  "feature": "Feature",
+  "id": "with numeric PrivateMetadata",
+  "parameters": {
+    "privateMetadata": {
+      "value": 1234
     }
   },
   "source": {

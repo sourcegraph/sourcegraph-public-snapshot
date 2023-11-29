@@ -25,6 +25,7 @@ const costEstimateVersion = 2
 type QueryCost struct {
 	FieldCount int
 	MaxDepth   int
+	AliasCount int
 	Version    int
 }
 
@@ -126,6 +127,7 @@ func EstimateQueryCost(query string, variables map[string]any) (totalCost *Query
 			return nil, errors.Wrap(err, "calculating operation cost")
 		}
 		totalCost.FieldCount += cost.FieldCount
+		totalCost.AliasCount += cost.AliasCount
 		if totalCost.MaxDepth < cost.MaxDepth {
 			totalCost.MaxDepth = cost.MaxDepth
 		}
@@ -158,6 +160,7 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 	limitStack := make([]int, 0)
 	currentLimit := 1
 
+	aliasCount := 0
 	fieldCount := 0
 	depth := 0
 	maxDepth := 0
@@ -191,6 +194,9 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 				}
 				pushLimit()
 			case *ast.Field:
+				if node.Alias != nil {
+					aliasCount++
+				}
 				switch node.Name.Value {
 				// Values that won't appear in the result
 				case "nodes", "__typename":
@@ -306,6 +312,7 @@ func calcNodeCost(def ast.Node, fragmentCosts map[string]int, variables map[stri
 	return &QueryCost{
 		FieldCount: fieldCount + maxInlineFragmentCost,
 		MaxDepth:   maxDepth,
+		AliasCount: aliasCount,
 	}, visitErr
 }
 

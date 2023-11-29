@@ -9,9 +9,8 @@ load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_API
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
 load("@npm//:eslint/package_json.bzl", eslint_bin = "bin")
-load("//:stamp_tags.bzl", "stamp_tags")
 load("//dev:eslint.bzl", "eslint_test_with_types")
-load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier")
 
 # Gazelle config
 #
@@ -57,8 +56,8 @@ ts_config(
 )
 
 ts_config(
-    name = "tsconfig-eslint",
-    src = "tsconfig.eslint.json",
+    name = "tsconfig-all",
+    src = "tsconfig.json",
     visibility = ["//visibility:public"],
     deps = [
         ":tsconfig",
@@ -68,6 +67,7 @@ ts_config(
 js_library(
     name = "postcss_config_js",
     srcs = ["postcss.config.js"],
+    visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/autoprefixer",
         "//:node_modules/postcss-custom-media",
@@ -77,74 +77,26 @@ js_library(
 )
 
 copy_to_bin(
-    name = "browserslist",
-    srcs = [".browserslistrc"],
-    visibility = ["//visibility:public"],
-)
-
-copy_to_bin(
     name = "package_json",
     srcs = ["package.json"],
     visibility = ["//visibility:public"],
 )
 
 js_library(
-    name = "jest_config",
+    name = "vitest_config",
     testonly = True,
     srcs = [
-        "jest.config.base.js",
-    ],
-    data = [
-        "jest.snapshot-resolver.js",
+        "vitest.shared.ts",
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":babel_config_jest",
         "//:node_modules/@testing-library/jest-dom",
         "//:node_modules/abort-controller",
-        "//:node_modules/babel-jest",
         "//:node_modules/core-js",
         "//:node_modules/identity-obj-proxy",
         "//:node_modules/message-port-polyfill",
         "//:node_modules/regenerator-runtime",
-        "//client/shared/dev:mock",
-    ],
-)
-
-js_library(
-    name = "babel_config_jest",
-    testonly = True,
-    srcs = [
-        "babel.config.jest.js",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@babel/preset-env",
-        "//:node_modules/@babel/runtime",
-        "//:node_modules/signale",
-    ],
-)
-
-js_library(
-    name = "babel_config",
-    srcs = [
-        "babel.config.js",
-    ],
-    data = [
-        ":package_json",
-    ],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//:node_modules/@babel/plugin-transform-runtime",
-        "//:node_modules/@babel/plugin-transform-typescript",
-        "//:node_modules/@babel/preset-env",
-        "//:node_modules/@babel/preset-react",
-        "//:node_modules/@babel/preset-typescript",
-        "//:node_modules/@babel/runtime",
-        "//:node_modules/babel-plugin-lodash",
-        "//:node_modules/babel-plugin-webpack-chunkname",
-        "//:node_modules/semver",
-        "//:node_modules/signale",
+        "//client/testing:testing_lib",
     ],
 )
 
@@ -156,9 +108,9 @@ js_library(
     ],
     deps = [
         "//:node_modules/abort-controller",
-        "//client/shared/dev:fetch-mock",
         "//client/shared/dev:mocha-reporter",
         "//client/shared/dev:suppress-polly-errors",
+        "//client/testing:fetch-mock",
     ],
 )
 
@@ -190,7 +142,6 @@ js_library(
         ".eslintrc.js",
     ],
     data = [
-        ".eslintignore",
         "package.json",
         ":eslint-relative-formatter",
     ],
@@ -211,10 +162,11 @@ js_library(
         ":node_modules/eslint-plugin-react",
         ":node_modules/eslint-plugin-react-hooks",
         ":node_modules/eslint-plugin-rxjs",
+        ":node_modules/eslint-plugin-storybook",
         ":node_modules/eslint-plugin-unicorn",
         ":node_modules/eslint-plugin-unused-imports",
         ":node_modules/react",  # required to resolve the react version for eslint-plugin-react
-        ":tsconfig-eslint",
+        ":tsconfig-all",
         "//:node_modules/tslib",
     ],
 )
@@ -226,6 +178,28 @@ eslint_test_with_types(
     deps = [
         ":node_modules/@types/node",
     ],
+)
+
+buildifier(
+    name = "buildifier",
+    exclude_patterns = [
+        "./.git/*",
+        "cmd/symbols/squirrel/test_repos/starlark/**/*",
+    ],
+    # TODO: enable these lint checks
+    # lint_mode = "fix",
+    mode = "fix",
+)
+
+buildifier(
+    name = "buildifier.check",
+    exclude_patterns = [
+        "./.git/*",
+        "cmd/symbols/squirrel/test_repos/starlark/**/*",
+    ],
+    # TODO: enable these lint checks
+    # lint_mode = "warn",
+    mode = "diff",
 )
 
 # Go
@@ -247,6 +221,13 @@ gazelle_binary(
 gazelle(
     name = "gazelle",
     gazelle = ":gazelle-buf",
+)
+
+sh_binary(
+    name = "configure",
+    srcs = ["//dev/ci:bazel-configure.sh"],
+    data = ["@go_sdk//:bin/go"],
+    env = {"GO": "$(rootpath @go_sdk//:bin/go)"},
 )
 
 go_library(
@@ -347,4 +328,20 @@ exports_files([
     # Used for when copy_to_directory might reference an empty filegroup
     # under certain conditions. See //ui/assets/...
     "CONTRIBUTING.md",
+    ".swcrc",
 ])
+
+# sg msp settings
+
+bool_flag(
+    name = "sg_msp",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "sg_msp_flag",
+    flag_values = {
+        "//:sg_msp": "True",
+    },
+)

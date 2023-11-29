@@ -5,10 +5,11 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dghubble/gologin"
-	"github.com/dghubble/gologin/github"
-	goauth2 "github.com/dghubble/gologin/oauth2"
+	"github.com/dghubble/gologin/v2"
+	"github.com/dghubble/gologin/v2/github"
+	goauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/inconshreveable/log15"
+	gh "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -39,6 +40,11 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 	}
 	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeGitHub)
 
+	callbackHandler := github.CallbackHandler
+	if !gh.URLIsGitHubDotCom(parsedURL) {
+		callbackHandler = github.EnterpriseCallbackHandler
+	}
+
 	return oauth.NewProvider(oauth.ProviderOp{
 		AuthPrefix: authPrefix,
 		OAuth2Config: func() oauth2.Config {
@@ -60,7 +66,7 @@ func parseProvider(logger log.Logger, p *schema.GitHubAuthProvider, db database.
 			return github.LoginHandler(&oauth2Cfg, nil)
 		},
 		Callback: func(oauth2Cfg oauth2.Config) http.Handler {
-			return github.CallbackHandler(
+			return callbackHandler(
 				&oauth2Cfg,
 				oauth.SessionIssuer(logger, db, &sessionIssuerHelper{
 					CodeHost:     codeHost,

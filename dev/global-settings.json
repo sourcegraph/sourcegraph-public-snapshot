@@ -11,5 +11,8 @@
   },
   "search.repositoryGroups": {
     "test": ["github.com/gorilla/mux", "github.com/gorilla/pat"]
-  }
+  },
+  // team search platform: This enables the experimental "precise (NEW)" search mode by default
+  "search.defaultMode": "precise",
+  "search.defaultPatternType": "newStandardRC1"
 }

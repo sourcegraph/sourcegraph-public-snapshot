@@ -32,7 +32,7 @@ func NewClient(urn string, registryURL string, httpfactory *httpcli.Factory) (*C
 	return &Client{
 		registryURL:    registryURL,
 		uncachedClient: uncached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("RubyGemsClient", ""), urn)),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("RubyGemsClient"), urn)),
 	}, nil
 }
 

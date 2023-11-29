@@ -11,8 +11,8 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/gitserver/shared",
-        "//cmd/sourcegraph/osscmd",
         "//internal/sanitycheck",
+        "//internal/service/svcmain",
     ],
 )
 

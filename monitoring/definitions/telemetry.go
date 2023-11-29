@@ -18,15 +18,9 @@ func Telemetry() *monitoring.Dashboard {
 		Title:       "Telemetry",
 		Description: "Monitoring telemetry services in Sourcegraph.",
 		Groups: []monitoring.Group{
-			// Legacy dashboards - TODO(@bobheadxi): remove after 5.2.2
-			shared.DataAnalytics.NewTelemetryJobOperationsGroup(containerName),
-			shared.DataAnalytics.NewTelemetryJobQueueGroup(containerName),
-			shared.DataAnalytics.TelemetryJobThroughputGroup(containerName),
-
 			// The new stuff - https://docs.sourcegraph.com/dev/background-information/telemetry
 			{
-				Title:  "Telemetry Gateway Exporter: Export and queue metrics",
-				Hidden: true, // TODO(@bobheadxi): not yet enabled by default, un-hide in 5.2.1
+				Title: "Telemetry Gateway Exporter: Export and queue metrics",
 				Rows: []monitoring.Row{
 					{
 						{
@@ -38,6 +32,26 @@ func Telemetry() *monitoring.Dashboard {
 							NoAlert:        true,
 							Interpretation: "The number of events queued to be exported.",
 						},
+						{
+							Name:           "telemetry_gateway_exporter_queue_growth",
+							Description:    "rate of growth of export queue over 30m",
+							Owner:          monitoring.ObservableOwnerDataAnalytics,
+							Query:          `max(deriv(src_telemetrygatewayexporter_queue_size[30m]))`,
+							Panel:          monitoring.Panel().LegendFormat("growth").MinAuto(),
+							Interpretation: `A positive value indicates the queue is growing.`,
+							// Warn when steadily growing
+							Warning: monitoring.Alert().Greater(1).For(1 * time.Hour),
+							// Critical when it grows without ever reducing
+							Critical: monitoring.Alert().Greater(1).For(36 * time.Hour),
+							NextSteps: `
+								- Check the "number of events exported per batch over 30m" dashboard panel to see if export throughput is at saturation.
+								- Increase 'TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE' to export more events per batch.
+								- Reduce 'TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL' to schedule more export jobs.
+								- See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details to see if any export errors are occuring - if logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph's Telemetry Gateway service.
+							`,
+						},
+					},
+					{
 						{
 							Name:           "src_telemetrygatewayexporter_exported_events",
 							Description:    "events exported from queue per hour",
@@ -60,8 +74,11 @@ func Telemetry() *monitoring.Dashboard {
 									p.HeatmapPanel.Targets[0].Format = "heatmap"
 									p.HeatmapPanel.Targets[0].LegendFormat = "{{le}}"
 								}),
-							NoAlert:        true,
-							Interpretation: "The number of events exported in each batch.",
+							NoAlert: true,
+							Interpretation: `
+								The number of events exported in each batch. The largest bucket is the maximum number of events exported per batch.
+								If the distribution trends to the maximum bucket, then events export throughput is at or approaching saturation - try increasing  'TELEMETRY_GATEWAY_EXPORTER_EXPORT_BATCH_SIZE' or decreasing 'TELEMETRY_GATEWAY_EXPORTER_EXPORT_INTERVAL'.
+							`,
 						},
 					},
 				},
@@ -75,15 +92,14 @@ func Telemetry() *monitoring.Dashboard {
 					},
 					Namespace:       "Telemetry Gateway Exporter",
 					DescriptionRoot: "Export job operations",
-					Hidden:          true, // TODO(@bobheadxi): not yet enabled by default, un-hide in 5.2.1
 				},
 				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
 					Total:     shared.NoAlertsOption("none"),
 					Duration:  shared.NoAlertsOption("none"),
 					ErrorRate: shared.NoAlertsOption("none"),
 					Errors: shared.WarningOption(monitoring.Alert().Greater(0), `
-						See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
-						If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph's Telemetry Gateway service.
+						- Failures indicate that exporting of telemetry events from Sourcegraph are failing. This may affect the performance of the database as the backlog grows.
+						- See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details. If logs only indicate that exports failed, reach out to Sourcegraph with relevant log entries, as this may be an issue in Sourcegraph's Telemetry Gateway service.
 					`),
 				},
 			}),
@@ -96,14 +112,15 @@ func Telemetry() *monitoring.Dashboard {
 					},
 					Namespace:       "Telemetry Gateway Exporter",
 					DescriptionRoot: "Export queue cleanup job operations",
-					Hidden:          true, // TODO(@bobheadxi): not yet enabled by default, un-hide in 5.2.1
 				},
 				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
 					Total:     shared.NoAlertsOption("none"),
 					Duration:  shared.NoAlertsOption("none"),
 					ErrorRate: shared.NoAlertsOption("none"),
-					Errors: shared.WarningOption(monitoring.Alert().Greater(0),
-						"See worker logs in the `worker.telemetrygateway-exporter` log scope for more details."),
+					Errors: shared.WarningOption(monitoring.Alert().Greater(0), `
+						- Failures indicate that pruning of already-exported telemetry events from the database is failing. This may affect the performance of the database as the export queue table grows.
+						- See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
+					`),
 				},
 			}),
 			shared.Observation.NewGroup(containerName, monitoring.ObservableOwnerDataAnalytics, shared.ObservationGroupOptions{
@@ -115,16 +132,22 @@ func Telemetry() *monitoring.Dashboard {
 					},
 					Namespace:       "Telemetry Gateway Exporter",
 					DescriptionRoot: "Export queue metrics reporting job operations",
-					Hidden:          true,
 				},
 				SharedObservationGroupOptions: shared.SharedObservationGroupOptions{
 					Total:     shared.NoAlertsOption("none"),
 					Duration:  shared.NoAlertsOption("none"),
 					ErrorRate: shared.NoAlertsOption("none"),
-					Errors: shared.WarningOption(monitoring.Alert().Greater(0),
-						"See worker logs in the `worker.telemetrygateway-exporter` log scope for more details."),
+					Errors: shared.WarningOption(monitoring.Alert().Greater(0), `
+						- Failures indicate that reporting of telemetry events metrics is failing. This may affect the reliability of telemetry events export metrics.
+						- See worker logs in the 'worker.telemetrygateway-exporter' log scope for more details.
+					`),
 				},
 			}),
+
+			// Legacy dashboards
+			shared.DataAnalytics.NewTelemetryJobOperationsGroup(containerName),
+			shared.DataAnalytics.NewTelemetryJobQueueGroup(containerName),
+			shared.DataAnalytics.TelemetryJobThroughputGroup(containerName),
 		},
 	}
 }

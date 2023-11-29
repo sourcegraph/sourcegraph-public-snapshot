@@ -1,6 +1,4 @@
-load("@aspect_bazel_lib//lib:directory_path.bzl", "make_directory_path")
-load("@aspect_bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
-load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 filegroup(
     name = "doc_files",
@@ -77,46 +75,19 @@ OUTPUT_FILES = [
     "version.md",
 ]
 
+# We prefix outputs with gen/ to avoid having the generated files having the same path as the ones we'll
+# write in the source tree, as this breaks the diff test that ensure the source tree files are up to date.
 genrule(
     name = "generate_doc",
-    outs = OUTPUT_FILES,
-    cmd_bash = "GOMAXPROCS=8 USER=user HOME=/home/user $(execpath //dev/tools:src-cli) doc -o=$(RULEDIR)",
+    outs = ["gen/" + path for path in OUTPUT_FILES],
+    cmd_bash = "GOMAXPROCS=8 USER=user HOME=/home/user $(execpath //dev/tools:src-cli) doc -o=$(RULEDIR)/gen",
     tools = ["//dev/tools:src-cli"],
     visibility = ["//visibility:public"],
 )
 
-sh_test(
-    name = "generate_doc_test",
-    size = "small",
-    srcs = ["generate_doc_test.sh"],
-    args = [
-        "$(location //dev/tools:src-cli)",
-        "$(locations :generate_doc)",
-    ],
-    data = [
-        ":generate_doc",
-        "//dev/tools:src-cli",
-    ],
-)
-
-# We use a copy_to_directory macro so write_source_files inputs and outputs are not at the same
-# path, which enables the write_doc_files_diff_test to work.
-copy_to_directory(
-    name = "files_copy",
-    srcs = [":generate_doc"],
-)
-
-write_source_files(
+write_generated_to_source_files(
     name = "write_doc_files",
-    files = {
-        out: make_directory_path(
-            out + "_directory_path",
-            "files_copy",
-            out,
-        )
-        for out in OUTPUT_FILES
-    },
-    suggested_update_target = "//dev:write_all_generated",
+    output_files = {dest: "gen/" + dest for dest in OUTPUT_FILES},
     tags = ["go_generate"],
-    visibility = ["//visibility:public"],
+    target = ":generate_doc",
 )

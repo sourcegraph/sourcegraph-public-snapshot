@@ -38,7 +38,7 @@ export function computeContext<T>(
             // reflect the types massively increases the impl complexity without any actual benefit
             // to the caller.
             //
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
             data[`config.${key}`] = value
         }
     }
@@ -68,14 +68,13 @@ export function computeContext<T>(
         data['component.type'] = 'CodeEditor'
         // See above for why we disable eslint rules related to `any`.
         //
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
         data['component.selections'] = component.selections as any // eslint-disable-line @typescript-eslint/no-explicit-any
         if (component.selections.length > 0) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             data['component.selection'] = (component.selections[0] || null) as any // eslint-disable-line @typescript-eslint/no-explicit-any
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
             data['component.selection.start'] = (component.selections[0] ? component.selections[0].start : null) as any // eslint-disable-line @typescript-eslint/no-explicit-any
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+
             data['component.selection.end'] = (component.selections[0] ? component.selections[0].end : null) as any // eslint-disable-line @typescript-eslint/no-explicit-any
             data['component.selection.start.line'] = component.selections[0] ? component.selections[0].start.line : null
             data['component.selection.start.character'] = component.selections[0]

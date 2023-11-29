@@ -85,6 +85,7 @@ type SourcerStore interface {
 	ExternalServices() database.ExternalServiceStore
 	UserCredentials() database.UserCredentialsStore
 	GitHubAppsStore() ghastore.GitHubAppsStore
+	GetChangesetSpecByID(ctx context.Context, id int64) (*btypes.ChangesetSpec, error)
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
@@ -105,7 +106,7 @@ type Sourcer interface {
 	//
 	// If the changeset was not created by a batch change, then a site credential will be
 	// used. If another AuthenticationStrategy is specified, then it will be used.
-	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy) (ChangesetSource, error)
+	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, repo *types.Repo) (ChangesetSource, error)
 	// ForUser returns a ChangesetSource for changesets on the given repo.
 	// It will be authenticated with the given authenticator.
 	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
@@ -129,13 +130,13 @@ type sourcer struct {
 
 func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	return &sourcer{
-		logger:    log.Scoped("sourcer", "logger scoped to sources.sourcer"),
+		logger:    log.Scoped("sourcer"),
 		cf:        cf,
 		newSource: csf,
 	}
 }
 
-func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy) (ChangesetSource, error) {
+func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy, targetRepo *types.Repo) (ChangesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
 		return nil, errors.Wrap(err, "loading changeset repo")
@@ -159,10 +160,41 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 	}
 
 	if as == AuthenticationStrategyGitHubApp {
-		repoMetadata := repo.Metadata.(*github.Repository)
-		owner, _, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+		cs, err := tx.GetChangesetSpecByID(ctx, ch.CurrentSpecID)
 		if err != nil {
-			return nil, errors.Wrap(err, "getting owner from repo name")
+			return nil, errors.Wrap(err, "getting changeset spec")
+		}
+
+		var owner string
+		// We check if the changeset is meant to be pushed to a fork.
+		// If yes, then we try to figure out the user namespace and get a github app for the user namespace.
+		if cs.IsFork() {
+			// forkNamespace is nil returns a non-nil value if the fork namespace is explicitly defined
+			// e.g sourcegraph.
+			// if it isn't then we assume the changeset will be forked into the current user's namespace
+			forkNamespace := cs.GetForkNamespace()
+			if forkNamespace != nil {
+				owner = *forkNamespace
+			} else {
+				u, err := getCloneURL(targetRepo)
+				if err != nil {
+					return nil, errors.Wrap(err, "getting url for forked changeset")
+				}
+
+				owner, _, err = github.SplitRepositoryNameWithOwner(strings.TrimPrefix(u.Path, "/"))
+				if err != nil {
+					return nil, errors.Wrap(err, "getting owner from repo name")
+				}
+			}
+		} else {
+			// Get owner from repo metadata. We expect repo.Metadata to be a github.Repository because the
+			// authentication strategy `AuthenticationStrategyGitHubApp` only applies to GitHub repositories.
+			// so this is a safe type cast.
+			repoMetadata := repo.Metadata.(*github.Repository)
+			owner, _, err = github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+			if err != nil {
+				return nil, errors.Wrap(err, "getting owner from repo name")
+			}
 		}
 
 		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner)
@@ -452,7 +484,7 @@ func buildChangesetSource(ctx context.Context, tx SourcerStore, cf *httpcli.Fact
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, externalService, cf)
 	case extsvc.KindPerforce:
-		return NewPerforceSource(ctx, gitserver.NewClient(), externalService, cf)
+		return NewPerforceSource(ctx, gitserver.NewClient("batches.perforcesource"), externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
@@ -542,7 +574,7 @@ func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 	}
 
 	sort.SliceStable(parsedURLs, func(i, j int) bool {
-		return !parsedURLs[i].IsSSH()
+		return !parsedURLs[i].IsSSH() && parsedURLs[j].IsSSH()
 	})
 
 	return parsedURLs[0], nil

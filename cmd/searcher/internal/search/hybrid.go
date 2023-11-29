@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,6 +53,9 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 	// request. As such we centralize our observability to always take into
 	// account the state of the ctx.
 	defer func() {
+		// We can downgrade error logs to rootLogger.Warn
+		errorLogger := rootLogger.Error
+
 		if err != nil {
 			switch ctx.Err() {
 			case context.Canceled:
@@ -65,9 +69,15 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 				// path in this case.
 				recordHybridFinalState("search-timeout")
 				unsearched, ok = nil, true
+				errorLogger = rootLogger.Warn
 			}
 		}
 
+		if err != nil {
+			errorLogger("hybrid search failed", log.String("state", finalState), log.Error(err))
+		} else {
+			rootLogger.Debug("hybrid search done", log.String("state", finalState), log.Bool("ok", ok), log.Int("unsearched.len", len(unsearched)))
+		}
 		metricHybridFinalState.WithLabelValues(finalState).Inc()
 	}()
 
@@ -83,7 +93,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		indexed, ok, err := zoektIndexedCommit(ctx, client, p.Repo)
 		if err != nil {
 			recordHybridFinalState("zoekt-list-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to list indexed commits for %s", p.Repo)
 		}
 		if !ok {
 			logger.Debug("failed to find indexed commit")
@@ -96,9 +106,13 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		// indexed and p.Commit and avoid the need of running diff for each
 		// search.
 		out, err := s.GitDiffSymbols(ctx, p.Repo, indexed, p.Commit)
-		if err != nil {
+		if errcode.IsNotFound(err) {
+			recordHybridFinalState("git-diff-not-found")
+			logger.Debug("not doing hybrid search due to likely missing indexed commit on gitserver", log.Error(err))
+			return nil, false, nil
+		} else if err != nil {
 			recordHybridFinalState("git-diff-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to find changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
 		}
 
 		indexedIgnore, unindexedSearch, err := diff.ParseGitDiffNameStatus(out)
@@ -107,7 +121,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 				log.Binary("out", out),
 				log.Error(err))
 			recordHybridFinalState("git-diff-parse-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to parse git diff output of changed files in %s between %s and %s", p.Repo, indexed, p.Commit)
 		}
 
 		totalLenIndexedIgnore := totalStringsLen(indexedIgnore)
@@ -131,7 +145,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 		retryReason, err := zoektSearchIgnorePaths(ctx, client, p, sender, indexed, indexedIgnore)
 		if err != nil {
 			recordHybridFinalState("zoekt-search-error")
-			return nil, false, err
+			return nil, false, errors.Wrapf(err, "failed to search indexed commit %s@%s", p.Repo, indexed)
 		} else if retryReason != "" {
 			metricHybridRetry.WithLabelValues(retryReason).Inc()
 			logger.Debug("retrying search since index changed while searching", log.String("retryReason", retryReason))

@@ -7,7 +7,7 @@ import { createHistoryResults } from '$testdata'
 import { createHistoryPanelStore } from './stores'
 
 describe('createHistoryPanelStore', () => {
-    let historyResults: HistoryResult[] = createHistoryResults(2, 2)
+    const historyResults: HistoryResult[] = createHistoryResults(2, 2)
 
     beforeAll(() => {
         vi.useFakeTimers()

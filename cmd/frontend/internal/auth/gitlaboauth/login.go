@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dghubble/gologin"
-	oauth2Login "github.com/dghubble/gologin/oauth2"
+	"github.com/dghubble/gologin/v2"
+	oauth2Login "github.com/dghubble/gologin/v2/oauth2"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -69,7 +69,7 @@ func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.
 }
 
 func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
-	logger := log.Scoped("GitlabOAuthHandler", "Gitlab OAuth Handler")
+	logger := log.Scoped("GitlabOAuthHandler")
 
 	if failure == nil {
 		failure = gologin.DefaultFailureHandler

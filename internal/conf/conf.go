@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/jsonx"
 	sglog "github.com/sourcegraph/log"
 
@@ -106,7 +107,10 @@ func getModeUncached() configurationMode {
 var configurationServerFrontendOnlyInitialized = make(chan struct{})
 
 func initDefaultClient() *client {
-	defaultClient := &client{store: newStore()}
+	defaultClient := &client{
+		store:          newStore(),
+		lastUpdateTime: time.Now(),
+	}
 
 	mode := getMode()
 	// Don't kickoff the background updaters for the client/server
@@ -123,6 +127,19 @@ func initDefaultClient() *client {
 			log.Fatalf("received error when setting up the store for the default client during test, err :%s", err)
 		}
 	}
+
+	m := prometheus.NewGaugeFunc(prometheus.GaugeOpts{
+		Name: "src_conf_client_time_since_last_successful_update_seconds",
+		Help: "Time since the last successful update of the configuration by the conf client",
+	}, func() float64 {
+		defaultClient.lastUpdateTimeMu.RLock()
+		defer defaultClient.lastUpdateTimeMu.RUnlock()
+
+		return time.Since(defaultClient.lastUpdateTime).Seconds()
+	})
+
+	prometheus.DefaultRegisterer.MustRegister(m)
+
 	return defaultClient
 }
 
@@ -232,7 +249,7 @@ func startSiteConfigEscapeHatchWorker(c ConfigurationSource) {
 		ctx                                        = context.Background()
 		lastKnownFileContents, lastKnownDBContents string
 		lastKnownConfigID                          int32
-		logger                                     = sglog.Scoped("SiteConfigEscapeHatch", "escape hatch for site config").With(sglog.String("path", siteConfigEscapeHatchPath))
+		logger                                     = sglog.Scoped("SiteConfigEscapeHatch").With(sglog.String("path", siteConfigEscapeHatchPath))
 	)
 	go func() {
 		// First, ensure we populate the file with what is currently in the DB.

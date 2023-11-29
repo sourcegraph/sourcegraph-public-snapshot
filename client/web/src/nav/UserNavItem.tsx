@@ -23,12 +23,12 @@ import {
     AnchorLink,
     Select,
     Icon,
-    ProductStatusBadge,
     Text,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
-import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
+import { useV2QueryInput } from '../search/useV2QueryInput'
+import { enableDevSettings, isSourcegraphDev, useDeveloperSettings } from '../stores'
 
 import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
 
@@ -38,7 +38,7 @@ const MAX_VISIBLE_ORGS = 5
 
 type MinimalAuthenticatedUser = Pick<
     AuthenticatedUser,
-    'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
+    'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName' | 'emails'
 >
 
 export interface UserNavItemProps extends TelemetryProps {
@@ -48,6 +48,7 @@ export interface UserNavItemProps extends TelemetryProps {
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
+    className?: string
 }
 
 /**
@@ -63,6 +64,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         showFeedbackModal,
         showKeyboardShortcutsHelp,
         telemetryService,
+        className,
     } = props
 
     const { themeSetting, setThemeSetting } = useTheme()
@@ -86,14 +88,15 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
     const organizations = authenticatedUser.organizations.nodes
     const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
-    const [experimentalQueryInputEnabled, setExperimentalQueryInputEnabled] = useExperimentalQueryInput()
+    const [v2QueryInputEnabled, setV2QueryInputEnabled] = useV2QueryInput()
+    const developerMode = useDeveloperSettings(settings => settings.enabled)
 
-    const onExperimentalQueryInputChange = useCallback(
+    const onV2QueryInputChange = useCallback(
         (enabled: boolean) => {
             telemetryService.log(`SearchInputToggle${enabled ? 'On' : 'Off'}`)
-            setExperimentalQueryInputEnabled(enabled)
+            setV2QueryInputEnabled(enabled)
         },
-        [telemetryService, setExperimentalQueryInputEnabled]
+        [telemetryService, setV2QueryInputEnabled]
     )
 
     return (
@@ -110,7 +113,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             ref={menuButtonRef}
                             variant="link"
                             data-testid="user-nav-item-toggle"
-                            className={classNames('d-flex align-items-center text-decoration-none', styles.menuButton)}
+                            className={classNames(
+                                'd-flex align-items-center text-decoration-none',
+                                styles.menuButton,
+                                className
+                            )}
                             aria-label={`${isExpanded ? 'Close' : 'Open'} user profile menu`}
                         >
                             <div className="position-relative">
@@ -188,16 +195,20 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
-                            {!isCodyApp && searchQueryInputFeature === 'experimental' && (
+                            {!isCodyApp && searchQueryInputFeature !== 'v1' && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
-                                        <div className="mr-2">
-                                            New search input <ProductStatusBadge status="beta" className="ml-1" />
-                                        </div>
-                                        <Toggle
-                                            value={experimentalQueryInputEnabled}
-                                            onToggle={onExperimentalQueryInputChange}
-                                        />
+                                        <div className="mr-2">New search input</div>
+                                        <Toggle value={v2QueryInputEnabled} onToggle={onV2QueryInputChange} />
+                                    </div>
+                                </div>
+                            )}
+
+                            {process.env.NODE_ENV !== 'development' && isSourcegraphDev(authenticatedUser) && (
+                                <div className="px-2 py-1">
+                                    <div className="d-flex align-items-center justify-content-between">
+                                        <div className="mr-2">Developer mode</div>
+                                        <Toggle value={developerMode} onToggle={enableDevSettings} />
                                     </div>
                                 </div>
                             )}
@@ -241,12 +252,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
                             {isSourcegraphDotCom && <MenuDivider className={styles.dropdownDivider} />}
                             {isSourcegraphDotCom && (
-                                <MenuLink
-                                    as={AnchorLink}
-                                    to="https://about.sourcegraph.com"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
+                                <MenuLink as={AnchorLink} to="https://sourcegraph.com" target="_blank" rel="noopener">
                                     About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}

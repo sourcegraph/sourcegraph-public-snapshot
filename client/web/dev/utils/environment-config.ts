@@ -8,9 +8,7 @@ import { getEnvironmentBoolean, STATIC_ASSETS_PATH } from '@sourcegraph/build-co
 
 import { DEFAULT_SITE_CONFIG_PATH } from './constants'
 
-type WEB_BUILDER = 'esbuild' | 'webpack'
-
-const NODE_ENV = process.env.NODE_ENV || 'development'
+const NODE_ENV = (process.env.NODE_ENV || 'development') as 'production' | 'development'
 
 const NODE_DEBUG = process.env.NODE_DEBUG
 
@@ -31,21 +29,8 @@ export const ENVIRONMENT_CONFIG = {
     // Can be used to expose global variables to integration tests (e.g., CodeMirror API).
     // Enabled in the dev environment to allow debugging integration tests with the dev server.
     INTEGRATION_TESTS: getEnvironmentBoolean('INTEGRATION_TESTS') || IS_DEVELOPMENT,
-    // Enables `embed` Webpack entry point.
-    EMBED_DEVELOPMENT: getEnvironmentBoolean('EMBED_DEVELOPMENT'),
 
-    // Should Webpack serve `index.html` with `HTMLWebpackPlugin`.
-    WEBPACK_SERVE_INDEX: getEnvironmentBoolean('WEBPACK_SERVE_INDEX'),
-    // Enables `StatoscopeWebpackPlugin` that allows to analyze application bundle.
-    WEBPACK_BUNDLE_ANALYZER: getEnvironmentBoolean('WEBPACK_BUNDLE_ANALYZER'),
-    // The name used to generate Statoscope JSON stats and HTML report in the `/ui/assets` folder.
-    WEBPACK_STATS_NAME: process.env.WEBPACK_STATS_NAME,
-    // Allow overriding default Webpack naming behavior for debugging.
-    WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
-    // Enables the plugin that write Webpack stats to disk.
-    WEBPACK_EXPORT_STATS: process.env.WEBPACK_EXPORT_STATS,
-    // Allow to adjust https://webpack.js.org/configuration/devtool/ in the dev environment.
-    WEBPACK_DEVELOPMENT_DEVTOOL: process.env.WEBPACK_DEVELOPMENT_DEVTOOL || 'eval-cheap-module-source-map',
+    WEB_BUILDER_SERVE_INDEX: getEnvironmentBoolean('WEB_BUILDER_SERVE_INDEX'),
     STATIC_ASSETS_PATH: process.env.STATIC_ASSETS_PATH || STATIC_ASSETS_PATH,
 
     // The commit SHA the client bundle was built with.
@@ -61,10 +46,6 @@ export const ENVIRONMENT_CONFIG = {
     // Sentry project
     SENTRY_PROJECT: process.env.SENTRY_PROJECT,
 
-    //  Webpack is the default web build tool, and esbuild is an experimental option (see
-    //  https://docs.sourcegraph.com/dev/background-information/web/build#esbuild).
-    DEV_WEB_BUILDER: (process.env.DEV_WEB_BUILDER === 'esbuild' ? 'esbuild' : 'webpack') as WEB_BUILDER,
-
     /**
      * Omit slow deps (such as Monaco and GraphiQL) in the build to get a ~40% reduction in esbuild
      * rebuild time. The web app will show placeholders if features needing these deps are used.
@@ -72,12 +53,14 @@ export const ENVIRONMENT_CONFIG = {
      */
     DEV_WEB_BUILDER_OMIT_SLOW_DEPS: Boolean(process.env.DEV_WEB_BUILDER_OMIT_SLOW_DEPS),
 
+    /** Disable code splitting for faster dev builds and dev page navigation. */
+    DEV_WEB_BUILDER_NO_SPLITTING: Boolean(process.env.DEV_WEB_BUILDER_NO_SPLITTING),
+
     /**
      * ----------------------------------------
      * Application features configuration.
      * ----------------------------------------
      */
-    ENTERPRISE: getEnvironmentBoolean('ENTERPRISE'),
     SOURCEGRAPHDOTCOM_MODE: getEnvironmentBoolean('SOURCEGRAPHDOTCOM_MODE'),
     CODY_APP: getEnvironmentBoolean('CODY_APP'),
 
@@ -98,6 +81,8 @@ export const ENVIRONMENT_CONFIG = {
     SITE_CONFIG_PATH: process.env.SITE_CONFIG_PATH || DEFAULT_SITE_CONFIG_PATH,
     CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT: process.env.CLIENT_OTEL_EXPORTER_OTLP_ENDPOINT || '-/debug/otlp',
 }
+
+export type EnvironmentConfig = typeof ENVIRONMENT_CONFIG
 
 const { SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 

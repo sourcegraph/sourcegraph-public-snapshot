@@ -8,7 +8,6 @@ import (
 	"github.com/gobwas/glob"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -79,7 +78,7 @@ func (m *Matcher) CommitsDescribedByPolicy(ctx context.Context, repositoryID int
 		branchRequests: map[string]branchRequestMeta{},
 	}
 
-	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, authz.DefaultSubRepoPermsChecker, repoName, filterCommits...)
+	refDescriptions, err := m.gitserverClient.RefDescriptions(ctx, repoName, filterCommits...)
 	if err != nil {
 		return nil, errors.Wrap(err, "gitserver.RefDescriptions")
 	}
@@ -214,7 +213,6 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 
 		commitDates, err := m.gitserverClient.CommitsUniqueToBranch(
 			ctx,
-			authz.DefaultSubRepoPermsChecker,
 			context.repo,
 			branchRequestMeta.commitID,
 			branchRequestMeta.isDefaultBranch,
@@ -261,7 +259,7 @@ func (m *Matcher) matchCommitsOnBranch(ctx context.Context, context matcherConte
 func (m *Matcher) matchCommitPolicies(ctx context.Context, context matcherContext, now time.Time) error {
 	for _, policy := range context.policies {
 		if policy.Type == shared.GitObjectTypeCommit {
-			commit, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, context.repo, api.CommitID(policy.Pattern))
+			commit, commitDate, revisionExists, err := m.gitserverClient.CommitDate(ctx, context.repo, api.CommitID(policy.Pattern))
 			if err != nil {
 				return err
 			}

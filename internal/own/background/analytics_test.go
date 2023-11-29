@@ -26,7 +26,7 @@ type fakeGitServer struct {
 	fileContents map[string]string
 }
 
-func (f fakeGitServer) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
+func (f fakeGitServer) LsFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
 	return f.files, nil
 }
 
@@ -34,7 +34,7 @@ func (f fakeGitServer) ResolveRevision(ctx context.Context, repo api.RepoName, s
 	return api.CommitID(""), nil
 }
 
-func (f fakeGitServer) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+func (f fakeGitServer) ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
 	if f.fileContents == nil {
 		return nil, os.ErrNotExist
 	}
@@ -49,7 +49,7 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "test"})
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
 	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	var repoID api.RepoID = 1
 	err := db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID})
@@ -127,7 +127,7 @@ func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
 	rcache.SetupForTest(t)
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	var repoID api.RepoID = 1
 	err := db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID})

@@ -42,7 +42,7 @@ type Server struct {
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
 func NewServer(logger log.Logger, c config.Config) *Server {
-	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
+	logger = logger.Scoped("server")
 	server := &Server{
 		logger:       logger,
 		store:        build.NewBuildStore(logger),
@@ -278,7 +278,7 @@ func main() {
 	})
 	defer sync.Sync()
 
-	logger := log.Scoped("BuildTracker", "main entrypoint for Build Tracking Server")
+	logger := log.Scoped("BuildTracker")
 
 	serverConf, err := config.NewFromEnv()
 	if err != nil {

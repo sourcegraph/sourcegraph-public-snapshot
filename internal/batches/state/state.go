@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -21,7 +21,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	bbcs "github.com/sourcegraph/sourcegraph/internal/batches/sources/bitbucketcloud"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -42,7 +41,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client g
 	copy(events, es)
 	sort.Sort(events)
 
-	logger := log.Scoped("SetDerivedState", "")
+	logger := log.Scoped("SetDerivedState")
 
 	// We need to ensure we're using an internal actor here, since we need to
 	// have access to the repo to set the derived state regardless of the actor
@@ -124,7 +123,7 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 		return computeAzureDevOpsBuildState(m)
 	case *gerritbatches.AnnotatedChange:
 		return computeGerritBuildState(m)
-	case *protocol.PerforceChangelistState:
+	case *perforce.ChangelistState:
 		// Perforce doesn't have builds built-in, its better to be explicit by still
 		// including this case for clarity.
 		return btypes.ChangesetCheckStateUnknown
@@ -639,13 +638,13 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		default:
 			return "", errors.Errorf("unknown Gerrit Change state: %s", m.Change.Status)
 		}
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		switch m.State {
-		case protocol.PerforceChangelistStateClosed:
+		case perforce.ChangelistStateClosed:
 			s = btypes.ChangesetExternalStateClosed
-		case protocol.PerforceChangelistStateSubmitted:
+		case perforce.ChangelistStateSubmitted:
 			s = btypes.ChangesetExternalStateMerged
-		case protocol.PerforceChangelistStatePending, protocol.PerforceChangelistStateShelved:
+		case perforce.ChangelistStatePending, perforce.ChangelistStateShelved:
 			s = btypes.ChangesetExternalStateOpen
 		default:
 			return "", errors.Errorf("unknown Perforce Change state: %s", m.State)
@@ -758,7 +757,7 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			}
 
 		}
-	case *protocol.PerforceChangelist:
+	case *perforce.Changelist:
 		states[btypes.ChangesetReviewStatePending] = true
 	default:
 		return "", errors.New("unknown changeset type")
@@ -794,7 +793,7 @@ func computeDiffStat(ctx context.Context, client gitserver.Client, c *btypes.Cha
 	if c.SyncState.BaseRefOid == c.SyncState.HeadRefOid {
 		return c.DiffStat(), nil
 	}
-	iter, err := client.Diff(ctx, authz.DefaultSubRepoPermsChecker, gitserver.DiffOptions{
+	iter, err := client.Diff(ctx, gitserver.DiffOptions{
 		Repo: repo,
 		Base: c.SyncState.BaseRefOid,
 		Head: c.SyncState.HeadRefOid,

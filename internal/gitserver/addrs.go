@@ -54,7 +54,7 @@ type TestClientSourceOptions struct {
 	Logger log.Logger
 }
 
-func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+func NewTestClientSource(t testing.TB, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
 	logger := logtest.Scoped(t)
 	opts := TestClientSourceOptions{
 		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
@@ -294,14 +294,14 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		a.conns.Store(&after)
 		return
 	}
-	log.Scoped("", "gitserver gRPC connections").Info(
+	log.Scoped("").Info(
 		"new gitserver addresses",
 		log.Strings("before", before.Addresses),
 		log.Strings("after", after.Addresses),
 	)
 
 	// Open connections for each address
-	clientLogger := log.Scoped("gitserver.client", "gitserver gRPC client")
+	clientLogger := log.Scoped("gitserver.client")
 
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {

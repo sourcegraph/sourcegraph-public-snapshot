@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 import { action } from '@storybook/addon-actions'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { type Observable, of } from 'rxjs'
 
@@ -17,7 +17,7 @@ const invalidSourcegraphUrl = (): Observable<string | undefined> => of('Arbitrar
 
 const requestPermissionsHandler = action('requestPermission')
 
-const decorator: DecoratorFn = story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>
+const decorator: Decorator = story => <BrandedStory styles={brandedStyles}>{() => story()}</BrandedStory>
 
 const config: Meta = {
     title: 'browser/Options/OptionsPage',
@@ -51,12 +51,12 @@ const OptionsPageWrapper: React.FunctionComponent<React.PropsWithChildren<Partia
     )
 }
 
-const Interactive: Story = args => {
+const Interactive: StoryFn = args => {
     const [isActivated, setIsActivated] = useState(false)
     return <OptionsPageWrapper isActivated={isActivated} onToggleActivated={setIsActivated} {...args} />
 }
 
-const WithAdvancedSettings: Story = args => {
+const WithAdvancedSettings: StoryFn = args => {
     const [optionFlagValues, setOptionFlagValues] = useState([
         { key: 'allowErrorReporting', label: 'Allow error reporting', value: false },
     ])
@@ -74,7 +74,7 @@ const WithAdvancedSettings: Story = args => {
     )
 }
 
-export const AllOptionsPages: Story = (args = {}) => (
+export const AllOptionsPages: StoryFn = (args = {}) => (
     <div>
         <H1 className="text-center mb-3">All Options Pages</H1>
         <Grid columnCount={3}>
@@ -149,16 +149,18 @@ export const AllOptionsPages: Story = (args = {}) => (
 AllOptionsPages.argTypes = {
     sourcegraphUrl: {
         control: { type: 'text' },
-        defaultValue: 'https://not-sourcegraph.com',
     },
     version: {
         control: { type: 'text' },
-        defaultValue: '0.0.0',
     },
     showSourcegraphComAlert: {
         control: { type: 'boolean' },
-        defaultValue: false,
     },
+}
+AllOptionsPages.args = {
+    sourcegraphUrl: 'https://not-sourcegraph.com',
+    version: '0.0.0',
+    showSourcegraphComAlert: false,
 }
 
 AllOptionsPages.parameters = {

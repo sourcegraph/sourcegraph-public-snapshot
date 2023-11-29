@@ -119,6 +119,12 @@ var Mac = []category{
 					).Wait()
 				},
 			},
+			{
+				Name:    "p4 CLI (Perforce)",
+				Check:   checkAction(check.InPath("p4")),
+				Enabled: disableInCI(), // giving a SHA256 mismatch error in CI
+				Fix:     cmdFix(`brew install --cask p4`),
+			},
 		},
 	},
 	{
@@ -151,6 +157,12 @@ var Mac = []category{
 			Name:  "src",
 			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.2.0"))),
 			Fix:   cmdFix(`brew upgrade sourcegraph/src-cli/src-cli || brew install sourcegraph/src-cli/src-cli`),
+		},
+		// gnu-parallel is never available by default on MacOs.
+		&dependency{
+			Name:  "gnu-parallel",
+			Check: checkAction(check.InPath("parallel")),
+			Fix:   cmdFix(`brew install parallel`),
 		},
 	),
 	{
@@ -325,7 +337,7 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 	{
 		Name:      "Cloud services",
 		DependsOn: []string{depsHomebrew},
-		Enabled:   enableForTeammatesOnly(),
+		Enabled:   disableInCI(),
 		Checks: []*dependency{
 			dependencyGcloud(),
 		},

@@ -1,5 +1,6 @@
 .bin/
 *.bundle.*
+package/
 bazel-*
 client/phabricator/scripts/loader.js
 client/browser/build
@@ -18,7 +19,7 @@ vendor/
 .nyc_output/
 out/
 dist/
-dist-types/
+client/web/dist/
 client/shared/src/schema/*.d.ts
 ts-node-*
 testdata
@@ -47,6 +48,7 @@ code-intel-extensions.json
 pnpm-lock.yaml
 node_modules/
 client/web-sveltekit/.svelte-kit
+client/web-sveltekit/build
 *.module.scss.d.ts
 .vscode-test
 
@@ -54,3 +56,6 @@ dev/backcompat/flakes.json
 
 # Errors when used with @ianvs/prettier-plugin-sort-imports due to TS language API hitting global `eval`
 client/browser/src/types/webextension-polyfill/index.d.ts
+
+dev/release/release-config.jsonc
+graphql-operations.ts

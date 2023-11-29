@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -129,6 +130,7 @@ func TestMiddleware(t *testing.T) {
 			Type:               providerType,
 		},
 		callbackUrl: ".auth/callback",
+		httpClient:  httpcli.TestExternalClient,
 	}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
@@ -194,6 +196,7 @@ func TestMiddleware(t *testing.T) {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: mockUserID}))
 		}
 		respRecorder := httptest.NewRecorder()
+		session.SetData(respRecorder, req, "oidcState", validState)
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
@@ -221,7 +224,7 @@ func TestMiddleware(t *testing.T) {
 		if got, want := resp.Header.Get("Location"), "/oauth2/v1/authorize?"; !strings.Contains(got, want) {
 			t.Errorf("got redirect URL %v, want contains %v", got, want)
 		}
-		if state, want := state(t, resp.Header.Get("Location")), "/"; state.Redirect != want {
+		if state, want := state(t, resp.Header.Get("Location")), "/search"; state.Redirect != want {
 			t.Errorf("got redirect destination %q, want %q", state.Redirect, want)
 		}
 	})
@@ -284,7 +287,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("OIDC callback without CSRF token -> error", func(t *testing.T) {
 		invalidState := (&AuthnState{CSRFToken: "bad", ProviderID: mockGetProviderValue.ConfigID().ID}).Encode()
 		resp := doRequest("GET", "http://example.com/.auth/callback?code=THECODE&state="+url.PathEscape(invalidState), "", nil, false)
-		if want := http.StatusBadRequest; resp.StatusCode != want {
+		if want := http.StatusUnauthorized; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
 	})
@@ -293,7 +296,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want := resp.Header.Get("Location"), "/redirect?signin="; got != want {
+		if got, want := resp.Header.Get("Location"), "/redirect?signin=OpenIDConnect"; got != want {
 			t.Errorf("got redirect URL %v, want %v", got, want)
 		}
 	})
@@ -331,6 +334,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 			Type:         providerType,
 		},
 		callbackUrl: ".auth/callback",
+		httpClient:  httpcli.TestExternalClient,
 	}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
@@ -385,6 +389,7 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 			req.AddCookie(cookie)
 		}
 		respRecorder := httptest.NewRecorder()
+		session.SetData(respRecorder, req, "oidcState", state)
 		authedHandler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}

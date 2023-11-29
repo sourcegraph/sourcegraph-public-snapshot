@@ -226,7 +226,7 @@ type Store struct {
 
 func NewBuildStore(logger log.Logger) *Store {
 	return &Store{
-		logger: logger.Scoped("store", "stores all the buildkite builds"),
+		logger: logger.Scoped("store"),
 
 		builds:              make(map[int]*Build),
 		consecutiveFailures: make(map[string]int),

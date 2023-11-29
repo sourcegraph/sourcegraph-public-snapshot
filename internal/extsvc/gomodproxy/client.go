@@ -38,7 +38,7 @@ func NewClient(urn string, urls []string, httpfactory *httpcli.Factory) *Client 
 		urls:           urls,
 		cachedClient:   cached,
 		uncachedClient: uncached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GoModClient", ""), urn)),
+		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GoModClient"), urn)),
 	}
 }
 
@@ -68,8 +68,7 @@ func (c *Client) GetVersion(ctx context.Context, mod reposource.PackageName, ver
 	return &module.Version{Path: string(mod), Version: v.Version}, nil
 }
 
-// GetZip returns the zip archive bytes of the given module and version.
-func (c *Client) GetZip(ctx context.Context, mod reposource.PackageName, version string) ([]byte, error) {
+func (c *Client) GetZip(ctx context.Context, mod reposource.PackageName, version string) (io.ReadCloser, error) {
 	escapedVersion, err := module.EscapeVersion(version)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to escape version")
@@ -80,13 +79,7 @@ func (c *Client) GetZip(ctx context.Context, mod reposource.PackageName, version
 		return nil, err
 	}
 
-	// TODO: remove and return io.Reader
-	zipBytes, err := io.ReadAll(zip)
-	if err != nil {
-		return nil, err
-	}
-
-	return zipBytes, nil
+	return zip, nil
 }
 
 func (c *Client) get(ctx context.Context, doer httpcli.Doer, mod reposource.PackageName, paths ...string) (respBody io.ReadCloser, err error) {

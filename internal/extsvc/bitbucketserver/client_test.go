@@ -27,6 +27,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -91,7 +92,7 @@ func TestClientKeepsBaseURLPath(t *testing.T) {
 	srvURL, err := url.JoinPath(srv.URL, "/testpath")
 	require.NoError(t, err)
 	bbConf := &schema.BitbucketServerConnection{Url: srvURL}
-	client, err := NewClient("test", bbConf, nil)
+	client, err := NewClient("test", bbConf, httpcli.TestExternalDoer)
 	require.NoError(t, err)
 	client.rateLimit = ratelimit.NewInstrumentedLimiter("bitbucket", rate.NewLimiter(100, 10))
 

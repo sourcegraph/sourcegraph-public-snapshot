@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"code.gitea.io/gitea/modules/hostmatcher"
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/gregjones/httpcache"
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
+	"github.com/sourcegraph/sourcegraph/internal/requestinteraction"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -39,12 +41,6 @@ import (
 // etc.
 type Doer interface {
 	Do(*http.Request) (*http.Response, error)
-}
-
-type MockDoer func(*http.Request) (*http.Response, error)
-
-func (m MockDoer) Do(req *http.Request) (*http.Response, error) {
-	return m(req)
 }
 
 // DoerFunc is function adapter that implements the http.RoundTripper
@@ -107,7 +103,7 @@ var ExternalClientFactory = NewExternalClientFactory()
 // UncachedExternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with external services, but with caching
 // responses disabled.
-var UncachedExternalClientFactory = newExternalClientFactory(false)
+var UncachedExternalClientFactory = newExternalClientFactory(false, false)
 
 var (
 	externalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
@@ -124,7 +120,7 @@ var (
 // use them for one-off requests if possible, and definitely not for larger payloads,
 // like downloading arbitrarily sized files!
 func NewExternalClientFactory(middleware ...Middleware) *Factory {
-	return newExternalClientFactory(true, middleware...)
+	return newExternalClientFactory(true, false, middleware...)
 }
 
 // NewExternalClientFactory returns a httpcli.Factory with common options
@@ -132,7 +128,9 @@ func NewExternalClientFactory(middleware ...Middleware) *Factory {
 // middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
 // If cache is true, responses will be cached in redis for improved rate limiting
 // and reduced byte transfer sizes.
-func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
+// If testOpt is true, a test-only transport option will be used that does not have
+// any IP restrictions for external requests.
+func newExternalClientFactory(cache bool, testOpt bool, middleware ...Middleware) *Factory {
 	mw := []Middleware{
 		ContextErrorMiddleware,
 		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
@@ -140,16 +138,22 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 	}
 	mw = append(mw, middleware...)
 
+	externalTransportOpt := ExternalTransportOpt
+	if testOpt || env.InsecureDev {
+		externalTransportOpt = TestExternalTransportOpt
+	}
+
 	opts := []Opt{
 		NewTimeoutOpt(externalTimeout),
-		// ExternalTransportOpt needs to be before TracedTransportOpt and
+		// externalTransportOpt needs to be before TracedTransportOpt and
 		// NewCachedTransportOpt since it wants to extract a http.Transport,
 		// not a generic http.RoundTripper.
-		ExternalTransportOpt,
+		externalTransportOpt,
 		NewErrorResilientTransportOpt(
 			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
 			ExpJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
 		),
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	}
 	if cache {
@@ -166,8 +170,26 @@ func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
 // convenience for existing uses of http.DefaultClient.
 // WARN: This client caches entire responses for etag matching. Do not use it for
 // one-off requests if possible, and definitely not for larger payloads, like
-// downloading arbitrarily sized files! See UncachedExternalClient instead.
+// downloading arbitrarily sized files! See UncachedExternalDoer instead.
 var ExternalDoer, _ = ExternalClientFactory.Doer()
+
+// UncachedExternalDoer is a shared client for external communication. This is a
+// convenience for existing uses of http.DefaultClient.
+// This client does not cache responses. To cache responses see ExternalDoer instead.
+var UncachedExternalDoer, _ = UncachedExternalClientFactory.Doer()
+
+// TestExternalClientFactory is a httpcli.Factory with common options
+// and is created for tests where you'd normally use an ExternalClientFactory.
+// Must be used in tests only as it doesn't apply any IP restrictions.
+var TestExternalClientFactory = newExternalClientFactory(false, true)
+
+// TestExternalClient is a shared client for external communication.
+// It does not apply any IP filering and must only be used in tests.
+var TestExternalClient, _ = TestExternalClientFactory.Client()
+
+// TestExternalDoer is a shared client for testing external communications.
+// It does not apply any IP filering and must only be used in tests.
+var TestExternalDoer, _ = TestExternalClientFactory.Doer()
 
 // ExternalClient returns a shared client for external communication. This is
 // a convenience for existing uses of http.DefaultClient.
@@ -175,6 +197,11 @@ var ExternalDoer, _ = ExternalClientFactory.Doer()
 // one-off requests if possible, and definitely not for larger payloads, like
 // downloading arbitrarily sized files! See UncachedExternalClient instead.
 var ExternalClient, _ = ExternalClientFactory.Client()
+
+// UncachedExternalClient returns a shared client for external communication. This is
+// a convenience for existing uses of http.DefaultClient.
+// WARN: This client does not cache responses. To cache responses see ExternalClient instead.
+var UncachedExternalClient, _ = UncachedExternalClientFactory.Client()
 
 // InternalClientFactory is a httpcli.Factory with common options
 // and middleware pre-set for communicating with internal services.
@@ -208,6 +235,7 @@ func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Facto
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
 		RequestClientTransportOpt,
+		RequestInteractionTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -320,7 +348,7 @@ const (
 //
 // It also logs metadata set by request context by other middleware, such as NewRetryPolicy.
 func NewLoggingMiddleware(logger log.Logger) Middleware {
-	logger = logger.Scoped("httpcli", "http client")
+	logger = logger.Scoped("httpcli")
 
 	return func(d Doer) Doer {
 		return DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -366,19 +394,52 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 	}
 }
 
-//
 // Common Opts
-//
+var externalDenyList = env.Get("EXTERNAL_DENY_LIST", "", "Deny list for outgoing requests")
+
+type denyRule struct {
+	pattern string
+	builtin string
+}
+
+var defaultDenylist = []denyRule{
+	{builtin: "loopback"},
+	{pattern: "169.254.169.254"},
+}
+
+// TestTransportOpt creates a transport for tests that does not apply any denylisting
+func TestExternalTransportOpt(cli *http.Client) error {
+	tr, err := getTransportForMutation(cli)
+	if err != nil {
+		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
+	}
+
+	cli.Transport = &externalTransport{base: tr}
+	return nil
+}
 
 // ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
 // can contact non-Sourcegraph services. For example Admins can configure
-// TLS/SSL settings.
+// TLS/SSL settings. This adds filtering for external requests based on
+// predefined deny lists. Can be extended using the EXTERNAL_DENY_LIST
+// environment variable.
 func ExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
 	if err != nil {
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
+	var denyList = hostmatcher.ParseHostMatchList("EXTERNAL_DENY_LIST", externalDenyList)
+	for _, rule := range defaultDenylist {
+		if rule.builtin != "" {
+			denyList.AppendBuiltin(rule.builtin)
+		} else if rule.pattern != "" {
+			denyList.AppendPattern(rule.pattern)
+		}
+	}
+
+	// this dialer will match resolved domain names against the deny list
+	tr.DialContext = hostmatcher.NewDialContext("", nil, denyList)
 	cli.Transport = &externalTransport{base: tr}
 	return nil
 }
@@ -830,6 +891,19 @@ func RequestClientTransportOpt(cli *http.Client) error {
 
 	cli.Transport = &wrappedTransport{
 		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
+
+	return nil
+}
+
+func RequestInteractionTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestinteraction.HTTPTransport{RoundTripper: cli.Transport},
 		Wrapped:      cli.Transport,
 	}
 

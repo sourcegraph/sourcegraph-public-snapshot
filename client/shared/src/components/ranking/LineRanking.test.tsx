@@ -1,4 +1,5 @@
 import { range } from 'lodash'
+import { describe, expect, test } from 'vitest'
 
 import { calculateMatchGroupsSorted, mergeContext } from './LineRanking'
 import type { MatchItem } from './PerFileResultRanking'

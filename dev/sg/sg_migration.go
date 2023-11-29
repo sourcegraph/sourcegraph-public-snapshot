@@ -225,7 +225,7 @@ func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (*ru
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
 	config, _ := getConfig()
-	logger := log.Scoped("migrations.runner", "migration runner")
+	logger := log.Scoped("migrations.runner")
 	if config != nil {
 		getEnv = config.GetEnv
 	} else {

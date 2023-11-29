@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/uploads/internal/store",
         "//internal/env",
         "//internal/gitserver",
@@ -30,7 +29,6 @@ go_test(
     embed = [":backfiller"],
     deps = [
         "//internal/api",
-        "//internal/authz",
         "//internal/codeintel/uploads/internal/store",
         "//internal/codeintel/uploads/shared",
         "//internal/database/basestore",

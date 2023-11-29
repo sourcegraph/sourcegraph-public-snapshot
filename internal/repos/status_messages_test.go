@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -38,7 +39,7 @@ func TestStatusMessages(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := NewStore(logtest.Scoped(t), db)
 
 	mockGitserverClient := gitserver.NewMockClient()
@@ -235,7 +236,7 @@ func TestStatusMessages(t *testing.T) {
 					},
 				})
 
-				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]gitserver.SystemInfo{
+				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]protocol.SystemInfo{
 					{
 						Address:     "gitserver-0",
 						PercentUsed: 75.10345,
@@ -257,7 +258,7 @@ func TestStatusMessages(t *testing.T) {
 		},
 		{
 			testSetup: func() {
-				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]gitserver.SystemInfo{
+				mockGitserverClient.SystemsInfoFunc.SetDefaultReturn([]protocol.SystemInfo{
 					{
 						Address:     "gitserver-0",
 						PercentUsed: 95.10345,

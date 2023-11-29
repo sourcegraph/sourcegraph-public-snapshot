@@ -3,7 +3,6 @@ import React from 'react'
 import type { JSONSchemaType } from 'ajv'
 import classNames from 'classnames'
 import { cloneDeep } from 'lodash'
-// eslint-disable-next-line import/order
 import type * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 
 import 'monaco-yaml'

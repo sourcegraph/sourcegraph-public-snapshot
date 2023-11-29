@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"io"
 	"net/http"
 
@@ -12,7 +12,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -27,40 +26,61 @@ import (
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
 
 const (
-	flaggedPromptLogMessage = "flagged prompt"
-
 	logPromptPrefixLength = 250
 
-	promptTokenLimit   = 18000
-	responseTokenLimit = 1000
+	promptTokenFlaggingLimit   = 18000
+	responseTokenFlaggingLimit = 1000
+
+	promptTokenBlockingLimit   = 20000
+	responseTokenBlockingLimit = 1000
 )
 
-func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (bool, string, error) {
+func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (*flaggingResult, error) {
 	// Only usage of chat models us currently flagged, so if the request
 	// is using another model, we skip other checks.
-	if ar.Model != "claude-2" && ar.Model != "claude-v1" {
-		return false, "", nil
+	if ar.Model != "claude-2" && ar.Model != "claude-2.0" && ar.Model != "claude-2.1" && ar.Model != "claude-v1" {
+		return nil, nil
 	}
+	reasons := []string{}
 
 	if len(promptRegexps) > 0 && !matchesAny(ar.Prompt, promptRegexps) {
-		return true, "unknown_prompt", nil
+		reasons = append(reasons, "unknown_prompt")
 	}
 
 	// If this request has a very high token count for responses, then flag it.
-	if ar.MaxTokensToSample > responseTokenLimit {
-		return true, fmt.Sprintf("high_max_tokens_to_sample_%d", ar.MaxTokensToSample), nil
+	if ar.MaxTokensToSample > responseTokenFlaggingLimit {
+		reasons = append(reasons, "high_max_tokens_to_sample")
 	}
 
 	// If this prompt consists of a very large number of tokens, then flag it.
 	tokenCount, err := ar.GetPromptTokenCount(tk)
 	if err != nil {
-		return true, "", errors.Wrap(err, "tokenize prompt")
+		return &flaggingResult{}, errors.Wrap(err, "tokenize prompt")
 	}
-	if tokenCount > promptTokenLimit {
-		return true, fmt.Sprintf("high_prompt_token_count_%d", tokenCount), nil
+	if tokenCount > promptTokenFlaggingLimit {
+		reasons = append(reasons, "high_prompt_token_count")
 	}
 
-	return false, "", nil
+	if len(reasons) > 0 {
+		blocked := false
+		if tokenCount > promptTokenBlockingLimit || ar.MaxTokensToSample > responseTokenBlockingLimit {
+			blocked = true
+		}
+
+		promptPrefix := ar.Prompt
+		if len(promptPrefix) > logPromptPrefixLength {
+			promptPrefix = promptPrefix[0:logPromptPrefixLength]
+		}
+		return &flaggingResult{
+			reasons:           reasons,
+			maxTokensToSample: int(ar.MaxTokensToSample),
+			promptPrefix:      promptPrefix,
+			promptTokenCount:  tokenCount,
+			shouldBlock:       blocked,
+		}, nil
+	}
+
+	return nil, nil
 }
 
 func matchesAny(prompt string, promptRegexps []*regexp.Regexp) bool {
@@ -89,6 +109,7 @@ func NewAnthropicHandler(
 	maxTokensToSample int,
 	promptRecorder PromptRecorder,
 	allowedPromptPatterns []string,
+	requestBlockingEnabled bool,
 ) (http.Handler, error) {
 	// Tokenizer only needs to be initialized once, and can be shared globally.
 	anthropicTokenizer, err := tokenizer.NewAnthropicClaudeTokenizer()
@@ -109,45 +130,35 @@ func NewAnthropicHandler(
 		anthropicAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
-			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, bool, error) {
+			validateRequest: func(ctx context.Context, logger log.Logger, _ codygateway.Feature, ar anthropicRequest) (int, *flaggingResult, error) {
 				if ar.MaxTokensToSample > int32(maxTokensToSample) {
-					return http.StatusBadRequest, false, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
+					return http.StatusBadRequest, nil, errors.Errorf("max_tokens_to_sample exceeds maximum allowed value of %d: %d", maxTokensToSample, ar.MaxTokensToSample)
 				}
 
-				if flagged, reason, err := isFlaggedAnthropicRequest(anthropicTokenizer, ar, promptRegexps); err != nil {
+				if result, err := isFlaggedAnthropicRequest(anthropicTokenizer, ar, promptRegexps); err != nil {
 					logger.Error("error checking anthropic request - treating as non-flagged",
 						log.Error(err))
-				} else if flagged {
-					// For now, just log the error, don't modify the request / response
-					promptPrefix := ar.Prompt
-					if len(promptPrefix) > logPromptPrefixLength {
-						promptPrefix = promptPrefix[0:logPromptPrefixLength]
-					}
-					logger.Info(flaggedPromptLogMessage,
-						log.String("reason", reason),
-						log.Int("promptLength", len(ar.Prompt)),
-						log.String("promptPrefix", promptPrefix),
-						log.String("model", ar.Model),
-						log.Int32("maxTokensToSample", ar.MaxTokensToSample),
-						log.Float32("temperature", ar.Temperature))
-
+				} else if result.IsFlagged() {
 					// Record flagged prompts in hotpath - they usually take a long time on the backend side, so this isn't going to make things meaningfully worse
 					if err := promptRecorder.Record(ctx, ar.Prompt); err != nil {
 						logger.Warn("failed to record flagged prompt", log.Error(err))
 					}
-					return 0, true, nil
+					if requestBlockingEnabled && result.shouldBlock {
+						return http.StatusBadRequest, result, errors.Errorf("request blocked - if you think this is a mistake, please contact support@sourcegraph.com")
+					}
+					return 0, result, nil
 				}
 
-				return 0, false, nil
+				return 0, nil, nil
 			},
-			transformBody: func(body *anthropicRequest, act *actor.Actor) {
+			transformBody: func(body *anthropicRequest, identifier string) {
 				// Overwrite the metadata field, we don't want to allow users to specify it:
 				body.Metadata = &anthropicRequestMetadata{
 					// We forward the actor ID to support tracking.
-					UserID: act.ID,
+					UserID: identifier,
 				}
 			},
-			getRequestMetadata: func(body anthropicRequest) (model string, additionalMetadata map[string]any) {
+			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, body anthropicRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{
 					"stream":               body.Stream,
 					"max_tokens_to_sample": body.MaxTokensToSample,
@@ -250,6 +261,10 @@ type anthropicRequest struct {
 
 	// Use (*anthropicRequest).GetTokenCount()
 	promptTokens *anthropicTokenCount
+}
+
+func (ar anthropicRequest) GetModel() string {
+	return ar.Model
 }
 
 type anthropicTokenCount struct {

@@ -49,10 +49,13 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// Second return value is a boolean indicating whether the request was flagged during validation.
 	//
 	// The provided logger already contains actor context.
-	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (httpStatus int, flagged bool, _ error)
+	validateRequest func(context.Context, log.Logger, codygateway.Feature, ReqT) (int, *flaggingResult, error)
 	// transformBody can be used to modify the request body before it is sent
 	// upstream. To manipulate the HTTP request, use transformRequest.
-	transformBody func(*ReqT, *actor.Actor)
+	//
+	// If the upstream supports it, the given identifier string should be
+	// provided to assist in abuse detection.
+	transformBody func(_ *ReqT, identifier string)
 	// transformRequest can be used to modify the HTTP request before it is sent
 	// upstream. To manipulate the body, use transformBody.
 	transformRequest func(*http.Request)
@@ -61,7 +64,7 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	// to be reported here - instead, use parseResponseAndUsage to extract usage,
 	// which for some providers we can only know after the fact based on what
 	// upstream tells us.
-	getRequestMetadata func(ReqT) (model string, additionalMetadata map[string]any)
+	getRequestMetadata func(context.Context, log.Logger, *actor.Actor, ReqT) (model string, additionalMetadata map[string]any)
 	// parseResponseAndUsage should extract details from the response we get back from
 	// upstream as well as overall usage for tracking purposes.
 	//
@@ -70,7 +73,9 @@ type upstreamHandlerMethods[ReqT UpstreamRequest] struct {
 	parseResponseAndUsage func(log.Logger, ReqT, io.Reader) (promptUsage, completionUsage usageStats)
 }
 
-type UpstreamRequest interface{}
+type UpstreamRequest interface {
+	GetModel() string
+}
 
 func makeUpstreamHandler[ReqT UpstreamRequest](
 	baseLogger log.Logger,
@@ -93,7 +98,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	// response.
 	defaultRetryAfterSeconds int,
 ) http.Handler {
-	baseLogger = baseLogger.Scoped(upstreamName, fmt.Sprintf("%s upstream handler", upstreamName)).
+	baseLogger = baseLogger.Scoped(upstreamName).
 		With(log.String("upstream.url", upstreamAPIURL))
 
 	// Convert allowedModels to the Cody Gateway configuration format with the
@@ -159,16 +164,51 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 				return
 			}
-			status, flagged, err := methods.validateRequest(r.Context(), logger, feature, body)
+			status, flaggingResult, err := methods.validateRequest(r.Context(), logger, feature, body)
 			if err != nil {
 				if status == 0 {
 					response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "invalid request"))
 				}
+				if flaggingResult.IsFlagged() && flaggingResult.shouldBlock {
+					requestMetadata := getFlaggingMetadata(flaggingResult, act)
+					err := eventLogger.LogEvent(
+						r.Context(),
+						events.Event{
+							Name:       codygateway.EventNameRequestBlocked,
+							Source:     act.Source.Name(),
+							Identifier: act.ID,
+							Metadata: mergeMaps(requestMetadata, map[string]any{
+								codygateway.CompletionsEventFeatureMetadataField: feature,
+								"model":    fmt.Sprintf("%s/%s", upstreamName, body.GetModel()),
+								"provider": upstreamName,
+
+								// Response details
+								"resolved_status_code": status,
+
+								// Request metadata
+								"prompt_token_count":   flaggingResult.promptTokenCount,
+								"max_tokens_to_sample": flaggingResult.maxTokensToSample,
+
+								// Actor details, specific to the actor Source
+								"sg_actor_id":            sgActorID,
+								"sg_actor_anonymous_uid": sgActorAnonymousUID,
+							}),
+						},
+					)
+					if err != nil {
+						logger.Error("failed to log event", log.Error(err))
+					}
+				}
+
 				response.JSONError(logger, w, status, err)
 				return
 			}
 
-			methods.transformBody(&body, act)
+			// identifier that can be provided to upstream for abuse detection
+			// has the format '$ACTOR_ID:$SG_ACTOR_ID'. The latter is anonymized
+			// (specific per-instance)
+			identifier := fmt.Sprintf("%s:%s", act.ID, sgActorID)
+			methods.transformBody(&body, identifier)
 
 			// Re-marshal the payload for upstream to unset metadata and remove any properties
 			// not known to us.
@@ -189,7 +229,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			methods.transformRequest(req)
 
 			// Retrieve metadata from the initial request.
-			model, requestMetadata := methods.getRequestMetadata(body)
+			model, requestMetadata := methods.getRequestMetadata(r.Context(), logger, act, body)
 
 			// Match the model against the allowlist of models, which are configured
 			// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
@@ -220,8 +260,8 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 						attribute.Int("upstreamStatusCode", upstreamStatusCode),
 						attribute.Int("resolvedStatusCode", resolvedStatusCode))
 				}
-				if flagged {
-					requestMetadata["flagged"] = true
+				if flaggingResult.IsFlagged() {
+					requestMetadata = mergeMaps(requestMetadata, getFlaggingMetadata(flaggingResult, act))
 				}
 				usageData := map[string]any{
 					"prompt_character_count":     promptUsage.characters,
@@ -312,6 +352,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 					log.Error(errors.New(resp.Status)), // real error needed for Sentry reporting
 					log.String("resp.headers", headers.String()))
 				resolvedStatusCode = http.StatusServiceUnavailable
+			}
+
+			// This handles upstream 429 responses as well, since they get
+			// resolved to http.StatusServiceUnavailable.
+			if resolvedStatusCode == http.StatusServiceUnavailable {
 				// Propagate retry-after in case it is handle-able by the client,
 				// or write our default. 503 errors can have retry-after as well.
 				if upstreamRetryAfter := resp.Header.Get("retry-after"); upstreamRetryAfter != "" {
@@ -340,6 +385,22 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 		}))
 }
 
+func getFlaggingMetadata(flaggingResult *flaggingResult, act *actor.Actor) map[string]any {
+	requestMetadata := map[string]any{}
+
+	requestMetadata["flagged"] = true
+	flaggingMetadata := map[string]any{
+		"reason":       flaggingResult.reasons,
+		"should_block": flaggingResult.shouldBlock,
+	}
+
+	if act.IsDotComActor() {
+		flaggingMetadata["prompt_prefix"] = flaggingResult.promptPrefix
+	}
+	requestMetadata["flagging_result"] = flaggingMetadata
+	return requestMetadata
+}
+
 func isAllowedModel(allowedModels []string, model string) bool {
 	for _, m := range allowedModels {
 		if strings.EqualFold(m, model) {
@@ -365,4 +426,16 @@ func mergeMaps(dst map[string]any, srcs ...map[string]any) map[string]any {
 		}
 	}
 	return dst
+}
+
+type flaggingResult struct {
+	shouldBlock       bool
+	reasons           []string
+	promptPrefix      string
+	maxTokensToSample int
+	promptTokenCount  int
+}
+
+func (f *flaggingResult) IsFlagged() bool {
+	return f != nil
 }

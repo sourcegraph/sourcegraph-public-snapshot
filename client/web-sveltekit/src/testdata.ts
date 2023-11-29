@@ -77,7 +77,7 @@ export function createHistoryResults(count: number, pageSize: number): HistoryRe
  * Converts the input string to lower case and replaces all non-word characters with -
  */
 function clean(str: string): string {
-    return str.replaceAll(/[^\w]+/g, '-').toLowerCase()
+    return str.replaceAll(/\W+/g, '-').toLowerCase()
 }
 
 function createRepoName(): string {
@@ -96,7 +96,7 @@ function createRepoStars(): number | undefined {
     return faker.helpers.maybe(() => faker.number.int({ max: 1000000 }))
 }
 
-function createUnifiedDiff() {
+function createUnifiedDiff(): string {
     const file = faker.system.filePath()
     return [
         `${file} ${file}`,
@@ -147,7 +147,7 @@ export function createCommitMatch(
                 })
         })(),
         content: ['```', diff ? 'DIFF' : 'COMMIT', '\n', content, '\n```'].join(''),
-        message: message,
+        message,
         authorDate: faker.date.recent().toISOString(),
         authorName: faker.person.fullName(),
         repository,
@@ -205,15 +205,15 @@ export function createContentMatch(): ContentMatch {
                 content,
                 ranges,
                 contentStart: {
-                    line: line,
+                    line,
                     column: 1,
                     offset: 1,
                 },
             }
         }),
-        pathMatches: faker.helpers.maybe(() => {
-            return faker.helpers.multiple(() => createRange(0, path.length), { count: { min: 0, max: 3 } })
-        }),
+        pathMatches: faker.helpers.maybe(() =>
+            faker.helpers.multiple(() => createRange(0, path.length), { count: { min: 0, max: 3 } })
+        ),
     }
 }
 
@@ -250,9 +250,9 @@ export function createPathMatch(): PathMatch {
         repository: createRepoName(),
         path,
         repoStars: createRepoStars(),
-        pathMatches: faker.helpers.maybe(() => {
-            return faker.helpers.multiple(() => createRange(0, path.length), { count: { min: 0, max: 3 } })
-        }),
+        pathMatches: faker.helpers.maybe(() =>
+            faker.helpers.multiple(() => createRange(0, path.length), { count: { min: 0, max: 3 } })
+        ),
     }
 }
 export function createSymbolMatch(): SymbolMatch {
@@ -263,21 +263,19 @@ export function createSymbolMatch(): SymbolMatch {
         path,
         repoStars: createRepoStars(),
         symbols: faker.helpers.multiple(
-            () => {
-                return {
-                    line: faker.number.int({ min: 1, max: 1000 }),
-                    url: faker.internet.url(),
-                    kind: faker.helpers.enumValue(SymbolKind),
-                    name: faker.lorem.word(),
-                    containerName: faker.lorem.word(),
-                }
-            },
+            () => ({
+                line: faker.number.int({ min: 1, max: 1000 }),
+                url: faker.internet.url(),
+                kind: faker.helpers.enumValue(SymbolKind),
+                name: faker.lorem.word(),
+                containerName: faker.lorem.word(),
+            }),
             { count: { min: 1, max: 5 } }
         ),
     }
 }
 
-function loremLine(minLength: number) {
+function loremLine(minLength: number): string {
     let content = ''
     do {
         content += faker.lorem.sentence() + ' '

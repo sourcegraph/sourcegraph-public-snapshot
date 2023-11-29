@@ -24,7 +24,7 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	check := func(jobID int, projectKey string, permissions []types.UserPermission, unrestricted bool) {
@@ -112,7 +112,7 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	_, err := db.ExecContext(ctx, `--sql
@@ -230,7 +230,7 @@ func TestListJobs(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	ctx := context.Background()
 	_, err := db.ExecContext(ctx, `--sql

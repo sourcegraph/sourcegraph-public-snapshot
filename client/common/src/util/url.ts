@@ -4,7 +4,6 @@ import { tryCatch } from '../errors'
 
 /**
  * Provide one.
- *
  * @param position either 1-indexed partial position
  * @param range or 1-indexed partial range spec
  */
@@ -118,20 +117,23 @@ export function toViewStateHash(viewState: string | undefined): string {
  * `%`-encoding for URLs.
  */
 export const encodeURIPathComponent = (component: string): string =>
-    component.split('/').map(encodeURIComponent).join('/').replace(/%2B/g, '+')
+    component.split('/').map(encodeURIComponent).join('/').replaceAll('%2B', '+')
 
 /**
  * Returns true if the given URL points outside the current site.
  */
-export const isExternalLink = (url: string): boolean =>
-    !!tryCatch(() => new URL(url, window.location.href).origin !== window.location.origin)
+export const isExternalLink = (
+    url: string,
+    windowLocation__testingOnly: Pick<URL, 'origin' | 'href'> = window.location
+): boolean =>
+    !!tryCatch(() => new URL(url, windowLocation__testingOnly.href).origin !== windowLocation__testingOnly.origin)
 
 /**
  * Stringifies the provided search parameters, replaces encoded `/` and `:` characters,
  * and removes trailing `=`.
  */
 export const formatSearchParameters = (searchParameters: URLSearchParams): string =>
-    searchParameters.toString().replace(/%2F/g, '/').replace(/%3A/g, ':').replace(/=&/g, '&').replace(/=$/, '')
+    searchParameters.toString().replaceAll('%2F', '/').replaceAll('%3A', ':').replaceAll('=&', '&').replace(/=$/, '')
 
 export const addLineRangeQueryParameter = (
     searchParameters: URLSearchParams,

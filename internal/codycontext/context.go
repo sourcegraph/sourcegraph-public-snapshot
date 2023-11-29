@@ -3,12 +3,11 @@ package context
 import (
 	"context"
 	"fmt"
-	"math"
-	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -393,28 +392,4 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 		StartLine: startLine,
 		EndLine:   endLine,
 	}}
-}
-
-func max(vals ...int) int {
-	res := math.MinInt32
-	for _, val := range vals {
-		if val > res {
-			res = val
-		}
-	}
-	return res
-}
-
-func min(vals ...int) int {
-	res := math.MaxInt32
-	for _, val := range vals {
-		if val < res {
-			res = val
-		}
-	}
-	return res
-}
-
-func truncate[T any](input []T, size int) []T {
-	return input[:min(len(input), size)]
 }

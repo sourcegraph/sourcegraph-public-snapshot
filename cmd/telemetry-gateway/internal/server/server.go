@@ -39,7 +39,7 @@ func New(logger log.Logger, eventsTopic pubsub.TopicClient) (*Server, error) {
 	}
 
 	return &Server{
-		logger:      logger.Scoped("server", "grpc server"),
+		logger:      logger.Scoped("server"),
 		eventsTopic: eventsTopic,
 
 		recordEventsMetrics: m,
@@ -117,6 +117,9 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 			if publisher == nil {
 				return status.Error(codes.InvalidArgument, "got events when metadata not yet received")
 			}
+
+			// Handle legacy exporters
+			migrateEvents(events)
 
 			// Publish events
 			resp := handlePublishEvents(

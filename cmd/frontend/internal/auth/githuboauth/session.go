@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dghubble/gologin/github"
+	"github.com/dghubble/gologin/v2/github"
 	"github.com/inconshreveable/log15"
 	"golang.org/x/oauth2"
 
@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/githubconvert"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -43,6 +44,10 @@ func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventNam
 
 func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventGitHubAuthFailed
+}
+
+func (s *sessionIssuerHelper) GetServiceID() string {
+	return s.ServiceID
 }
 
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
@@ -89,7 +94,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	// Try every verified email in succession until the first that succeeds
 	var data extsvc.AccountData
-	if err := githubsvc.SetExternalAccountData(&data, ghUser, token); err != nil {
+	if err := githubsvc.SetExternalAccountData(&data, githubconvert.ConvertUserV48ToV55(ghUser), token); err != nil {
 		return false, nil, "", err
 	}
 	var (
@@ -193,7 +198,7 @@ func derefInt64(i *int64) int64 {
 
 func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
 	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
-	return githubsvc.NewV3Client(log.Scoped("session.github.v3", "github v3 client for session issuer"),
+	return githubsvc.NewV3Client(log.Scoped("session.github.v3"),
 		extsvc.URNGitHubOAuth, apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
 }
 
@@ -232,7 +237,7 @@ func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *gith
 	var err error
 	page := 1
 	for hasNextPage {
-		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgsForPage(ctx, page)
+		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgs(ctx, page)
 
 		if err != nil {
 			log15.Warn("Could not get GitHub authenticated user organizations", "error", err)

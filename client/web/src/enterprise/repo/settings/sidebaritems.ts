@@ -19,7 +19,7 @@ export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups =
                         {
                             to: '/permissions',
                             exact: true,
-                            label: 'Permissions',
+                            label: 'Repo Permissions',
                         },
                     ],
                 },

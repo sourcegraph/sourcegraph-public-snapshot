@@ -116,7 +116,7 @@ type store struct {
 
 func New(observationCtx *observation.Context, db database.DB) Store {
 	return &store{
-		logger:     logger.Scoped("uploads.store", ""),
+		logger:     logger.Scoped("uploads.store"),
 		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationCtx),
 	}

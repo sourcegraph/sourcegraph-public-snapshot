@@ -9,7 +9,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
@@ -33,7 +32,7 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
 		date, ok := expectedCommitDates[string(commit)]
 		return string(commit), date, ok, nil
 	})
@@ -112,7 +111,7 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
+	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
 		date, ok := expectedCommitDates[string(commit)]
 		return string(commit), date, ok, nil
 	})

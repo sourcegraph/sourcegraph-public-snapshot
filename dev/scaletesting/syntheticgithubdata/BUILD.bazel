@@ -15,7 +15,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//lib/output",
-        "@com_github_google_go_github_v41//github",
+        "@com_github_google_go_github_v55//github",
         "@com_github_mattn_go_sqlite3//:go-sqlite3",
         "@com_github_sourcegraph_conc//pool",
         "@org_golang_x_oauth2//:oauth2",

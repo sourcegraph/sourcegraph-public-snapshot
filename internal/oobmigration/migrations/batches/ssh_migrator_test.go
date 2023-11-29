@@ -20,7 +20,7 @@ import (
 func TestSSHMigrator(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := basestore.NewWithHandle(db.Handle())
 	key := et.TestKey{}
 

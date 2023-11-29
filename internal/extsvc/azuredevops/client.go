@@ -84,7 +84,7 @@ func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpc
 	return &client{
 		httpClient:          httpClient,
 		URL:                 u,
-		internalRateLimiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("AzureDevOpsClient", ""), urn)),
+		internalRateLimiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("AzureDevOpsClient"), urn)),
 		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
 		auth:                auth,
 		urn:                 urn,
@@ -133,10 +133,8 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
 	}
 
-	logger := log.Scoped("azuredevops.Client", "azuredevops Client logger")
-	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth, func(r *http.Request) (*http.Response, error) {
-		return c.httpClient.Do(r)
-	})
+	logger := log.Scoped("azuredevops.Client")
+	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 	if err != nil {
 		return "", err
 	}
@@ -151,9 +149,7 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
 
 		req.Body = io.NopCloser(bytes.NewReader(reqBody))
-		resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth, func(r *http.Request) (*http.Response, error) {
-			return c.httpClient.Do(r)
-		})
+		resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth)
 		numRetries++
 	}
 

@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -66,7 +67,7 @@ func Init() {
 	conf.ContributeValidator(validateConfig)
 
 	const pkgName = "openidconnect"
-	logger := log.Scoped(pkgName, "OpenID Connect config watch")
+	logger := log.Scoped(pkgName)
 	go func() {
 		conf.Watch(func() {
 			ps := getProviders()
@@ -103,7 +104,7 @@ func getProviders() []providers.Provider {
 	}
 	ps := make([]providers.Provider, 0, len(cfgs))
 	for _, cfg := range cfgs {
-		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback")))
+		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback"), httpcli.ExternalClient))
 	}
 	return ps
 }

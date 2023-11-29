@@ -15,12 +15,13 @@ export const enum EventName {
     CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED = 'web:codyChat:inferredRepoDisabled',
     CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED = 'web:codyChat:inferredFileEnabled',
     CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED = 'web:codyChat:inferredFileDisabled',
-    VIEW_GET_CODY = 'ViewGetCody',
+    VIEW_GET_CODY = 'GetCody',
 
     CODY_EDITOR_WIDGET_VIEWED = 'web:codyEditorWidget:viewed',
     CODY_SIDEBAR_CHAT_OPENED = 'web:codySidebar:chatOpened',
     CODY_SIGNUP = 'CodySignup',
     CODY_CHAT_DOWNLOAD_VSCODE = 'web:codyChat:downloadVSCodeCTA',
+    CODY_CHAT_GET_EDITOR_EXTENSION = 'web:codyChat:getEditorExtensionCTA',
     CODY_CHAT_TRY_ON_PUBLIC_CODE = 'web:codyChat:tryOnPublicCodeCTA',
     CODY_CTA = 'ClickedOnCodyCTA',
     VIEW_EDITOR_EXTENSIONS = 'CodyClickViewEditorExtensions',
@@ -35,6 +36,11 @@ export const enum EventName {
     JOIN_IDE_WAITLIST = 'JoinIDEWaitlist',
     DOWNLOAD_IDE = 'DownloadIDE',
     DOWNLOAD_APP = 'DownloadApp',
+
+    CODY_MANAGEMENT_PAGE_VIEWED = 'web:codyManagement:pageViewed',
+    CODY_SUBSCRIPTION_PAGE_VIEWED = 'web:codySubscription:pageViewed',
+    CODY_ONBOARDING_PURPOSE_WORK = 'web:codyOnboarding:purpose:work',
+    CODY_ONBOARDING_PURPOSE_PERSONAL = 'web:codyOnboarding:purpose:personal',
 }
 
 export const enum EventLocation {

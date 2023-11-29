@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { noop } from 'lodash'
 
@@ -12,7 +12,7 @@ import type { ExecutorSecretAccessLogsResult } from '../../../graphql-operations
 import { EXECUTOR_SECRET_ACCESS_LOGS } from './backend'
 import { SecretAccessLogsModal } from './SecretAccessLogsModal'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/executors/secrets/SecretAccessLogsModal',
@@ -77,7 +77,7 @@ const EXECUTOR_SECRET_LIST_MOCK: MockedResponse<ExecutorSecretAccessLogsResult> 
     },
 }
 
-export const List: Story = () => (
+export const List: StoryFn = () => (
     <WebStory>
         {webProps => (
             <MockedTestProvider mocks={[EXECUTOR_SECRET_LIST_MOCK]}>
@@ -112,7 +112,7 @@ const EMPTY_SECRET_ACCESS_LOGS_LIST_MOCK: MockedResponse<ExecutorSecretAccessLog
     },
 }
 
-export const EmptyList: Story = () => (
+export const EmptyList: StoryFn = () => (
     <WebStory>
         {webProps => (
             <MockedTestProvider mocks={[EMPTY_SECRET_ACCESS_LOGS_LIST_MOCK]}>

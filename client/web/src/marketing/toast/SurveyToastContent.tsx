@@ -110,7 +110,7 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
     }
 
     switch (activeStep) {
-        case ToastSteps.rate:
+        case ToastSteps.rate: {
             return (
                 <SurveyUserRatingToast
                     score={userFeedback.score}
@@ -121,7 +121,8 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
                     toggleErrorMessage={toggleErrorMessage}
                 />
             )
-        case ToastSteps.useCase:
+        }
+        case ToastSteps.useCase: {
             return (
                 <SurveyUseCaseToast
                     isSubmitting={isSubmitting}
@@ -137,9 +138,12 @@ export const SurveyToastContent: React.FunctionComponent<React.PropsWithChildren
                     authenticatedUser={authenticatedUser}
                 />
             )
-        case ToastSteps.thankYou:
+        }
+        case ToastSteps.thankYou: {
             return <SurveySuccessToast onDismiss={handleDismiss} />
-        default:
+        }
+        default: {
             throw new Error('Invalid survey step!')
+        }
     }
 }

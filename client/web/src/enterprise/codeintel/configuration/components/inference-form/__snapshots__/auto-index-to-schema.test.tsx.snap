@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`autoIndexToAutoIndexSchema should build form data as expected 1`] = `
+exports[`autoIndexToAutoIndexSchema > should build form data as expected 1`] = `
 Object {
   "dirty": false,
   "index_jobs": Array [
@@ -93,7 +93,7 @@ Object {
 }
 `;
 
-exports[`autoIndexToAutoIndexSchema should build schema data as expected 1`] = `
+exports[`autoIndexToAutoIndexSchema > should build schema data as expected 1`] = `
 Object {
   "index_jobs": Array [
     Object {

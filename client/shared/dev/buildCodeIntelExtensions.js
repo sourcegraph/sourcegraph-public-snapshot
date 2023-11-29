@@ -35,7 +35,7 @@ function buildCodeIntelExtensions({ pathToExtensionBundles, revision }) {
   }
 
   // when repo archive is unpacked the leading 'v' from tag is trimmed: v1.0.0.zip => sourcegraph-extensions-bundles-1.0.0
-  const bundlesRepoDirectoryName = `${bundlesRepoName}-${revision.replace(/^v/g, '')}`
+  const bundlesRepoDirectoryName = `${bundlesRepoName}-${revision.replaceAll(/^v/g, '')}`
 
   // Remove existing repo and bundles directory in case of an interrupted process.
   shelljs.rm('-rf', bundlesRepoDirectoryName)

@@ -15,7 +15,7 @@ import (
 
 func TestInsertMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
@@ -32,7 +32,7 @@ func TestInsertMetadata(t *testing.T) {
 
 func TestInsertSharedDocumentsConcurrently(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	store := newInternal(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 
@@ -109,7 +109,7 @@ func TestInsertSharedDocumentsConcurrently(t *testing.T) {
 
 func TestInsertDocumentWithSymbols(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, codeIntelDB)
 	ctx := context.Background()
 

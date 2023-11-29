@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { GroupByField, TimeIntervalStepUnit } from '@sourcegraph/shared/src/graphql-operations'
@@ -77,7 +77,7 @@ const MOCK_SERIES: SearchBasedInsightSeries[] = [
     { id: 'series_001', name: 'test series', query: 'test query', stroke: 'var(--blue)' },
 ]
 
-export const ComputeLivePreview: Story = () => (
+export const ComputeLivePreview: StoryFn = () => (
     <MockedTestProvider mocks={[mock]}>
         <div className="m-3 px-4 py-5 bg-white">
             <ComputeLivePreviewComponent

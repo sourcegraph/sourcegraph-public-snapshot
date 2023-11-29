@@ -13,7 +13,7 @@ import (
 // insert into the DB.
 func TestEnsureExtSVC(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	testDB := database.NewDB(logger, dbtest.NewDB(t))
 	store := testDB.ExternalServices()
 
 	err := doEnsureExtSVC(context.Background(), store, "http://test", "/fake")

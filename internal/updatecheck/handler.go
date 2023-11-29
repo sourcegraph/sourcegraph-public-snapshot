@@ -36,17 +36,17 @@ var (
 	// non-cluster, non-docker-compose, and non-pure-docker installations what the latest
 	// version is. The version here _must_ be available at https://hub.docker.com/r/sourcegraph/server/tags/
 	// before landing in master.
-	latestReleaseDockerServerImageBuild = newPingResponse("5.1.9")
+	latestReleaseDockerServerImageBuild = newPingResponse("5.2.3")
 
 	// latestReleaseKubernetesBuild is only used by sourcegraph.com to tell existing Sourcegraph
 	// cluster deployments what the latest version is. The version here _must_ be available in
 	// a tag at https://github.com/sourcegraph/deploy-sourcegraph before landing in master.
-	latestReleaseKubernetesBuild = newPingResponse("5.1.9")
+	latestReleaseKubernetesBuild = newPingResponse("5.2.3")
 
 	// latestReleaseDockerComposeOrPureDocker is only used by sourcegraph.com to tell existing Sourcegraph
 	// Docker Compose or Pure Docker deployments what the latest version is. The version here _must_ be
 	// available in a tag at https://github.com/sourcegraph/deploy-sourcegraph-docker before landing in master.
-	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.1.9")
+	latestReleaseDockerComposeOrPureDocker = newPingResponse("5.2.3")
 
 	// latestReleaseApp is only used by sourcegraph.com to tell existing Sourcegraph
 	// App instances what the latest version is. The version here _must_ be available for download/released
@@ -395,7 +395,7 @@ type pingPayload struct {
 }
 
 func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, meter *Meter, r *http.Request, pr *pingRequest, hasUpdate bool) {
-	logger = logger.Scoped("logPing", "logs ping requests")
+	logger = logger.Scoped("logPing")
 	defer func() {
 		if err := recover(); err != nil {
 			logger.Warn("panic", log.String("recover", fmt.Sprintf("%+v", err)))

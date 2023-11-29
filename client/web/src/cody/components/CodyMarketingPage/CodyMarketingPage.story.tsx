@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import type { AuthenticatedUser } from '../../../auth'
 import { WebStory } from '../../../components/WebStory'
@@ -33,18 +33,18 @@ const context: Pick<SourcegraphContext, 'authProviders'> = {
     ],
 }
 
-export const SourcegraphDotCom: Story = () => (
+export const SourcegraphDotCom: StoryFn = () => (
     <WebStory>
         {() => <CodyMarketingPage context={context} isSourcegraphDotCom={true} authenticatedUser={null} />}
     </WebStory>
 )
-export const Enterprise: Story = () => (
+export const Enterprise: StoryFn = () => (
     <WebStory>
         {() => <CodyMarketingPage context={context} isSourcegraphDotCom={false} authenticatedUser={null} />}
     </WebStory>
 )
 
-export const EnterpriseSiteAdmin: Story = () => (
+export const EnterpriseSiteAdmin: StoryFn = () => (
     <WebStory>
         {() => (
             <CodyMarketingPage

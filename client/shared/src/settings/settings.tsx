@@ -283,7 +283,7 @@ export const useSettingsCascade = (): SettingsCascadeOrError => {
     const { settingsCascade } = useContext(SettingsContext)
     if (
         settingsCascade === EMPTY_SETTINGS_CASCADE &&
-        (typeof globalThis.process === 'undefined' || process.env.JEST_WORKER_ID === undefined)
+        (globalThis.process === undefined || process.env.VITEST_WORKER_ID === undefined)
     ) {
         logger.error(
             'useSettingsCascade must be used within a SettingsProvider, falling back to an empty settings object'
@@ -308,11 +308,12 @@ const defaultFeatures: SettingsExperimentalFeatures = {
     showMultilineSearchConsole: false,
     codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
+    showFullTreeContext: false,
     codeInsightsCompute: false,
     editor: 'codemirror6',
     codeInsightsRepoUI: 'search-query-or-strict-list',
     isInitialized: true,
-    searchQueryInput: 'experimental',
+    searchQueryInput: 'v2',
 }
 
 /**

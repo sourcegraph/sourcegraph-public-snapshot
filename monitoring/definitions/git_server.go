@@ -522,6 +522,9 @@ func GitServer() *monitoring.Dashboard {
 					},
 				},
 			},
+
+			shared.GitServer.NewClientGroup("*"),
+
 			shared.NewDiskMetricsGroup(
 				shared.DiskMetricsGroupOptions{
 					DiskTitle: "repos",
@@ -554,11 +557,16 @@ func GitServer() *monitoring.Dashboard {
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
 
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "gitserver",
+				InstanceFilterRegex: `${shard:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
+
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
 			shared.CodeIntelligence.NewNpmGroup(containerName),
 
 			shared.HTTP.NewHandlersGroup(containerName),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerSource),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSource, provisioningIndicatorsOptions),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),

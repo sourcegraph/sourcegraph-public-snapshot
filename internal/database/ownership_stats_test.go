@@ -32,7 +32,7 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	// 1. Setup repo and paths:
 	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
@@ -64,7 +64,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	// 1. Setup repos and paths:
 	repo1 := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
@@ -161,7 +161,7 @@ func TestUpdateAggregateCountsSuccess(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	// 1. Setup repo and paths:
 	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
@@ -204,7 +204,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	// 1. Setup repo and paths:
 	repo1 := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})

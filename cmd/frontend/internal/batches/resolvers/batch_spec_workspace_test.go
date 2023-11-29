@@ -30,7 +30,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
 	repo, _ := bt.CreateTestRepo(t, ctx, db)

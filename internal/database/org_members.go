@@ -102,7 +102,7 @@ func (m *orgMemberStore) GetByOrgID(ctx context.Context, orgID int32) ([]*types.
 func (u *orgMemberStore) AutocompleteMembersSearch(ctx context.Context, orgID int32, query string) ([]*types.OrgMemberAutocompleteSearchItem, error) {
 	pattern := query + "%"
 	q := sqlf.Sprintf(`SELECT u.id, u.username, u.display_name, u.avatar_url, (SELECT COUNT(o.org_id) from org_members o WHERE o.org_id = %d AND o.user_id = u.id) as inorg
-		FROM users u WHERE (u.username ILIKE %s OR u.display_name ILIKE %s) AND u.searchable IS TRUE AND u.deleted_at IS NULL ORDER BY id ASC LIMIT 10`, orgID, pattern, pattern)
+		FROM users u WHERE (u.username ILIKE %s OR u.display_name ILIKE %s) AND u.deleted_at IS NULL ORDER BY id ASC LIMIT 10`, orgID, pattern, pattern)
 
 	rows, err := u.Query(ctx, q)
 	if err != nil {

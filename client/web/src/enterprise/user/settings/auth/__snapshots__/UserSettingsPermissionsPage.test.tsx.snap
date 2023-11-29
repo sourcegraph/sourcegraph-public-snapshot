@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`UserSettingsPermissionsPage empty state 1`] = `
+exports[`UserSettingsPermissionsPage > empty state 1`] = `
 <DocumentFragment>
   <div
     class="w-100"
@@ -52,7 +52,11 @@ exports[`UserSettingsPermissionsPage empty state 1`] = `
         <span
           class="d-flex flex-grow-1"
         >
-          Never
+          <span
+            class="flex-grow-1 pl-2"
+          >
+            Never
+          </span>
         </span>
       </div>
       <p
@@ -271,8 +275,22 @@ exports[`UserSettingsPermissionsPage empty state 1`] = `
                 </span>
               </div>
             </th>
+            <th>
+              <div
+                class="text-nowrap header"
+              >
+                <span
+                  class="fontWeightBold"
+                >
+                  Code host connections
+                </span>
+              </div>
+            </th>
           </tr>
           <tr>
+            <th
+              class="pr-2"
+            />
             <th
               class="pr-2"
             />
@@ -292,7 +310,7 @@ exports[`UserSettingsPermissionsPage empty state 1`] = `
 </DocumentFragment>
 `;
 
-exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
+exports[`UserSettingsPermissionsPage > user alice with permissions 1`] = `
 <DocumentFragment>
   <div
     class="w-100"
@@ -1100,8 +1118,22 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                 </span>
               </div>
             </th>
+            <th>
+              <div
+                class="text-nowrap header"
+              >
+                <span
+                  class="fontWeightBold"
+                >
+                  Code host connections
+                </span>
+              </div>
+            </th>
           </tr>
           <tr>
+            <th
+              class="pr-2"
+            />
             <th
               class="pr-2"
             />
@@ -1160,6 +1192,14 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                 -
               </div>
             </td>
+            <td>
+              <a
+                class="anchorLink"
+                href="/site-admin/external-services?repoID=UmVwb3NpdG9yeTox"
+              >
+                View
+              </a>
+            </td>
           </tr>
           <tr>
             <td>
@@ -1205,6 +1245,14 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
               >
                 -
               </div>
+            </td>
+            <td>
+              <a
+                class="anchorLink"
+                href="/site-admin/external-services?repoID=UmVwb3NpdG9yeToy"
+              >
+                View
+              </a>
             </td>
           </tr>
           <tr>
@@ -1252,6 +1300,14 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                 -
               </div>
             </td>
+            <td>
+              <a
+                class="anchorLink"
+                href="/site-admin/external-services?repoID=UmVwb3NpdG9yeToz"
+              >
+                View
+              </a>
+            </td>
           </tr>
           <tr>
             <td>
@@ -1298,6 +1354,14 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                 -
               </div>
             </td>
+            <td>
+              <a
+                class="anchorLink"
+                href="/site-admin/external-services?repoID=UmVwb3NpdG9yeTo0"
+              >
+                View
+              </a>
+            </td>
           </tr>
           <tr>
             <td>
@@ -1343,6 +1407,14 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
               >
                 -
               </div>
+            </td>
+            <td>
+              <a
+                class="anchorLink"
+                href="/site-admin/external-services?repoID=UmVwb3NpdG9yeTo1"
+              >
+                View
+              </a>
             </td>
           </tr>
           <tr>
@@ -1394,6 +1466,14 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                 </span>
               </div>
             </td>
+            <td>
+              <a
+                class="anchorLink"
+                href="/site-admin/external-services?repoID=UmVwb3NpdG9yeTo4"
+              >
+                View
+              </a>
+            </td>
           </tr>
           <tr>
             <td>
@@ -1444,6 +1524,14 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                 </span>
               </div>
             </td>
+            <td>
+              <a
+                class="anchorLink"
+                href="/site-admin/external-services?repoID=UmVwb3NpdG9yeTo5"
+              >
+                View
+              </a>
+            </td>
           </tr>
           <tr>
             <td>
@@ -1493,6 +1581,14 @@ exports[`UserSettingsPermissionsPage user alice with permissions 1`] = `
                   1 minute ago
                 </span>
               </div>
+            </td>
+            <td>
+              <a
+                class="anchorLink"
+                href="/site-admin/external-services?repoID=UmVwb3NpdG9yeToxMQ=="
+              >
+                View
+              </a>
             </td>
           </tr>
         </tbody>

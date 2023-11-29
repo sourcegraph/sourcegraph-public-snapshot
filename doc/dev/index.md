@@ -71,7 +71,6 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Development
 
 - [`sg` - the Sourcegraph developer tool](background-information/sg/index.md)
-  - [Full `sg` reference](background-information/sg/reference.md)
 - [Using Bazel](background-information/bazel/index.md)
   - [Bazel and Go code](background-information/bazel/go.md)
   - [Bazel and client code](background-information/bazel/web.md)
@@ -141,6 +140,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Security policy](https://about.sourcegraph.com/security/)
 - [How to disclose vulnerabilities](https://about.sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
 - [CSRF security model](security/csrf_security_model.md)
+- [Sourcegraph secret formats](security/secret_formats.md)
 
 ### Testing
 
@@ -193,7 +193,6 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 ### Documentation
 
 - [Developing the product documentation](how-to/documentation_implementation.md)
-- [Architecture Decision Records (ADRs)](adr/index.md)
 
 ### Executors
 

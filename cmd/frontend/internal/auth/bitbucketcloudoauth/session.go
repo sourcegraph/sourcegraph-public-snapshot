@@ -39,6 +39,10 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventBitbucketCloudAuthFailed
 }
 
+func (s *sessionIssuerHelper) GetServiceID() string {
+	return s.baseURL.String()
+}
+
 func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	var client bitbucketcloud.Client
 	if s.client != nil {

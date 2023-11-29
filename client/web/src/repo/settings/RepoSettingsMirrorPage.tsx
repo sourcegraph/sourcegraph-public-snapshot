@@ -46,6 +46,7 @@ import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 
 import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
+import { RepoSettingsOptions } from './RepoSettingsOptions'
 
 import styles from './RepoSettingsMirrorPage.module.scss'
 
@@ -83,7 +84,7 @@ const UpdateMirrorRepositoryActionContainer: FC<UpdateMirrorRepositoryActionCont
             </span>
         )
         buttonDisabled = true
-        info = <DirectImportRepoAlert className={styles.alert} />
+        info = <DirectImportRepoAlert className={classNames(styles.alert, 'mb-0')} />
     } else if (props.repo.mirrorInfo.cloned) {
         const updateSchedule = props.repo.mirrorInfo.updateSchedule
         title = (
@@ -244,35 +245,33 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
             title="Repository corruption"
             titleAs="h3"
             description={<span>Recent corruption events that have been detected on this repository.</span>}
+            className="mb-0"
             details={
                 <div className="flex-1">
                     {health}
-                    <Collapse isOpen={isOpened} onOpenChange={setIsOpened}>
-                        <CollapseHeader
-                            as={Button}
-                            outline={true}
-                            focusLocked={true}
-                            variant="secondary"
-                            className="w-100 my-2"
-                            disabled={!hasLogs}
-                        >
-                            {hasLogs ? (
-                                <>
-                                    Show corruption history
-                                    <Icon
-                                        aria-hidden={true}
-                                        svgPath={isOpened ? mdiChevronUp : mdiChevronDown}
-                                        className="mr-1"
-                                    />
-                                </>
-                            ) : (
-                                'No corruption history'
-                            )}
-                        </CollapseHeader>
-                        <CollapsePanel>
-                            <ul className="list-group">{logEvents}</ul>
-                        </CollapsePanel>
-                    </Collapse>
+                    {!hasLogs && <Text className="mt-3 text-muted text-center mb-0">No corruption history</Text>}
+                    {hasLogs && (
+                        <Collapse isOpen={isOpened} onOpenChange={setIsOpened}>
+                            <CollapseHeader
+                                as={Button}
+                                outline={true}
+                                focusLocked={true}
+                                variant="secondary"
+                                className="w-100 my-2"
+                                disabled={!hasLogs}
+                            >
+                                Show corruption history
+                                <Icon
+                                    aria-hidden={true}
+                                    svgPath={isOpened ? mdiChevronUp : mdiChevronDown}
+                                    className="mr-1"
+                                />
+                            </CollapseHeader>
+                            <CollapsePanel>
+                                <ul className="list-group">{logEvents}</ul>
+                            </CollapsePanel>
+                        </Collapse>
+                    )}
                 </div>
             }
         />
@@ -312,6 +311,7 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
         <>
             <PageTitle title="Mirror settings" />
             <PageHeader path={[{ text: 'Mirroring and cloning' }]} headingElement="h2" className="mb-3" />
+            <RepoSettingsOptions repo={repo} />
             <Container className="repo-settings-mirror-page">
                 {error && <ErrorAlert error={error} />}
 
@@ -319,15 +319,16 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                     <Label>
                         {' '}
                         Remote repository URL{' '}
-                        <small className="text-info">
-                            <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
+                        <small className="text-muted">
+                            <Icon aria-hidden={true} svgPath={mdiLock} className="text-warning" /> Only visible to site
+                            admins
                         </small>
                     </Label>
                     <Input value={repo.mirrorInfo.remoteURL || '(unknown)'} readOnly={true} className="mb-0" />
                     {repo.viewerCanAdminister && (
                         <small className="form-text text-muted">
                             Configure repository mirroring in{' '}
-                            <Link to="/site-admin/external-services">external services</Link>.
+                            <Link to="/site-admin/external-services">code host connections</Link>.
                         </small>
                     )}
                 </div>

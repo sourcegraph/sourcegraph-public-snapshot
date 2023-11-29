@@ -1,7 +1,0 @@
-query {
-    currentUser {
-        username
-        displayName
-        avatarURL
-    }
-}

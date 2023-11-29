@@ -168,6 +168,7 @@ export const RepositoryCommitsPage: FC<RepositoryCommitsPageProps> = props => {
         options: {
             fetchPolicy: 'cache-first',
             useAlternateAfterCursor: true,
+            errorPolicy: 'all',
         },
     })
 

@@ -15,7 +15,7 @@ import (
 
 func TestRepositoryExceptions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	query := sqlf.Sprintf(
@@ -55,7 +55,7 @@ func TestRepositoryExceptions(t *testing.T) {
 
 func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	expectedConfigurationData := []byte(`{
@@ -97,7 +97,7 @@ func TestGetIndexConfigurationByRepositoryID(t *testing.T) {
 
 func TestUpdateIndexConfigurationByRepositoryID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	query := sqlf.Sprintf(

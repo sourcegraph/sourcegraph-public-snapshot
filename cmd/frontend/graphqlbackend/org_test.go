@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -384,7 +383,7 @@ func TestAddOrganizationMember(t *testing.T) {
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}, EmailSmtp: nil}})
 
 	// mock permission sync scheduling
-	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ database.DB, _ permssync.ScheduleSyncOpts) {}
 	defer func() { permssync.MockSchedulePermsSync = nil }()
 
 	db := dbmocks.NewMockDB()

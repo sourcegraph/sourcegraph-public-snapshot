@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -229,6 +231,137 @@ func TestUser_LatestSettings(t *testing.T) {
 	})
 }
 
+func TestUser_CodyCurrentPeriod(t *testing.T) {
+	db := dbmocks.NewMockDB()
+
+	orig := envvar.SourcegraphDotComMode()
+	envvar.MockSourcegraphDotComMode(true)
+	t.Cleanup(func() {
+		envvar.MockSourcegraphDotComMode(orig)
+	})
+
+	t.Run("allowed by same user or site admin", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		db.UsersFunc.SetDefaultReturn(users)
+		now := time.Now()
+
+		tests := []struct {
+			name    string
+			ctx     context.Context
+			success bool
+		}{
+			{
+				name:    "same user",
+				ctx:     actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				success: true,
+			},
+			{
+				name:    "another user",
+				ctx:     actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				success: false,
+			},
+			{
+				name:    "another user, but site admin",
+				ctx:     actor.WithActor(context.Background(), actor.FromActualUser(&types.User{ID: 2, SiteAdmin: true})),
+				success: true,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				user := &types.User{ID: 1, CreatedAt: now}
+				users.GetByIDFunc.SetDefaultReturn(user, nil)
+
+				date, _ := NewUserResolver(test.ctx, db, user).CodyCurrentPeriodStartDate(test.ctx)
+
+				assert.Equal(t, test.success, date != nil, "CodyCurrentPeriodStartDate")
+			})
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		users := dbmocks.NewMockUserStore()
+		db.UsersFunc.SetDefaultReturn(users)
+		now := time.Now()
+
+		tests := []struct {
+			name      string
+			user      *types.User
+			today     time.Time
+			createdAt time.Time
+			pro       bool
+			start     time.Time
+			end       time.Time
+		}{
+			{
+				name:      "community user created before current day",
+				createdAt: time.Date(2022, 9, 5, 0, 0, 0, 0, now.Location()),
+				today:     time.Date(2023, 1, 15, 0, 0, 0, 0, now.Location()),
+				start:     time.Date(2023, 1, 5, 0, 0, 0, 0, now.Location()),
+				end:       time.Date(2023, 2, 4, 23, 59, 59, 59, now.Location()),
+			},
+			{
+				name:      "community user created after current day",
+				createdAt: time.Date(2022, 9, 25, 0, 0, 0, 0, now.Location()),
+				today:     time.Date(2023, 1, 15, 0, 0, 0, 0, now.Location()),
+				start:     time.Date(2022, 12, 25, 0, 0, 0, 0, now.Location()),
+				end:       time.Date(2023, 1, 24, 23, 59, 59, 59, now.Location()),
+			},
+			{
+				name:      "community user created on 31st Jan",
+				createdAt: time.Date(2023, 1, 31, 0, 0, 0, 0, now.Location()),
+				today:     time.Date(2023, 2, 15, 0, 0, 0, 0, now.Location()),
+				start:     time.Date(2023, 1, 31, 0, 0, 0, 0, now.Location()),
+				end:       time.Date(2023, 2, 28, 23, 59, 59, 59, now.Location()),
+			},
+			{
+				name:      "pro user created before current day",
+				createdAt: time.Date(2022, 9, 5, 0, 0, 0, 0, now.Location()),
+				today:     time.Date(2023, 1, 15, 0, 0, 0, 0, now.Location()),
+				start:     time.Date(2023, 1, 5, 0, 0, 0, 0, now.Location()),
+				end:       time.Date(2023, 2, 4, 23, 59, 59, 59, now.Location()),
+				pro:       true,
+			},
+			{
+				name:      "pro user created after current day",
+				createdAt: time.Date(2022, 9, 25, 0, 0, 0, 0, now.Location()),
+				today:     time.Date(2023, 1, 15, 0, 0, 0, 0, now.Location()),
+				start:     time.Date(2022, 12, 25, 0, 0, 0, 0, now.Location()),
+				end:       time.Date(2023, 1, 24, 23, 59, 59, 59, now.Location()),
+				pro:       true,
+			},
+			{
+				name:      "pro user created on 31st Jan",
+				createdAt: time.Date(2023, 1, 31, 0, 0, 0, 0, now.Location()),
+				today:     time.Date(2023, 2, 15, 0, 0, 0, 0, now.Location()),
+				start:     time.Date(2023, 1, 31, 0, 0, 0, 0, now.Location()),
+				end:       time.Date(2023, 2, 28, 23, 59, 59, 59, now.Location()),
+				pro:       true,
+			},
+		}
+		for _, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				user := &types.User{ID: 1}
+				if test.pro {
+					user.CodyProEnabledAt = &test.createdAt
+				} else {
+					user.CreatedAt = test.createdAt
+				}
+
+				users.GetByIDFunc.SetDefaultReturn(test.user, nil)
+
+				ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
+				ctx = withCurrentTimeMock(ctx, test.today)
+
+				startDate, _ := NewUserResolver(ctx, db, user).CodyCurrentPeriodStartDate(ctx)
+				assert.Equal(t, &gqlutil.DateTime{Time: test.start}, startDate, "CodyCurrentPeriodStartDate")
+
+				endDate, _ := NewUserResolver(ctx, db, user).CodyCurrentPeriodEndDate(ctx)
+				assert.Equal(t, &gqlutil.DateTime{Time: test.end}, endDate, "CodyCurrentPeriodEndDate")
+			})
+		}
+	})
+}
+
 func TestUser_ViewerCanAdminister(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	t.Run("settings edit only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
@@ -342,7 +475,7 @@ func TestUpdateUser(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(context.Background(),
 			&updateUserArgs{
 				User: "VXNlcjox",
 			},
@@ -363,7 +496,7 @@ func TestUpdateUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(ctx,
+		_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     MarshalUserID(1),
 				Username: strptr("about"),
@@ -390,7 +523,7 @@ func TestUpdateUser(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(ctx,
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(ctx,
 			&updateUserArgs{
 				User:     "VXNlcjox",
 				Username: strptr("alice"),
@@ -493,7 +626,7 @@ func TestUpdateUser(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(
 					test.ctx,
 					&updateUserArgs{
 						User: MarshalUserID(1),
@@ -525,7 +658,7 @@ func TestUpdateUser(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(
+				_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateUser(
 					actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 					&updateUserArgs{
 						User:      MarshalUserID(2),
@@ -772,7 +905,7 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient()).SetUserCompletionsQuota(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).SetUserCompletionsQuota(context.Background(),
 			SetUserCompletionsQuotaArgs{
 				User:  MarshalUserID(1),
 				Quota: nil,
@@ -847,7 +980,7 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
-		schemaResolver := newSchemaResolver(db, gitserver.NewClient())
+		schemaResolver := newSchemaResolver(db, gitserver.NewTestClient(t))
 		result, err := schemaResolver.SetUserCodeCompletionsQuota(context.Background(),
 			SetUserCodeCompletionsQuotaArgs{
 				User:  MarshalUserID(1),
@@ -926,7 +1059,7 @@ func TestSchema_SetCompletedPostSignup(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		userID := MarshalUserID(1)
-		result, err := newSchemaResolver(db, gitserver.NewClient()).SetCompletedPostSignup(context.Background(),
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).SetCompletedPostSignup(context.Background(),
 			&userMutationArgs{UserID: &userID},
 		)
 		got := fmt.Sprintf("%v", err)

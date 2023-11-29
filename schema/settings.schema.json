@@ -13,6 +13,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "newSearchNavigationUI": {
+          "description": "Enables new experimental search UI navigation",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsRepoUI": {
           "description": "Specifies which (code insight repo) editor to use for repo query UI",
           "type": "string",
@@ -194,7 +202,7 @@
           "description": "Specify which version of the search query input to use",
           "type": "string",
           "default": "v1",
-          "enum": ["v1", "experimental"],
+          "enum": ["v1", "v2"],
           "!go": {
             "pointer": true
           }
@@ -362,12 +370,6 @@
       "description": "The timeout (in milliseconds) for un-indexed search requests.",
       "type": "number"
     },
-    "codeIntelligence.autoIndexPopularRepoLimit": {
-      "description": "Up to this number of repos are auto-indexed automatically. Ordered by star count.",
-      "type": "integer",
-      "minimum": 0,
-      "default": 0
-    },
     "search.contextLines": {
       "description": "The default number of lines to show as context below and above search results. Default is 1.",
       "type": "integer",
@@ -382,7 +384,7 @@
     "search.defaultPatternType": {
       "description": "The default pattern type that search queries will be intepreted as. `lucky` is an experimental mode that will interpret the query in multiple ways.",
       "type": "string",
-      "pattern": "standard|literal|regexp|lucky"
+      "pattern": "standard|literal|regexp|lucky|newStandardRC1"
     },
     "search.defaultCaseSensitive": {
       "description": "Whether query patterns are treated case sensitively. Patterns are case insensitive by default.",

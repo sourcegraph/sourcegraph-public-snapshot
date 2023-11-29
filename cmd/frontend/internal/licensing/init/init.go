@@ -50,7 +50,7 @@ func Init(
 	// services when the max is reached.
 	database.BeforeCreateExternalService = enforcement.NewBeforeCreateExternalServiceHook()
 
-	logger := log.Scoped("licensing", "licensing enforcement")
+	logger := log.Scoped("licensing")
 
 	// Surface basic, non-sensitive information about the license type. This information
 	// can be used to soft-gate features from the UI, and to provide info to admins from

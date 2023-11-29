@@ -57,12 +57,19 @@
     }
 }
 
-.input {
+// :root selector is needed here in order to override .form-control
+// global CSS class, since we don't have any control over CSS order files
+// we can't ensure wildcard styles prevalence over global css styles.
+// Therefore we have to increase cascade speciality synthetically.
+:root .input {
     border: none;
     outline: none;
     padding: 0 0 0 0.5rem;
-    box-shadow: none !important;
     height: 1.75rem;
+
+    // Override standard input box-shadow styles since root container
+    // already re-implements it.
+    box-shadow: none !important;
 }
 
 .pill {

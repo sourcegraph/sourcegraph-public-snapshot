@@ -3,9 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -17,10 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
@@ -32,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -48,7 +44,7 @@ func TestAddExternalService(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).AddExternalService(ctx, &addExternalServiceArgs{})
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).AddExternalService(ctx, &addExternalServiceArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %q", want, err)
 		}
@@ -63,9 +59,16 @@ func TestAddExternalService(t *testing.T) {
 	externalServices := dbmocks.NewMockExternalServiceStore()
 	externalServices.CreateFunc.SetDefaultReturn(nil)
 
+	es := backend.NewStrictMockExternalServicesService()
+	es.ValidateConnectionFunc.SetDefaultReturn(nil)
+
+	mockExternalServicesService = es
+	t.Cleanup(func() { mockExternalServicesService = nil })
+
 	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.HandleFunc.SetDefaultReturn(&handle{db})
 
 	RunTests(t, []*Test{
 		{
@@ -104,6 +107,13 @@ func TestUpdateExternalService(t *testing.T) {
 		t.Run("cannot update external services", func(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
+			db.HandleFunc.SetDefaultReturn(&handle{db})
+
+			es := backend.NewStrictMockExternalServicesService()
+			es.ValidateConnectionFunc.SetDefaultReturn(nil)
+
+			mockExternalServicesService = es
+			t.Cleanup(func() { mockExternalServicesService = nil })
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			result, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
@@ -135,9 +145,16 @@ func TestUpdateExternalService(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+		db.HandleFunc.SetDefaultReturn(&handle{db})
+
+		es := backend.NewStrictMockExternalServicesService()
+		es.ValidateConnectionFunc.SetDefaultReturn(nil)
+
+		mockExternalServicesService = es
+		t.Cleanup(func() { mockExternalServicesService = nil })
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateExternalService(ctx, &updateExternalServiceArgs{
+		result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).UpdateExternalService(ctx, &updateExternalServiceArgs{
 			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
@@ -182,6 +199,13 @@ func TestUpdateExternalService(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.HandleFunc.SetDefaultReturn(&handle{db})
+
+	es := backend.NewStrictMockExternalServicesService()
+	es.ValidateConnectionFunc.SetDefaultReturn(nil)
+
+	mockExternalServicesService = es
+	t.Cleanup(func() { mockExternalServicesService = nil })
 
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchema(t, db),
@@ -233,6 +257,7 @@ func TestExcludeRepoFromExternalServices_ExternalServiceDoesntSupportRepoExclusi
 
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+	db.HandleFunc.SetDefaultReturn(&handle{db})
 
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchema(t, db),
@@ -281,10 +306,6 @@ func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepo
 		metadata := &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}
 		return &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
-	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
-		return nil, nil
-	}
-	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
@@ -294,6 +315,7 @@ func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepo
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
+	db.HandleFunc.SetDefaultReturn(&handle{db})
 
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchema(t, db),
@@ -344,10 +366,6 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoA
 		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
 		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
-	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
-		return nil, nil
-	}
-	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
@@ -356,6 +374,7 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoA
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
+	db.HandleFunc.SetDefaultReturn(&handle{db})
 
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchema(t, db),
@@ -405,10 +424,6 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExclude
 		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
 		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
-	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
-		return nil, nil
-	}
-	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
@@ -417,6 +432,7 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExclude
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
+	db.HandleFunc.SetDefaultReturn(&handle{db})
 
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchema(t, db),
@@ -476,10 +492,6 @@ func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *test
 		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
 		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
-	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
-		return nil, nil
-	}
-	t.Cleanup(func() { repoupdater.MockSyncExternalService = nil })
 
 	db := dbmocks.NewMockDB()
 	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
@@ -488,6 +500,7 @@ func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *test
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 	db.ReposFunc.SetDefaultReturn(repos)
+	db.HandleFunc.SetDefaultReturn(&handle{db})
 
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchema(t, db),
@@ -528,7 +541,7 @@ func TestDeleteExternalService(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient()).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
@@ -589,7 +602,7 @@ func TestExternalServicesResolver(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			result, err := newSchemaResolver(db, gitserver.NewClient()).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			result, err := newSchemaResolver(db, gitserver.NewTestClient(t)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
@@ -610,7 +623,7 @@ func TestExternalServicesResolver(t *testing.T) {
 			db := dbmocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			_, err := newSchemaResolver(db, gitserver.NewClient()).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			_, err := newSchemaResolver(db, gitserver.NewTestClient(t)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -628,13 +641,13 @@ func TestExternalServices(t *testing.T) {
 		{ID: 2, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 		{ID: 3, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGitHub},
 		{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
-		{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
+		{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit, Unrestricted: true},
 	}
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
 		if opt.AfterID > 0 || opt.RepoID == 42 {
 			return []*types.ExternalService{
 				{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
-				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
+				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit, Unrestricted: true},
 			}, nil
 		}
 
@@ -800,6 +813,7 @@ func TestExternalServices(t *testing.T) {
 				externalServices(repo: "%s") {
 					nodes {
 						id
+						unrestricted
 					}
 				}
 			}
@@ -808,8 +822,8 @@ func TestExternalServices(t *testing.T) {
 			{
 				"externalServices": {
 					"nodes": [
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
-						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ=","unrestricted":false},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU=","unrestricted":true}
                     ]
                 }
 			}
@@ -1089,32 +1103,6 @@ func TestExternalServices_PageInfo(t *testing.T) {
 	}
 }
 
-func TestSyncExternalService_ContextTimeout(t *testing.T) {
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Since the timeout in our test is set to 0ms, we do not need to sleep at all. If our code
-		// is correct, this handler should timeout right away.
-		w.WriteHeader(http.StatusOK)
-	}))
-
-	t.Cleanup(func() { s.Close() })
-
-	ctx := context.Background()
-	svc := &types.ExternalService{
-		Config: extsvc.NewEmptyConfig(),
-	}
-
-	err := backend.NewExternalServices(logtest.Scoped(t), dbmocks.NewMockDB(), repoupdater.NewClient(s.URL)).SyncExternalService(ctx, svc, 0*time.Millisecond)
-
-	if err == nil {
-		t.Error("Expected error but got nil")
-	}
-
-	expected := "context deadline exceeded"
-	if !strings.Contains(err.Error(), expected) {
-		t.Errorf("Expected error: %q, but got %v", expected, err)
-	}
-}
-
 func TestCancelExternalServiceSync(t *testing.T) {
 	externalServiceID := int64(1234)
 	syncJobID := int64(99)
@@ -1220,19 +1208,11 @@ func TestExternalServiceNamespaces(t *testing.T) {
 	mockExternalServiceNamespaces := func(t *testing.T, ns []*types.ExternalServiceNamespace, err error) {
 		t.Helper()
 
-		errStr := ""
-		if err != nil {
-			errStr = err.Error()
-		}
+		es := backend.NewStrictMockExternalServicesService()
+		es.ListNamespacesFunc.SetDefaultReturn(ns, err)
 
-		repoupdater.MockExternalServiceNamespaces = func(_ context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error) {
-			res := protocol.ExternalServiceNamespacesResult{
-				Namespaces: ns,
-				Error:      errStr,
-			}
-			return &res, err
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceNamespaces = nil })
+		mockExternalServicesService = es
+		t.Cleanup(func() { mockExternalServicesService = nil })
 	}
 
 	githubExternalServiceConfig := `
@@ -1519,19 +1499,11 @@ func TestExternalServiceRepositories(t *testing.T) {
 	mockExternalServiceRepos := func(t *testing.T, repos []*types.ExternalServiceRepository, err error) {
 		t.Helper()
 
-		errStr := ""
-		if err != nil {
-			errStr = err.Error()
-		}
+		es := backend.NewStrictMockExternalServicesService()
+		es.DiscoverReposFunc.SetDefaultReturn(repos, err)
 
-		repoupdater.MockExternalServiceRepositories = func(_ context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error) {
-			res := protocol.ExternalServiceRepositoriesResult{
-				Repos: repos,
-				Error: errStr,
-			}
-			return &res, err
-		}
-		t.Cleanup(func() { repoupdater.MockExternalServiceRepositories = nil })
+		mockExternalServicesService = es
+		t.Cleanup(func() { mockExternalServicesService = nil })
 	}
 
 	githubExternalServiceConfig := `
@@ -1809,4 +1781,20 @@ func TestExternalServiceRepositories(t *testing.T) {
 			},
 		})
 	})
+}
+
+type handle struct {
+	database.DB
+}
+
+func (handle) Done(err error) error {
+	return err
+}
+
+func (h handle) Transact(context.Context) (basestore.TransactableHandle, error) {
+	return h, nil
+}
+
+func (handle) InTransaction() bool {
+	return false
 }

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	authztypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -23,7 +24,7 @@ import (
 
 var mockServerURL string
 
-func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *authztypes.ProviderInitResult {
+func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection, httpClient *http.Client) *authztypes.ProviderInitResult {
 	orgs, projects := map[string]struct{}{}, map[string]struct{}{}
 
 	authorizedConnections := []*types.AzureDevOpsConnection{}
@@ -57,7 +58,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 		return initResults
 	}
 
-	p, err := newAuthzProvider(db, authorizedConnections, orgs, projects)
+	p, err := newAuthzProvider(db, authorizedConnections, orgs, projects, httpClient)
 	if err != nil {
 		initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeAzureDevOps)
 		initResults.Problems = append(initResults.Problems, err.Error())
@@ -68,7 +69,7 @@ func NewAuthzProviders(db database.DB, conns []*types.AzureDevOpsConnection) *au
 	return initResults
 }
 
-func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs, projects map[string]struct{}) (*Provider, error) {
+func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs, projects map[string]struct{}, httpClient *http.Client) (*Provider, error) {
 	if err := licensing.Check(licensing.FeatureACLs); err != nil {
 		return nil, err
 	}
@@ -79,12 +80,13 @@ func newAuthzProvider(db database.DB, conns []*types.AzureDevOpsConnection, orgs
 	}
 
 	return &Provider{
-		db:       db,
-		urn:      "azuredevops:authzprovider",
-		conns:    conns,
-		codeHost: extsvc.NewCodeHost(u, extsvc.TypeAzureDevOps),
-		orgs:     orgs,
-		projects: projects,
+		db:         db,
+		urn:        "azuredevops:authzprovider",
+		conns:      conns,
+		codeHost:   extsvc.NewCodeHost(u, extsvc.TypeAzureDevOps),
+		orgs:       orgs,
+		projects:   projects,
+		httpClient: httpClient,
 	}, nil
 }
 
@@ -99,7 +101,8 @@ type Provider struct {
 	// orgs is the set of orgs as configured across all the code host connections.
 	orgs map[string]struct{}
 	// projects is the set of projects as configured across all the code host connections.
-	projects map[string]struct{}
+	projects   map[string]struct{}
+	httpClient *http.Client
 }
 
 func (p *Provider) FetchAccount(_ context.Context, _ *types.User, _ []*extsvc.Account, _ []string) (*extsvc.Account, error) {
@@ -107,7 +110,7 @@ func (p *Provider) FetchAccount(_ context.Context, _ *types.User, _ []*extsvc.Ac
 }
 
 func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, _ authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	logger := log.Scoped("azuredevops.FetchuserPerms", "logger for azuredevops provider")
+	logger := log.Scoped("azuredevops.FetchuserPerms")
 	logger.Debug("starting FetchUserPerms", log.String("user ID", fmt.Sprintf("%#v", account.UserID)))
 
 	profile, token, err := azuredevops.GetExternalAccountData(ctx, &account.AccountData)
@@ -144,7 +147,7 @@ func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, 
 		p.ServiceID(),
 		apiURL,
 		oauthToken,
-		nil,
+		p.httpClient,
 	)
 	if err != nil {
 		return nil, errors.Wrapf(
@@ -291,7 +294,7 @@ func (p *Provider) ValidateConnection(ctx context.Context) error {
 				Username: conn.Username,
 				Password: conn.Token,
 			},
-			nil,
+			p.httpClient,
 		)
 		if err != nil {
 			allErrors = append(allErrors, fmt.Sprintf("%s:%s", conn.URN, err.Error()))

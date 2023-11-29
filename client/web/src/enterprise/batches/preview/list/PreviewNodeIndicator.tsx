@@ -21,7 +21,7 @@ export const PreviewNodeIndicator: React.FunctionComponent<React.PropsWithChildr
 }) => {
     switch (node.targets.__typename) {
         case 'HiddenApplyPreviewTargetsAttach':
-        case 'VisibleApplyPreviewTargetsAttach':
+        case 'VisibleApplyPreviewTargetsAttach': {
             return (
                 <div className={containerClassName}>
                     <span className={styles.previewNodeIndicatorAttachBar}>&nbsp;</span>
@@ -36,8 +36,9 @@ export const PreviewNodeIndicator: React.FunctionComponent<React.PropsWithChildr
                     <span className={styles.previewNodeIndicatorAttachBar}>&nbsp;</span>
                 </div>
             )
+        }
         case 'HiddenApplyPreviewTargetsUpdate':
-        case 'VisibleApplyPreviewTargetsUpdate':
+        case 'VisibleApplyPreviewTargetsUpdate': {
             if (node.__typename === 'HiddenChangesetApplyPreview' || node.operations.length === 0) {
                 // If no operations, no update :P
                 return <div />
@@ -72,8 +73,9 @@ export const PreviewNodeIndicator: React.FunctionComponent<React.PropsWithChildr
                     <span className={styles.previewNodeIndicatorUpdateBar}>&nbsp;</span>
                 </div>
             )
+        }
         case 'HiddenApplyPreviewTargetsDetach':
-        case 'VisibleApplyPreviewTargetsDetach':
+        case 'VisibleApplyPreviewTargetsDetach': {
             return (
                 <div className={containerClassName}>
                     <span className={styles.previewNodeIndicatorDetachBar}>&nbsp;</span>
@@ -88,5 +90,6 @@ export const PreviewNodeIndicator: React.FunctionComponent<React.PropsWithChildr
                     <span className={styles.previewNodeIndicatorDetachBar}>&nbsp;</span>
                 </div>
             )
+        }
     }
 }

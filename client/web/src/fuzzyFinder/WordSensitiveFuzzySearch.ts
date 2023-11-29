@@ -235,10 +235,12 @@ function isDelimeter(character: string): boolean {
         case '_':
         case '-':
         case '.':
-        case ' ':
+        case ' ': {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }
 

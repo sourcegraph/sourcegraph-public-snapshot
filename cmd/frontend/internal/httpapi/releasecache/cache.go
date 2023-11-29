@@ -38,7 +38,7 @@ type releaseCache struct {
 func newReleaseCache(logger log.Logger, client *github.V4Client, owner, name string) ReleaseCache {
 	return &releaseCache{
 		client:   client,
-		logger:   logger.Scoped("ReleaseCache", "release cache"),
+		logger:   logger.Scoped("ReleaseCache"),
 		branches: map[string]string{},
 		owner:    owner,
 		name:     name,

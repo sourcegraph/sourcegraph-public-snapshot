@@ -55,29 +55,6 @@ pnpm-debug.log
 
 /cmd/frontend/internal/graphqlbackend/node_modules
 
-/ui/artifacts
-/ui/node_modules
-/ui/assets/_goTemplates.js
-/ui/assets/analytics.js
-/ui/assets/bundle.js
-/ui/assets/bundle.css
-/ui/assets/sourcebox.js
-/ui/assets/sourcebox.css
-/ui/assets/test.js
-/ui/assets/test.css
-/ui/assets/webpack.manifest.json
-/ui/assets/vs
-/ui/assets/*.html
-/ui/assets/*.map
-/ui/assets/*.txt
-/ui/assets/extension
-/ui/.tmp
-/ui/assets/scripts/
-/ui/assets/styles/
-/ui/assets/*.br
-/ui/assets/*.gz
-/ui/assets/stats-*
-
 *.json.actual
 
 eb-bundle.zip
@@ -116,11 +93,12 @@ out/
 client/shared/src/schema/*.d.ts
 puppeteer/
 package-lock.json
-/dist
+dist/
 sourcegraph-webapp-*.tgz
 *.tsbuildinfo
 graphql-operations.ts
 *.module.scss.d.ts
+*.module.css.d.ts
 dll-bundle
 
 # Extensions
@@ -208,3 +186,10 @@ result-*
 # For locally building and testing shared packages from the sourcegraph/cody repository on
 # the web client.
 /cody
+
+/playwright
+
+# JUnit execution reports
+junit.xml
+
+/enterprise/

@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { H1 } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
@@ -14,7 +14,7 @@ const config: Meta = {
 
 export default config
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <Modal aria-label="Welcome message">
         <H1>Hello world!</H1>
     </Modal>
@@ -39,13 +39,13 @@ Default.parameters = {
     ],
 }
 
-export const PositionCentered: Story = () => (
+export const PositionCentered: StoryFn = () => (
     <Modal position="center" aria-label="Welcome message">
         <H1>Hello world!</H1>
     </Modal>
 )
 
-export const PositionFull: Story = () => (
+export const PositionFull: StoryFn = () => (
     <Modal position="full" aria-label="Welcome message">
         <H1>Hello world!</H1>
     </Modal>

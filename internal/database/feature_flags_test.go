@@ -72,7 +72,7 @@ func setupClearRedisCacheTest(t *testing.T, expectedFlagName string) *bool {
 func testNewFeatureFlagRoundtrip(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	flagStore := NewDB(logger, dbtest.NewDB(logger, t)).FeatureFlags()
+	flagStore := NewDB(logger, dbtest.NewDB(t)).FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
 	cases := []struct {
@@ -129,7 +129,7 @@ func testNewFeatureFlagRoundtrip(t *testing.T) {
 func testListFeatureFlags(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -165,7 +165,7 @@ func testListFeatureFlags(t *testing.T) {
 func testNewOverrideRoundtrip(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
@@ -215,7 +215,7 @@ func testNewOverrideRoundtrip(t *testing.T) {
 func testListUserOverrides(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	users := db.Users()
 	ctx := actor.WithInternalActor(context.Background())
@@ -295,7 +295,7 @@ func testListUserOverrides(t *testing.T) {
 func testListOrgOverrides(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
 	users := db.Users()
 	orgs := db.Orgs()
@@ -381,7 +381,7 @@ func testListOrgOverrides(t *testing.T) {
 func testUserFlags(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	users := db.Users()
 	orgs := db.Orgs()
@@ -558,7 +558,7 @@ func testUserFlags(t *testing.T) {
 func testAnonymousUserFlags(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -603,7 +603,7 @@ func testAnonymousUserFlags(t *testing.T) {
 func testUserlessFeatureFlags(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -652,7 +652,7 @@ func testUserlessFeatureFlags(t *testing.T) {
 func testOrgFeatureFlag(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	orgs := db.Orgs()
 	ctx := actor.WithInternalActor(context.Background())
@@ -728,7 +728,7 @@ func testOrgFeatureFlag(t *testing.T) {
 func testGetFeatureFlag(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	ctx := context.Background()
 	t.Run("no value", func(t *testing.T) {
@@ -755,7 +755,7 @@ func testGetFeatureFlag(t *testing.T) {
 func testUpdateFeatureFlag(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	flagStore := db.FeatureFlags()
 	ctx := context.Background()
 	t.Run("invalid input", func(t *testing.T) {

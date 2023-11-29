@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,19 +15,86 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
 )
 
+func TestTelemetryEventsExportQueue_QueueForExport(t *testing.T) {
+	for _, tc := range []struct {
+		name         string
+		mode         licensing.TelemetryEventsExportMode
+		events       []*telemetrygatewayv1.Event
+		expectQueued autogold.Value
+	}{{
+		name: "disabled",
+		mode: licensing.TelemetryEventsExportDisabled,
+		events: []*telemetrygatewayv1.Event{{
+			Id:      "1",
+			Feature: "foobar",
+			Action:  "baz",
+		}},
+		expectQueued: autogold.Expect([]string{}),
+	}, {
+		name: "enabled: export all",
+		mode: licensing.TelemetryEventsExportAll,
+		events: []*telemetrygatewayv1.Event{{
+			Id:      "1",
+			Feature: "foobar",
+			Action:  "baz",
+		}},
+		expectQueued: autogold.Expect([]string{"1"}),
+	}, {
+		name: "cody-only: drop some",
+		mode: licensing.TelemetryEventsExportCodyOnly,
+		events: []*telemetrygatewayv1.Event{{
+			Id:      "1",
+			Feature: "foobar",
+			Action:  "baz",
+		}, {
+			Id:      "2",
+			Feature: "cody.foobar",
+			Action:  "baz",
+		}, {
+			Id:      "3",
+			Feature: "cody",
+			Action:  "bar",
+		}},
+		expectQueued: autogold.Expect([]string{"2", "3"}),
+	}} {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			logger := logtest.Scoped(t)
+			db := NewDB(logger, dbtest.NewDB(t))
+
+			store := TelemetryEventsExportQueueWith(logger, db)
+
+			// Set a mock mode to test enabled exports
+			store.(MockExportModeSetterTelemetryEventsExportQueueStore).
+				SetMockExportMode(tc.mode)
+
+			require.NoError(t, store.QueueForExport(context.Background(), tc.events))
+			queued, err := store.ListForExport(ctx, 999)
+			require.NoError(t, err)
+			var ids []string
+			for _, e := range queued {
+				ids = append(ids, e.Id)
+			}
+			tc.expectQueued.Equal(t, ids)
+		})
+	}
+}
+
 func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
-	// Context with FF enabled.
-	ff := featureflag.NewMemoryStore(
-		nil, nil, map[string]bool{FeatureFlagTelemetryExport: true})
-	ctx := featureflag.WithFlags(context.Background(), ff)
+	ctx := context.Background()
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	store := TelemetryEventsExportQueueWith(logger, db)
+
+	// Set a mock mode to test enabled exports
+	store.(MockExportModeSetterTelemetryEventsExportQueueStore).
+		SetMockExportMode(licensing.TelemetryEventsExportAll)
 
 	events := []*telemetrygatewayv1.Event{{
 		Id:        "1",
@@ -34,7 +102,7 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		Action:    "View",
 		Timestamp: timestamppb.New(time.Date(2022, 11, 3, 1, 0, 0, 0, time.UTC)),
 		Parameters: &telemetrygatewayv1.EventParameters{
-			Metadata: map[string]int64{"public": 1},
+			Metadata: map[string]float64{"public": 1},
 		},
 	}, {
 		Id:        "2",
@@ -55,7 +123,12 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 	eventsToExport := []string{"1", "2"}
 
 	t.Run("feature flag off", func(t *testing.T) {
-		require.NoError(t, store.QueueForExport(context.Background(), events))
+		// Context with FF disabled.
+		ff := featureflag.NewMemoryStore(
+			nil, nil, map[string]bool{FeatureFlagTelemetryExport: false})
+		ctx := featureflag.WithFlags(context.Background(), ff)
+
+		require.NoError(t, store.QueueForExport(ctx, events))
 		export, err := store.ListForExport(ctx, 100)
 		require.NoError(t, err)
 		assert.Len(t, export, 0)
@@ -76,6 +149,13 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 		export, err := store.ListForExport(ctx, limit)
 		require.NoError(t, err)
 		assert.Len(t, export, limit)
+
+		// Check we got the exact event IDs we want to export
+		var gotIDs []string
+		for _, e := range export {
+			gotIDs = append(gotIDs, e.GetId())
+		}
+		assert.Equal(t, eventsToExport, gotIDs)
 
 		// Check integrity of first item
 		original, err := proto.Marshal(events[0])
@@ -102,7 +182,9 @@ func TestTelemetryEventsExportQueueLifecycle(t *testing.T) {
 	t.Run("after export: QueueForExport", func(t *testing.T) {
 		export, err := store.ListForExport(ctx, len(events))
 		require.NoError(t, err)
-		assert.Len(t, export, len(events)-len(eventsToExport))
+		assert.Len(t, export, 1)
+		// ID is exactly as expected
+		assert.Equal(t, "3", export[0].GetId())
 	})
 
 	t.Run("after export: DeleteExported", func(t *testing.T) {

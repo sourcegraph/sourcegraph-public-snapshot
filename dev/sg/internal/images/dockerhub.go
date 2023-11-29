@@ -50,6 +50,12 @@ func (r *DockerHub) Org() string {
 	return r.org
 }
 
+// Public returns if the registry is used for public purposes or not.
+// Right now, we only use DockerHub for public releases, so it's always true.
+func (r *DockerHub) Public() bool {
+	return true
+}
+
 func (r *DockerHub) tryLoadingCredsFromStore() error {
 	dockerCredentials := &credentials.Credentials{
 		ServerURL: "https://registry.hub.docker.com/v2",

@@ -30,7 +30,7 @@ import (
 
 func TestSetRepositoryAsDirty(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	for _, id := range []int{50, 51, 52} {
@@ -61,7 +61,7 @@ func TestSetRepositoryAsDirty(t *testing.T) {
 
 func TestSkipsDeletedRepositories(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertRepo(t, db, 50, "should not be dirty", false)
@@ -94,7 +94,7 @@ func TestSkipsDeletedRepositories(t *testing.T) {
 
 func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	uploads := []shared.Upload{
@@ -129,7 +129,7 @@ func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T
 
 func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -222,7 +222,7 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 
 func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfiguration(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -332,7 +332,7 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 
 func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -391,7 +391,7 @@ func TestUpdateUploadsVisibleToCommits(t *testing.T) {
 
 func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -444,7 +444,7 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 
 func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -487,7 +487,7 @@ func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
 
 func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -562,7 +562,7 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 
 func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -618,7 +618,7 @@ func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
 
 func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	uploads := []shared.Upload{
@@ -685,7 +685,7 @@ func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
 
 func TestFindClosestDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -751,7 +751,7 @@ func TestFindClosestDumps(t *testing.T) {
 
 func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -811,7 +811,7 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 
 func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -864,7 +864,7 @@ func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *te
 
 func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -914,7 +914,7 @@ func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 
 func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -994,7 +994,7 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 
 func TestFindClosestDumpsIndexerName(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -1083,7 +1083,7 @@ func TestFindClosestDumpsIndexerName(t *testing.T) {
 
 func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -1127,7 +1127,7 @@ func TestFindClosestDumpsIntersectingPath(t *testing.T) {
 
 func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// This database has the following commit graph:
@@ -1193,7 +1193,7 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 
 func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	for _, id := range []int{50, 51, 52} {
@@ -1227,7 +1227,7 @@ func TestGetRepositoriesMaxStaleAge(t *testing.T) {
 
 func TestCommitGraphMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
@@ -1534,7 +1534,7 @@ func keysOf(m map[string][]int) (keys []string) {
 
 func BenchmarkCalculateVisibleUploads(b *testing.B) {
 	logger := logtest.Scoped(b)
-	db := database.NewDB(logger, dbtest.NewDB(logger, b))
+	db := database.NewDB(logger, dbtest.NewDB(b))
 	store := New(&observation.TestContext, db)
 
 	graph, err := readBenchmarkCommitGraph()

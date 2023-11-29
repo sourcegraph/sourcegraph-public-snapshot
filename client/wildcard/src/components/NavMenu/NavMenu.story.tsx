@@ -1,5 +1,5 @@
 import { mdiPoll, mdiAntenna, mdiMenu, mdiMenuUp, mdiMenuDown } from '@mdi/js'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 import FileTreeOutlineIcon from 'mdi-react/FileTreeOutlineIcon'
 import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
@@ -142,7 +142,7 @@ const navItems: NavMenuSectionProps[] = [
     },
 ]
 
-export const UserNav: Story = () => (
+export const UserNav: StoryFn = () => (
     <NavMenu
         navTrigger={{
             variant: 'icon',
@@ -183,7 +183,7 @@ const singleSectionNavItems: NavMenuSectionProps[] = [
     },
 ]
 
-export const SingleSectionNavMenuExample: Story = () => (
+export const SingleSectionNavMenuExample: StoryFn = () => (
     <NavMenu
         navTrigger={{
             variant: 'secondary',

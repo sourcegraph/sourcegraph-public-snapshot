@@ -195,7 +195,7 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, db databa
 
 		routine := goroutine.NewPeriodicGoroutine(
 			ctxWithCancel,
-			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternalDoer, logger: logger.Scoped("licenseChecker", "Periodically checks license validity")},
+			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternalDoer, logger: logger.Scoped("licenseChecker")},
 			goroutine.WithName("licensing.check-license-validity"),
 			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
 			goroutine.WithInterval(licensing.LicenseCheckInterval),

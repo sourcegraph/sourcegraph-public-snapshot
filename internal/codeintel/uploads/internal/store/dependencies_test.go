@@ -17,7 +17,7 @@ import (
 
 func TestReferencesForUpload(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertUploads(t, db,
@@ -58,7 +58,7 @@ func TestReferencesForUpload(t *testing.T) {
 
 func TestUpdatePackages(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// for foreign key relation
@@ -90,7 +90,7 @@ func TestUpdatePackages(t *testing.T) {
 
 func TestUpdatePackagesEmpty(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	if err := store.UpdatePackages(context.Background(), 0, nil); err != nil {
@@ -108,7 +108,7 @@ func TestUpdatePackagesEmpty(t *testing.T) {
 
 func TestUpdatePackageReferences(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// for foreign key relation

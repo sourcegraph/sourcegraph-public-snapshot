@@ -9,19 +9,18 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunks []*gitserver.Hunk) gitserver.Client {
@@ -29,7 +28,6 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 	gsClient := gitserver.NewMockClient()
 	gsClient.GetCommitFunc.SetDefaultHook(
 		func(_ context.Context,
-			checker authz.SubRepoPermissionChecker,
 			repoName api.RepoName,
 			commit api.CommitID,
 			opts gitserver.ResolveRevisionOptions,
@@ -41,7 +39,6 @@ func setupMockGSClient(t *testing.T, wantRev api.CommitID, returnErr error, hunk
 	gsClient.StreamBlameFileFunc.SetDefaultHook(
 		func(
 			ctx context.Context,
-			checker authz.SubRepoPermissionChecker,
 			repo api.RepoName,
 			path string,
 			opts *gitserver.BlameOptions,
@@ -125,19 +122,7 @@ func TestStreamBlame(t *testing.T) {
 		backend.Mocks.Repos = backend.MockRepos{}
 	})
 
-	ffs := featureflag.NewMemoryStore(nil, nil, map[string]bool{"enable-streaming-git-blame": true})
-	ctx := featureflag.WithFlags(context.Background(), ffs)
-
-	t.Run("NOK feature flag disabled", func(t *testing.T) {
-		rec := httptest.NewRecorder()
-		req, err := http.NewRequest(http.MethodGet, "/no-vars", nil)
-		require.NoError(t, err)
-		req = req.WithContext(context.Background()) // no feature flag there
-
-		gsClient := setupMockGSClient(t, "abcd", nil, hunks)
-		handleStreamBlame(logger, db, gsClient).ServeHTTP(rec, req)
-		assert.Equal(t, http.StatusNotFound, rec.Code)
-	})
+	ctx := context.Background()
 
 	t.Run("NOK no mux vars", func(t *testing.T) {
 		rec := httptest.NewRecorder()

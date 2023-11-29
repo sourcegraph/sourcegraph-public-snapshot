@@ -44,7 +44,7 @@ To work on most frontend issues, it is necessary to run three applications local
 
     ```sh
     # Prepare web application for integration tests
-    ENTERPRISE=1 DISABLE_TYPECHECKING=true pnpm run build-web
+    DISABLE_TYPECHECKING=true pnpm run build-web
     # Run integration tests
     pnpm test-integration
     ```

@@ -1,4 +1,4 @@
-import { type ChangeSpec, EditorState, type Extension } from '@codemirror/state'
+import type { Extension } from '@codemirror/state'
 import { EditorView, type ViewUpdate } from '@codemirror/view'
 import type { NavigateFunction } from 'react-router-dom'
 import type { Observable } from 'rxjs'
@@ -30,36 +30,6 @@ export const changeListener = (callback: (value: string) => void): Extension =>
             return callback(update.state.sliceDoc())
         }
     })
-
-const replacePattern = /[\n\r↵]+/g
-/**
- * An extension that enforces that the input will be single line. Consecutive
- * line breaks will be replaces by a single space.
- */
-export const singleLine = EditorState.transactionFilter.of(transaction => {
-    if (!transaction.docChanged) {
-        return transaction
-    }
-
-    const newText = transaction.newDoc.sliceString(0)
-    const changes: ChangeSpec[] = []
-
-    // new RegExp(...) creates a copy of the regular expression so that we have
-    // our own stateful copy for using `exec` below.
-    const lineBreakPattern = new RegExp(replacePattern)
-    let match: RegExpExecArray | null = null
-    while ((match = lineBreakPattern.exec(newText))) {
-        // Insert space for line breaks following non-whitespace characters
-        if (match.index > 0 && !/\s/.test(newText[match.index - 1])) {
-            changes.push({ from: match.index, to: match.index + match[0].length, insert: ' ' })
-        } else {
-            // Otherwise remove it
-            changes.push({ from: match.index, to: match.index + match[0].length })
-        }
-    }
-
-    return changes.length > 0 ? [transaction, { changes, sequential: true }] : transaction
-})
 
 interface CreateDefaultSuggestionsOptions extends Omit<DefaultSuggestionSourcesOptions, 'fetchSuggestions'> {
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>

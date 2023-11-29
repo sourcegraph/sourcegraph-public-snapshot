@@ -15,7 +15,7 @@ import (
 
 func TestRepoKVPs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	kvps := db.RepoKVPs()
 

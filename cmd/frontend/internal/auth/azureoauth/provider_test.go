@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log/logtest"
 	"golang.org/x/oauth2"
 
@@ -33,7 +34,7 @@ func newUnifiedConfig(s schema.SiteConfiguration) conf.Unified {
 
 func TestParseConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	testCases := []struct {
 		name          string
@@ -266,7 +267,7 @@ func TestParseConfig(t *testing.T) {
 			if diff := cmp.Diff(tc.wantProblems, gotProblems.Messages()); diff != "" {
 				t.Errorf("mismatched problems (-want,+got):\n%s", diff)
 			}
-			if diff := cmp.Diff(wantConfigs, gotConfigs); diff != "" {
+			if diff := cmp.Diff(wantConfigs, gotConfigs, cmpopts.IgnoreUnexported(oauth2.Config{})); diff != "" {
 				t.Errorf("mismatched configs (-want,+got):\n%s", diff)
 			}
 		})

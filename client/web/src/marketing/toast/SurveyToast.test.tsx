@@ -2,6 +2,7 @@ import { gql } from '@apollo/client'
 import { createMockClient } from '@apollo/client/testing'
 import { cleanup, fireEvent, waitFor } from '@testing-library/react'
 import { take } from 'rxjs/operators'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { TemporarySettingsContext } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
@@ -32,9 +33,9 @@ describe('SurveyToast', () => {
     })
 
     const mockClient = createMockClient(
-        { contents: JSON.stringify({}) },
+        { temporarySettings: { contents: JSON.stringify({}) } },
         gql`
-            query TemporarySettings {
+            query GetTemporarySettings {
                 temporarySettings {
                     contents
                 }

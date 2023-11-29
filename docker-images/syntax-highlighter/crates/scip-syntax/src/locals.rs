@@ -14,7 +14,7 @@ use crate::languages::LocalConfiguration;
 pub struct Scope<'a> {
     pub scope: Node<'a>,
     pub range: PackedRange,
-    pub definitions: HashMap<&'a str, Definition<'a>>,
+    pub lvalues: HashMap<&'a str, LValue<'a>>,
     pub references: HashMap<&'a str, Vec<Reference<'a>>>,
     pub children: Vec<Scope<'a>>,
 }
@@ -29,7 +29,7 @@ impl<'a> PartialEq for Scope<'a> {
 
 impl<'a> PartialOrd for Scope<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.range.partial_cmp(&other.range)
+        Some(self.cmp(other))
     }
 }
 
@@ -44,7 +44,7 @@ impl<'a> Scope<'a> {
         Self {
             scope,
             range: scope.into(),
-            definitions: HashMap::default(),
+            lvalues: HashMap::default(),
             references: HashMap::default(),
             children: vec![],
         }
@@ -62,27 +62,27 @@ impl<'a> Scope<'a> {
         }
     }
 
-    pub fn insert_definition(&mut self, definition: Definition<'a>) {
+    pub fn insert_lvalue(&mut self, lvalue: LValue<'a>) {
         // TODO: Probably should assert that this the root node?
-        if definition.scope_modifier == ScopeModifier::Global {
-            self.definitions.insert(definition.identifier, definition);
+        if lvalue.scope_modifier == ScopeModifier::Global {
+            self.lvalues.insert(lvalue.identifier, lvalue);
             return;
         }
 
         if let Some(child) = self
             .children
             .iter_mut()
-            .find(|child| child.range.contains(&definition.range))
+            .find(|child| child.range.contains(&lvalue.range))
         {
-            child.insert_definition(definition)
+            child.insert_lvalue(lvalue)
         } else {
-            self.definitions.insert(definition.identifier, definition);
+            self.lvalues.insert(lvalue.identifier, lvalue);
         }
     }
 
     pub fn insert_reference(&mut self, reference: Reference<'a>) {
-        if let Some(definition) = self.definitions.get(&reference.identifier) {
-            if definition.node.id() == reference.node.id() {
+        if let Some(lvalue) = self.lvalues.get(&reference.identifier) {
+            if lvalue.node.id() == reference.node.id() {
                 return;
             }
         }
@@ -91,9 +91,18 @@ impl<'a> Scope<'a> {
             &(reference.range.start_line, reference.range.start_col),
             |r| (r.range.start_line, r.range.start_col),
         ) {
-            Ok(_) => {
-                // self.children[idx].insert_reference(reference);
-                todo!("I'm not sure what to do yet, think more now");
+            Ok(idx) => {
+                let child = &self.children[idx];
+                if child.range.end_line == reference.range.end_line
+                    && child.range.end_col == reference.range.end_col
+                {
+                    eprintln!(
+                        "Two or more scopes with identical ranges ({:#?}) detected while performing heuristic local code navigation indexing. This is likely an issue with a tree-sitter query. This will be ignored.", reference.range
+                    );
+                    return;
+                }
+
+                self.children[idx].insert_reference(reference);
             }
             Err(idx) => match idx {
                 0 => self
@@ -125,7 +134,7 @@ impl<'a> Scope<'a> {
 
         let mut empty_children = vec![];
         for (idx, child) in self.children.iter().enumerate() {
-            if child.definitions.is_empty() {
+            if child.lvalues.is_empty() {
                 empty_children.push(idx);
             }
         }
@@ -146,32 +155,79 @@ impl<'a> Scope<'a> {
 
     pub fn into_occurrences(&mut self, hint: usize) -> Vec<Occurrence> {
         let mut occs = Vec::with_capacity(hint);
-        self.rec_into_occurrences(&mut 0, &mut occs);
+        let mut declarations_above = vec![];
+
+        self.rec_into_occurrences(&mut 0, &mut occs, &mut declarations_above);
         occs
     }
 
-    fn rec_into_occurrences(&self, id: &mut usize, occurrences: &mut Vec<Occurrence>) {
+    fn rec_into_occurrences(
+        &self,
+        id: &mut usize,
+        occurrences: &mut Vec<Occurrence>,
+        declarations_above: &mut Vec<HashMap<&'a str, usize>>,
+    ) {
+        let mut our_declarations_above = HashMap::<&str, usize>::default();
+
         // TODO: I'm a little sad about this.
         //  We could probably make this a runtime option, where `self` has a `sorted` value
         //  that decides whether we need to or not. But on a huge file, this made no difference.
-        let mut values = self.definitions.values().collect::<Vec<_>>();
+        let mut values = self.lvalues.values().collect::<Vec<_>>();
         values.sort_by_key(|d| &d.range);
 
-        for definition in values {
+        for lvalue in values {
             *id += 1;
 
-            let symbol = format_symbol(Symbol::new_local(*id));
-            let symbol_roles = scip::types::SymbolRole::Definition.value();
+            let symbol = match lvalue.reassignment_behavior {
+                ReassignmentBehavior::NewestIsDefinition => {
+                    let symbol = format_symbol(Symbol::new_local(*id));
+                    our_declarations_above.insert(lvalue.identifier, *id);
+                    let symbol_roles = scip::types::SymbolRole::Definition.value();
 
-            occurrences.push(scip::types::Occurrence {
-                range: definition.node.to_scip_range(),
-                symbol: symbol.clone(),
-                symbol_roles,
-                // syntax_kind: todo!(),
-                ..Default::default()
-            });
+                    occurrences.push(scip::types::Occurrence {
+                        range: lvalue.node.to_scip_range(),
+                        symbol: symbol.clone(),
+                        symbol_roles,
+                        ..Default::default()
+                    });
 
-            if let Some(references) = self.references.get(definition.identifier) {
+                    symbol
+                }
+                ReassignmentBehavior::OldestIsDefinition => {
+                    if let Some(above) = declarations_above
+                        .iter_mut()
+                        .rev()
+                        .find(|x| x.contains_key(lvalue.identifier))
+                    {
+                        let symbol = format_symbol(Symbol::new_local(
+                            *above.get(lvalue.identifier).unwrap(),
+                        ));
+
+                        occurrences.push(scip::types::Occurrence {
+                            range: lvalue.node.to_scip_range(),
+                            symbol: symbol.clone(),
+                            ..Default::default()
+                        });
+
+                        continue;
+                    } else {
+                        let symbol = format_symbol(Symbol::new_local(*id));
+                        our_declarations_above.insert(lvalue.identifier, *id);
+                        let symbol_roles = scip::types::SymbolRole::Definition.value();
+
+                        occurrences.push(scip::types::Occurrence {
+                            range: lvalue.node.to_scip_range(),
+                            symbol: symbol.clone(),
+                            symbol_roles,
+                            ..Default::default()
+                        });
+
+                        symbol
+                    }
+                }
+            };
+
+            if let Some(references) = self.references.get(lvalue.identifier) {
                 for reference in references {
                     occurrences.push(scip::types::Occurrence {
                         range: reference.node.to_scip_range(),
@@ -183,22 +239,27 @@ impl<'a> Scope<'a> {
 
             self.children
                 .iter()
-                .for_each(|c| c.occurrences_for_children(definition, symbol.as_str(), occurrences));
+                .for_each(|c| c.occurrences_for_children(lvalue, symbol.as_str(), occurrences));
         }
 
+        declarations_above.push(our_declarations_above);
         self.children
             .iter()
-            .for_each(|c| c.rec_into_occurrences(id, occurrences));
+            .for_each(|c| c.rec_into_occurrences(id, occurrences, declarations_above));
+        declarations_above.pop();
     }
 
     fn occurrences_for_children(
         self: &Scope<'a>,
-        def: &Definition<'a>,
+        def: &LValue<'a>,
         symbol: &str,
         occurrences: &mut Vec<Occurrence>,
     ) {
-        if self.definitions.contains_key(def.identifier) {
-            return;
+        if let Some(def) = self.lvalues.get(def.identifier) {
+            match def.reassignment_behavior {
+                ReassignmentBehavior::NewestIsDefinition => return,
+                ReassignmentBehavior::OldestIsDefinition => {}
+            }
         }
 
         if let Some(references) = self.references.get(def.identifier) {
@@ -217,12 +278,8 @@ impl<'a> Scope<'a> {
     }
 
     #[allow(dead_code)]
-    fn find_scopes_with(
-        &'a self,
-        scopes: &mut Vec<&Scope<'a>>,
-        // predicate: impl Fn(&Scope<'a>) -> bool,
-    ) {
-        if self.definitions.is_empty() {
+    fn find_scopes_with(&'a self, scopes: &mut Vec<&Scope<'a>>) {
+        if self.lvalues.is_empty() {
             scopes.push(self);
         }
 
@@ -251,13 +308,31 @@ pub enum ScopeModifier {
     Global,
 }
 
+/// Define how strong a definition is, useful for languages that use
+/// the same syntax for defining a variable and setting it, like Python.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub enum ReassignmentBehavior {
+    /// a = 10
+    /// ^ local 1
+    /// a = 10
+    /// ^ local 2
+    #[default]
+    NewestIsDefinition,
+    /// a = 10
+    /// ^ local 1
+    /// a = 10
+    /// ^ local 1 (reference)
+    OldestIsDefinition,
+}
+
 #[derive(Debug)]
-pub struct Definition<'a> {
+pub struct LValue<'a> {
     pub group: &'a str,
     pub identifier: &'a str,
     pub node: Node<'a>,
     pub range: PackedRange,
     pub scope_modifier: ScopeModifier,
+    pub reassignment_behavior: ReassignmentBehavior,
 }
 
 #[derive(Debug)]
@@ -279,16 +354,17 @@ pub fn parse_tree<'a>(
     let capture_names = config.query.capture_names();
 
     let mut scopes = vec![];
-    let mut definitions = vec![];
+    let mut lvalues = vec![];
     let mut references = vec![];
 
     for m in cursor.matches(&config.query, root_node, source_bytes) {
         let mut node = None;
 
         let mut scope = None;
-        let mut definition = None;
+        let mut lvalue = None;
         let mut reference = None;
         let mut scope_modifier = None;
+        let mut reassignment_behavior = None;
 
         for capture in m.captures {
             let capture_name = match capture_names.get(capture.index as usize) {
@@ -298,11 +374,15 @@ pub fn parse_tree<'a>(
 
             node = Some(capture.node);
 
+            // TODO: Change all captures to lvalue in later PR
+            // I don't want to do this now as @definition.[...]
+            // is the standard capture we use throughout our codebase
+            // beyond just locals, so I want to keep things consistent
             if capture_name.starts_with("definition") {
-                assert!(definition.is_none(), "only one definition per match");
-                definition = Some(capture_name);
+                assert!(lvalue.is_none(), "only one definition per match");
+                lvalue = Some(capture_name);
 
-                // Handle scope modifiers
+                // Handle modifiers
                 let properties = config.query.property_settings(m.pattern_index);
                 for prop in properties {
                     if &(*prop.key) == "scope" {
@@ -310,9 +390,19 @@ pub fn parse_tree<'a>(
                             Some("global") => scope_modifier = Some(ScopeModifier::Global),
                             Some("parent") => scope_modifier = Some(ScopeModifier::Parent),
                             Some("local") => scope_modifier = Some(ScopeModifier::Local),
-                            // TODO: Should probably error instead
-                            Some(other) => panic!("unknown scope-testing: {}", other),
-                            None => {}
+                            Some(_) | None => unreachable!(),
+                        }
+                    } else if &(*prop.key) == "reassignment_behavior" {
+                        match prop.value.as_deref() {
+                            Some("newest_is_definition") => {
+                                reassignment_behavior =
+                                    Some(ReassignmentBehavior::NewestIsDefinition)
+                            }
+                            Some("oldest_is_definition") => {
+                                reassignment_behavior =
+                                    Some(ReassignmentBehavior::OldestIsDefinition)
+                            }
+                            Some(_) | None => unreachable!(),
                         }
                     }
                 }
@@ -334,19 +424,22 @@ pub fn parse_tree<'a>(
             None => continue,
         };
 
-        if let Some(group) = definition {
+        if let Some(group) = lvalue {
             let identifier = match node.utf8_text(source_bytes) {
                 Ok(identifier) => identifier,
                 Err(_) => continue,
             };
 
             let scope_modifier = scope_modifier.unwrap_or_default();
-            definitions.push(Definition {
+            let reassignment_behavior = reassignment_behavior.unwrap_or_default();
+
+            lvalues.push(LValue {
                 range: node.into(),
                 group,
                 identifier,
                 node,
                 scope_modifier,
+                reassignment_behavior,
             });
         } else if let Some(group) = reference {
             let identifier = match node.utf8_text(source_bytes) {
@@ -381,15 +474,15 @@ pub fn parse_tree<'a>(
         )
     });
 
-    let capacity = definitions.len() + references.len();
+    let capacity = lvalues.len() + references.len();
 
     // Add all the scopes to our tree
     while let Some(m) = scopes.pop() {
         root.insert_scope(m);
     }
 
-    while let Some(m) = definitions.pop() {
-        root.insert_definition(m);
+    while let Some(m) = lvalues.pop() {
+        root.insert_lvalue(m);
     }
 
     root.clean_empty_scopes();
@@ -447,9 +540,9 @@ mod test {
 
     #[test]
     fn test_can_do_go() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals.go");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
@@ -459,9 +552,9 @@ mod test {
 
     #[test]
     fn test_can_do_nested_locals() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/locals-nested.go");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
@@ -471,9 +564,9 @@ mod test {
 
     #[test]
     fn test_can_do_functions() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/funcs.go");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);
@@ -483,9 +576,33 @@ mod test {
 
     #[test]
     fn test_can_do_perl() -> Result<()> {
-        let mut config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
+        let config = crate::languages::get_local_configuration(BundledParser::Perl).unwrap();
         let source_code = include_str!("../testdata/perl.pm");
-        let doc = parse_file_for_lang(&mut config, source_code)?;
+        let doc = parse_file_for_lang(config, source_code)?;
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_do_matlab() -> Result<()> {
+        let config = crate::languages::get_local_configuration(BundledParser::Matlab).unwrap();
+        let source_code = include_str!("../testdata/locals.m");
+        let doc = parse_file_for_lang(config, source_code)?;
+
+        let dumped = snapshot_syntax_document(&doc, source_code);
+        insta::assert_snapshot!(dumped);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_do_java() -> Result<()> {
+        let config = crate::languages::get_local_configuration(BundledParser::Java).unwrap();
+        let source_code = include_str!("../testdata/locals.java");
+        let doc = parse_file_for_lang(config, source_code)?;
 
         let dumped = snapshot_syntax_document(&doc, source_code);
         insta::assert_snapshot!(dumped);

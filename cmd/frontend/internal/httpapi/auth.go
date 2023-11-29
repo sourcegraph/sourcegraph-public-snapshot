@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cookie"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -28,7 +30,7 @@ const authAuditEntity = "httpapi/auth"
 // AccessTokenAuthMiddleware authenticates the user based on the
 // token query parameter or the "Authorization" header.
 func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.Handler) http.Handler {
-	baseLogger = baseLogger.Scoped("accessTokenAuth", "Access token authentication middleware")
+	baseLogger = baseLogger.Scoped("accessTokenAuth")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// SCIM uses an auth token which is checked separately in the SCIM package.
 		if strings.HasPrefix(r.URL.Path, "/.api/scim/v2") {
@@ -54,11 +56,11 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 		if headerValue := r.Header.Get("Authorization"); headerValue != "" && token == "" {
 			// Handle Authorization header
 			var err error
-			token, sudoUser, err = authz.ParseAuthorizationHeader(logger, r, headerValue)
+			token, sudoUser, err = authz.ParseAuthorizationHeader(headerValue)
 			if err != nil {
-				if authz.IsUnrecognizedScheme(err) {
+				if !envvar.SourcegraphDotComMode() && authz.IsUnrecognizedScheme(err) {
 					// Ignore Authorization headers that we don't handle.
-					// 🚨 SECURITY: md5sum the authorization header value so we redact it
+					// 🚨 SECURITY: sha256 the authorization header value so we redact it
 					// while still retaining the ability to link it back to a token, assuming
 					// the logs reader has the value in clear.
 					var redactedValue string
@@ -117,7 +119,19 @@ func AccessTokenAuthMiddleware(db database.DB, baseLogger log.Logger, next http.
 			} else {
 				requiredScope = authz.ScopeSiteAdminSudo
 			}
-			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, requiredScope)
+
+			info, err := licensing.GetConfiguredProductLicenseInfo()
+			if err != nil {
+				http.Error(w, "Could not check license for access token authorization.", http.StatusInternalServerError)
+				return
+			}
+
+			opts := database.TokenLookupOpts{
+				RequiredScope: requiredScope,
+				OnlyAdmin:     info.IsExpired(),
+			}
+
+			subjectUserID, err := db.AccessTokens().Lookup(r.Context(), token, opts)
 			if err != nil {
 				if err == database.ErrAccessTokenNotFound || errors.HasType(err, database.InvalidTokenError{}) {
 					anonymousId, anonCookieSet := cookie.AnonymousUID(r)

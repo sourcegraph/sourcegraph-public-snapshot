@@ -176,7 +176,7 @@ It may be tempting to make many assertions as possible in one test to save repea
 Instead of making many assertions that test different things in one test, favor splitting the test into multiple.
 For example, favor three separate tests for "Add X", "Update X" and "Remove X" with fewer assertions each over a single test like "CRUD feature X works" with many assertions.
 This ensures that when one of them fails, the developer debugging can see whether the other two features are still working and therefor better narrow down where the problem is.
-Use [`beforeEach()`/`afterEach()` hooks](https://jestjs.io/docs/en/setup-teardown) to avoid duplication of common setup and teardown logic and giving better errors when setup or teardown fails (as opposed to the test itself).
+Use [`beforeEach()`/`afterEach()` hooks](https://vitest.dev/api/#setup-and-teardown) to avoid duplication of common setup and teardown logic and giving better errors when setup or teardown fails (as opposed to the test itself).
 
 ### Write clear test titles
 

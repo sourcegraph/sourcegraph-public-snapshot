@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import type { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
@@ -78,7 +78,7 @@ const twoItemPureAlert: Required<AggregateStreamingSearchResults>['alert'] = {
     ],
 }
 
-export const DefaultStory: Story = () => (
+export const DefaultStory: StoryFn = () => (
     <WebStory>
         {() => (
             <div style={{ padding: '1rem' }}>

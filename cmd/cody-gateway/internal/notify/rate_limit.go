@@ -53,7 +53,7 @@ func NewSlackRateLimitNotifier(
 	slackWebhookURL string,
 	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
 ) RateLimitNotifier {
-	baseLogger = baseLogger.Scoped("slackRateLimitNotifier", "notifications for usage rate limit approaching thresholds")
+	baseLogger = baseLogger.Scoped("slackRateLimitNotifier")
 
 	return func(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
 		thresholds := actorSourceThresholds.Get(actor.GetSource())

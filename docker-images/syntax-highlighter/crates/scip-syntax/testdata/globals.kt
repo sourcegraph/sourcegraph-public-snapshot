@@ -1,3 +1,5 @@
+package org.example
+
 // Top level constant property
 const val PI = 3.14
 
@@ -43,6 +45,11 @@ interface MyInterface {
     fun interfaceMethod(): String
 }
 
+object SimpleSingleton {
+    val answer = 42;
+    fun greet(name: String) = "Hello, $name!"
+}
+
 // Type alias
 typealias UserList = List<User>
 
@@ -62,11 +69,15 @@ inline class Password(val value: String)
 
 // Companion object
 class MyClassWithCompanion {
-    companion object {
+    companion object ConstantCompanion {
         const val CONSTANT = "Companion constant"
     }
 }
 
 fun `Escaped`() {}
 
+// Multi-variable declaration
 val (left, right) = directions()
+
+// Anonymous function
+fun(x: Int, y: Int): Int = x + y

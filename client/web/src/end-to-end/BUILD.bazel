@@ -25,7 +25,6 @@ ts_project(
         "utils/initEndToEndTest.ts",
     ],
     tsconfig = ":tsconfig",
-    use_preset_env = False,
     deps = [
         "//:node_modules/@types/mocha",
         "//:node_modules/@types/mockdate",
@@ -44,7 +43,6 @@ ts_project(
         "frontend-platform/theme-switcher.test.ts",
     ],
     tsconfig = ":tsconfig",
-    use_preset_env = False,
     deps = [
         ":end-to-end",
         "//:node_modules/@types/lodash",
@@ -52,6 +50,7 @@ ts_project(
         "//:node_modules/expect",
         "//:node_modules/lodash",
         "//:node_modules/mocha",
+        "//client/shared/src/testing",  # keep
         "//client/web:node_modules/@sourcegraph/shared",
     ],
 )
@@ -59,7 +58,9 @@ ts_project(
 mocha_test(
     name = "e2e",
     timeout = "moderate",
-    env = {"INCLUDE_ADMIN_ONBOARDING": "false"},
+    env = {
+        "INCLUDE_ADMIN_ONBOARDING": "false",
+    },
     node_toolchain = select({
         "//:darwin_docker_e2e_go": "@nodejs_darwin_arm64//:node_toolchain",
         "//conditions:default": None,

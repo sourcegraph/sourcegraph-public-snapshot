@@ -17,8 +17,8 @@ type recordEventsMetrics struct {
 type recordEventsRequestPayloadMetrics struct {
 	// Record event length of individual payloads
 	length metric.Int64Histogram
-	// Count number of failedEvents
-	failedEvents metric.Int64Counter
+	// Count of processed events
+	processedEvents metric.Int64Counter
 }
 
 func newRecordEventsMetrics() (m recordEventsMetrics, err error) {
@@ -35,9 +35,9 @@ func newRecordEventsMetrics() (m recordEventsMetrics, err error) {
 	if err != nil {
 		return m, err
 	}
-	m.payload.failedEvents, err = meter.Int64Counter(
-		"telemetry-gateway.record_events.payload_failed_events_count",
-		metric.WithDescription("Number of events that failed to submit in indvidiual record_events request payloads"))
+	m.payload.processedEvents, err = meter.Int64Counter(
+		"telemetry-gateway.record_events.processed_events",
+		metric.WithDescription("Number of events processed"))
 	if err != nil {
 		return m, err
 	}

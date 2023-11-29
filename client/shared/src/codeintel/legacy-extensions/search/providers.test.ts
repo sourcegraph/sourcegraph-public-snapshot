@@ -1,7 +1,7 @@
-/* eslint-disable etc/no-deprecated */
 import * as assert from 'assert'
 
 import * as sinon from 'sinon'
+import { afterEach, beforeEach, describe, it } from 'vitest'
 
 import { createStubTextDocument } from '@sourcegraph/extension-api-stubs'
 
@@ -138,9 +138,6 @@ describe('search providers', () => {
 
         const stubResolveRepo = sinon.stub(api, 'resolveRepo')
         stubResolveRepo.callsFake(repo => Promise.resolve({ name: repo, isFork, isArchived, id }))
-
-        const stubHasLocalCodeIntelField = sinon.stub(api, 'hasLocalCodeIntelField')
-        stubHasLocalCodeIntelField.callsFake(() => Promise.resolve(true))
 
         const stubFindSymbol = sinon.stub(api, 'findLocalSymbol')
         stubFindSymbol.callsFake(() => Promise.resolve(undefined))

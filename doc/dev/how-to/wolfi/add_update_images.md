@@ -14,11 +14,26 @@ These configuration files can be processed with apko, which will generate a base
 
 ### Update base images for a new release
 
-Before each release, we should update the base images to ensure we include any updated packages and vulnerability fixes.
+Before each release, we should update the base images to ensure we include any updated packages and vulnerability fixes. To update the images:
 
-This is currently a two-step process, which will be further automated in the future:
+- Review the [auto-update pull request](https://github.com/sourcegraph/sourcegraph/pulls?q=is:pr+head:wolfi-auto-update/main+is:open) opened by Buildkite, and merge it
 
-- Run [`wolfi-images/rebuild-images.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@588463afbb0904c125cdcf78c7b182f43328504e/-/blob/wolfi-images/rebuild-images.sh) script, commit the updated YAML files, and merge to main.
+#### Automation
+
+This process is automated by Buildkite, which runs a daily scheduled build to:
+
+- Rebuild Wolfi base images, pulling in any updated dependencies.
+- Push the updated base images to Docker Hub.
+- Update the base image hashes in `dev/oci_deps.bzl`.
+- Open, or update the already open pull request updating the hashes.
+
+To rerun the automation manually (perhaps to pick up a just-released package version or a change you made), open [Buildkite for sourcegraph/sourcegraph](https://buildkite.com/sourcegraph/sourcegraph) and choose New Build > Options > set Environment Variables to `WOLFI_BASE_REBUILD=true` and Create Build.
+
+#### Manual image updates
+
+If the automation fails and a manual update is needed, follow these steps:
+
+- Run [`wolfi-images/rebuild-images.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/wolfi-images/rebuild-images.sh) script, commit the updated YAML files, and merge to main.
 - Wait for the `main` branch's Buildkite run to complete.
   - Buildkite will rebuild the base images and publish them to Dockerhub.
 - Run `sg wolfi update-hashes` locally to update the base image hashes in `dev/oci_deps.bzl`. Commit these changes and merge to `main`.

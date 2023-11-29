@@ -11,7 +11,7 @@ import { upperFirst, capitalize } from 'lodash'
  */
 export const formatDays = (days: string[] | undefined): string => {
     if (days && days.length > 0) {
-        return days.join(', ').replace(/\w+/g, capitalize)
+        return days.join(', ').replaceAll(/\w+/g, capitalize)
     }
 
     return 'every other day'

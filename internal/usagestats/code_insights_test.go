@@ -27,7 +27,7 @@ func TestCodeInsightsUsageStatistics(t *testing.T) {
 	mockTimeNow(now)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	_, err := db.ExecContext(context.Background(), `
 		INSERT INTO event_logs
@@ -133,7 +133,7 @@ func TestWithCreationPings(t *testing.T) {
 	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	user1 := "420657f0-d443-4d16-ac7d-003d8cdc91ef"
 	user2 := "55555555-5555-5555-5555-555555555555"

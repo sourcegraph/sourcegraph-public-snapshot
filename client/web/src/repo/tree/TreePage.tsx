@@ -18,7 +18,7 @@ import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
 import { asError, encodeURIPathComponent, type ErrorLike, isErrorLike, logger, basename } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
+import { gql, useQuery } from '@sourcegraph/http-client'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import type { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -49,7 +49,7 @@ import type { CodeIntelligenceProps } from '../../codeintel'
 import { isCodyEnabled } from '../../cody/isCodyEnabled'
 import type { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
-import type { RepositoryFields } from '../../graphql-operations'
+import type { FileCommitsResult, FileCommitsVariables, RepositoryFields } from '../../graphql-operations'
 import type { SourcegraphContext } from '../../jscontext'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
@@ -57,9 +57,26 @@ import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 
 import { TreePageContent } from './TreePageContent'
+import { treeHistoryFragment } from './TreePagePanels'
 
 import styles from './TreePage.module.scss'
 
+const FILE_COMMITS_QUERY = gql`
+    ${treeHistoryFragment}
+    query FileCommits($repoName: String!, $revision: String!, $filePath: String!, $first: Int) {
+        repository(name: $repoName) {
+            id
+            commit(rev: $revision) {
+                id
+                tree(path: $filePath) {
+                    entries(first: $first) {
+                        ...TreeHistoryFields
+                    }
+                }
+            }
+        }
+    }
+`
 export interface Props
     extends SettingsCascadeProps<Settings>,
         ExtensionsControllerProps,
@@ -119,7 +136,6 @@ export const TreePage: FC<Props> = ({
         () => isPackageServiceType(repo?.externalRepository.serviceType),
         [repo?.externalRepository.serviceType]
     )
-
     useEffect(() => {
         if (isRoot) {
             props.telemetryService.logViewEvent('Repository')
@@ -165,6 +181,16 @@ export const TreePage: FC<Props> = ({
             [repoName, commitID, revision, filePath, props.platformContext]
         )
     )
+
+    const { data: fileCommitData } = useQuery<FileCommitsResult, FileCommitsVariables>(FILE_COMMITS_QUERY, {
+        variables: {
+            repoName,
+            revision,
+            filePath,
+            first: 2500,
+        },
+    })
+    const treeWithHistory = fileCommitData?.repository?.commit?.tree?.entries
 
     const showCodeInsights =
         !isErrorLike(settingsCascade.final) &&
@@ -402,6 +428,7 @@ export const TreePage: FC<Props> = ({
                         <TreePageContent
                             filePath={filePath}
                             tree={treeOrError}
+                            treeWithHistory={treeWithHistory}
                             repo={repo}
                             revision={revision}
                             commitID={commitID}

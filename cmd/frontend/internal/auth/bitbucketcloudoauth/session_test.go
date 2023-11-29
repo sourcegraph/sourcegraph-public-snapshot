@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	bitbucketlogin "github.com/dghubble/gologin/bitbucket"
+	bitbucketlogin "github.com/dghubble/gologin/v2/bitbucket"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
 
@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -191,7 +192,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					Url:    server.URL,
 					ApiURL: server.URL,
 				}
-				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
+				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -272,7 +273,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		Url:    server.URL,
 		ApiURL: server.URL,
 	}
-	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
+	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
 	if err != nil {
 		t.Fatal(err)
 	}

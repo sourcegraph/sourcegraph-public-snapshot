@@ -12,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
@@ -57,7 +56,7 @@ type unlockUserAccountInfo struct {
 
 // HandleSignUp handles submission of the user signup form.
 func HandleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder) http.HandlerFunc {
-	logger = logger.Scoped("HandleSignUp", "sign up request handler")
+	logger = logger.Scoped("HandleSignUp")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -72,7 +71,7 @@ func HandleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 
 // HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
 func HandleSiteInit(logger log.Logger, db database.DB, events *telemetry.EventRecorder) http.HandlerFunc {
-	logger = logger.Scoped("HandleSiteInit", "initial size initialization request handler")
+	logger = logger.Scoped("HandleSiteInit")
 	return func(w http.ResponseWriter, r *http.Request) {
 		// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
 		// allow signups after those conditions become true, so we don't need to check the builtin auth
@@ -109,7 +108,8 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 // 🚨 SECURITY: Any change to this function could introduce security exploits
 // and/or break sign up / initial admin account creation. Be careful.
 func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder,
-	w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
+	w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool,
+) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -125,10 +125,8 @@ func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.Ev
 		return
 	}
 
-	// Write the session cookie
-	a := &sgactor.Actor{UID: usr.ID}
-	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+	if _, err := session.SetActorFromUser(r.Context(), w, r, usr, 0); err != nil {
+		httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
 	}
 
 	// Track user data
@@ -293,7 +291,7 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 // The account will be locked out after consecutive failed attempts in a certain
 // period of time.
 func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorder *telemetry.EventRecorder) http.HandlerFunc {
-	logger = logger.Scoped("HandleSignin", "sign in request handler")
+	logger = logger.Scoped("HandleSignin")
 	events := telemetry.NewBestEffortEventRecorder(logger, recorder)
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -373,17 +371,10 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorde
 			return
 		}
 
-		// We are now an authenticated actor
-		act := sgactor.Actor{
-			UID: user.ID,
-		}
-
-		// Make sure we're in the context of our newly signed in user
-		ctx = actor.WithActor(ctx, &act)
-
 		// Write the session cookie
-		if err := session.SetActor(w, r, &act, 0, user.CreatedAt); err != nil {
-			httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+		ctx, err = session.SetActorFromUser(ctx, w, r, &user, 0)
+		if err != nil {
+			httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
@@ -394,7 +385,7 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorde
 }
 
 func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) http.HandlerFunc {
-	logger = logger.Scoped("HandleUnlockAccount", "unlock account request handler")
+	logger = logger.Scoped("HandleUnlockAccount")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -506,7 +497,7 @@ func checkAccountLockout(store LockoutStore, user *types.User, event *database.S
 
 // HandleCheckUsernameTaken checks availability of username for signup form
 func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleCheckUsernameTaken", "checks for username uniqueness")
+	logger = logger.Scoped("HandleCheckUsernameTaken")
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		username, err := NormalizeUsername(vars["username"])

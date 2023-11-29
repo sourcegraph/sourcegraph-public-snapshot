@@ -2,6 +2,7 @@ import { gql } from '@apollo/client'
 import type { MockedProviderProps, MockedResponse } from '@apollo/client/testing'
 import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
+import { describe, expect, test } from 'vitest'
 
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'

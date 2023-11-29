@@ -115,6 +115,11 @@ Cody supports a wide range of programming languages, including:
 
 JavaScript, TypeScript, PHP, Python, Java, C/C++, C#, Ruby, Go, SQL, Swift, Objective-C, Perl, Rust, Kotlin, Scala, Groovy, R, MATLAB, Dart, Lua, Julia, Cobol and Shell scripting languages (like Bash, PowerShell).
 
+### Can Cody answer non-programming questions?
+
+Cody is an expert in answering a wide range of coding-related questions on topics including questions about your codebase, general programming concepts, test cases, debugging, and more. Cody Chat is not designed to answer non-coding questions or provide general information on topics outside of coding or your codebase.
+
+
 ## Embeddings
 
 ### What are embeddings for?
@@ -141,7 +146,7 @@ There can be several reasons why your scheduled one-off embedding job isn't appe
 
 - The repository is already in the queue or currently being processed
 - The system has successfully completed a job for the same repository and revision
-- Another job for the same repository is in the queue, scheduled within the [`embeddings.MinimumInterval`](./explanations/code_graph_context.md#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings) time window
+- Another job for the same repository is in the queue, scheduled within the [`embeddings.MinimumInterval`](./core-concepts/embeddings.md#minimum-time-interval-between-automatically-scheduled-embeddings) time window
 
 ### How do I stop a running embeddings job?
 
@@ -155,14 +160,14 @@ A running embeddings job with the state `QUEUED` or `PROCESSING` can be stopped 
 Files may be skipped for the following reasons:
 
 - The file size exceeds 1 MB
-- The file path matches an [exclusion pattern](./explanations/code_graph_context.md#excluding-files-from-embeddings)
-- The repository has already reached the maximum limit for generated embeddings, as specified by [`embeddings.maxCodeEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated) or [`embeddings.maxTextEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated)
+- The file path matches an [exclusion pattern](./core-concepts/embeddings/manage-embeddings.md#filter-files-from-embeddings)
+- The repository has already reached the maximum limit for generated embeddings, as specified by [`embeddings.maxCodeEmbeddingsPerRepo`](./core-concepts/embeddings/usage-and-limits.md#limit-the-number-of-embeddings-that-can-be-generated) or [`embeddings.maxTextEmbeddingsPerRepo`](./core-concepts/embeddings/usage-and-limits.md#limit-the-number-of-embeddings-that-can-be-generated)
 
 ## Third party dependencies
 
 ### What is the default `sourcegraph` provider for completions and embeddings?
 
-The default provider for completions and embeddings, specified as `"provider": "sourcegraph"` refers to the [Sourcegraph Cody Gateway](./explanations/cody_gateway.md). The Cody Gateway facilitates access to completions and embeddings for Sourcegraph enterprise instances by leveraging third-party services such as Anthropic and OpenAI.
+The default provider for completions and embeddings, specified as `"provider": "sourcegraph"` refers to the [Sourcegraph Cody Gateway](./core-concepts/cody-gateway.md). The Cody Gateway facilitates access to completions and embeddings for Sourcegraph enterprise instances by leveraging third-party services such as Anthropic and OpenAI.
 
 ### What third-party cloud services does Cody depend on?
 
@@ -170,7 +175,7 @@ Cody relies on one primary third-party dependency, i.e., Anthropic's Claude API.
 
 Additionally, Cody can optionally use OpenAI for generating embeddings, enhancing the quality of its context snippets, although this is not mandatory.
 
-It's worth noting that these dependencies remain consistent when utilizing the [default `sourcegraph` provider, Cody Gateway](./explanations/cody_gateway.md), which uses the same third-party providers.
+It's worth noting that these dependencies remain consistent when utilizing the [default `sourcegraph` provider, Cody Gateway](./core-concepts/cody-gateway.md), which uses the same third-party providers.
 
 ### What is the retention policy for Anthropic and OpenAI?
 

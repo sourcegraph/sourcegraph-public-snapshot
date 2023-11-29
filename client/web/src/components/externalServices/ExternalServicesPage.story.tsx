@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { subMinutes } from 'date-fns'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -12,7 +12,7 @@ import { WebStory } from '../WebStory'
 import { EXTERNAL_SERVICES } from './backend'
 import { ExternalServicesPage } from './ExternalServicesPage'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <div className="p-3 container">
         <WebStory>{story}</WebStory>
     </div>
@@ -25,7 +25,7 @@ const config: Meta = {
 
 export default config
 
-export const ListOfExternalServices: Story = () => (
+export const ListOfExternalServices: StoryFn = () => (
     <MockedTestProvider
         link={
             new WildcardMockLink([

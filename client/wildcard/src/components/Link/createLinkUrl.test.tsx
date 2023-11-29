@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { createLinkUrl } from './createLinkUrl'
 
 describe('createLinkUrl', () => {

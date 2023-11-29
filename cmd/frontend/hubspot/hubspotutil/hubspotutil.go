@@ -19,6 +19,7 @@ import (
 // - timeline
 // - forms
 // - crm.objects.contacts.read
+// - analytics.behavioral_events.send
 var HubSpotAccessToken = env.Get("HUBSPOT_ACCESS_TOKEN", "", "HubSpot access token for accessing certain HubSpot endpoints.")
 
 // SurveyFormID is the ID for a satisfaction (NPS) survey.
@@ -40,6 +41,9 @@ var SelfHostedSiteInitEventID = "000010399089"
 
 // CodyClientInstalledEventID is the HubSpot Event ID for when a user reports installing a Cody client.
 var CodyClientInstalledEventID = "000018021981"
+
+// CodyClientInstalledV3EventID is the HubSpot ID for the new event which support custom properties.
+var CodyClientInstalledV3EventID = "pe2762526_codyinstall"
 
 // AppDownloadButtonClickedEventID is the HubSpot Event ID for when a user clicks on a button to download Cody App.
 var AppDownloadButtonClickedEventID = "000019179879"
@@ -78,20 +82,21 @@ func SyncUser(email, eventID string, contactParams *hubspot.ContactProperties) {
 
 	// Update or create user contact information in HubSpot, and we want to sync the
 	// contact independent of the request lifecycle.
-	err := syncHubSpotContact(context.Background(), email, eventID, contactParams, map[string]string{})
+	err := syncHubSpotContact(context.Background(), email, eventID, contactParams)
 	if err != nil {
 		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
 	}
 }
 
-// SyncUserWithEventParams handles creating or syncing a user profile in HubSpot, and if provided,
-// logs a user event along with the event params.
-func SyncUserWithEventParams(email, eventID string, contactParams *hubspot.ContactProperties, eventParams map[string]string) {
+// SyncUserWithV3Event handles creating or syncing a user profile in HubSpot, and if provided,
+// logs a V3 custom event along with the event params.
+func SyncUserWithV3Event(email, eventName string, contactParams *hubspot.ContactProperties, eventProperties any) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("panic in tracking.SyncUser: %s", err)
+			log.Printf("panic in tracking.SyncUserWithV3Event: %s", err)
 		}
 	}()
+
 	// If the user no API token present or on-prem environment, don't do any tracking
 	if !HasAPIKey() || !envvar.SourcegraphDotComMode() {
 		return
@@ -99,13 +104,23 @@ func SyncUserWithEventParams(email, eventID string, contactParams *hubspot.Conta
 
 	// Update or create user contact information in HubSpot, and we want to sync the
 	// contact independent of the request lifecycle.
-	err := syncHubSpotContact(context.Background(), email, eventID, contactParams, eventParams)
+	err := syncHubSpotContact(context.Background(), email, "", contactParams)
 	if err != nil {
 		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
 	}
+
+	// Log the V3 event
+	if eventName != "" {
+		c := Client()
+		err = c.LogV3Event(email, eventName, eventProperties)
+		if err != nil {
+			log.Printf("LOGV3Event: failed to event %s", err)
+
+		}
+	}
 }
 
-func syncHubSpotContact(ctx context.Context, email, eventID string, contactParams *hubspot.ContactProperties, eventParams map[string]string) error {
+func syncHubSpotContact(ctx context.Context, email, eventID string, contactParams *hubspot.ContactProperties) error {
 	if email == "" {
 		return errors.New("user must have a valid email address")
 	}
@@ -126,7 +141,7 @@ func syncHubSpotContact(ctx context.Context, email, eventID string, contactParam
 
 	// Log the user event
 	if eventID != "" {
-		err = c.LogEvent(ctx, email, eventID, eventParams)
+		err = c.LogEvent(ctx, email, eventID, map[string]string{})
 		if err != nil {
 			return errors.Wrap(err, "LogEvent")
 		}

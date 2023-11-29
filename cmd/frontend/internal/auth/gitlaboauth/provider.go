@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/dghubble/gologin"
+	"github.com/dghubble/gologin/v2"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"

@@ -104,7 +104,7 @@ func (c *noopTopicClient) Stop()                                    {}
 // Log entries are generated at debug level.
 func NewLoggingTopicClient(logger log.Logger) TopicClient {
 	return &loggingTopicClient{
-		logger: logger.Scoped("pubsub", "pubsub message printer for use in development"),
+		logger: logger.Scoped("pubsub"),
 	}
 }
 

@@ -1,7 +1,6 @@
 package httpapi
 
 import (
-	"database/sql"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
@@ -80,7 +80,7 @@ func httpError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser):
 		http.Error(w, err.Error(), http.StatusForbidden)
-	case errors.Is(err, store.ErrNoResults), errors.Is(err, sql.ErrNoRows):
+	case errors.Is(err, store.ErrNoResults):
 		http.Error(w, err.Error(), http.StatusNotFound)
 	default:
 		http.Error(w, err.Error(), http.StatusInternalServerError)

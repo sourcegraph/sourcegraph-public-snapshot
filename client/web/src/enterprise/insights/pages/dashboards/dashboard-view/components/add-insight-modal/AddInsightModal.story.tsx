@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 import type { MockedResponse } from '@apollo/client/testing/core'
-import type { DecoratorFn, Story, Meta } from '@storybook/react'
+import type { Decorator, StoryFn, Meta } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo/mockedTestProvider'
@@ -16,7 +16,7 @@ import { type CustomInsightDashboard, InsightsDashboardOwnerType, InsightsDashbo
 import { AddInsightModal } from './AddInsightModal'
 import { GET_INSIGHTS_BY_SEARCH_TERM } from './query'
 
-const decorator: DecoratorFn = story => <WebStory>{() => story()}</WebStory>
+const decorator: Decorator = story => <WebStory>{() => story()}</WebStory>
 
 const config: Meta = {
     title: 'web/insights/AddInsightModal',
@@ -99,7 +99,7 @@ const mockInsights: MockedResponse<FindInsightsBySearchTermResult> = {
     },
 }
 
-export const AddInsightModalStory: Story = () => {
+export const AddInsightModalStory: StoryFn = () => {
     const [open, setOpen] = useState<boolean>(true)
 
     return (

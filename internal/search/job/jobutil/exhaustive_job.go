@@ -23,8 +23,6 @@ type Exhaustive struct {
 //
 // It will return an error if the input query is not supported by Exhaustive.
 func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
-	// TODO(keegan) a bunch of tests around this after branch cut pls
-
 	if inputs.Protocol != search.Exhaustive {
 		return Exhaustive{}, errors.New("only works for exhaustive search inputs")
 	}
@@ -46,15 +44,12 @@ func NewExhaustive(inputs *search.Inputs) (Exhaustive, error) {
 		return Exhaustive{}, errors.Errorf("expected a simple expression (no and/or/etc). Got %v", b.Pattern)
 	}
 
-	// no predicates
-	if inputs.Query.Exists(query.FieldRepoHasFile) {
-		return Exhaustive{}, errors.Errorf("repoHasFile is not supported")
-	}
-	if pred, ok := hasPredicates(query.FieldRepo, inputs.Query); ok {
-		return Exhaustive{}, errors.Errorf("repo: predicates are not supported. Got %v", pred)
-	}
+	// We don't support file: predicates, such as file:has.content(), because the
+	// search breaks in unexpected ways. For example, for interactive search
+	// file:has.content() is translated to an AND query which we don't support in
+	// Search Jobs yet.
 	if pred, ok := hasPredicates(query.FieldFile, inputs.Query); ok {
-		return Exhaustive{}, errors.Errorf("field: predicates are not supported. Got %v", pred)
+		return Exhaustive{}, errors.Errorf("file: predicates are not supported. Got %v", pred)
 	}
 
 	// This is a very weak protection but should be enough to catch simple misuse.

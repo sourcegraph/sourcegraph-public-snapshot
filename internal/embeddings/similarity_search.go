@@ -202,20 +202,6 @@ func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) Sear
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 type SearchOptions struct {
 	UseDocumentRanks bool
 }

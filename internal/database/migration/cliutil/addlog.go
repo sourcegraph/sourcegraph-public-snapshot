@@ -35,7 +35,7 @@ func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory)
 			schemaName  = TranslateSchemaNames(schemaNameFlag.Get(cmd), out)
 			versionFlag = versionFlag.Get(cmd)
 			upFlag      = upFlag.Get(cmd)
-			logger      = log.Scoped("up", "migration up command")
+			logger      = log.Scoped("up")
 		)
 
 		store, err := setupStore(ctx, factory, schemaName)

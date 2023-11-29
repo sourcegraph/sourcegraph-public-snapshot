@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
@@ -57,7 +56,6 @@ func (r *treeEntryResolver) Content(ctx context.Context, args *resolvers.GitTree
 
 	content, err := r.gitserverClient.ReadFile(
 		ctx,
-		authz.DefaultSubRepoPermsChecker,
 		api.RepoName(r.commit.Repository().Name()), // repository name
 		api.CommitID(r.commit.OID()),               // commit oid
 		r.path,                                     // path

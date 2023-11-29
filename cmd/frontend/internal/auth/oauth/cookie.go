@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dghubble/gologin"
+	"github.com/dghubble/gologin/v2"
 )
 
 /*

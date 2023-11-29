@@ -1,13 +1,13 @@
 import { useState } from 'react'
 
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { Button, Grid, Code, Text, Input } from '..'
 import { BrandedStory } from '../../stories/BrandedStory'
 
 import { Tooltip } from '.'
 
-const decorator: DecoratorFn = story => <BrandedStory>{() => <div className="p-5">{story()}</div>}</BrandedStory>
+const decorator: Decorator = story => <BrandedStory>{() => <div className="p-5">{story()}</div>}</BrandedStory>
 
 const config: Meta = {
     title: 'wildcard/Tooltip',
@@ -33,7 +33,7 @@ const config: Meta = {
 
 export default config
 
-export const Basic: Story = () => (
+export const Basic: StoryFn = () => (
     <Text>
         You can{' '}
         <Tooltip content="Tooltip 1">
@@ -47,7 +47,7 @@ export const Basic: Story = () => (
     </Text>
 )
 
-export const Conditional: Story = () => {
+export const Conditional: StoryFn = () => {
     const [clicked, setClicked] = useState<boolean>(false)
 
     function onClick() {
@@ -73,7 +73,7 @@ export const Conditional: Story = () => {
     )
 }
 
-export const DefaultOpen: Story = () => (
+export const DefaultOpen: StoryFn = () => (
     <Grid columnCount={1}>
         <div>
             <Tooltip content="Click me!" defaultOpen={true}>
@@ -102,7 +102,7 @@ DefaultOpen.parameters = {
     },
 }
 
-export const DisabledTrigger: Story = () => (
+export const DisabledTrigger: StoryFn = () => (
     <Grid columnCount={1}>
         <div>
             <Tooltip content="Tooltip still works properly" placement="right">
@@ -125,7 +125,7 @@ export const DisabledTrigger: Story = () => (
     </Grid>
 )
 
-export const LongContent: Story = () => (
+export const LongContent: StoryFn = () => (
     <Grid columnCount={1}>
         <div>
             <Tooltip
@@ -142,7 +142,7 @@ export const LongContent: Story = () => (
     </Grid>
 )
 
-export const PlacementOptions: Story = () => (
+export const PlacementOptions: StoryFn = () => (
     <>
         <Grid columnCount={5}>
             <div>
@@ -183,7 +183,7 @@ export const PlacementOptions: Story = () => (
     </>
 )
 
-export const UpdateContent: Story = () => {
+export const UpdateContent: StoryFn = () => {
     const [clicked, setClicked] = useState<boolean>(false)
 
     function onClick() {

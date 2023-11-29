@@ -121,8 +121,20 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
 
     /** Get the requester, port, and destination from the url parameters */
     const urlSearchParams = useMemo(() => new URLSearchParams(location.search), [location.search])
-    const requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
-    const port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
+    let requestFrom = useMemo(() => urlSearchParams.get('requestFrom'), [urlSearchParams])
+    let port = useMemo(() => urlSearchParams.get('port'), [urlSearchParams])
+
+    // Allow a single query parameter `requestFrom=JETBRAIN-PORT_NUMBER`. The motivation for this parameter encoding is that
+    // the separate `port=NUMBER` parameter is lost when we try to log in via GitHub directly from the JetBrains IDE. By encoding the
+    // port number inside requestFrom, we have a single query parameter just like with VS Code.
+    if (requestFrom?.includes('-')) {
+        const [requestFrom1, port1, ...rest] = requestFrom?.split('-')
+        if (requestFrom1 && port1 && rest.length === 0 && port1.match(/^\d/)) {
+            requestFrom = requestFrom1
+            port = port1
+        }
+    }
+
     const destination = useMemo(() => urlSearchParams.get('destination'), [urlSearchParams])
 
     /** The validated requester where the callback request originally comes from. */
@@ -213,13 +225,15 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     }
 
                                     switch (requester.callbackType) {
-                                        case 'new-tab':
+                                        case 'new-tab': {
                                             window.open(uri, '_blank')
+                                        }
 
                                         // falls through
-                                        default:
+                                        default: {
                                             // open the redirect link in the same tab
                                             window.location.replace(uri)
+                                        }
                                     }
                                 }
                             }),

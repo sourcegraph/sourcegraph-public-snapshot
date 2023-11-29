@@ -23,22 +23,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	sgservice "github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/singleprogram"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
-type Config struct {
-	// SkipValidate, if true, will skip validation of service configuration.
-	SkipValidate bool
-	// AfterConfigure, if provided, is run after all services' Configure hooks are called
-	AfterConfigure func()
-}
-
 // Main is called from the `main` function of `cmd/sourcegraph`.
 //
 // args is the commandline arguments (usually os.Args).
-func Main(services []sgservice.Service, config Config, args []string) {
+func Main(services []sgservice.Service, args []string) {
 	// Unlike other sourcegraph binaries we expect to be run
 	// by a user instead of deployed to a cloud. So adjust the default output
 	// format before initializing log.
@@ -86,7 +78,7 @@ func Main(services []sgservice.Service, config Config, args []string) {
 		},
 	}
 	app.Action = func(_ *cli.Context) error {
-		logger := log.Scoped("sourcegraph", "Sourcegraph")
+		logger := log.Scoped("sourcegraph")
 		cleanup := singleprogram.Init(logger)
 		defer func() {
 			err := cleanup()
@@ -94,7 +86,7 @@ func Main(services []sgservice.Service, config Config, args []string) {
 				logger.Error("cleaning up", log.Error(err))
 			}
 		}()
-		run(liblog, logger, services, config, nil)
+		run(liblog, logger, services, nil)
 		return nil
 	}
 
@@ -111,7 +103,7 @@ func Main(services []sgservice.Service, config Config, args []string) {
 //
 // If your service cannot access site configuration, use SingleServiceMainWithoutConf
 // instead.
-func SingleServiceMain(svc sgservice.Service, config Config) {
+func SingleServiceMain(svc sgservice.Service) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -124,8 +116,8 @@ func SingleServiceMain(svc sgservice.Service, config Config) {
 			},
 		),
 	)
-	logger := log.Scoped("sourcegraph", "Sourcegraph")
-	run(liblog, logger, []sgservice.Service{svc}, config, nil)
+	logger := log.Scoped("sourcegraph")
+	run(liblog, logger, []sgservice.Service{svc}, nil)
 }
 
 // OutOfBandConfiguration declares additional configuration that happens continuously,
@@ -143,7 +135,7 @@ type OutOfBandConfiguration struct {
 // service WITHOUT site configuration enabled by default. This is only useful for services
 // that are not part of the core Sourcegraph deployment, such as executors and managed
 // services. Use with care!
-func SingleServiceMainWithoutConf(svc sgservice.Service, config Config, oobConfig OutOfBandConfiguration) {
+func SingleServiceMainWithoutConf(svc sgservice.Service, oobConfig OutOfBandConfiguration) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
@@ -156,15 +148,14 @@ func SingleServiceMainWithoutConf(svc sgservice.Service, config Config, oobConfi
 			},
 		),
 	)
-	logger := log.Scoped("sourcegraph", "Sourcegraph")
-	run(liblog, logger, []sgservice.Service{svc}, config, &oobConfig)
+	logger := log.Scoped("sourcegraph")
+	run(liblog, logger, []sgservice.Service{svc}, &oobConfig)
 }
 
 func run(
 	liblog *log.PostInitCallbacks,
 	logger log.Logger,
 	services []sgservice.Service,
-	config Config,
 	// If nil, will use site config
 	oobConfig *OutOfBandConfiguration,
 ) {
@@ -186,7 +177,7 @@ func run(
 		go oobConfig.Logging.Watch(liblog.Update(oobConfig.Logging.SinksConfig))
 	}
 	if oobConfig.Tracing != nil {
-		tracer.Init(log.Scoped("tracer", "internal tracer package"), oobConfig.Tracing)
+		tracer.Init(log.Scoped("tracer"), oobConfig.Tracing)
 	}
 
 	profiler.Init()
@@ -210,23 +201,17 @@ func run(
 	// Validate each service's configuration.
 	//
 	// This cannot be done for executor, see the executorcmd package for details.
-	if !config.SkipValidate {
-		for i, c := range serviceConfigs {
-			if c == nil {
-				continue
-			}
-			if err := c.Validate(); err != nil {
-				logger.Fatal("invalid configuration", log.String("service", services[i].Name()), log.Error(err))
-			}
+	for i, c := range serviceConfigs {
+		if c == nil {
+			continue
+		}
+		if err := c.Validate(); err != nil {
+			logger.Fatal("invalid configuration", log.String("service", services[i].Name()), log.Error(err))
 		}
 	}
 
 	env.Lock()
 	env.HandleHelpFlag()
-
-	if config.AfterConfigure != nil {
-		config.AfterConfigure()
-	}
 
 	// Start the debug server. The ready boolean state it publishes will become true when *all*
 	// services report ready.
@@ -244,10 +229,10 @@ func run(
 			// TODO(sqs): TODO(single-binary): Consider using the goroutine package and/or the errgroup package to report
 			// errors and listen to signals to initiate cleanup in a consistent way across all
 			// services.
-			obctx := observation.ContextWithLogger(log.Scoped(service.Name(), service.Name()), obctx)
+			obctx := observation.ContextWithLogger(log.Scoped(service.Name()), obctx)
 
 			// ensure ready is only called once and always call it.
-			ready := syncx.OnceFunc(allReadyWG.Done)
+			ready := sync.OnceFunc(allReadyWG.Done)
 			defer ready()
 
 			// Don't run executors for Cody App

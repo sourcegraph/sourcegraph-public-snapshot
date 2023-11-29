@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "example",
+    srcs = ["example.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/msp-example/internal/example",
+    visibility = [
+        "//cmd/msp-example:__pkg__",
+        "//lib/managedservicesplatform/example:__subpackages__",
+    ],
+    deps = [
+        "//lib/background",
+        "//lib/errors",
+        "//lib/managedservicesplatform/runtime",
+        "@com_github_sourcegraph_log//:log",
+        "@io_gorm_driver_postgres//:postgres",
+        "@io_gorm_gorm//:gorm",
+    ],
+)

@@ -35,7 +35,7 @@ func NewMeteredSearcher(hostname string, z zoekt.Streamer) zoekt.Streamer {
 	return &meteredSearcher{
 		Streamer: z,
 		hostname: hostname,
-		log:      sglog.Scoped("meteredSearcher", "wraps zoekt.Streamer with observability"),
+		log:      sglog.Scoped("meteredSearcher"),
 	}
 }
 
@@ -85,7 +85,6 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 			attribute.Int64("opts.max_wall_time_ms", opts.MaxWallTime.Milliseconds()),
 			attribute.Int64("opts.flush_wall_time_ms", opts.FlushWallTime.Milliseconds()),
 			attribute.Int("opts.max_doc_display_count", opts.MaxDocDisplayCount),
-			attribute.Bool("opts.use_document_ranks", opts.UseDocumentRanks),
 		}
 		tr.AddEvent("begin", fields...)
 		event.AddAttributes(fields)
@@ -254,7 +253,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if zsl != nil {
 		// the fields are mutually exclusive so we can just add them
-		event.AddField("repos", len(zsl.Repos)+len(zsl.Minimal)+len(zsl.ReposMap)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		event.AddField("repos", len(zsl.Repos)+len(zsl.ReposMap))
 		event.AddField("stats.crashes", zsl.Crashes)
 	}
 	if err != nil {
@@ -291,8 +290,6 @@ func listCategory(opts *zoekt.ListOptions) string {
 	switch field {
 	case zoekt.RepoListFieldRepos:
 		return "List"
-	case zoekt.RepoListFieldMinimal:
-		return "ListMinimal"
 	case zoekt.RepoListFieldReposMap:
 		return "ListReposMap"
 	default:

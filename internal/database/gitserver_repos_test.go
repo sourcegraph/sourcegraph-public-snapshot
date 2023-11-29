@@ -31,7 +31,7 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	repos := types.Repos{
@@ -108,10 +108,10 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	})
 }
 
-func TestIteratePurgeableRepos(t *testing.T) {
+func TestListPurgeableRepos(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := basestore.NewWithHandle(db.Handle())
 
 	normalRepo := &types.Repo{Name: "normal"}
@@ -145,12 +145,12 @@ func TestIteratePurgeableRepos(t *testing.T) {
 
 	for _, tt := range []struct {
 		name      string
-		options   IteratePurgableReposOptions
+		options   ListPurgableReposOptions
 		wantRepos []api.RepoName
 	}{
 		{
 			name: "zero deletedBefore",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Time{},
 				Limit:         0,
 			},
@@ -158,7 +158,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 		{
 			name: "deletedBefore now",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Now(),
 				Limit:         0,
 			},
@@ -167,7 +167,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 		{
 			name: "deletedBefore 5 minutes ago",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Now().Add(-5 * time.Minute),
 				Limit:         0,
 			},
@@ -175,7 +175,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 		{
 			name: "test limit",
-			options: IteratePurgableReposOptions{
+			options: ListPurgableReposOptions{
 				DeletedBefore: time.Time{},
 				Limit:         1,
 			},
@@ -183,13 +183,8 @@ func TestIteratePurgeableRepos(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			var have []api.RepoName
-			if err := db.GitserverRepos().IteratePurgeableRepos(ctx, tt.options, func(repo api.RepoName) error {
-				have = append(have, repo)
-				return nil
-			}); err != nil {
-				t.Fatal(err)
-			}
+			have, err := db.GitserverRepos().ListPurgeableRepos(ctx, tt.options)
+			require.NoError(t, err)
 
 			sort.Slice(have, func(i, j int) bool { return have[i] < have[j] })
 
@@ -268,7 +263,7 @@ func TestListReposWithLastError(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			logger := logtest.Scoped(t)
-			db := NewDB(logger, dbtest.NewDB(logger, t))
+			db := NewDB(logger, dbtest.NewDB(t))
 			now := time.Now()
 
 			cloudDefaultService := createTestExternalService(ctx, t, now, db, true)
@@ -350,7 +345,7 @@ func TestReposWithLastOutput(t *testing.T) {
 	}
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	now := time.Now()
 	cloudDefaultService := createTestExternalService(ctx, t, now, db, true)
 	for i, tr := range testRepos {
@@ -414,7 +409,7 @@ func TestGitserverReposGetByID(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -440,7 +435,7 @@ func TestGitserverReposGetByName(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -466,7 +461,7 @@ func TestGitserverReposGetByNames(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
@@ -507,7 +502,7 @@ func TestSetCloneStatus(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -575,7 +570,7 @@ func TestCloningProgress(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	t.Run("Default", func(t *testing.T) {
@@ -620,7 +615,7 @@ func TestLogCorruption(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	t.Run("log repo corruption sets corrupted_at time", func(t *testing.T) {
@@ -774,7 +769,7 @@ func TestSetLastError(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -853,7 +848,7 @@ func TestSetRepoSize(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -930,7 +925,7 @@ func TestGitserverRepo_Update(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create one test repo
@@ -994,7 +989,7 @@ func TestGitserverRepoUpdateMany(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Create two test repos
@@ -1058,7 +1053,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
@@ -1229,7 +1224,7 @@ func TestGitserverRepos_GetGitserverGitDirSize(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	assertSize := func(want int64) {

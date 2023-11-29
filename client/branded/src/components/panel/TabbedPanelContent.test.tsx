@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { cleanup, fireEvent } from '@testing-library/react'
+import { afterEach, describe, expect, it } from 'vitest'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 

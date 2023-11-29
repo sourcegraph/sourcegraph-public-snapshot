@@ -5,5 +5,5 @@
     "outDir": "out",
     "rootDir": "src",
   },
-  "files": ["src/sourcegraph.d.ts", "src/index.js"],
+  "files": ["src/sourcegraph.d.ts"],
 }

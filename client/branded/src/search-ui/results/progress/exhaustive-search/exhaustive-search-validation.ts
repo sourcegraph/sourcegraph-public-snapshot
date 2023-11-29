@@ -1,13 +1,12 @@
 import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
-import { Filter, Keyword, Pattern } from '@sourcegraph/shared/src/search/query/token'
+import type { Filter, Keyword, Pattern } from '@sourcegraph/shared/src/search/query/token'
 
 enum ValidationErrorType {
     MULTIPLE_REV = 'multiple_rev',
     INVALID_QUERY = 'invalid_query',
     GENERIC_REGEXP = 'generic_regexp',
     HAS_CONTENT_PREDICATE = 'has_content_predicate',
-    HAS_FILE_PREDICATE = 'has_file_predicate',
     OR_OPERATOR = 'or_operator',
     AND_OPERATOR = 'and_operator',
 }
@@ -68,21 +67,16 @@ export function validateQueryForExhaustiveSearch(query: string): ValidationError
             })
         }
 
-        const repoHasContentFilter = filters.some(filter => filter.value?.value.startsWith('has.content('))
-
-        if (repoHasContentFilter) {
+        const filePredicates = ['has.content', 'has.owner', 'has.contributor', 'contains.content']
+        const fileHasContentFilter = filters.some(
+            filter =>
+                filePredicates.some(startString => filter.value?.value.startsWith(startString)) &&
+                filter.field.value?.startsWith('f')
+        )
+        if (fileHasContentFilter) {
             validationErrors.push({
                 type: ValidationErrorType.HAS_CONTENT_PREDICATE,
-                reason: 'repo.has.content predicate is not compatible',
-            })
-        }
-
-        const repoHasFileFilter = filters.some(filter => filter.value?.value.startsWith('has.file('))
-
-        if (repoHasFileFilter) {
-            validationErrors.push({
-                type: ValidationErrorType.HAS_FILE_PREDICATE,
-                reason: 'repo.has.file predicate is not compatible',
+                reason: 'file: predicate is not compatible',
             })
         }
 

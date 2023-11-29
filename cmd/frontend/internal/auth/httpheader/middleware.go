@@ -119,7 +119,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				return
 			}
 
-			auth.AddPostAuthRedirectParametersToURL(r.URL, newUserCreated)
+			auth.AddPostAuthRedirectParametersToURL(r.URL, newUserCreated, "http-header")
 			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
 			next.ServeHTTP(w, r)
 		})

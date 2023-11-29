@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -187,7 +188,7 @@ func TestMiddleware(t *testing.T) {
 		ServiceProviderPrivateKey:   testSAMLSPKey,
 	})
 
-	mockGetProviderValue = &provider{config: *config}
+	mockGetProviderValue = &provider{config: *config, httpClient: httpcli.TestExternalClient}
 	defer func() { mockGetProviderValue = nil }()
 	providers.MockProviders = []providers.Provider{mockGetProviderValue}
 	defer func() { providers.MockProviders = nil }()
@@ -374,7 +375,7 @@ func TestMiddleware(t *testing.T) {
 		if want := http.StatusFound; resp.StatusCode != want {
 			t.Errorf("got status code %v, want %v", resp.StatusCode, want)
 		}
-		if got, want1, want2 := resp.Header.Get("Location"), "http://example.com/?signin=", "/?signin="; got != want1 && got != want2 {
+		if got, want1, want2 := resp.Header.Get("Location"), "http://example.com/?signin=SAML", "/?signin=SAML"; got != want1 && got != want2 {
 			t.Errorf("got redirect location %v, want %v or %v", got, want1, want2)
 		}
 

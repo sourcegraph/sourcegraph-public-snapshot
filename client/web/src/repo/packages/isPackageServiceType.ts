@@ -13,9 +13,11 @@ export function isPackageServiceType(serviceType?: string): boolean {
         case 'pythonPackages':
         case 'rubyPackages':
         case 'goModules':
-        case 'rustPackages':
+        case 'rustPackages': {
             return true
-        default:
+        }
+        default: {
             return false
+        }
     }
 }

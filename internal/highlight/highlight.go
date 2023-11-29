@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -20,6 +19,7 @@ import (
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/binary"
@@ -318,6 +318,8 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return Mocks.Code(p)
 	}
 
+	logger := log.Scoped("highlight")
+
 	p.Filepath = normalizeFilepath(p.Filepath)
 
 	filetypeQuery := DetectSyntaxHighlightingLanguage(p.Filepath, string(p.Content))
@@ -415,7 +417,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
 		LineLengthLimit:  maxLineLength,
-		CSS:              true,
 		Engine:           getEngineParameter(filetypeQuery.Engine),
 	}
 
@@ -455,13 +456,13 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	resp, err := client.Highlight(ctx, query, p.Format)
 
 	if ctx.Err() == context.DeadlineExceeded {
-		log15.Warn(
+		logger.Warn(
 			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
-			"filepath", p.Filepath,
-			"filetype", query.Filetype,
-			"repo_name", p.Metadata.RepoName,
-			"revision", p.Metadata.Revision,
-			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+			log.String("filepath", p.Filepath),
+			log.String("filetype", query.Filetype),
+			log.String("repo_name", p.Metadata.RepoName),
+			log.String("revision", p.Metadata.Revision),
+			log.String("snippet", fmt.Sprintf("%q…", firstCharacters(code, 80))),
 		)
 		trace.AddEvent("syntaxHighlighting", attribute.Bool("timeout", true))
 		prometheusStatus = "timeout"
@@ -473,14 +474,14 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		}
 		return plainResponse, true, nil
 	} else if err != nil {
-		log15.Error(
+		logger.Error(
 			"syntax highlighting failed (this is a bug, please report it)",
-			"filepath", p.Filepath,
-			"filetype", query.Filetype,
-			"repo_name", p.Metadata.RepoName,
-			"revision", p.Metadata.Revision,
-			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
-			"error", err,
+			log.String("filepath", p.Filepath),
+			log.String("filetype", query.Filetype),
+			log.String("repo_name", p.Metadata.RepoName),
+			log.String("revision", p.Metadata.Revision),
+			log.String("snippet", fmt.Sprintf("%q…", firstCharacters(code, 80))),
+			log.Error(err),
 		)
 
 		if known, problem := identifyError(err); known {

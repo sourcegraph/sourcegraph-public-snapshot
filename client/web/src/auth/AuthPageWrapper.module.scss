@@ -1,0 +1,15 @@
+.logo {
+    display: block;
+    width: 4rem;
+    margin-bottom: 1rem;
+}
+
+.wrapper {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    /* stylelint-disable declaration-property-unit-allowed-list */
+    margin-top: min(20vh, 20rem);
+    flex-direction: column;
+    flex: 1 1 auto;
+}

@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,7 +26,7 @@ type SearchImplementer interface {
 
 // NewBatchSearchImplementer returns a SearchImplementer that provides search results and suggestions.
 func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db database.DB, args *SearchArgs) (_ SearchImplementer, err error) {
-	cli := client.New(logger, db)
+	cli := client.New(logger, db, gitserver.NewClient("graphql.batchsearch"))
 	inputs, err := cli.Plan(
 		ctx,
 		args.Version,
@@ -43,7 +44,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
-		logger:       logger.Scoped("BatchSearchSearchImplementer", "provides search results and suggestions"),
+		logger:       logger.Scoped("BatchSearchSearchImplementer"),
 		client:       cli,
 		db:           db,
 		SearchInputs: inputs,

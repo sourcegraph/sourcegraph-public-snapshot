@@ -15,7 +15,7 @@ func SubstituteAliases(searchType SearchType) func(nodes []Node) []Node {
 	mapper := func(nodes []Node) []Node {
 		return MapParameter(nodes, func(field, value string, negated bool, annotation Annotation) Node {
 			if field == "content" {
-				if searchType == SearchTypeRegex {
+				if searchType == SearchTypeRegex && !annotation.Labels.IsSet(Quoted) {
 					annotation.Labels.Set(Regexp)
 				} else {
 					annotation.Labels.Set(Literal)
@@ -374,6 +374,15 @@ func space(patterns []Pattern) []Node {
 			Value:      strings.Join(values, " "),
 		},
 	}
+}
+
+// and concatenates patterns with AND.
+func and(patterns []Pattern) []Node {
+	p := make([]Node, 0, len(patterns))
+	for _, pattern := range patterns {
+		p = append(p, pattern)
+	}
+	return NewOperator(p, And)
 }
 
 // substituteConcat returns a function that concatenates all contiguous patterns

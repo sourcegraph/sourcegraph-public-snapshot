@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"encoding/json"
-	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -361,36 +360,6 @@ func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
 		RepoCommit:    rc,
 		CommandOutput: p.GetCommandOutput(),
 		CommandError:  p.GetCommandError(),
-	}
-}
-
-// P4ExecRequest is a request to execute a p4 command with given arguments.
-//
-// Note that this request is deserialized by both gitserver and the frontend's
-// internal proxy route and any major change to this structure will need to be
-// reconciled in both places.
-type P4ExecRequest struct {
-	P4Port   string   `json:"p4port"`
-	P4User   string   `json:"p4user"`
-	P4Passwd string   `json:"p4passwd"`
-	Args     []string `json:"args"`
-}
-
-func (r *P4ExecRequest) ToProto() *proto.P4ExecRequest {
-	return &proto.P4ExecRequest{
-		P4Port:   r.P4Port,
-		P4User:   r.P4User,
-		P4Passwd: r.P4Passwd,
-		Args:     stringsToByteSlices(r.Args),
-	}
-}
-
-func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
-	*r = P4ExecRequest{
-		P4Port:   p.GetP4Port(),
-		P4User:   p.GetP4User(),
-		P4Passwd: p.GetP4Passwd(),
-		Args:     byteSlicesToStrings(p.GetArgs()),
 	}
 }
 
@@ -863,52 +832,132 @@ func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
 
 }
 
+// IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.
+type IsPerforcePathCloneableRequest struct {
+	P4Port    string `json:"p4port"`
+	P4User    string `json:"p4user"`
+	P4Passwd  string `json:"p4passwd"`
+	DepotPath string `json:"depotPath"`
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if a Perforce path is cloneable.
+type IsPerforcePathCloneableResponse struct{}
+
+// CheckPerforceCredentialsRequest is the request to check if given Perforce credentials are valid.
+type CheckPerforceCredentialsRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
+type CheckPerforceCredentialsResponse struct{}
+
+// PerforceConnectionDetails holds all the details required to talk to a Perforce server.
+type PerforceConnectionDetails struct {
+	P4Port   string
+	P4User   string
+	P4Passwd string
+}
+
+func (c PerforceConnectionDetails) ToProto() *proto.PerforceConnectionDetails {
+	return &proto.PerforceConnectionDetails{
+		P4Port:   c.P4Port,
+		P4User:   c.P4User,
+		P4Passwd: c.P4Passwd,
+	}
+}
+
+// SystemInfo holds info on a Gitserver instance.
+type SystemInfo struct {
+	Address     string
+	FreeSpace   uint64
+	TotalSpace  uint64
+	PercentUsed float32
+}
+
+type PerforceUsersRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+}
+
+type PerforceUsersResponse struct {
+	Users []PerforceUser `json:"users"`
+}
+
+type PerforceUser struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+type PerforceProtectsForUserRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+	Username string `json:"username"`
+}
+
+type PerforceProtectsForUserResponse struct {
+	Protects []PerforceProtect `json:"protects"`
+}
+
+type PerforceProtect struct {
+	Level       string `json:"level"`
+	EntityType  string `json:"entityType"`
+	EntityName  string `json:"entityName"`
+	Match       string `json:"match"`
+	IsExclusion bool   `json:"isExclusion"`
+	Host        string `json:"host"`
+}
+
+type PerforceProtectsForDepotRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+	Depot    string `json:"depot"`
+}
+
+type PerforceProtectsForDepotResponse struct {
+	Protects []PerforceProtect `json:"protects"`
+}
+
+type PerforceGroupMembersRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+	Group    string `json:"group"`
+}
+
+type PerforceGroupMembersResponse struct {
+	Usernames []string `json:"usernames"`
+}
+
+type IsPerforceSuperUserRequest struct {
+	P4Port   string `json:"p4port"`
+	P4User   string `json:"p4user"`
+	P4Passwd string `json:"p4passwd"`
+}
+
+type IsPerforceSuperUserResponse struct {
+}
+
+type PerforceGetChangelistRequest struct {
+	P4Port       string `json:"p4port"`
+	P4User       string `json:"p4user"`
+	P4Passwd     string `json:"p4passwd"`
+	ChangelistID string `json:"changelistID"`
+}
+
+type PerforceGetChangelistResponse struct {
+	Changelist PerforceChangelist `json:"changelist"`
+}
+
 type PerforceChangelist struct {
-	ID           string
-	CreationDate time.Time
-	State        PerforceChangelistState
-	Author       string
-	Title        string
-	Message      string
-}
-
-type PerforceChangelistState string
-
-const (
-	PerforceChangelistStateSubmitted PerforceChangelistState = "submitted"
-	PerforceChangelistStatePending   PerforceChangelistState = "pending"
-	PerforceChangelistStateShelved   PerforceChangelistState = "shelved"
-	// Perforce doesn't actually return a state for closed changelists, so this is one we use to indicate the changelist is closed.
-	PerforceChangelistStateClosed PerforceChangelistState = "closed"
-)
-
-func ParsePerforceChangelistState(state string) (PerforceChangelistState, error) {
-	switch strings.ToLower(strings.TrimSpace(state)) {
-	case "submitted":
-		return PerforceChangelistStateSubmitted, nil
-	case "pending":
-		return PerforceChangelistStatePending, nil
-	case "shelved":
-		return PerforceChangelistStateShelved, nil
-	case "closed":
-		return PerforceChangelistStateClosed, nil
-	default:
-		return "", errors.Newf("invalid Perforce changelist state: %s", state)
-	}
-}
-
-func stringsToByteSlices(in []string) [][]byte {
-	res := make([][]byte, len(in))
-	for i, s := range in {
-		res[i] = []byte(s)
-	}
-	return res
-}
-
-func byteSlicesToStrings(in [][]byte) []string {
-	res := make([]string, len(in))
-	for i, s := range in {
-		res[i] = string(s)
-	}
-	return res
+	ID           string    `json:"id"`
+	CreationDate time.Time `json:"creationDate"`
+	State        string    `json:"state"`
+	Author       string    `json:"author"`
+	Title        string    `json:"title"`
+	Message      string    `json:"message"`
 }

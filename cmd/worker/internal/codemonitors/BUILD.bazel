@@ -1,0 +1,17 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codemonitors",
+    srcs = ["codemonitor_job.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/codemonitors",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/frontend/envvar",
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/codemonitors/background",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+    ],
+)
