@@ -209,6 +209,9 @@ def oci_deps():
     )
 
     # The following image digests are from tag 252535_2023-11-28_5.2-82b5f4f5d73f
+    # To rebuild these legacy images using docker and outside of bazel you can either push a branch to:
+    # - docker-images-candidates-notest/<your banch name here>
+    # or you can run `sg ci build docker-images-candidates-notest`
     oci_pull(
         name = "legacy_alpine-3.14_base",
         digest = "sha256:581afabd476b4918b14295ae6dd184f4a3783c64bab8bde9ad7b11ea984498a8",
