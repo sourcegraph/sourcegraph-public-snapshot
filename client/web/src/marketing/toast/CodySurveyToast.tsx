@@ -13,7 +13,6 @@ import type { AuthenticatedUser } from '../../auth'
 import { getReturnTo } from '../../auth/SignInSignUpCommon'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
 import { LoaderButton } from '../../components/LoaderButton'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type {
     SubmitCodySurveyResult,
     SubmitCodySurveyVariables,
@@ -325,10 +324,9 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
 export const CodySurveyToast: React.FC<
     {
         authenticatedUser: AuthenticatedUser
-        isExperimentEnabled?: boolean
+        showQualificationSurvey?: boolean
     } & TelemetryProps
-> = ({ authenticatedUser, telemetryService, isExperimentEnabled }) => {
-    const [showQualificationSurvey] = useFeatureFlag('signup-survey-enabled', false)
+> = ({ authenticatedUser, telemetryService, showQualificationSurvey }) => {
     const [showVerifyEmail, setShowVerifyEmail] = useState(!authenticatedUser.hasVerifiedEmail)
 
     const location = useLocation()
@@ -358,7 +356,7 @@ export const CodySurveyToast: React.FC<
         )
     }
 
-    if (isExperimentEnabled || showQualificationSurvey) {
+    if (showQualificationSurvey) {
         return (
             <CodyQualificationSurveryToastInner
                 telemetryService={telemetryService}
