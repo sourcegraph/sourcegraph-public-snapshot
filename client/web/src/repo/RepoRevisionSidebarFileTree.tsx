@@ -151,15 +151,15 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
     // Initialize the treeData from the initial query
     const client = useApolloClient()
+    const [initialVariables] = useState({
+        filePath: props.filePathIsDirectory ? props.filePath : getParentPath(props.filePath),
+        // Only fetch ancestors if the file tree is rooted higher than the target file.
+        ancestors: props.initialFilePath !== props.filePath,
+    })
     useEffect(() => {
         const result = client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
             query: APOLLO_QUERY,
-            variables: {
-                ...defaultVariables,
-                filePath: props.filePathIsDirectory ? props.filePath : getParentPath(props.filePath),
-                // Only fetch ancestors if the file tree is rooted higher than the target file.
-                ancestors: props.initialFilePath != props.filePath,
-            },
+            variables: { ...defaultVariables, ...initialVariables },
         })
 
         setLoading(true)
@@ -169,7 +169,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             setError(res.error)
             updateTreeData(createTreeData(initialFilePath), res.data)
         })
-    }, [initialFilePath, updateTreeData])
+    }, [initialFilePath, updateTreeData, client, defaultVariables, initialVariables])
 
     const fetchEntries = useCallback(
         async (variables: FileTreeEntriesVariables) => {
