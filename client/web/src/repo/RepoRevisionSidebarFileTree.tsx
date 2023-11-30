@@ -173,7 +173,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             variables: {
                 ...defaultVariables,
                 filePath: props.filePathIsDirectory ? props.filePath : getParentPath(props.filePath),
-                ancestors: true,
+                // Only fetch ancestors if the file tree is rooted higher than the target file.
+                ancestors: props.initialFilePath != props.filePath,
             },
         })
 
