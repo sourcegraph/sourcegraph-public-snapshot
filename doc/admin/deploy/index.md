@@ -24,7 +24,7 @@ Carefully consider your organization's needs and technical expertise when select
 
 ### [Sourcegraph Cloud](https://about.sourcegraph.com/get-started?t=enterprise)
 
-**For Enterprises looking for a Cloud solution.**
+**For Enterprises looking for a managed Cloud solution.**
 
 A cloud instance hosted and maintained by Sourcegraph
 
@@ -43,7 +43,7 @@ A cloud instance hosted and maintained by Sourcegraph
   
 ### [Machine Images](machine-images/index.md) 
 
-**For Enterprises looking for a self-hosted solution on Cloud.** 
+**For Enterprises looking for a self-hosted solution on the Cloud infrastructure of their choice.** 
 
 An option to run Sourcegraph on your own infrastructure using pre-configured machine images.
 
