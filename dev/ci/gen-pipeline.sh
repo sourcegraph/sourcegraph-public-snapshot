@@ -5,11 +5,17 @@ set -e
 echo "--- :books: Annotating build with Glossary"
 buildkite-agent annotate --style info <./dev/ci/glossary.md
 
+bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
+
+if [ ${BUILDKITE_AGENT_META_DATA_QUEUE:-""} == "aspect-default" ]; then
+  aspectBazelRcFile=$(mktemp)
+  rosetta bazelrc > ${aspectBazelRcFile}
+  bazelrc=(--bazelrc=${aspectBazelRcFile})
+fi
+
 echo "--- :bazel: Build pipeline generator"
 bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  "${bazelrc[@]}" \
   build \
   //dev/ci:ci
 
