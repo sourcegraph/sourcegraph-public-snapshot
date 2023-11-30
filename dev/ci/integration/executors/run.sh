@@ -40,7 +40,7 @@ fi
 
 # Need to pull this image pre-execution as the docker executor doesn't have a
 # credential to pull this image.
-BATCHESHELPER_IMAGE="us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal/batcheshelper:${CANDIDATE_VERSION}"
+BATCHESHELPER_IMAGE="$registry/batcheshelper:${CANDIDATE_VERSION}"
 docker pull "${BATCHESHELPER_IMAGE}"
 
 echo "--- :terminal: Start server with executor"
