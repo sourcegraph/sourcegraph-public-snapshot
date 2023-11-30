@@ -63,8 +63,8 @@ func TestAzureDevOpsCloneURL(t *testing.T) {
 	}
 
 	repo := &azuredevops.Repository{
-		ID:       "test-project",
-		CloneURL: "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
+		ID:        "test-project",
+		RemoteURL: "https://sgtestazure@dev.azure.com/sgtestazure/sgtestazure/_git/sgtestazure",
 	}
 
 	got := azureDevOpsCloneURL(logtest.Scoped(t), repo, &cfg)
