@@ -12,7 +12,7 @@
         min-width: 800px;
     }
 
-    @media (--md-breakpoint-up) and (--lg-breakpoint-down) {
+    @media (--sm-breakpoint-up) and (--lg-breakpoint-down) {
         flex-direction: column;
     }
 
