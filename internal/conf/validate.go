@@ -377,8 +377,8 @@ func redactHashString(secret string) string {
 //
 // Updates to this function should also be reflected in the UnredactSecrets.
 func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty conftypes.RawUnified, err error) {
-	getRedactedSecret := func(secret string, hashSecrets ...bool) string {
-		if len(hashSecrets) == 0 || !hashSecrets[0] {
+	getRedactedSecret := func(secret string, hashSecrets bool) string {
+		if !hashSecrets {
 			return redactedSecret
 		}
 		return redactHashString(secret)
@@ -391,19 +391,19 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 
 	for _, ap := range cfg.AuthProviders {
 		if ap.Github != nil {
-			ap.Github.ClientSecret = getRedactedSecret(ap.Github.ClientSecret, false)
+			ap.Github.ClientSecret = getRedactedSecret(ap.Github.ClientSecret, hashSecrets)
 		}
 		if ap.Openidconnect != nil {
-			ap.Openidconnect.ClientSecret = getRedactedSecret(ap.Openidconnect.ClientSecret, false)
+			ap.Openidconnect.ClientSecret = getRedactedSecret(ap.Openidconnect.ClientSecret, hashSecrets)
 		}
 		if ap.Gitlab != nil {
-			ap.Gitlab.ClientSecret = getRedactedSecret(ap.Gitlab.ClientSecret, false)
+			ap.Gitlab.ClientSecret = getRedactedSecret(ap.Gitlab.ClientSecret, hashSecrets)
 		}
 		if ap.Bitbucketcloud != nil {
-			ap.Bitbucketcloud.ClientSecret = getRedactedSecret(ap.Bitbucketcloud.ClientSecret, false)
+			ap.Bitbucketcloud.ClientSecret = getRedactedSecret(ap.Bitbucketcloud.ClientSecret, hashSecrets)
 		}
 		if ap.AzureDevOps != nil {
-			ap.AzureDevOps.ClientSecret = getRedactedSecret(ap.AzureDevOps.ClientSecret, false)
+			ap.AzureDevOps.ClientSecret = getRedactedSecret(ap.AzureDevOps.ClientSecret, hashSecrets)
 		}
 	}
 
@@ -458,7 +458,7 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 			continue
 		}
 
-		redactedSite, err = jsonc.Edit(redactedSite, getRedactedSecret(val), secret.editPaths...)
+		redactedSite, err = jsonc.Edit(redactedSite, getRedactedSecret(val, hashSecrets), secret.editPaths...)
 		if err != nil {
 			return empty, errors.Wrapf(err, `redact %q`, strings.Join(secret.editPaths, " > "))
 		}
