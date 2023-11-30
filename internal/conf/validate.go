@@ -284,22 +284,22 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	var observabilitySecretsReplaceList []string
 	for _, oa := range oldCfg.ObservabilityAlerts {
 		if oa.Notifier.Opsgenie != nil && oa.Notifier.Opsgenie.ApiKey != "" {
-			oldObservabilitySecrets = append(oldObservabilitySecrets, redactHashString(oa.Notifier.Opsgenie.ApiKey), oa.Notifier.Opsgenie.ApiKey)
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Opsgenie.ApiKey), oa.Notifier.Opsgenie.ApiKey)
 		}
 		if oa.Notifier.Slack != nil && oa.Notifier.Slack.Url != "" {
-			oldObservabilitySecrets = append(oldObservabilitySecrets, redactHashString(oa.Notifier.Slack.Url), oa.Notifier.Slack.Url)
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Slack.Url), oa.Notifier.Slack.Url)
 		}
 		if oa.Notifier.Pagerduty != nil && oa.Notifier.Pagerduty.IntegrationKey != "" {
-			oldObservabilitySecrets = append(oldObservabilitySecrets, redactHashString(oa.Notifier.Pagerduty.IntegrationKey), oa.Notifier.Pagerduty.IntegrationKey)
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Pagerduty.IntegrationKey), oa.Notifier.Pagerduty.IntegrationKey)
 		}
 		if oa.Notifier.Webhook != nil && oa.Notifier.Webhook.BearerToken != "" {
-			oldObservabilitySecrets = append(oldObservabilitySecrets, redactHashString(oa.Notifier.Webhook.BearerToken), oa.Notifier.Webhook.BearerToken)
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Webhook.BearerToken), oa.Notifier.Webhook.BearerToken)
 		}
 		if oa.Notifier.Webhook != nil && oa.Notifier.Webhook.Password != "" {
-			oldObservabilitySecrets = append(oldObservabilitySecrets, redactHashString(oa.Notifier.Webhook.Password), oa.Notifier.Webhook.Password)
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Webhook.Password), oa.Notifier.Webhook.Password)
 		}
 	}
-	unredactedSite = strings.NewReplacer(oldObservabilitySecrets...).Replace(unredactedSite)
+	unredactedSite = strings.NewReplacer(observabilitySecretsReplaceList...).Replace(unredactedSite)
 
 	for _, secret := range siteConfigSecrets {
 		v, err := jsonc.ReadProperty(unredactedSite, secret.editPaths...)
