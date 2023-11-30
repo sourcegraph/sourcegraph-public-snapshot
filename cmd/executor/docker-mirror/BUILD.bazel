@@ -1,21 +1,24 @@
-genrule(
+sh_binary(
     name = "ami",
     srcs = [
+        "build-bazel.sh",
+    ],
+    args = [],
+    data = [
         "aws_regions.json",
         "build.sh",
         "docker-mirror.pkr.hcl",
         "install.sh",
+        "//dev/tools:gcloud",
+        "//dev/tools:packer",
     ],
-    outs = ["logs"],
-    cmd = """\
-    mkdir workdir
-    cp $(location docker-mirror.pkr.hcl) workdir/
-    cp $(location aws_regions.json) workdir/
-    cp $(location install.sh) workdir/
-    """,
-    env = {
-        "IMAGE_FAMILY": "",
-        "EXECUTOR_IS_TAGGED_RELEASE": "false",
-    },
-    tools = ["//dev/tools:packer"],
+    # env = {
+    #     "IMAGE_FAMILY": "",
+    #     "EXECUTOR_IS_TAGGED_RELEASE": "false",
+    # },
+    deps = ["@bazel_tools//tools/bash/runfiles"],
 )
+
+# TODO(@jhchabran:before_merge)
+# - remove the normal build.sh
+# - handle tagging, number, image_family from Bazel instead of pipeline generator.
