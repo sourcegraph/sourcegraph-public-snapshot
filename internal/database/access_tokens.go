@@ -2,21 +2,22 @@ package database
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -159,22 +160,26 @@ func (s *accessTokenStore) CreateInternal(ctx context.Context, subjectUserID int
 	return s.createToken(ctx, subjectUserID, scopes, note, creatorUserID, true)
 }
 
-// personalAccessTokenPrefix is the token prefix for Sourcegraph personal access tokens. Its purpose
-// is to make it easier to identify that a given string (in a file, document, etc.) is a secret
-// Sourcegraph personal access token (vs. some arbitrary high-entropy hex-encoded value).
-const personalAccessTokenPrefix = "sgp_"
-
 func (s *accessTokenStore) createToken(ctx context.Context, subjectUserID int32, scopes []string, note string, creatorUserID int32, internal bool) (id int64, token string, err error) {
-	var b [20]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return 0, "", err
-	}
-	token = personalAccessTokenPrefix + hex.EncodeToString(b[:])
-
 	if len(scopes) == 0 {
 		// Prevent mistakes. There is no point in creating an access token with no scopes, and the
 		// GraphQL API wouldn't let you do so anyway.
 		return 0, "", errors.New("access tokens without scopes are not supported")
+	}
+
+	config := conf.Get().SiteConfig()
+
+	var isDevInstance bool
+	licenseInfo, err := licensing.GetConfiguredProductLicenseInfo()
+	if err != nil || licenseInfo == nil {
+		isDevInstance = true
+	} else {
+		isDevInstance = licenseInfo.HasTag("dev")
+	}
+
+	token, b, err := accesstoken.GeneratePersonalAccessToken(config.LicenseKey, isDevInstance)
+	if err != nil {
+		return 0, "", err
 	}
 
 	if err := s.Handle().QueryRowContext(ctx,
@@ -444,9 +449,13 @@ func (s *accessTokenStore) delete(ctx context.Context, cond *sqlf.Query) error {
 }
 
 // tokenSHA256Hash returns the 32-byte long SHA-256 hash of its hex-encoded value
-// (after stripping the "sgp_" token prefix, if present).
+// (after stripping the "sgph_" or "sgp_" token prefix and instance identifier, if present).
 func tokenSHA256Hash(token string) ([]byte, error) {
-	token = strings.TrimPrefix(token, personalAccessTokenPrefix)
+	token, err := accesstoken.ParsePersonalAccessToken(token)
+	if err != nil {
+		return nil, InvalidTokenError{err}
+	}
+
 	value, err := hex.DecodeString(token)
 	if err != nil {
 		return nil, InvalidTokenError{err}

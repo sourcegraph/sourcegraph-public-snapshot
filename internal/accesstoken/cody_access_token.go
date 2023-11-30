@@ -1,8 +1,7 @@
-package dotcomuser
+package accesstoken
 
 import (
 	"encoding/hex"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 )
@@ -13,7 +12,16 @@ const DotcomUserGatewayAccessTokenPrefix = "sgd_" // "(S)ource(g)raph (d)otcom u
 
 // GenerateLicenseKeyBasedAccessToken creates a prefixed, encoded token based on a
 // Sourcegraph license key.
-func GenerateDotcomUserGatewayAccessToken(apiToken string) string {
-	tokenBytes, _ := hex.DecodeString(strings.TrimPrefix(apiToken, "sgp_"))
-	return "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes(tokenBytes)))
+func GenerateDotcomUserGatewayAccessToken(apiToken string) (string, error) {
+	token, err := ParsePersonalAccessToken(apiToken)
+	if err != nil {
+		return "", err
+	}
+
+	tokenBytes, err := hex.DecodeString(token)
+	if err != nil {
+		return "", err
+	}
+
+	return "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes(tokenBytes))), nil
 }

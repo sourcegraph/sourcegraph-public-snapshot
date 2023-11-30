@@ -2,8 +2,6 @@ package productsubscription_test
 
 import (
 	"context"
-	"encoding/hex"
-	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -12,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom/productsubscription"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/audit/audittest"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -20,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -117,7 +115,8 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 			_, dotcomToken, err := db.AccessTokens().Create(context.Background(), test.user.ID, []string{authz.ScopeUserAll}, test.name, test.user.ID)
 			require.NoError(t, err)
 			// convert token into a gateway token
-			gatewayToken := makeGatewayToken(dotcomToken)
+			gatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(dotcomToken)
+			require.NoError(t, err)
 
 			logger, exportLogs := logtest.Captured(t)
 
@@ -195,7 +194,8 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 	require.NoError(t, err)
 	// Generate a token for the cody user
 	_, codyUserApiToken, err := db.AccessTokens().Create(context.Background(), coydUser.ID, []string{authz.ScopeUserAll}, "cody", coydUser.ID)
-	codyUserGatewayToken := makeGatewayToken(codyUserApiToken)
+	require.NoError(t, err)
+	codyUserGatewayToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(codyUserApiToken)
 	require.NoError(t, err)
 
 	// Create a feature flag override entry for the notAdminUser.
@@ -239,9 +239,4 @@ func TestCodyGatewayDotcomUserResolverRequestAccess(t *testing.T) {
 			require.ErrorIs(t, err, test.wantErr)
 		})
 	}
-}
-
-func makeGatewayToken(apiToken string) string {
-	tokenBytes, _ := hex.DecodeString(strings.TrimPrefix(apiToken, "sgp_"))
-	return "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes(tokenBytes)))
 }
