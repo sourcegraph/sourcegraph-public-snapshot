@@ -1251,7 +1251,7 @@ func TestRateLimitRetry(t *testing.T) {
 		srvURL, err := url.Parse(srv.URL)
 		require.NoError(t, err)
 
-		testCase.client = newV3Client(logtest.NoOp(t), "test", srvURL, nil, "", nil)
+		testCase.client = newV3Client(logtest.NoOp(t), "test", srvURL, nil, "", httpcli.TestExternalDoer)
 		testCase.client.internalRateLimiter = ratelimit.NewInstrumentedLimiter("githubv3", rate.NewLimiter(100, 10))
 		testCase.client.waitForRateLimit = true
 

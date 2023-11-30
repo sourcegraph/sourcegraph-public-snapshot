@@ -38,7 +38,30 @@ All notable changes to Sourcegraph are documented in this file.
 - The feature-flag `search-ranking`, which allowed to disable the improved ranking introduced in 5.1, is now deprecated and will not be read anymore. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
 - The GitHub Proxy service is no longer required and has been removed from deployment options. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
 
-## Unreleased 5.2.2
+## Unreleased 5.2.4
+
+### Added
+
+### Fixed
+
+- Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
+
+### Changed
+
+### Removed
+
+## 5.2.3
+
+### Added
+
+- Added configurable GraphQL query cost limitations to prevent unintended resource exhaustion. Default values are now provided and enforced, replacing the previously unlimited behaviour. For more information, please refer to: [GraphQL Cost Limits Documentation](https://docs.sourcegraph.com/api/graphql#cost-limits). See details at [#58346](https://github.com/sourcegraph/sourcegraph/pull/58346).
+- Sourcegraph now supports connecting to Bitbucket Cloud using Workspace Access Tokens. [#58465](https://github.com/sourcegraph/sourcegraph/pull/58465).
+
+### Fixed
+
+- Defining file filters for embeddings jobs no longer causes all files to be skipped if `MaxFileSizeBytes` isn't defined. [#58262](https://github.com/sourcegraph/sourcegraph/pull/58262)
+
+## 5.2.2
 
 ### Added
 

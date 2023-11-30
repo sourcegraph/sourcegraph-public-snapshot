@@ -130,6 +130,13 @@ func checkErrors(t *testing.T, want, got []*gqlerrors.QueryError) {
 
 	// Compare without caring about the concrete type of the error returned
 	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(gqlerrors.QueryError{}, "ResolverError", "Err")); diff != "" {
+		// diff truncates the error messages, so dump the full error messages
+		// in t.Log for inspection with 'go test -v'.
+		t.Log("Full errors:\n")
+		for _, e := range got {
+			t.Logf("- %+v\n", e)
+		}
+		// Fail the test with the diff as a summary
 		t.Fatal(diff)
 	}
 }

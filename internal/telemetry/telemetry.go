@@ -15,11 +15,11 @@ type constString string
 
 // EventMetadata is secure, PII-free metadata that can be attached to events.
 // Keys must be const strings.
-type EventMetadata map[constString]int64
+type EventMetadata map[constString]float64
 
 // MetadataBool returns 1 for true and 0 for false, for use in EventMetadata's
 // restricted int64 values.
-func MetadataBool(value bool) int64 {
+func MetadataBool(value bool) float64 {
 	if value {
 		return 1 // true
 	}
