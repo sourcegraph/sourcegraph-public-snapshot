@@ -166,7 +166,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                                     <LoadingSpinner />
                                 )}
                             </div>
-                            <H4 className="mb-0">Chat Messages</H4>
+                            <H4 className="mb-0">Chats and Commands used</H4>
                             {!codyProEnabled && (
                                 <Text className="text-muted mb-0" size="small">
                                     this month
