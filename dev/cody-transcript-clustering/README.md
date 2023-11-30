@@ -10,6 +10,12 @@ The goal is to group similar text snippets together into a predefined number of 
 
 ## Usage
 
+Ensure the required packges are installed:
+
+```
+pip install -r requirements.txt
+```
+
 The script accepts the following arguments:
 
 | Argument       | Description                                      | Default    |
@@ -24,7 +30,7 @@ The script accepts the following arguments:
 Example
 
 ```
-python3 cluster.py --input data.tsv --text_field chat_message --clusters 5 --output out.tsv
+python cluster.py --input data.tsv --text_field chat_message --clusters 5 --output out.tsv
 ```
 
 ## Output
