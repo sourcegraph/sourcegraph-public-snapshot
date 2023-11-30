@@ -233,52 +233,73 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		return input, errors.Wrap(err, "parse old config")
 	}
 
-	oldSecrets := make(map[string]string, len(oldCfg.AuthProviders))
+	oldAuthProviderSecrets := make(map[string]string, len(oldCfg.AuthProviders))
 	for _, ap := range oldCfg.AuthProviders {
 		if ap.Openidconnect != nil {
-			oldSecrets[ap.Openidconnect.ClientID] = ap.Openidconnect.ClientSecret
+			oldAuthProviderSecrets[ap.Openidconnect.ClientID] = ap.Openidconnect.ClientSecret
 		}
 		if ap.Github != nil {
-			oldSecrets[ap.Github.ClientID] = ap.Github.ClientSecret
+			oldAuthProviderSecrets[ap.Github.ClientID] = ap.Github.ClientSecret
 		}
 		if ap.Gitlab != nil {
-			oldSecrets[ap.Gitlab.ClientID] = ap.Gitlab.ClientSecret
+			oldAuthProviderSecrets[ap.Gitlab.ClientID] = ap.Gitlab.ClientSecret
 		}
 		if ap.Bitbucketcloud != nil {
-			oldSecrets[ap.Bitbucketcloud.ClientKey] = ap.Bitbucketcloud.ClientSecret
+			oldAuthProviderSecrets[ap.Bitbucketcloud.ClientKey] = ap.Bitbucketcloud.ClientSecret
 		}
 		if ap.AzureDevOps != nil {
-			oldSecrets[ap.AzureDevOps.ClientID] = ap.AzureDevOps.ClientSecret
+			oldAuthProviderSecrets[ap.AzureDevOps.ClientID] = ap.AzureDevOps.ClientSecret
 		}
 	}
 
-	newCfg, err := ParseConfig(conftypes.RawUnified{
+	newAuthProviderCfg, err := ParseConfig(conftypes.RawUnified{
 		Site: input,
 	})
 	if err != nil {
 		return input, errors.Wrap(err, "parse new config")
 	}
-	for _, ap := range newCfg.AuthProviders {
+	for _, ap := range newAuthProviderCfg.AuthProviders {
 		if ap.Openidconnect != nil && ap.Openidconnect.ClientSecret == redactedSecret {
-			ap.Openidconnect.ClientSecret = oldSecrets[ap.Openidconnect.ClientID]
+			ap.Openidconnect.ClientSecret = oldAuthProviderSecrets[ap.Openidconnect.ClientID]
 		}
 		if ap.Github != nil && ap.Github.ClientSecret == redactedSecret {
-			ap.Github.ClientSecret = oldSecrets[ap.Github.ClientID]
+			ap.Github.ClientSecret = oldAuthProviderSecrets[ap.Github.ClientID]
 		}
 		if ap.Gitlab != nil && ap.Gitlab.ClientSecret == redactedSecret {
-			ap.Gitlab.ClientSecret = oldSecrets[ap.Gitlab.ClientID]
+			ap.Gitlab.ClientSecret = oldAuthProviderSecrets[ap.Gitlab.ClientID]
 		}
 		if ap.Bitbucketcloud != nil && ap.Bitbucketcloud.ClientSecret == redactedSecret {
-			ap.Bitbucketcloud.ClientSecret = oldSecrets[ap.Bitbucketcloud.ClientKey]
+			ap.Bitbucketcloud.ClientSecret = oldAuthProviderSecrets[ap.Bitbucketcloud.ClientKey]
 		}
 		if ap.AzureDevOps != nil && ap.AzureDevOps.ClientSecret == redactedSecret {
-			ap.AzureDevOps.ClientSecret = oldSecrets[ap.AzureDevOps.ClientID]
+			ap.AzureDevOps.ClientSecret = oldAuthProviderSecrets[ap.AzureDevOps.ClientID]
 		}
 	}
-	unredactedSite, err := jsonc.Edit(input, newCfg.AuthProviders, "auth.providers")
+
+	unredactedSite, err := jsonc.Edit(input, newAuthProviderCfg.AuthProviders, "auth.providers")
 	if err != nil {
 		return input, errors.Wrap(err, `unredact "auth.providers"`)
 	}
+
+	var observabilitySecretsReplaceList []string
+	for _, oa := range oldCfg.ObservabilityAlerts {
+		if oa.Notifier.Opsgenie != nil && oa.Notifier.Opsgenie.ApiKey != "" {
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Opsgenie.ApiKey), oa.Notifier.Opsgenie.ApiKey)
+		}
+		if oa.Notifier.Slack != nil && oa.Notifier.Slack.Url != "" {
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Slack.Url), oa.Notifier.Slack.Url)
+		}
+		if oa.Notifier.Pagerduty != nil && oa.Notifier.Pagerduty.IntegrationKey != "" {
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Pagerduty.IntegrationKey), oa.Notifier.Pagerduty.IntegrationKey)
+		}
+		if oa.Notifier.Webhook != nil && oa.Notifier.Webhook.BearerToken != "" {
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Webhook.BearerToken), oa.Notifier.Webhook.BearerToken)
+		}
+		if oa.Notifier.Webhook != nil && oa.Notifier.Webhook.Password != "" {
+			observabilitySecretsReplaceList = append(observabilitySecretsReplaceList, redactHashString(oa.Notifier.Webhook.Password), oa.Notifier.Webhook.Password)
+		}
+	}
+	unredactedSite = strings.NewReplacer(observabilitySecretsReplaceList...).Replace(unredactedSite)
 
 	for _, secret := range siteConfigSecrets {
 		v, err := jsonc.ReadProperty(unredactedSite, secret.editPaths...)
@@ -344,19 +365,23 @@ func RedactAndHashSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified,
 	return redactConfSecrets(raw, true)
 }
 
+func redactHashString(secret string) string {
+	hash := hashutil.ToSHA256Bytes([]byte(secret))
+	digest := hex.EncodeToString(hash)
+	return "REDACTED-DATA-CHUNK-" + digest[:10]
+}
+
 // redactConfSecrets redacts defined list of secrets from the given configuration. It returns empty
 // configuration if any error occurs during redacting process to prevent accidental leak of secrets
 // in the configuration.
 //
 // Updates to this function should also be reflected in the UnredactSecrets.
 func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty conftypes.RawUnified, err error) {
-	getRedactedSecret := func(_ string) string { return redactedSecret }
-	if hashSecrets {
-		getRedactedSecret = func(secret string) string {
-			hash := hashutil.ToSHA256Bytes([]byte(secret))
-			digest := hex.EncodeToString(hash)
-			return "REDACTED-DATA-CHUNK" + "-" + digest[:10]
+	getRedactedSecret := func(secret string, hashSecrets bool) string {
+		if !hashSecrets {
+			return redactedSecret
 		}
+		return redactHashString(secret)
 	}
 
 	cfg, err := ParseConfig(raw)
@@ -365,27 +390,52 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 	}
 
 	for _, ap := range cfg.AuthProviders {
-		if ap.Openidconnect != nil {
-			ap.Openidconnect.ClientSecret = getRedactedSecret(ap.Openidconnect.ClientSecret)
-		}
 		if ap.Github != nil {
-			ap.Github.ClientSecret = getRedactedSecret(ap.Github.ClientSecret)
+			ap.Github.ClientSecret = getRedactedSecret(ap.Github.ClientSecret, hashSecrets)
+		}
+		if ap.Openidconnect != nil {
+			ap.Openidconnect.ClientSecret = getRedactedSecret(ap.Openidconnect.ClientSecret, hashSecrets)
 		}
 		if ap.Gitlab != nil {
-			ap.Gitlab.ClientSecret = getRedactedSecret(ap.Gitlab.ClientSecret)
+			ap.Gitlab.ClientSecret = getRedactedSecret(ap.Gitlab.ClientSecret, hashSecrets)
 		}
 		if ap.Bitbucketcloud != nil {
-			ap.Bitbucketcloud.ClientSecret = getRedactedSecret(ap.Bitbucketcloud.ClientSecret)
+			ap.Bitbucketcloud.ClientSecret = getRedactedSecret(ap.Bitbucketcloud.ClientSecret, hashSecrets)
 		}
 		if ap.AzureDevOps != nil {
-			ap.AzureDevOps.ClientSecret = getRedactedSecret(ap.AzureDevOps.ClientSecret)
+			ap.AzureDevOps.ClientSecret = getRedactedSecret(ap.AzureDevOps.ClientSecret, hashSecrets)
 		}
 	}
+
+	for _, oa := range cfg.ObservabilityAlerts {
+		if oa.Notifier.Opsgenie != nil && oa.Notifier.Opsgenie.ApiKey != "" {
+			oa.Notifier.Opsgenie.ApiKey = getRedactedSecret(oa.Notifier.Opsgenie.ApiKey, true)
+		}
+		if oa.Notifier.Slack != nil && oa.Notifier.Slack.Url != "" {
+			oa.Notifier.Slack.Url = getRedactedSecret(oa.Notifier.Slack.Url, true)
+		}
+		if oa.Notifier.Pagerduty != nil && oa.Notifier.Pagerduty.IntegrationKey != "" {
+			oa.Notifier.Pagerduty.IntegrationKey = getRedactedSecret(oa.Notifier.Pagerduty.IntegrationKey, true)
+		}
+		if oa.Notifier.Webhook != nil && oa.Notifier.Webhook.BearerToken != "" {
+			oa.Notifier.Webhook.BearerToken = getRedactedSecret(oa.Notifier.Webhook.BearerToken, true)
+		}
+		if oa.Notifier.Webhook != nil && oa.Notifier.Webhook.Password != "" {
+			oa.Notifier.Webhook.Password = getRedactedSecret(oa.Notifier.Webhook.Password, true)
+		}
+	}
+
 	redactedSite := raw.Site
 	if len(cfg.AuthProviders) > 0 {
 		redactedSite, err = jsonc.Edit(raw.Site, cfg.AuthProviders, "auth.providers")
 		if err != nil {
 			return empty, errors.Wrap(err, `redact "auth.providers"`)
+		}
+	}
+	if len(cfg.ObservabilityAlerts) > 0 {
+		redactedSite, err = jsonc.Edit(redactedSite, cfg.ObservabilityAlerts, "observability.alerts")
+		if err != nil {
+			return empty, errors.Wrap(err, `redact "observability.alerts"`)
 		}
 	}
 
@@ -408,7 +458,7 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 			continue
 		}
 
-		redactedSite, err = jsonc.Edit(redactedSite, getRedactedSecret(val), secret.editPaths...)
+		redactedSite, err = jsonc.Edit(redactedSite, getRedactedSecret(val, hashSecrets), secret.editPaths...)
 		if err != nil {
 			return empty, errors.Wrapf(err, `redact %q`, strings.Join(secret.editPaths, " > "))
 		}

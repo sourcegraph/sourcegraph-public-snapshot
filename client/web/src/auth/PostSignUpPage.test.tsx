@@ -8,6 +8,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import type { AuthenticatedUser } from '../auth'
+import { createFlagMock } from '../featureFlags/createFlagMock'
+import { FeatureFlagName } from '../featureFlags/featureFlags'
 import { GetCodyPage } from '../get-cody/GetCodyPage'
 import { SUBMIT_CODY_SURVEY } from '../marketing/toast/CodySurveyToast'
 
@@ -38,8 +40,10 @@ function renderPage(
         completedPostSignup,
     } as AuthenticatedUser
 
+    const FLAG = 'signup-survey-enabled' as FeatureFlagName
+
     return renderWithBrandedContext(
-        <MockedTestProvider mocks={mocks || []}>
+        <MockedTestProvider mocks={[...(mocks || []), createFlagMock(FLAG, false)]}>
             <Routes>
                 <Route path="/post-sign-up" element={<PostSignUpPage authenticatedUser={mockUser} />} />
                 <Route
@@ -53,9 +57,13 @@ function renderPage(
 }
 
 describe('PostSignUpPage', () => {
-    test('renders post signup page - with email verification', () => {
+    test('renders post signup page - with email verification', async () => {
         const { asFragment } = renderPage({ completedPostSignup: false, hasVerifiedEmail: false })
-        expect(document.title).toBe('Post signup - Sourcegraph')
+
+        await waitFor(() => {
+            expect(document.title).toBe('Post signup - Sourcegraph')
+        })
+
         expect(asFragment()).toMatchSnapshot()
 
         // Renders email verification modal.
@@ -65,11 +73,12 @@ describe('PostSignUpPage', () => {
         const nextButton = screen.getByRole('button', { name: 'Next' })
         fireEvent.click(nextButton)
 
+        // console.log('DOCUMENT 2', prettyDOM(document.body))
         expect(screen.queryByText('Verify your email address')).not.toBeInTheDocument()
         expect(screen.getByText('How will you be using Cody, our AI assistant?')).toBeVisible()
     })
 
-    test('renders post signup page - with cody survey', () => {
+    test('renders post signup page - with cody survey', async () => {
         const submitCodySurveyMock: MockedResponse = {
             request: {
                 query: gql(SUBMIT_CODY_SURVEY),
@@ -92,7 +101,10 @@ describe('PostSignUpPage', () => {
             { completedPostSignup: false, hasVerifiedEmail: true },
             { mocks: [submitCodySurveyMock] }
         )
-        expect(document.title).toBe('Post signup - Sourcegraph')
+        await waitFor(() => {
+            expect(document.title).toBe('Post signup - Sourcegraph')
+        })
+
         expect(screen.getByText('How will you be using Cody, our AI assistant?')).toBeVisible()
         expect(asFragment()).toMatchSnapshot()
 
@@ -107,7 +119,7 @@ describe('PostSignUpPage', () => {
         waitFor(() => expect(locationRef.current?.pathname).toBe('/get-cody'))
     })
 
-    test('redirects to customized page after survey submission', () => {
+    test('redirects to customized page after survey submission', async () => {
         const submitCodySurveyMock: MockedResponse = {
             request: {
                 query: gql(SUBMIT_CODY_SURVEY),
@@ -131,6 +143,10 @@ describe('PostSignUpPage', () => {
             { route: '/post-sign-up?returnTo=/foo?bar=baz', mocks: [submitCodySurveyMock] }
         )
 
+        await waitFor(() => {
+            expect(document.title).toBe('Post signup - Sourcegraph')
+        })
+
         const workCheckbox = screen.getByLabelText('for work')
         fireEvent.click(workCheckbox)
         const submitButton = screen.getByRole('button', { name: 'Get started' })
@@ -142,19 +158,26 @@ describe('PostSignUpPage', () => {
         })
     })
 
-    test('renders redirect when user has completed post signup flow', () => {
+    test('renders redirect when user has completed post signup flow', async () => {
         const { asFragment, locationRef } = renderPage({ completedPostSignup: true, hasVerifiedEmail: true })
-        expect(document.title).toBe('Sourcegraph')
+
+        await waitFor(() => {
+            expect(document.title).toBe('Sourcegraph')
+        })
+
         expect(asFragment()).toMatchSnapshot()
         expect(locationRef.current?.pathname).toBe('/search')
     })
 
-    test('renders customized redirect when user has completed post signup flow', () => {
+    test('renders customized redirect when user has completed post signup flow', async () => {
         const { asFragment, locationRef } = renderPage(
             { completedPostSignup: true, hasVerifiedEmail: true },
             { route: '/post-sign-up?returnTo=/foo' }
         )
-        expect(document.title).toBe('Sourcegraph')
+        await waitFor(() => {
+            expect(document.title).toBe('Sourcegraph')
+        })
+
         expect(asFragment()).toMatchSnapshot()
         expect(locationRef.current?.pathname).toBe('/foo')
     })
