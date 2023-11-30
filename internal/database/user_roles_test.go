@@ -19,7 +19,7 @@ func TestUserRoleAssign(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	user, role := createUserAndRole(ctx, t, db)
@@ -70,7 +70,7 @@ func TestUserRoleBulkAssignForUser(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	user, role := createUserAndRole(ctx, t, db)
@@ -126,7 +126,7 @@ func TestUserRoleAssignSysemRole(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	user, _ := createUserAndRole(ctx, t, db)
@@ -171,7 +171,7 @@ func TestUserRoleBulkAssignSystemRolesToUsers(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	user, _ := createUserAndRole(ctx, t, db)
@@ -217,7 +217,7 @@ func TestUserRoleRevoke(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	user, role := createUserAndRole(ctx, t, db)
@@ -280,7 +280,7 @@ func TestUserRoleRevoke(t *testing.T) {
 func TestUserRoleGetByRoleID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	role := createTestRoleForUserRole(ctx, "TESTROLE", t, db)
@@ -323,7 +323,7 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 func TestUserRoleGetByUserID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	user := createTestUserWithoutRoles(t, db, "ANOTHERTESTUSER", false)
@@ -366,7 +366,7 @@ func TestUserRoleGetByUserID(t *testing.T) {
 func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	user, role := createUserAndRole(ctx, t, db)
@@ -413,7 +413,7 @@ func TestSetRolesForUser(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	u1 := createTestUserWithoutRoles(t, db, "u1", false)
@@ -499,7 +499,7 @@ func TestBulkRevokeRolesForUser(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.UserRoles()
 
 	user, role := createUserAndRole(ctx, t, db)

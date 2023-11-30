@@ -11,7 +11,7 @@ var DataAnalytics dataAnalytics
 // codeInsights provides `CodeInsights` implementations.
 type dataAnalytics struct{}
 
-var usageDataExporterNamespace = "Usage data exporter"
+var usageDataExporterNamespace = "Usage data exporter (legacy)"
 
 // src_telemetry_job_queue_size
 func (dataAnalytics) NewTelemetryJobQueueGroup(containerName string) monitoring.Group {
@@ -48,7 +48,7 @@ func (dataAnalytics) NewTelemetryJobOperationsGroup(containerName string) monito
 			},
 			Namespace:       usageDataExporterNamespace,
 			DescriptionRoot: "Job operations",
-			Hidden:          false,
+			Hidden:          true,
 		},
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
 			Total:     NoAlertsOption("none"),
@@ -67,8 +67,8 @@ func (dataAnalytics) NewTelemetryJobOperationsGroup(containerName string) monito
 
 func (dataAnalytics) TelemetryJobThroughputGroup(containerName string) monitoring.Group {
 	return monitoring.Group{
-		Title:  "Usage data exporter: Utilization",
-		Hidden: false,
+		Title:  "Usage data exporter (legacy): Utilization",
+		Hidden: true,
 		Rows: []monitoring.Row{
 			{
 				{

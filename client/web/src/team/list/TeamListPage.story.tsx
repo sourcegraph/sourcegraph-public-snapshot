@@ -1,5 +1,5 @@
 import type { MockedResponse } from '@apollo/client/testing'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
@@ -17,7 +17,7 @@ const config: Meta = {
 }
 export default config
 
-export const EmptyList: Story = function EmptyList() {
+export const EmptyList: StoryFn = function EmptyList() {
     const mockResponse: MockedResponse<ListTeamsResult> = {
         request: {
             query: getDocumentNode(LIST_TEAMS),
@@ -42,7 +42,7 @@ export const EmptyList: Story = function EmptyList() {
     return <WebStory mocks={[mockResponse]}>{() => <TeamListPage />}</WebStory>
 }
 
-export const ListWithItems: Story = function ListWithItems() {
+export const ListWithItems: StoryFn = function ListWithItems() {
     const mockResponse: MockedResponse<ListTeamsResult> = {
         request: {
             query: getDocumentNode(LIST_TEAMS),

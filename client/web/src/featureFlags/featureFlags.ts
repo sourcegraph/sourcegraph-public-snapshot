@@ -3,33 +3,40 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 import type { OrgFeatureFlagOverridesResult, OrgFeatureFlagOverridesVariables } from '../graphql-operations'
 
 // A union of all feature flags we currently have.
-// If there are no feature flags at the moment, this should be `never`.
-export type FeatureFlagName =
-    | 'quick-start-tour-for-authenticated-users'
-    | 'insight-polling-enabled'
-    | 'ab-visitor-tour-with-notebooks'
-    | 'ab-email-verification-alert'
-    | 'contrast-compliant-syntax-highlighting'
-    | 'admin-analytics-cache-disabled'
-    | 'search-input-show-history'
-    | 'search-results-keyboard-navigation'
-    | 'enable-streaming-git-blame'
-    | 'plg-enable-add-codehost-widget'
-    | 'accessible-file-tree'
-    | 'accessible-symbol-tree'
-    | 'accessible-file-tree-always-load-ancestors'
-    | 'enable-ownership-panels'
-    | 'search-ranking'
-    | 'blob-page-switch-areas-shortcuts'
-    | 'sentinel'
-    | 'clone-progress-logging'
-    | 'sourcegraph-operator-site-admin-hide-maintenance'
-    | 'repository-metadata'
-    | 'cody-web-search'
-    | 'own-promote'
-    | 'own-analytics'
-    | 'enable-simple-search'
-    | 'end-user-onboarding'
+export const FEATURE_FLAGS = [
+    'quick-start-tour-for-authenticated-users',
+    'insight-polling-enabled',
+    'ab-visitor-tour-with-notebooks',
+    'ab-email-verification-alert',
+    'contrast-compliant-syntax-highlighting',
+    'admin-analytics-cache-disabled',
+    'search-input-show-history',
+    'search-results-keyboard-navigation',
+    'plg-enable-add-codehost-widget',
+    'accessible-file-tree',
+    'accessible-symbol-tree',
+    'accessible-file-tree-always-load-ancestors',
+    'enable-ownership-panels',
+    'blob-page-switch-areas-shortcuts',
+    'clone-progress-logging',
+    'sourcegraph-operator-site-admin-hide-maintenance',
+    'repository-metadata',
+    'cody-web-search',
+    'own-promote',
+    'own-analytics',
+    'enable-simple-search',
+    'end-user-onboarding',
+    'admin-onboarding',
+    'enable-sveltekit',
+    'search-content-based-lang-detection',
+    'search-new-keyword',
+    'search-debug',
+    'cody-chat-mock-test',
+    'signup-survey-enabled',
+    'cody-pro',
+] as const
+
+export type FeatureFlagName = typeof FEATURE_FLAGS[number]
 
 interface OrgFlagOverride {
     orgID: string

@@ -579,7 +579,7 @@ func newStore(t *testing.T, files map[string]struct {
 	}
 
 	return &search.Store{
-		GitserverClient: gitserver.NewClient(),
+		GitserverClient: gitserver.NewTestClient(t),
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			r, w := io.Pipe()
 			go func() {

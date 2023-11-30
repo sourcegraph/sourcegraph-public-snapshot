@@ -18,6 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 )
@@ -136,8 +139,21 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 	}
 	// Only log the time if we successfully resolved one search type.
 	if len(types) == 1 {
+		// New events that get exported: https://docs.sourcegraph.com/dev/background-information/telemetry
+		events := telemetryrecorder.NewBestEffort(clients.Logger, clients.DB)
+		// For now, do not tee into event_logs in telemetryrecorder - retain the
+		// custom instrumentation of V1 events instead (usagestats.LogBackendEvent)
+		ctx = teestore.WithoutV1(ctx)
+
 		a := actor.FromContext(ctx)
 		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
+			// New event
+			events.Record(ctx, "search.latencies", telemetry.Action(types[0]), &telemetry.EventParameters{
+				Metadata: telemetry.EventMetadata{
+					"durationMs": float64(duration.Milliseconds()),
+				},
+			})
+			// Legacy event
 			value := fmt.Sprintf(`{"durationMs": %d}`, duration.Milliseconds())
 			eventName := fmt.Sprintf("search.latencies.%s", types[0])
 			err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureflag.GetEvaluatedFlagSet(ctx), nil)
@@ -146,6 +162,9 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 			}
 
 			if _, _, ok := isOwnershipSearch(q); ok {
+				// New event
+				events.Record(ctx, "search", "file.hasOwners", nil)
+				// Legacy event
 				err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "FileHasOwnerSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
 				if err != nil {
 					clients.Logger.Warn("Could not log use of file:has.owners", log.Error(err))
@@ -154,6 +173,9 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 
 			if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
 				if sp, err := filter.SelectPathFromString(v); err == nil && isSelectOwnersSearch(sp) {
+					// New event
+					events.Record(ctx, "search", "select.fileOwners", nil)
+					// Legacy event
 					err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "SelectFileOwnersSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
 					if err != nil {
 						clients.Logger.Warn("Could not log use of select:file.owners", log.Error(err))

@@ -107,7 +107,7 @@ func TestRecloneRepository(t *testing.T) {
 			GitServers: []string{serverURL.Host},
 		}, SiteConfiguration: schema.SiteConfiguration{
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: false,
+				EnableGRPC: boolPointer(false),
 			},
 		},
 	})
@@ -201,7 +201,7 @@ func TestResolverTo(t *testing.T) {
 	// This test exists purely to remove some non determinism in our tests
 	// run. The To* resolvers are stored in a map in our graphql
 	// implementation => the order we call them is non deterministic =>
-	// codecov coverage reports are noisy.
+	// code coverage reports are noisy.
 	resolvers := []any{
 		&FileMatchResolver{db: db},
 		&NamespaceResolver{},
@@ -248,4 +248,8 @@ func TestResolverTo(t *testing.T) {
 			t.Errorf("expected treeEntry to be tree")
 		}
 	})
+}
+
+func boolPointer(b bool) *bool {
+	return &b
 }

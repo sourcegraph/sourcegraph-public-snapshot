@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -334,7 +333,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	const repoID = 1
 
 	called := false
-	permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+	permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 		called = true
 		if len(req.RepoIDs) != 1 && req.RepoIDs[0] == api.RepoID(repoID) {
 			t.Errorf("unexpected repoID argument. want=%d have=%d", repoID, req.RepoIDs[0])
@@ -389,7 +388,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		r := &Resolver{db: db}
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 			called = true
 			if len(req.UserIDs) != 1 || req.UserIDs[0] != userID {
 				t.Errorf("unexpected UserIDs argument. want=%d have=%v", userID, req.UserIDs)
@@ -421,7 +420,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		r := &Resolver{db: db}
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 			called = true
 			if len(req.UserIDs) != 1 || req.UserIDs[0] != userID {
 				t.Errorf("unexpected UserIDs argument. want=%d have=%v", userID, req.UserIDs)
@@ -447,7 +446,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		r := &Resolver{db: db}
 
 		called := false
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 			called = true
 			if len(req.UserIDs) != 1 && req.UserIDs[0] == userID {
 				t.Errorf("unexpected UserIDs argument. want=%d have=%d", userID, req.UserIDs[0])

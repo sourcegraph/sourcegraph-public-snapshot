@@ -42,6 +42,7 @@ type Services struct {
 
 	// Handler for exporting search jobs data.
 	SearchJobsDataExportHandler http.Handler
+	SearchJobsLogsHandler       http.Handler
 
 	// Handler for completions stream.
 	NewChatCompletionsStreamHandler NewChatCompletionsStreamHandler
@@ -120,6 +121,7 @@ func DefaultServices() Services {
 		NewChatCompletionsStreamHandler: func() http.Handler { return makeNotFoundHandler("chat completions streaming endpoint") },
 		NewCodeCompletionsHandler:       func() http.Handler { return makeNotFoundHandler("code completions streaming endpoint") },
 		SearchJobsDataExportHandler:     makeNotFoundHandler("search jobs data export handler"),
+		SearchJobsLogsHandler:           makeNotFoundHandler("search jobs logs handler"),
 	}
 }
 

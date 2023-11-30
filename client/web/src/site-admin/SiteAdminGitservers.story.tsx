@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -10,7 +10,7 @@ import { WebStory } from '../components/WebStory'
 import { GITSERVERS } from './backend'
 import { SiteAdminGitserversPage } from './SiteAdminGitserversPage'
 
-const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
+const decorator: Decorator = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'web/site-admin/Gitservers',
@@ -55,7 +55,7 @@ const mocks = new WildcardMockLink([
     },
 ])
 
-export const GitserversPage: Story = () => (
+export const GitserversPage: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider link={mocks}>

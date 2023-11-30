@@ -15,12 +15,6 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
    An introduction to Sourcegraph's Buildkite pipelines.
   </a>
 
-  <a href="./reference" class="btn" alt="Pipeline references">
-   <span>Pipelines reference</span>
-   <br>
-   A complete Buildkite pipeline reference covering all the different pipeline types.
-  </a>
-
   <a href="./development" class="btn" alt="Development">
    <span>Development</span>
    <br>
@@ -28,12 +22,13 @@ Sourcegraph also maintains a variety of tooling on [GitHub Actions](#github-acti
   </a>
 </div>
 
+Run `sg ci docs` to see documentation about the CI pipeline steps.
+
 
 ## Buildkite pipelines
 
 [Tests](../../how-to/testing.md) are automatically run in our [various Buildkite pipelines](https://buildkite.com/sourcegraph) when you push your changes (i.e. when you run `git push`) to the `sourcegraph/sourcegraph` GitHub repository.
-Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/enterprise/dev/ci) - a complete reference of all available pipeline types and steps is available in the generated [Pipeline reference](./reference.md). To keep the repository tidy, consider deleting the branch after the pipeline has completed. The build results will be available even after the branch is deleted.
-You can also see these docs locally with `sg ci docs`.
+Pipeline steps are generated on the fly using the [pipeline generator](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/tree/dev/ci) - a complete reference of all available pipeline types and steps is available from `sg ci docs`. To keep the repository tidy, consider deleting the branch after the pipeline has completed. The build results will be available even after the branch is deleted.
 
 To see what checks will get run against your current branch, use [`sg`](../../setup/quickstart.md):
 
@@ -64,7 +59,7 @@ In the Buildkite UI, soft failures currently look like the following, with a _tr
 We use soft failures for the following reasons only:
 
 - Steps that determine whether a subsequent step should run, where soft failures are the only technical way to communicate that a later step should be skipped in this manner using Buildkite.
-  - Examples: [hash comparison steps that determine if a build should run](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/ci/operations%5C.go+compare-hash.sh&patternType=literal)
+  - Examples: [hash comparison steps that determine if a build should run](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Edev/ci/internal/ci/operations%5C.go+compare-hash.sh&patternType=literal)
 - Regular analysis tasks, where soft failures serve as an monitoring indicator to warn the team responsible for fixing issues.
   - Examples: [image vulnerability scanning](#image-vulnerability-scanning), linting tasks for catching deprecation warnings
 - Temporary exceptions to accommodate experimental or in-progress work.
@@ -79,7 +74,7 @@ All other failures are hard failures.
 #### Image vulnerability scanning
 
 Our CI pipeline scans uses [Trivy](https://aquasecurity.github.io/trivy/) to scan our Docker images for security vulnerabilities.
-Refer to our [Pipeline reference](./reference.md) to see what pipelines Trivy checks run in.
+Refer to `sg ci docs` to see what pipelines Trivy checks run in.
 
 If there are any `HIGH` or `CRITICAL` severities in a Docker image that have a known fix:
 
@@ -144,8 +139,8 @@ If a step is flaky we need to get the build back to reliable as soon as possible
 An example use of `Skip`:
 
 ```diff
---- a/enterprise/dev/ci/internal/ci/operations.go
-+++ b/enterprise/dev/ci/internal/ci/operations.go
+--- a/dev/ci/internal/ci/operations.go
++++ b/dev/ci/internal/ci/operations.go
 @@ -260,7 +260,9 @@ func addGoBuild(pipeline *bk.Pipeline) {
  func addDockerfileLint(pipeline *bk.Pipeline) {
         pipeline.AddStep(":docker: Lint",
@@ -169,7 +164,7 @@ Also see [Buildkite infrastructure](#buildkite-infrastructure).
 
 ##### Flaky linters
 
-Linters are all run through [`sg lint`](../sg/reference.md#sg-lint), with linters defined in [`dev/sg/linters`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/sg/linters).
+Linters are all run through [`sg lint`], with linters defined in [`dev/sg/linters`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/dev/sg/linters).
 If a linter is flaky, you can modify the `dev/sg/linters` package to disable the specific linter (or entire category of linters) with the `Enabled: disabled(...)` helper:
 
 ```diff

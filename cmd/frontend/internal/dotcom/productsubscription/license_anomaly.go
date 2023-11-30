@@ -39,7 +39,7 @@ func StartCheckForAnomalousLicenseUsage(logger log.Logger, db database.DB) {
 	client := slack.New(dotcom.SlackLicenseAnomallyWebhook)
 
 	t := time.NewTicker(1 * time.Hour)
-	logger = logger.Scoped("StartCheckForAnomalousLicenseUsage", "starts the checks for anomalous license usage")
+	logger = logger.Scoped("StartCheckForAnomalousLicenseUsage")
 
 	for range t.C {
 		maybeCheckAnomalies(logger, db, client, glock.NewRealClock(), redispool.Store)

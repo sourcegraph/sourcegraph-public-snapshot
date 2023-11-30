@@ -158,6 +158,20 @@ Type: `string`
 
 Example: `"Summarize the given git changes in 3-5 sentences"`
 
+#### `commands.<id>.mode`
+
+The interaction mode to use.
+
+Type: `string`
+
+Default: `"ask"`
+
+Values:
+- `"ask"` — Focus the chat view and add to the current chat
+- `"inline"` — Start a new inline chat
+- `"insert"` — Insert the response above the code
+- `"replace"` — Replace the code with the response
+
 #### `commands.<id>.context`
 
 Optional context data to generate and pass to Cody.
@@ -182,6 +196,8 @@ Type: `string`
 
 Default: `""`
 
+Example: ` "git log --since=$(git describe --tags --abbrev=0) --pretty='Commit author: %an%nCommit message: %s%nChange description:%b%n'"`
+
 #### `commands.<id>.context.currentDir`
 
 Include snippets from first 10 files in the current directory.
@@ -197,6 +213,26 @@ Include snippets from the current file. If the file is too long, only the conten
 Type: `boolean`
 
 Default: `false`
+
+#### `commands.<id>.context.directoryPath`
+
+Include snippets from the first five files within the given relative path of the directory. Content will be limited and truncated according to the token limit.
+
+Type: `string`
+
+Default: `""`
+
+Example: `"lib/common"`
+
+#### `commands.<id>.context.filePath`
+
+Include snippets from the given file path relative to the codebase. If the file is too long, content will be truncated.
+
+Type: `string`
+
+Default: `""`
+
+Example: `"CHANGELOG.md", "test/unit/example.test.ts"`
 
 #### `commands.<id>.context.none`
 

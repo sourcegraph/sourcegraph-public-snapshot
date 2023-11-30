@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
@@ -270,8 +270,8 @@ func (*GitHubWebhook) issueComment(e *gh.IssueCommentEvent) *github.IssueComment
 		comment.AuthorAssociation = c.GetAuthorAssociation()
 		comment.Body = c.GetBody()
 		comment.URL = c.GetURL()
-		comment.CreatedAt = c.GetCreatedAt()
-		comment.UpdatedAt = c.GetUpdatedAt()
+		comment.CreatedAt = c.GetCreatedAt().Time
+		comment.UpdatedAt = c.GetUpdatedAt().Time
 	}
 
 	comment.IncludesCreatedEdit = e.GetAction() == "edited"
@@ -292,7 +292,7 @@ func (*GitHubWebhook) labeledEvent(e *gh.PullRequestEvent) *github.LabelEvent {
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		labelEvent.CreatedAt = pr.GetUpdatedAt()
+		labelEvent.CreatedAt = pr.GetUpdatedAt().Time
 	}
 
 	if l := e.GetLabel(); l != nil {
@@ -315,7 +315,7 @@ func (*GitHubWebhook) readyForReviewEvent(e *gh.PullRequestEvent) *github.ReadyF
 	readyForReviewEvent := &github.ReadyForReviewEvent{}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		readyForReviewEvent.CreatedAt = pr.GetUpdatedAt()
+		readyForReviewEvent.CreatedAt = pr.GetUpdatedAt().Time
 	}
 
 	if s := e.GetSender(); s != nil {
@@ -331,7 +331,7 @@ func (*GitHubWebhook) convertToDraftEvent(e *gh.PullRequestEvent) *github.Conver
 	convertToDraftEvent := &github.ConvertToDraftEvent{}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		convertToDraftEvent.CreatedAt = pr.GetUpdatedAt()
+		convertToDraftEvent.CreatedAt = pr.GetUpdatedAt().Time
 	}
 
 	if s := e.GetSender(); s != nil {
@@ -347,7 +347,7 @@ func (*GitHubWebhook) assignedEvent(e *gh.PullRequestEvent) *github.AssignedEven
 	assignedEvent := &github.AssignedEvent{}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		assignedEvent.CreatedAt = pr.GetUpdatedAt()
+		assignedEvent.CreatedAt = pr.GetUpdatedAt().Time
 	}
 
 	if s := e.GetSender(); s != nil {
@@ -369,7 +369,7 @@ func (*GitHubWebhook) unassignedEvent(e *gh.PullRequestEvent) *github.Unassigned
 	unassignedEvent := &github.UnassignedEvent{}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		unassignedEvent.CreatedAt = pr.GetUpdatedAt()
+		unassignedEvent.CreatedAt = pr.GetUpdatedAt().Time
 	}
 
 	if s := e.GetSender(); s != nil {
@@ -397,7 +397,7 @@ func (*GitHubWebhook) reviewRequestedEvent(e *gh.PullRequestEvent) *github.Revie
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		event.CreatedAt = pr.GetUpdatedAt()
+		event.CreatedAt = pr.GetUpdatedAt().Time
 	}
 
 	if e.RequestedReviewer != nil {
@@ -428,7 +428,7 @@ func (*GitHubWebhook) reviewRequestRemovedEvent(e *gh.PullRequestEvent) *github.
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		event.CreatedAt = pr.GetUpdatedAt()
+		event.CreatedAt = pr.GetUpdatedAt().Time
 	}
 
 	if e.RequestedReviewer != nil {
@@ -460,7 +460,7 @@ func (*GitHubWebhook) renamedTitleEvent(e *gh.PullRequestEvent) *github.RenamedT
 
 	if pr := e.GetPullRequest(); pr != nil {
 		event.CurrentTitle = pr.GetTitle()
-		event.CreatedAt = pr.GetUpdatedAt()
+		event.CreatedAt = pr.GetUpdatedAt().Time
 	}
 
 	if ch := e.GetChanges(); ch != nil && ch.Title != nil && ch.Title.From != nil {
@@ -482,7 +482,7 @@ func (*GitHubWebhook) closedOrMergeEvent(e *gh.PullRequestEvent) keyer {
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		closeEvent.CreatedAt = pr.GetUpdatedAt()
+		closeEvent.CreatedAt = pr.GetUpdatedAt().Time
 
 		// This is different from the URL returned by GraphQL because the precise
 		// event URL isn't available in this webhook payload. This means if we expose
@@ -518,7 +518,7 @@ func (*GitHubWebhook) reopenedEvent(e *gh.PullRequestEvent) *github.ReopenedEven
 	}
 
 	if pr := e.GetPullRequest(); pr != nil {
-		event.CreatedAt = pr.GetUpdatedAt()
+		event.CreatedAt = pr.GetUpdatedAt().Time
 	}
 
 	return event
@@ -532,8 +532,8 @@ func (*GitHubWebhook) pullRequestReviewEvent(e *gh.PullRequestReviewEvent) *gith
 		review.Body = e.Review.GetBody()
 		review.State = e.Review.GetState()
 		review.URL = e.Review.GetHTMLURL()
-		review.CreatedAt = e.Review.GetSubmittedAt()
-		review.UpdatedAt = e.Review.GetSubmittedAt()
+		review.CreatedAt = e.Review.GetSubmittedAt().Time
+		review.UpdatedAt = e.Review.GetSubmittedAt().Time
 
 		if u := r.GetUser(); u != nil {
 			review.Author.AvatarURL = u.GetAvatarURL()
@@ -560,8 +560,8 @@ func (*GitHubWebhook) pullRequestReviewCommentEvent(e *gh.PullRequestReviewComme
 		}
 		comment.Body = c.GetBody()
 		comment.URL = c.GetURL()
-		comment.CreatedAt = c.GetCreatedAt()
-		comment.UpdatedAt = c.GetUpdatedAt()
+		comment.CreatedAt = c.GetCreatedAt().Time
+		comment.UpdatedAt = c.GetUpdatedAt().Time
 
 		if u := c.GetUser(); u != nil {
 			user.AvatarURL = u.GetAvatarURL()

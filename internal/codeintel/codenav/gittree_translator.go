@@ -8,7 +8,6 @@ import (
 	"github.com/dgraph-io/ristretto"
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -156,7 +155,7 @@ func (g *gitTreeTranslator) readCachedHunks(ctx context.Context, repo *sgtypes.R
 // readHunks returns a position-ordered slice of changes (additions or deletions) of
 // the given path between the given source and target commits.
 func (g *gitTreeTranslator) readHunks(ctx context.Context, repo *sgtypes.Repo, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-	return g.client.DiffPath(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, sourceCommit, targetCommit, path)
+	return g.client.DiffPath(ctx, repo.Name, sourceCommit, targetCommit, path)
 }
 
 // findHunk returns the last thunk that does not begin after the given line.

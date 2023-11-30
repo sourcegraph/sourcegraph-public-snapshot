@@ -5,6 +5,7 @@ go_library(
     name = "conf",
     srcs = [
         "auth.go",
+        "batch_changes.go",
         "client.go",
         "cody_validators.go",
         "computed.go",
@@ -25,11 +26,11 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
+        "//internal/accesstoken",
         "//internal/api/internalapi",
         "//internal/conf/confdefaults",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
-        "//internal/dotcomuser",
         "//internal/env",
         "//internal/hashutil",
         "//internal/httpcli",
@@ -43,6 +44,7 @@ go_library(
         "@com_github_getsentry_sentry_go//:sentry-go",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_hashicorp_cronexpr//:cronexpr",
+        "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_jsonx//:jsonx",
         "@com_github_sourcegraph_log//:log",
         "@com_github_xeipuuv_gojsonschema//:gojsonschema",

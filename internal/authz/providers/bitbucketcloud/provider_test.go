@@ -22,14 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-type mockDoer struct {
-	do func(*http.Request) (*http.Response, error)
-}
-
-func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
-	return c.do(r)
-}
-
 func mustURL(t *testing.T, u string) *url.URL {
 	parsed, err := url.Parse(u)
 	if err != nil {

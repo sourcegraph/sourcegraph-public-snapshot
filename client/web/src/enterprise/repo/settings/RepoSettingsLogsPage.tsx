@@ -19,6 +19,8 @@ import {
     LoadingSpinner,
     ErrorAlert,
     Button,
+    Alert,
+    Link,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../../components/LogOutput'
@@ -59,11 +61,13 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
     useEffect(() => {
         const numericTabIdx = parseInt(activeTab, 10)
         switch (numericTabIdx) {
-            case LogsPageTabs.SYNCLOGS:
+            case LogsPageTabs.SYNCLOGS: {
                 setActiveTab(LogsPageTabs.SYNCLOGS)
                 break
-            default:
+            }
+            default: {
                 setActiveTab(LogsPageTabs.COMMANDS)
+            }
         }
     }, [setActiveTab, activeTab])
 
@@ -105,13 +109,30 @@ interface CommandLogsProps {
 }
 
 const CommandLogs: FC<CommandLogsProps> = ({ repo }) => {
-    const { recordedCommands, loading, error, fetchMore, hasNextPage } = useFetchRecordedCommands(repo.id)
-
+    const { recordedCommands, loading, error, fetchMore, hasNextPage, isRecordingEnabled } = useFetchRecordedCommands(
+        repo.id
+    )
     return (
         <>
             {error && <ErrorAlert error={error} />}
             <div aria-label="recorded commands">
-                {!loading && recordedCommands.length === 0 && <Text className="my-2">No recorded commands yet.</Text>}
+                {/*
+                    We explicitly check is `isRecordingEnabled` is false because when fetching this field
+                    from the API, `isRecordingEnabled` will be undefined and we don't want to display this
+                    instruction until we're certain the repository isn't configured for recording.
+                 */}
+                {!loading && isRecordingEnabled === false && (
+                    <Alert variant="info" className="mt-3">
+                        <small>Command recording isn't enabled for this repository.</small>{' '}
+                        <small>
+                            Visit <Link to="/help/admin/repo/recording">the docs</Link> to learn how to enable command
+                            recording.
+                        </small>
+                    </Alert>
+                )}
+                {!loading && recordedCommands.length === 0 && isRecordingEnabled && (
+                    <Text className="my-2">No recorded commands yet.</Text>
+                )}
                 {recordedCommands.map((command, index) => (
                     // We use the index as key here because commands don't have the concept
                     // of IDs and there's nothing really unique about each command.

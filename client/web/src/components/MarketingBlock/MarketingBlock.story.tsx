@@ -1,5 +1,5 @@
 import { mdiArrowRight } from '@mdi/js'
-import type { DecoratorFn, Meta } from '@storybook/react'
+import type { Decorator, Meta } from '@storybook/react'
 
 import { Link, Icon, H2, H3, Grid } from '@sourcegraph/wildcard'
 
@@ -7,7 +7,7 @@ import { WebStory } from '../WebStory'
 
 import { MarketingBlock } from './MarketingBlock'
 
-const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
+const decorator: Decorator = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
 
 const config: Meta = {
     title: 'web/marketing/MarketingBlock',

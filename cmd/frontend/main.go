@@ -11,15 +11,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
+	_ "github.com/sourcegraph/sourcegraph/client/web/dist" // use assets
 )
 
 func main() {
 	sanitycheck.Pass()
-	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
+	if os.Getenv("WEB_BUILDER_DEV_SERVER") == "1" {
 		assets.UseDevAssetsProvider()
 	}
-	svcmain.SingleServiceMainWithoutConf(shared.Service, svcmain.Config{}, svcmain.OutOfBandConfiguration{
+	svcmain.SingleServiceMainWithoutConf(shared.Service, svcmain.OutOfBandConfiguration{
 		// use a switchable config here so we can switch it out for a proper conf client
 		// once we can use it after autoupgrading
 		Logging: conf.NewLogsSinksSource(shared.SwitchableSiteConfig()),

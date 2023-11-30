@@ -30,7 +30,7 @@ import { RedactingLogger } from './legacy-extensions/logging'
 import { createProviders, emptySourcegraphProviders, type SourcegraphProviders } from './legacy-extensions/providers'
 import type { Occurrence } from './scip'
 
-interface CodeIntelAPI {
+export interface CodeIntelAPI {
     hasReferenceProvidersForDocument(textParameters: TextDocumentPositionParameters): Promise<boolean>
     getDefinition(
         textParameters: TextDocumentPositionParameters,
@@ -278,7 +278,7 @@ export function injectNewCodeintel(
 
     return new Proxy(old, {
         get(target, prop) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
             const codeintelFunction = (codeintelOverrides as any)[prop]
             if (codeintelFunction) {
                 return codeintelFunction

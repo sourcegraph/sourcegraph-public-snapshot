@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`Toggles Query input toggle state case toggle for case subexpressions 1`] = `
+exports[`Toggles > Query input toggle state > case toggle for case subexpressions 1`] = `
 Array [
   <div
     aria-checked="false"
@@ -27,7 +27,7 @@ Array [
 ]
 `;
 
-exports[`Toggles Query input toggle state case toggle for patterntype subexpressions 1`] = `
+exports[`Toggles > Query input toggle state > case toggle for patterntype subexpressions 1`] = `
 Array [
   <div
     aria-checked="false"
@@ -54,7 +54,7 @@ Array [
 ]
 `;
 
-exports[`Toggles Query input toggle state regexp toggle for patterntype subexpressions 1`] = `
+exports[`Toggles > Query input toggle state > regexp toggle for patterntype subexpressions 1`] = `
 Array [
   <div
     aria-checked="false"

@@ -164,7 +164,7 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 	// tested further down separately.
 	ctx := actor.WithInternalActor(context.Background())
 	logger := logtest.NoOp(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)
@@ -388,7 +388,7 @@ func TestExecutorSecrets_CreateUpdateDelete(t *testing.T) {
 func TestExecutorSecrets_GetListCount(t *testing.T) {
 	internalCtx := actor.WithInternalActor(context.Background())
 	logger := logtest.NoOp(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	user, err := db.Users().Create(internalCtx, database.NewUser{Username: "johndoe"})
 	if err != nil {
 		t.Fatal(err)

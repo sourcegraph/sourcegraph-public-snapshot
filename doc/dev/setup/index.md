@@ -50,7 +50,6 @@ The quick start guide above provides a standard approach, focused on simplicity 
 
 The following pages list common problems with the local environment and their solutions:
 
-- [_DEPRECATED_: Quickstart without `sg`](deprecated_quickstart.md)
 - [Problems with node_modules or Javascript packages](troubleshooting.md#problems-with-nodemodules-or-javascript-packages)
 - [dial tcp 127.0.0.1:3090: connect: connection refused](troubleshooting.md#dial-tcp-1270013090-connect-connection-refused)
 - [Database migration failures](troubleshooting.md#database-migration-failures)

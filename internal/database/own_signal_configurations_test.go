@@ -14,7 +14,7 @@ import (
 
 func Test_LoadConfigurations(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	store := db.OwnSignalConfigurations()

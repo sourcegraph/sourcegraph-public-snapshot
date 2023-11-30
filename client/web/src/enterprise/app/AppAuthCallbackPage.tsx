@@ -44,7 +44,7 @@ export const AppAuthCallbackPage: React.FC = () => {
         }
         didSaveRef.current = true
 
-        saveAccessToken(code, destination).catch(setError)
+        saveAccessTokenAndRedirect(code, destination).catch(setError)
     }, [code, isInvalidUrl, destination])
 
     return (
@@ -73,7 +73,7 @@ const defaultModificationOptions: jsonc.ModificationOptions = {
     },
 }
 
-async function saveAccessToken(accessToken: string, destination: string | null): Promise<void> {
+export async function saveAccessToken(accessToken: string): Promise<void> {
     const site = await fetchSite().toPromise()
 
     const content = site.configuration.effectiveContents
@@ -86,6 +86,11 @@ async function saveAccessToken(accessToken: string, destination: string | null):
 
     // If the Cody window is open, we need to reload it so it gets the new site config
     tauriInvoke('reload_cody_window')
+}
+
+const saveAccessTokenAndRedirect = async (accessToken: string, destination: string | null): Promise<void> => {
+    await saveAccessToken(accessToken)
+
     // Also reload the main window so it gets the new site config, and redirect to the destination
     safelyRedirectToDestination(destination)
 }

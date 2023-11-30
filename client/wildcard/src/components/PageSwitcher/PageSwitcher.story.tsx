@@ -1,13 +1,13 @@
 import { useState } from 'react'
 
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Text } from '../Typography/Text/Text'
 
 import { PageSwitcher } from './PageSwitcher'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
@@ -29,7 +29,7 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = (args = {}) => {
+export const Simple: StoryFn = (args = {}) => {
     const totalPages = args.totalCount
 
     const [page, setPage] = useState(1)
@@ -76,13 +76,15 @@ Simple.argTypes = {
     totalCount: {
         name: 'totalCount',
         control: { type: 'number' },
-        defaultValue: 5,
     },
     totalLabel: {
         name: 'totalLabel',
         control: { type: 'string' },
-        defaultValue: 'pages',
     },
+}
+Simple.args = {
+    totalCount: 5,
+    totalLabel: 'pages',
 }
 
 Simple.parameters = {

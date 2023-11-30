@@ -487,16 +487,16 @@ func cleanupStaleLockFiles(gitDir string, logger *log.Logger) error {
 		"gc.pid.lock", // created when git starts a garbage collection run
 		"index.lock",  // created when running "git add" / "git commit"
 
-		// from cmd/gitserver/server/cleanup.go, see
-		// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/server/cleanup.go#L325-L359
+		// from cmd/gitserver/internal/cleanup.go, see
+		// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/internal/cleanup.go#L325-L359
 		"config.lock",
 		"packed-refs.lock",
 	} {
 		lockFiles = append(lockFiles, filepath.Join(gitDir, f))
 	}
 
-	// from cmd/gitserver/server/cleanup.go, see
-	// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/server/cleanup.go#L325-L359
+	// from cmd/gitserver/internal/cleanup.go, see
+	// https://github.com/sourcegraph/sourcegraph/blob/55d83e8111d4dfea480ad94813e07d58068fec9c/cmd/gitserver/internal/cleanup.go#L325-L359
 	lockFiles = append(lockFiles, filepath.Join(gitDir, "objects", "info", "commit-graph.lock"))
 
 	refsDir := filepath.Join(gitDir, "refs")

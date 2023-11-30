@@ -54,7 +54,7 @@ type RecentViewSummary struct {
 }
 
 func RecentViewSignalStoreWith(other basestore.ShareableStore, logger log.Logger) RecentViewSignalStore {
-	lgr := logger.Scoped("RecentViewSignalStore", "Store for a table containing a number of views of a single file by a given viewer")
+	lgr := logger.Scoped("RecentViewSignalStore")
 	return &recentViewSignalStore{Store: basestore.NewWithHandle(other.Handle()), Logger: lgr}
 }
 

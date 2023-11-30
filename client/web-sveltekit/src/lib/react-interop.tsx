@@ -3,7 +3,8 @@ import React, { useEffect, useMemo, type FC, type PropsWithChildren } from 'reac
 import { createRouter, type History, Action, type Location, type Router } from '@remix-run/router'
 import type { Navigation } from '@sveltejs/kit'
 import { RouterProvider, type RouteObject, UNSAFE_enhanceManualRouteObjects } from 'react-router-dom'
-import { RouterLink, setLinkComponent } from 'wildcard/src'
+
+import { RouterLink, setLinkComponent } from '@sourcegraph/wildcard'
 
 import { goto } from '$app/navigation'
 import { navigating } from '$app/stores'
@@ -136,7 +137,7 @@ function createSvelteKitHistory(): History {
                 // I noticed that at least on Notebook pages this won't scroll the target into view.
                 if (!state && prevState) {
                     switch (prevState.type) {
-                        case 'popstate':
+                        case 'popstate': {
                             action = Action.Pop
                             if (prevState.to) {
                                 listener({
@@ -146,7 +147,8 @@ function createSvelteKitHistory(): History {
                                 })
                             }
                             break
-                        case 'link':
+                        }
+                        case 'link': {
                             // This is a special case for SvelteKit. In a normal browser context it seems that `listen`
                             // should only handle popstate events. Listening to the SvelteKit 'link' event seems
                             // necessary to properly handle SvelteKit links which point to paths handled by this React
@@ -160,6 +162,7 @@ function createSvelteKitHistory(): History {
                                 listener({ action, location: createLocation(prevState.to.url), delta: 1 })
                             }
                             break
+                        }
                     }
                 }
                 prevState = state

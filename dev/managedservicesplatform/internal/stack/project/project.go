@@ -35,6 +35,9 @@ var gcpServices = []string{
 	"storage-api.googleapis.com",
 	"storage-component.googleapis.com",
 	"bigquery.googleapis.com",
+	"cloudprofiler.googleapis.com",
+	"cloudscheduler.googleapis.com",
+	"sqladmin.googleapis.com",
 }
 
 const (
@@ -56,7 +59,7 @@ var EnvironmentCategoryFolders = map[spec.EnvironmentCategory]string{
 	spec.EnvironmentCategory(""):     DefaultProjectFolderID,
 }
 
-type Output struct {
+type CrossStackOutput struct {
 	// Project is created with a generated project ID.
 	Project project.Project
 }
@@ -66,8 +69,12 @@ type Variables struct {
 	// '-${randomizedSuffix}' will be added, as project IDs must be unique.
 	ProjectIDPrefix string
 
-	// Name is a display name for the project. It does not need to be unique.
-	Name string
+	// ProjectIDSuffixLength is the length of the randomized suffix added to
+	// to the project.
+	ProjectIDSuffixLength *int
+
+	// DisplayName is a display name for the project. It does not need to be unique.
+	DisplayName string
 
 	// Labels to apply to the project.
 	Labels map[string]string
@@ -78,66 +85,76 @@ type Variables struct {
 	// EnableAuditLogs ships GCP audit logs to security cluster.
 	// TODO: Not yet implemented
 	EnableAuditLogs bool
+
+	// Services is a list of additional GCP services to enable.
+	Services []string
 }
 
 const StackName = "project"
 
 const (
 	// https://cloud.google.com/resource-manager/reference/rest/v1/projects
-	projectIDMaxLength              = 30
-	projectIDRandomizedSuffixLength = 6
+	projectIDMaxLength                 = 30
+	projectIDRandomizedSuffixLength    = 6
+	projectIDMinRandomizedSuffixLength = 2
 )
 
 // NewStack creates a stack that provisions a GCP project.
-func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
-	stack := stacks.New(StackName,
+func NewStack(stacks *stack.Set, vars Variables) (*CrossStackOutput, error) {
+	stack, locals, err := stacks.New(StackName,
 		randomprovider.With(),
 		// ID is not known ahead of time, we can omit it
 		googleprovider.With(""))
+	if err != nil {
+		return nil, err
+	}
 
 	// Name all stack resources after the desired project ID
 	id := resourceid.New(vars.ProjectIDPrefix)
 
 	// The project ID must leave room for a randomized suffix and a separator.
-	if afterSuffixLength := len(vars.ProjectIDPrefix) + 1 + projectIDRandomizedSuffixLength; afterSuffixLength > projectIDMaxLength {
+	suffixLength := projectIDRandomizedSuffixLength
+	if vars.ProjectIDSuffixLength != nil {
+		suffixLength = *vars.ProjectIDSuffixLength / 2
+	}
+	realSuffixLength := suffixLength * 2 // after converting to hex
+	if afterSuffixLength := len(vars.ProjectIDPrefix) + 1 + realSuffixLength; afterSuffixLength > projectIDMaxLength {
 		return nil, errors.Newf("project ID prefix %q is too long after adding random suffix (%d characters) - got %d characters, but maximum is %d characters",
 			vars.ProjectIDPrefix, projectIDRandomizedSuffixLength, afterSuffixLength, projectIDMaxLength)
 	}
 	projectID := random.New(stack, id, random.Config{
-		ByteLength: projectIDRandomizedSuffixLength,
+		ByteLength: suffixLength,
 		Prefix:     vars.ProjectIDPrefix,
 	})
 
-	output := &Output{
-		Project: project.NewProject(stack,
-			id.ResourceID("project"),
-			&project.ProjectConfig{
-				Name:              pointers.Ptr(vars.Name),
-				ProjectId:         &projectID.HexValue,
-				AutoCreateNetwork: false,
-				BillingAccount:    pointers.Ptr(BillingAccountID),
-				FolderId: func() *string {
-					folder, ok := EnvironmentCategoryFolders[pointers.Deref(vars.Category, spec.EnvironmentCategoryExternal)]
-					if ok {
-						return &folder
-					}
-					return pointers.Ptr(string(DefaultProjectFolderID))
-				}(),
-				Labels: func(input map[string]string) *map[string]*string {
-					labels := make(map[string]*string)
-					for k, v := range input {
-						labels[sanitizeName(k)] = pointers.Ptr(v)
-					}
-					return &labels
-				}(vars.Labels),
-			}),
-	}
+	project := project.NewProject(stack,
+		id.TerraformID("project"),
+		&project.ProjectConfig{
+			Name:              pointers.Ptr(vars.DisplayName),
+			ProjectId:         &projectID.HexValue,
+			AutoCreateNetwork: false,
+			BillingAccount:    pointers.Ptr(BillingAccountID),
+			FolderId: func() *string {
+				folder, ok := EnvironmentCategoryFolders[pointers.Deref(vars.Category, spec.EnvironmentCategoryExternal)]
+				if ok {
+					return &folder
+				}
+				return pointers.Ptr(string(DefaultProjectFolderID))
+			}(),
+			Labels: func(input map[string]string) *map[string]*string {
+				labels := make(map[string]*string)
+				for k, v := range input {
+					labels[sanitizeName(k)] = pointers.Ptr(v)
+				}
+				return &labels
+			}(vars.Labels),
+		})
 
-	for _, service := range gcpServices {
+	for _, service := range append(gcpServices, vars.Services...) {
 		projectservice.NewProjectService(stack,
-			id.ResourceID("project-service-%s", strings.ReplaceAll(service, ".", "-")),
+			id.TerraformID("project-service-%s", strings.ReplaceAll(service, ".", "-")),
 			&projectservice.ProjectServiceConfig{
-				Project:                  output.Project.ProjectId(),
+				Project:                  project.ProjectId(),
 				Service:                  pointers.Ptr(service),
 				DisableDependentServices: jsii.Bool(false),
 				// prevent accidental deletion of services
@@ -145,7 +162,9 @@ func NewStack(stacks *stack.Set, vars Variables) (*Output, error) {
 			})
 	}
 
-	return output, nil
+	// Collect outputs
+	locals.Add("project_id", project.ProjectId(), "Generated project ID")
+	return &CrossStackOutput{Project: project}, nil
 }
 
 var regexpMatchNonLowerAlphaNumericUnderscoreDash = regexp.MustCompile(`[^a-z0-9_-]`)

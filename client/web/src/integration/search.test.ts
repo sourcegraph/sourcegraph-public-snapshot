@@ -1,5 +1,5 @@
 import expect from 'expect'
-import { test } from 'mocha'
+import { afterEach, beforeEach, describe, test } from 'mocha'
 import { Key } from 'ts-key-enum'
 
 import { type SharedGraphQlOperations, SymbolKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -74,16 +74,19 @@ const commonSearchGraphQLResults: Partial<WebGraphQlOperations & SharedGraphQlOp
                 repositories: [
                     {
                         __typename: 'Repository',
+                        id: 'repo1',
                         name: 'github.com/Algorilla/manta-ray',
                         stars: 1,
                     },
                     {
                         __typename: 'Repository',
+                        id: 'repo1',
                         name: 'github.com/Algorilla/manta-ray-2',
                         stars: 2,
                     },
                     {
                         __typename: 'Repository',
+                        id: 'repo1',
                         name: 'github.com/Algorilla/manta-ray-3',
                         stars: 3,
                     },
@@ -117,7 +120,7 @@ const commonSearchGraphQLResultsWithUser: Partial<WebGraphQlOperations & SharedG
 
 const queryInputSelectors: Record<SearchQueryInput, string> = {
     codemirror6: '[data-testid="searchbox"] .test-query-input',
-    'experimental-search-input': '.test-experimental-search-input',
+    v2: '.test-v2-query-input',
 }
 
 describe('Search', () => {
@@ -289,9 +292,7 @@ describe('Search', () => {
                     const editor = await waitForInput(driver, queryInputSelector)
                     await editor.focus()
                     await driver.paste('foo\n\n\n\n\nbar')
-                    expect(await editor.getValue()).toBe(
-                        name === 'experimental-search-input' ? 'context:global foo bar' : 'foo bar'
-                    )
+                    expect(await editor.getValue()).toBe(name === 'v2' ? 'context:global foo bar' : 'foo bar')
                 })
             })
         })
@@ -330,7 +331,7 @@ describe('Search', () => {
                     const input = await waitForInput(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
                     await driver.page.click('.test-case-sensitivity-toggle')
-                    if (name === 'experimental-search-input') {
+                    if (name === 'v2') {
                         // The the toggle buttons do not submit automatically in the new search input
                         await input.focus()
                         await driver.page.keyboard.press(Key.Enter)
@@ -371,7 +372,7 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    if (name === 'experimental-search-input') {
+                    if (name === 'v2') {
                         // The the toggle buttons do not submit automatically in the new search input
                         await editor.focus()
                         await driver.page.keyboard.press(Key.Enter)
@@ -384,7 +385,7 @@ describe('Search', () => {
                     const editor = await waitForInput(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    if (name === 'experimental-search-input') {
+                    if (name === 'v2') {
                         // The the toggle buttons do not submit automatically in the new search input
                         await editor.focus()
                         await driver.page.keyboard.press(Key.Enter)

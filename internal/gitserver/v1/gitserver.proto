@@ -17,13 +17,21 @@ service GitserverService {
   rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
-  rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {}
+  rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {
+    option deprecated = true;
+  }
   rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
   rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
-  // TODO: Remove this endpoint after 5.2, it is deprecated.
-  rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
+  rpc IsPerforcePathCloneable(IsPerforcePathCloneableRequest) returns (IsPerforcePathCloneableResponse) {}
+  rpc CheckPerforceCredentials(CheckPerforceCredentialsRequest) returns (CheckPerforceCredentialsResponse) {}
+  rpc PerforceUsers(PerforceUsersRequest) returns (PerforceUsersResponse) {}
+  rpc PerforceProtectsForUser(PerforceProtectsForUserRequest) returns (PerforceProtectsForUserResponse) {}
+  rpc PerforceProtectsForDepot(PerforceProtectsForDepotRequest) returns (PerforceProtectsForDepotResponse) {}
+  rpc PerforceGroupMembers(PerforceGroupMembersRequest) returns (PerforceGroupMembersResponse) {}
+  rpc IsPerforceSuperUser(IsPerforceSuperUserRequest) returns (IsPerforceSuperUserResponse) {}
+  rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {}
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -447,28 +455,17 @@ message RepoUpdateResponse {
   string error = 3;
 }
 
-// ReposStatsRequest is a empty request for the ReposStats RPC.
-message ReposStatsRequest {}
-
-// ReposStats is an aggregation of statistics from a gitserver.
-message ReposStatsResponse {
-  // git_dir_bytes is the amount of bytes stored in .git directories.
-  uint64 git_dir_bytes = 1;
-  // updated_at is the time these statistics were computed. If updated_at is
-  // zero, the statistics have not yet been computed. This can happen on a
-  // new gitserver.
-  google.protobuf.Timestamp updated_at = 2;
-}
-
+// Do not use: The P4Exec method has been deprecated and will disappear soon!
 message P4ExecRequest {
-  string p4port = 1;
-  string p4user = 2;
-  string p4passwd = 3;
-  repeated bytes args = 4;
+  string p4port = 1 [deprecated = true];
+  string p4user = 2 [deprecated = true];
+  string p4passwd = 3 [deprecated = true];
+  repeated bytes args = 4 [deprecated = true];
 }
 
+// Do not use: The P4Exec method has been deprecated and will disappear soon!
 message P4ExecResponse {
-  bytes data = 1;
+  bytes data = 1 [deprecated = true];
 }
 
 // ListGitoliteRequest is a request to list all repositories in gitolite.
@@ -518,4 +515,134 @@ message GitObject {
   bytes id = 1;
   // type is the type of the object.
   ObjectType type = 2;
+}
+
+// IsPerforcePathCloneableRequest is the request to check if a Perforce path is cloneable.
+message IsPerforcePathCloneableRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string depot_path = 2;
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if a Perforce path is cloneable.
+message IsPerforcePathCloneableResponse {}
+
+// CheckPerforceCredentialsRequest is the request to check if given Perforce credentials are valid.
+message CheckPerforceCredentialsRequest {
+  PerforceConnectionDetails connection_details = 1;
+}
+
+// IsPerforcePathCloneableResponse is the response from checking if given Perforce credentials are valid.
+message CheckPerforceCredentialsResponse {}
+
+// PerforceConnectionDetails holds all the details required to talk to a Perforce server.
+message PerforceConnectionDetails {
+  string p4port = 1;
+  string p4user = 2;
+  string p4passwd = 3;
+}
+
+// PerforceGetChangelistRequest is used to retrieve information about a specific
+// Perforce changelist.
+message PerforceGetChangelistRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string changelist_id = 2;
+}
+
+// PerforceGetChangelistResponse returns information about the requested changelist.
+message PerforceGetChangelistResponse {
+  PerforceChangelist changelist = 1;
+}
+
+// PerforceChangelist represents a changelist in Perforce.
+message PerforceChangelist {
+  // PerforceChangelistState is the valid state values of a Perforce changelist.
+  enum PerforceChangelistState {
+    PERFORCE_CHANGELIST_STATE_UNSPECIFIED = 0;
+    PERFORCE_CHANGELIST_STATE_SUBMITTED = 1;
+    PERFORCE_CHANGELIST_STATE_PENDING = 2;
+    PERFORCE_CHANGELIST_STATE_SHELVED = 3;
+    // Perforce doesn't actually return a state for closed changelists, so this is
+    // one we use to indicate the changelist is closed.
+    PERFORCE_CHANGELIST_STATE_CLOSED = 4;
+  }
+  string id = 1;
+  google.protobuf.Timestamp creation_date = 2;
+  PerforceChangelistState state = 3;
+  string author = 4;
+  string title = 5;
+  string message = 6;
+}
+
+// IsPerforceSuperUserRequest can be used to check if a given Perforce user is a
+// super user.
+message IsPerforceSuperUserRequest {
+  PerforceConnectionDetails connection_details = 1;
+}
+
+// IsPerforceSuperUserResponse is the response from checking if a given Perforce
+// user is a super user.
+// No fields here, returning an error means "no".
+message IsPerforceSuperUserResponse {}
+
+// PerforceProtectsForDepotRequest requests all the protections that apply to the
+// given depot.
+message PerforceProtectsForDepotRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string depot = 2;
+}
+
+// PerforceProtectsForDepotResponse returns all the protections that apply to the
+// given depot.
+message PerforceProtectsForDepotResponse {
+  repeated PerforceProtect protects = 1;
+}
+
+// PerforceProtectsForUserRequest requests all the protections that apply to the
+// given user.
+message PerforceProtectsForUserRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string username = 2;
+}
+
+// PerforceProtectsForUserResponse returns all the protections that apply to the
+// given user.
+message PerforceProtectsForUserResponse {
+  repeated PerforceProtect protects = 1;
+}
+
+// PerforceProtect is a single line definition of a protection in Perforce.
+message PerforceProtect {
+  string level = 1;
+  string entity_type = 2;
+  string entity_name = 3;
+  string match = 4;
+  bool is_exclusion = 5;
+  string host = 6;
+}
+
+// PerforceGroupMembersRequest requests the members of the given Perforce group.
+message PerforceGroupMembersRequest {
+  PerforceConnectionDetails connection_details = 1;
+  string group = 2;
+}
+
+// PerforceGroupMembersResponse returns the members of the requested Perforce group.
+message PerforceGroupMembersResponse {
+  repeated string usernames = 1;
+}
+
+// PerforceUsersRequest lists all the users known to the Perforce server.
+message PerforceUsersRequest {
+  PerforceConnectionDetails connection_details = 1;
+}
+
+// PerforceUsersResponse contains the list of users known by the server.
+message PerforceUsersResponse {
+  repeated PerforceUser users = 1;
+}
+
+// PerforceUser is a representation of a user account in Perforce.
+message PerforceUser {
+  string username = 1;
+  string email = 2;
 }

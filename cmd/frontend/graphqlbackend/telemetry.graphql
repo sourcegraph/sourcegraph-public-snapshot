@@ -1,0 +1,189 @@
+extend type Mutation {
+    """
+    Telemetry mutations for "Event Logging Everywhere", aka a version 2 of
+    existing event-logging/event-recording APIs.
+    """
+    telemetry: TelemetryMutation
+}
+
+"""
+Mutations for recording events from clients.
+"""
+type TelemetryMutation {
+    """
+    Record a batch of telemetry events.
+
+    ❗ Do not use this directly when recording events in-product - use the
+    @sourcegraph/telemetry package, or equivalent, instead.
+    """
+    recordEvents(events: [TelemetryEventInput!]!): EmptyResponse
+}
+
+"""
+Properties comprising a telemetry V2 event that can be reported by a client.
+"""
+input TelemetryEventInput {
+    """
+    Feature associated with the event in camelCase, e.g. 'myFeature'.
+
+    Feature names must come from a static set of values in libraries - it is
+    left as a string in the API to allow some flexibility.
+    """
+    feature: String!
+
+    """
+    Action associated with the event in camelCase, e.g. 'pageView'.
+
+    Action names must come from a static set of values in libraries - it is
+    left as a string in the API to allow some flexibility.
+    """
+    action: String!
+
+    """
+    Information about where this event came from.
+    """
+    source: TelemetryEventSourceInput!
+
+    """
+    Parameters of the event.
+    """
+    parameters: TelemetryEventParametersInput!
+
+    """
+    Optional marketing campaign tracking parameters.
+
+    🚨 SECURITY: This metadata is NEVER exported from private Sourcegraph instances,
+    and is only exported for events tracked in the public Sourcegraph.com instance.
+    """
+    marketingTracking: TelemetryEventMarketingTrackingInput
+}
+
+"""
+Properties comprising the source of a telemetry V2 event reported by a client.
+"""
+input TelemetryEventSourceInput {
+    """
+    Source client of the event.
+    """
+    client: String!
+    """
+    Version of the source client of the event.
+    """
+    clientVersion: String
+}
+
+"""
+Properties of a telemetry V2 event.
+"""
+input TelemetryEventParametersInput {
+    """
+    Version of the event parameters, used for indicating the "shape" of this
+    event's metadata.
+    """
+    version: Int!
+    """
+    Strictly typed metadata that must not contain any sensitive data or PII.
+    """
+    metadata: [TelemetryEventMetadataInput!]
+    """
+    Private metadata in JSON format. Unlike metadata, values can be of any type,
+    not just numeric.
+
+    🚨 SECURITY: This metadata is NOT exported from instances by default, as it
+    can contain arbitrarily-shaped data that may accidentally contain sensitive
+    or private contents.
+    """
+    privateMetadata: JSONValue
+    """
+    Billing-related metadata.
+    """
+    billingMetadata: TelemetryEventBillingMetadataInput
+    """
+    Optional interaction ID that can be provided to indicate the interaction
+    this event belongs to. It overrides the X-Sourcegraph-Interaction-ID header
+    if one is set on the request recording the event.
+
+    This parameter is only available in Sourcegraph 5.2.4 and later.
+    """
+    interactionID: String
+}
+
+"""
+A single, PII-free metadata item for telemetry V2 events.
+"""
+input TelemetryEventMetadataInput {
+    """
+    The key identifying this metadata entry.
+    """
+    key: String!
+    """
+    Numeric value associated with the key. Enforcing numeric values eliminates
+    risks of accidentally shipping sensitive or private data.
+
+    The value type in the schema is JSONValue for flexibility, but we ONLY
+    accept numeric values (integers and floats) - any other value will be
+    rejected.
+    """
+    value: JSONValue!
+}
+
+"""
+Billing-related metadata for a telemetry event.
+"""
+input TelemetryEventBillingMetadataInput {
+    """
+    Billing product ID associated with the event.
+
+    IDs must come from a static set of values in libraries - it is left as a
+    string in the API to allow some flexibility.
+    """
+    product: String!
+    """
+    Billing category ID the event falls into.
+
+    IDs must come from a static set of values in libraries - it is left as a
+    string in the API to allow some flexibility.
+    """
+    category: String!
+}
+
+"""
+Marketing campaign tracking parameters for a telemetry V2 event.
+
+🚨 SECURITY: This metadata is NEVER exported from private Sourcegraph instances,
+and is only exported for events tracked in the public Sourcegraph.com instance.
+"""
+input TelemetryEventMarketingTrackingInput {
+    """
+    URL the event occurred on.
+    """
+    url: String
+    """
+    Initial URL the user landed on.
+    """
+    firstSourceURL: String
+    """
+    Cohort ID to identify the user as part of a specific A/B test.
+    """
+    cohortID: String
+    """
+    Referrer URL that refers the user to Sourcegraph.
+    """
+    referrer: String
+    """
+    Last source URL visited by the user.
+    """
+    lastSourceURL: String
+    """
+    Device session ID to identify the user's session.
+    """
+    deviceSessionID: String
+    """
+    Session referrer URL for the user.
+    """
+    sessionReferrer: String
+    """
+    First URL the user visited in their current session.
+    """
+    sessionFirstURL: String
+}

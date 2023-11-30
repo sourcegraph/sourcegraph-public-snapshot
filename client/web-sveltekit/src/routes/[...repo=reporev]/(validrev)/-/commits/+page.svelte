@@ -18,7 +18,7 @@
             Loading...
         {:else if $commits}
             <ul>
-                {#each $commits as commit (commit.url)}
+                {#each $commits as commit (commit.canonicalURL)}
                     <li><Commit {commit} /></li>
                 {/each}
             </ul>

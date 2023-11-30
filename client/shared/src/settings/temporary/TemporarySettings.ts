@@ -15,6 +15,15 @@ export interface LegacyBatchChangesFilter {
     value: BatchChangeState
 }
 
+export interface UserOnboardingConfig {
+    skipped: boolean
+    userinfo?: {
+        repo: string
+        email: string
+        language: string
+    }
+}
+
 /**
  * Schema for temporary settings.
  */
@@ -23,8 +32,6 @@ export interface TemporarySettingsSchema {
     'search.hiddenNoResultsSections': NoResultsSectionID[]
     'search.sidebar.revisions.tab': number
     'search.sidebar.collapsed': boolean // Used only on non-mobile sizes and when coreWorkflowImprovements.enabled is set
-    'search.notepad.enabled': boolean
-    'search.notepad.ctaSeen': boolean
     'search.notebooks.gettingStartedTabSeen': boolean
     'insights.freeGaAccepted': boolean
     'insights.freeGaExpiredAccepted': boolean
@@ -42,12 +49,12 @@ export interface TemporarySettingsSchema {
     'codeintel.badge.used': boolean
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
     'onboarding.quickStartTour': TourListState
+    'onboarding.userconfig': UserOnboardingConfig
     'characterKeyShortcuts.enabled': boolean
     'search.homepage.queryExamplesContent': {
         lastCachedTimestamp: string
         repositoryName: string
         filePath: string
-        author: string
     }
     'search.results.collapseSmartSearch': boolean
     'search.results.collapseUnownedResultsAlert': boolean
@@ -58,10 +65,10 @@ export interface TemporarySettingsSchema {
      */
     'search.input.usedExamples': string[]
     'search.input.usedInlineHistory': boolean
-    // This is a temporary (no pun intended) setting to allow users to easily
-    // switch been the current and the new search input. It's only used when
-    // the feature flag `"searchQueryInput": "experimental"` is set.
+
+    /** Let users quickly switch between the v1 and v2 query inputs. */
     'search.input.experimental': boolean
+
     'batches.minSavedPerChangeset': number
     'search.notebooks.minSavedPerView': number
     'repo.commitPage.diffMode': DiffMode
@@ -76,7 +83,10 @@ export interface TemporarySettingsSchema {
     'app.codyStandalonePage.selectedRepo': string
     'cody.contextCallout.dismissed': boolean
     'admin.hasDismissedCodeHostPrivacyWarning': boolean
+    'admin.hasCompletedLicenseCheck': boolean
     'simple.search.toggle': boolean
+    'cody.onboarding.completed': boolean
+    'cody.onboarding.step': number
 }
 
 /**
@@ -84,3 +94,62 @@ export interface TemporarySettingsSchema {
  * should be used to force the consumer to check for undefined values.
  */
 export type TemporarySettings = Optional<TemporarySettingsSchema>
+
+// TypeScript doesn't have a concept of "exhaustive" list or sets, so we use
+// a record instead.
+const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
+    'search.collapsedSidebarSections': null,
+    'search.hiddenNoResultsSections': null,
+    'search.sidebar.revisions.tab': null,
+    'search.sidebar.collapsed': null,
+    'search.notebooks.gettingStartedTabSeen': null,
+    'insights.freeGaAccepted': null,
+    'insights.freeGaExpiredAccepted': null,
+    'insights.wasMainPageOpen': null,
+    'insights.lastVisitedDashboardId': null,
+    'npsSurvey.hasTemporarilyDismissed': null,
+    'npsSurvey.hasPermanentlyDismissed': null,
+    'user.lastDayActive': null,
+    'user.daysActiveCount': null,
+    'user.themePreference': null,
+    'signup.finishedWelcomeFlow': null,
+    'homepage.userInvites.tab': null,
+    'batches.defaultListFilters': null,
+    'batches.downloadSpecModalDismissed': null,
+    'codeintel.badge.used': null,
+    'codeintel.referencePanel.redesign.ctaDismissed': null,
+    'onboarding.quickStartTour': null,
+    'onboarding.userconfig': null,
+    'characterKeyShortcuts.enabled': null,
+    'search.homepage.queryExamplesContent': null,
+    'search.results.collapseSmartSearch': null,
+    'search.results.collapseUnownedResultsAlert': null,
+    'search.input.recentSearches': null,
+    /**
+     * Keeps track of which of the query examples shown as suggestions
+     * the user has used so that we don't suggest them anymore.
+     */
+    'search.input.usedExamples': null,
+    'search.input.usedInlineHistory': null,
+    'search.input.experimental': null,
+    'batches.minSavedPerChangeset': null,
+    'search.notebooks.minSavedPerView': null,
+    'repo.commitPage.diffMode': null,
+    'setup.activeStepId': null,
+    'app-setup.activeStepId': null,
+    'own.panelExplanationHidden': null,
+    'cody.showSidebar': null,
+    'cody.blobPageCta.dismissed': null,
+    'cody.searchPageCta.dismissed': null,
+    'cody.chatPageCta.dismissed': null,
+    'cody.survey.submitted': null,
+    'app.codyStandalonePage.selectedRepo': null,
+    'cody.contextCallout.dismissed': null,
+    'admin.hasDismissedCodeHostPrivacyWarning': null,
+    'admin.hasCompletedLicenseCheck': null,
+    'simple.search.toggle': null,
+    'cody.onboarding.completed': null,
+    'cody.onboarding.step': null,
+}
+
+export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as readonly (keyof TemporarySettings)[]

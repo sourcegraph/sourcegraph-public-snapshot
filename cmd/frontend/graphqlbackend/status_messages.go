@@ -17,7 +17,7 @@ func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageRe
 		return nil, err
 	}
 
-	messages, err := repos.FetchStatusMessages(ctx, r.db)
+	messages, err := repos.FetchStatusMessages(ctx, r.db, r.gitserverClient)
 	if err != nil {
 		return nil, err
 	}
@@ -62,6 +62,10 @@ func (r *statusMessageResolver) ToIndexingProgress() (*indexingProgressMessageRe
 	return nil, false
 }
 
+func (r *statusMessageResolver) ToGitserverDiskThresholdReached() (*statusMessageResolver, bool) {
+	return r, r.message.GitserverDiskThresholdReached != nil
+}
+
 func (r *statusMessageResolver) Message() (string, error) {
 	if r.message.GitUpdatesDisabled != nil {
 		return r.message.GitUpdatesDisabled.Message, nil
@@ -78,6 +82,9 @@ func (r *statusMessageResolver) Message() (string, error) {
 	if r.message.SyncError != nil {
 		return r.message.SyncError.Message, nil
 	}
+	if r.message.GitserverDiskThresholdReached != nil {
+		return r.message.GitserverDiskThresholdReached.Message, nil
+	}
 	return "", errors.New("status message is of unknown type")
 }
 
@@ -88,7 +95,7 @@ func (r *statusMessageResolver) ExternalService(ctx context.Context) (*externalS
 		return nil, err
 	}
 
-	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}, nil
+	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver"), db: r.db, externalService: externalService}, nil
 }
 
 type indexingProgressMessageResolver struct {

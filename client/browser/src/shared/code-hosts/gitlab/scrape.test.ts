@@ -1,3 +1,5 @@
+import { describe, expect, test } from 'vitest'
+
 import { getPageKindFromPathName, GitLabPageKind } from './scrape'
 
 describe('getPageKindFromPathName()', () => {

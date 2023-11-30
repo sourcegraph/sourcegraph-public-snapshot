@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -41,7 +41,7 @@ func repoUpdaterURLDefault() string {
 		return u
 	}
 
-	if deploy.IsApp() {
+	if deploy.IsSingleBinary() {
 		return "http://127.0.0.1:3182"
 	}
 
@@ -66,13 +66,13 @@ func NewClient(serverURL string) *Client {
 	return &Client{
 		URL:        serverURL,
 		HTTPClient: defaultDoer,
-		grpcClient: syncx.OnceValues(func() (proto.RepoUpdaterServiceClient, error) {
+		grpcClient: sync.OnceValues(func() (proto.RepoUpdaterServiceClient, error) {
 			u, err := url.Parse(serverURL)
 			if err != nil {
 				return nil, err
 			}
 
-			l := log.Scoped("repoUpdateGRPCClient", "gRPC client for repo-updater")
+			l := log.Scoped("repoUpdateGRPCClient")
 			conn, err := defaults.Dial(u.Host, l)
 			if err != nil {
 				return nil, err
@@ -305,126 +305,6 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 		return nil
 	}
 	return errors.New(res.Error)
-}
-
-// MockSyncExternalService mocks (*Client).SyncExternalService for tests.
-var MockSyncExternalService func(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error)
-
-// SyncExternalService requests the given external service to be synced.
-func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int64) (*protocol.ExternalServiceSyncResult, error) {
-	if MockSyncExternalService != nil {
-		return MockSyncExternalService(ctx, externalServiceID)
-	}
-
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.grpcClient()
-		if err != nil {
-			return nil, err
-		}
-
-		// empty response can be ignored
-		_, err = client.SyncExternalService(ctx, &proto.SyncExternalServiceRequest{ExternalServiceId: externalServiceID})
-		return nil, err
-	}
-
-	req := &protocol.ExternalServiceSyncRequest{ExternalServiceID: externalServiceID}
-	resp, err := c.httpPost(ctx, "sync-external-service", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	bs, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
-	}
-
-	var result protocol.ExternalServiceSyncResult
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return nil, errors.New(string(bs))
-	} else if len(bs) == 0 {
-		return &result, nil
-	} else if err = json.Unmarshal(bs, &result); err != nil {
-		return nil, err
-	}
-
-	if result.Error != "" {
-		return nil, errors.New(result.Error)
-	}
-	return &result, nil
-}
-
-// MockExternalServiceNamespaces mocks (*Client).QueryExternalServiceNamespaces for tests.
-var MockExternalServiceNamespaces func(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (*protocol.ExternalServiceNamespacesResult, error)
-
-// ExternalServiceNamespaces retrieves a list of namespaces available to the given external service configuration
-func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.ExternalServiceNamespacesArgs) (result *protocol.ExternalServiceNamespacesResult, err error) {
-	if MockExternalServiceNamespaces != nil {
-		return MockExternalServiceNamespaces(ctx, args)
-	}
-
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.grpcClient()
-		if err != nil {
-			return nil, err
-		}
-
-		resp, err := client.ExternalServiceNamespaces(ctx, args.ToProto())
-		if err != nil {
-			return nil, err
-		}
-
-		return protocol.ExternalServiceNamespacesResultFromProto(resp), nil
-	}
-
-	resp, err := c.httpPost(ctx, "external-service-namespaces", args)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err == nil && result != nil && result.Error != "" {
-		err = errors.New(result.Error)
-	}
-	return result, err
-}
-
-// MockExternalServiceRepositories mocks (*Client).ExternalServiceRepositories for tests.
-var MockExternalServiceRepositories func(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (*protocol.ExternalServiceRepositoriesResult, error)
-
-// ExternalServiceRepositories retrieves a list of repositories sourced by the given external service configuration
-func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.ExternalServiceRepositoriesArgs) (result *protocol.ExternalServiceRepositoriesResult, err error) {
-	if MockExternalServiceRepositories != nil {
-		return MockExternalServiceRepositories(ctx, args)
-	}
-
-	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.grpcClient()
-		if err != nil {
-			return nil, err
-		}
-
-		resp, err := client.ExternalServiceRepositories(ctx, args.ToProto())
-		if err != nil {
-			return nil, err
-		}
-
-		return protocol.ExternalServiceRepositoriesResultFromProto(resp), nil
-	}
-
-	resp, err := c.httpPost(ctx, "external-service-repositories", args)
-
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&result)
-	if err == nil && result != nil && result.Error != "" {
-		err = errors.New(result.Error)
-	}
-	return result, err
 }
 
 func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp *http.Response, err error) {

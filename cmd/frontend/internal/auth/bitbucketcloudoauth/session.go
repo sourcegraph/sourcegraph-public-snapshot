@@ -39,7 +39,11 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventBitbucketCloudAuthFailed
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetServiceID() string {
+	return s.baseURL.String()
+}
+
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	var client bitbucketcloud.Client
 	if s.client != nil {
 		client = s.client
@@ -49,7 +53,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		}
 		client, err = bitbucketcloud.NewClient(s.baseURL.String(), conf, nil)
 		if err != nil {
-			return nil, "Could not initialize Bitbucket Cloud client", err
+			return false, nil, "Could not initialize Bitbucket Cloud client", err
 		}
 	}
 
@@ -61,22 +65,22 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	client = client.WithAuthenticator(auther)
 	bbUser, err := client.CurrentUser(ctx)
 	if err != nil {
-		return nil, "Could not read Bitbucket user from callback request.", errors.Wrap(err, "could not read user from bitbucket")
+		return false, nil, "Could not read Bitbucket user from callback request.", errors.Wrap(err, "could not read user from bitbucket")
 	}
 
 	var data extsvc.AccountData
 	if err := bitbucketcloud.SetExternalAccountData(&data, &bbUser.Account, token); err != nil {
-		return nil, "", err
+		return false, nil, "", err
 	}
 
 	emails, err := client.AllCurrentUserEmails(ctx)
 	if err != nil {
-		return nil, "", err
+		return false, nil, "", err
 	}
 
 	attempts, err := buildUserFetchAttempts(emails, s.allowSignup)
 	if err != nil {
-		return nil, "Could not find verified email address for Bitbucket user.", err
+		return false, nil, "Could not find verified email address for Bitbucket user.", err
 	}
 
 	var (
@@ -85,7 +89,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	)
 
 	for i, attempt := range attempts {
-		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+		newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 			UserProps: database.NewUser{
 				Username:        bbUser.Username,
 				Email:           attempt.email,
@@ -108,7 +112,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 				FirstSourceURL:  firstSourceURL,
 				LastSourceURL:   lastSourceURL,
 			})
-			return actor.FromUser(userID), "", nil
+			return newUserCreated, actor.FromUser(userID), "", nil
 		}
 		if i == 0 {
 			firstSafeErrMsg, firstErr = safeErrMsg, err
@@ -120,7 +124,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	for i, attempt := range attempts {
 		verifiedEmails[i] = attempt.email
 	}
-	return nil, fmt.Sprintf("No Sourcegraph user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
+	return false, nil, fmt.Sprintf("No Sourcegraph user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
 }
 
 type attempt struct {

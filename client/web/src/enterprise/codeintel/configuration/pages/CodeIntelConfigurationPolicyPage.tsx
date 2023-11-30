@@ -469,7 +469,8 @@ const GitObjectSettingsSection: FunctionComponent<GitObjectSettingsSectionProps>
             </Label>
             <Text size="small" className="text-muted mb-2">
                 Configuration policies apply to code intelligence data for specific revisions of{' '}
-                {repo ? 'this repository' : 'matching repositories'}.
+                {repo ? 'this repository' : 'matching repositories'}. Specify branches or tags using a{' '}
+                <Link to="https://github.com/gobwas/glob#example">glob pattern</Link>.
             </Text>
 
             <div className="input-group">
@@ -662,7 +663,8 @@ const RepositorySettingsSection: FunctionComponent<RepositorySettingsSectionProp
     <div className="form-group">
         <Label className="mb-0">Which repositories match this policy?</Label>
         <Text size="small" className="text-muted mb-2">
-            Configuration policies can apply to one, a set, or to all repositories on a Sourcegraph instance.
+            Configuration policies can apply to one, a set, or to all repositories on a Sourcegraph instance. Specify a
+            set of repositories using a <Link to="https://github.com/gobwas/glob#example">glob pattern</Link>.
         </Text>
         {!policy.repositoryPatterns || policy.repositoryPatterns.length === 0 ? (
             <Alert variant="info" className="d-flex justify-content-between align-items-center">

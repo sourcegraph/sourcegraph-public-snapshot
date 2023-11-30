@@ -31,7 +31,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	}})
 
 	logger, exportLogs := logtest.Captured(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	var testCases = []struct {
 		name  string

@@ -31,11 +31,14 @@ export const getFontWeightStyle = ({ weight }: GetFontWeightStyleParameters): st
 
 export const getModeStyle = ({ mode }: GetModeStyleParameters): string => {
     switch (mode) {
-        case 'single-line':
+        case 'single-line': {
             return styles.singleLine
-        case 'break-word':
+        }
+        case 'break-word': {
             return styles.breakWord
-        default:
+        }
+        default: {
             return ''
+        }
     }
 }

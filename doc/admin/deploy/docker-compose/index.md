@@ -31,7 +31,7 @@ A step by step guide to install Sourcegraph with Docker Compose.
 
 ### Overview
 
- 1. <span class="badge badge-note">RECOMMENDED</span> [Prepare the deployment repository](#step-1-prepare-the-deployment-repository)
+ 1. <span class="badge badge-note">RECOMMENDED</span> [Fork the deployment repository](#step-1-fork-the-deployment-repository)
  2. [Customize the instance](#step-2-configure-the-instance)
  3. [Clone the release branch](#step-3-clone-the-release-branch)
  4. [Build and start the Sourcegraph containers](#step-4-start-sourcegraph)
@@ -118,7 +118,7 @@ Continue with the following steps *after* you have created a public or private c
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v5.1.8"
+  export SOURCEGRAPH_VERSION="v5.2.3"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```

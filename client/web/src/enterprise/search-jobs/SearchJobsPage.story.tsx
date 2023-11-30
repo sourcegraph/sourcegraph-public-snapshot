@@ -1,21 +1,24 @@
-import { MockedResponse } from '@apollo/client/testing'
-import { Meta, Story } from '@storybook/react'
+import type { MockedResponse } from '@apollo/client/testing'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../components/WebStory'
 import {
-    GetUsersListResult,
-    GetUsersListVariables,
+    type GetUsersListResult,
+    type GetUsersListVariables,
     SearchJobsOrderBy,
-    SearchJobsResult,
+    type SearchJobsResult,
     SearchJobState,
-    SearchJobsVariables,
+    type SearchJobsVariables,
 } from '../../graphql-operations'
 
 import { SEARCH_JOBS_QUERY, SearchJobsPage } from './SearchJobsPage'
 import { GET_USERS_QUERY } from './UsersPicker'
+
+type SearchJob = SearchJobsResult['searchJobs']['nodes'][number]
 
 const defaultStory: Meta = {
     title: 'web/search-jobs',
@@ -33,11 +36,14 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
     request: {
         query: getDocumentNode(SEARCH_JOBS_QUERY),
         variables: {
-            first: 20,
+            first: 15,
             after: null,
+            last: null,
+            before: null,
             query: '',
+            userIDs: [],
             states: [],
-            orderBy: SearchJobsOrderBy.CREATED_DATE,
+            orderBy: SearchJobsOrderBy.CREATED_AT,
         },
     },
     result: {
@@ -54,6 +60,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.QUEUED,
                         query: 'repo:sourcegraph/* insights rev:asdf',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 200,
@@ -77,6 +84,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.PROCESSING,
                         query: 'repo:sourcegraph/* batch-changes rev:asdf',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 145,
@@ -100,6 +108,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.FAILED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 155,
@@ -123,6 +132,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.ERRORED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 155,
@@ -146,6 +156,7 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                         state: SearchJobState.COMPLETED,
                         query: 'repo:sourcegraph/* import { Button ',
                         URL: null,
+                        logURL: null,
                         repoStats: {
                             __typename: 'SearchJobStats',
                             total: 155,
@@ -161,12 +172,14 @@ const SEARCH_JOBS_MOCK: MockedResponse<SearchJobsResult, SearchJobsVariables> = 
                             avatarURL: null,
                         },
                     },
-                ],
+                ] as SearchJob[],
                 totalCount: 5,
                 pageInfo: {
-                    __typename: 'PageInfo',
+                    __typename: 'BidirectionalPageInfo',
                     hasNextPage: false,
                     endCursor: null,
+                    startCursor: null,
+                    hasPreviousPage: false,
                 },
             },
         },
@@ -258,8 +271,8 @@ const USER_PICKER_QUERY_MOCK: MockedResponse<GetUsersListResult, GetUsersListVar
     },
 }
 
-export const SearchJobsListPage: Story = () => (
+export const SearchJobsListPage: StoryFn = () => (
     <MockedTestProvider mocks={[SEARCH_JOBS_MOCK, USER_PICKER_QUERY_MOCK]}>
-        <SearchJobsPage isAdmin={false} />
+        <SearchJobsPage isAdmin={false} telemetryService={NOOP_TELEMETRY_SERVICE} />
     </MockedTestProvider>
 )

@@ -66,7 +66,7 @@ var dbMu sync.Mutex
 // storage.
 //
 // Note: This is designed for use in a single process application like
-// Sourcegraph App. All transactions are additionally protected by a global
+// Cody App. All transactions are additionally protected by a global
 // mutex to avoid the need to handle database serializability errors.
 func DBKeyValue(namespace string) KeyValue {
 	store := func(ctx context.Context, key string, f NaiveUpdater) error {

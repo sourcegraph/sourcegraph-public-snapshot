@@ -1,11 +1,11 @@
-import { FC, useState } from 'react'
+import { type FC, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Button, Icon, Link, ProductStatusBadge, Badge } from '@sourcegraph/wildcard'
 
-import { AddExternalServiceOptions } from './externalServices'
+import type { AddExternalServiceOptions } from './externalServices'
 
 import styles from './ExternalServiceGroup.module.scss'
 

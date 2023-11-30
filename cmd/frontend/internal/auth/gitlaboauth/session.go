@@ -38,10 +38,14 @@ func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
 	return database.SecurityEventGitLabAuthFailed
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetServiceID() string {
+	return s.ServiceID
+}
+
+func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (newUserCreated bool, actr *actor.Actor, safeErrMsg string, err error) {
 	gUser, err := UserFromContext(ctx)
 	if err != nil {
-		return nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
+		return false, nil, "Could not read GitLab user from callback request.", errors.Wrap(err, "could not read user from context")
 	}
 
 	dc := conf.Get().Dotcom
@@ -51,13 +55,13 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
 
 		if gUser.CreatedAt.After(earliestValidCreationDate) {
-			return nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
+			return false, nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
 		}
 	}
 
 	login, err := auth.NormalizeUsername(gUser.Username)
 	if err != nil {
-		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
+		return false, nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
 	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil)
@@ -67,12 +71,12 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 	userBelongsToAllowedGroups, err := s.verifyUserGroups(ctx, glClient)
 	if err != nil {
 		message := "Error verifying user groups."
-		return nil, message, err
+		return false, nil, message, err
 	}
 
 	if !userBelongsToAllowedGroups {
 		message := "User does not belong to allowed GitLab groups or subgroups."
-		return nil, message, errors.New(message)
+		return false, nil, message, errors.New(message)
 	}
 
 	// AllowSignup defaults to true when not set to preserve the existing behavior.
@@ -80,13 +84,13 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 
 	var data extsvc.AccountData
 	if err := gitlab.SetExternalAccountData(&data, gUser, token); err != nil {
-		return nil, "", err
+		return false, nil, "", err
 	}
 
 	// Unlike with GitHub, we can *only* use the primary email to resolve the user's identity,
 	// because the GitLab API does not return whether an email has been verified. The user's primary
 	// email on GitLab is always verified, so we use that.
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
+	newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
 		UserProps: database.NewUser{
 			Username:        login,
 			Email:           gUser.Email,
@@ -104,7 +108,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		CreateIfNotExist:    signupAllowed,
 	})
 	if err != nil {
-		return nil, safeErrMsg, err
+		return false, nil, safeErrMsg, err
 	}
 
 	// There is no need to send record if we know email is empty as it's a primary property
@@ -116,7 +120,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		})
 	}
 
-	return actor.FromUser(userID), "", nil
+	return newUserCreated, actor.FromUser(userID), "", nil
 }
 
 func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {

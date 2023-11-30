@@ -17,8 +17,8 @@
         "confirm": true
       },
       "fs": {
-        "scope": ["$APPDATA/postgresql/data"],
-        "removeDir": true
+        "scope": ["$APPDATA/*"],
+        "all": true
       },
       "shell": {
         "sidecar": true,

@@ -63,7 +63,7 @@ query NotebookStars($id: ID!, $first: Int!, $after: String) {
 
 func TestCreateAndDeleteNotebookStars(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()
 
@@ -139,7 +139,7 @@ func createAPINotebookStars(t *testing.T, schema *graphql.Schema, notebookID int
 
 func TestListNotebookStars(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()
 

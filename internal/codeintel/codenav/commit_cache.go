@@ -7,7 +7,6 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -146,7 +145,7 @@ func (c *commitCache) commitsExist(ctx context.Context, commits []RepositoryComm
 		}
 	}
 
-	exists, err := c.gitserverClient.CommitsExist(ctx, authz.DefaultSubRepoPermsChecker, repoCommits)
+	exists, err := c.gitserverClient.CommitsExist(ctx, repoCommits)
 	if err != nil {
 		return nil, err
 	}

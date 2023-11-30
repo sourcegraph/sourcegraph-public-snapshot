@@ -42,8 +42,10 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
         case SearchPatternType.regexp:
         case SearchPatternType.structural:
         case SearchPatternType.lucky:
-        case SearchPatternType.keyword:
+        case SearchPatternType.newStandardRC1:
+        case SearchPatternType.keyword: {
             return patternType
+        }
     }
     return undefined
 }
@@ -59,8 +61,9 @@ export function parseSearchURLSearchMode(query: string): SearchMode {
     const searchMode = parseInt(searchModeStr, 10)
     switch (searchMode) {
         case SearchMode.Precise:
-        case SearchMode.SmartSearch:
+        case SearchMode.SmartSearch: {
             return searchMode
+        }
     }
     return defaultSearchMode
 }

@@ -1,5 +1,5 @@
 import { mdiMagnify, mdiPlus, mdiPuzzleOutline } from '@mdi/js'
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 
 import { BrandedStory } from '../../stories/BrandedStory'
 import { Button } from '../Button'
@@ -10,7 +10,7 @@ import { H1, H2 } from '../Typography'
 
 import { PageHeader } from './PageHeader'
 
-const decorator: DecoratorFn = story => (
+const decorator: Decorator = story => (
     <BrandedStory>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
 )
 
@@ -22,7 +22,7 @@ const config: Meta = {
 
 export default config
 
-export const BasicHeader: Story = () => (
+export const BasicHeader: StoryFn = () => (
     <>
         <H1>Page Header</H1>
         <H2>Basic</H2>
@@ -60,7 +60,7 @@ BasicHeader.parameters = {
     },
 }
 
-export const ComplexHeader: Story = () => (
+export const ComplexHeader: StoryFn = () => (
     <PageHeader
         annotation={<FeedbackBadge status="experimental" feedback={{ mailto: 'support@sourcegraph.com' }} />}
         byline={

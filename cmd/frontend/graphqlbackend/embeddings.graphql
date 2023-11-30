@@ -99,6 +99,11 @@ extend type Mutation {
     Experimental: Cancels the embedding job with the given ID. The job must exist and be in either 'processing' or 'queued' state.
     """
     cancelRepoEmbeddingJob(job: ID!): EmptyResponse!
+    """
+    TEMPORARY: creates a new embedding job for all completed embeddings
+    jobs so that they will be moved from blobstore to qdrant
+    """
+    migrateToQdrant: EmptyResponse!
 }
 
 """

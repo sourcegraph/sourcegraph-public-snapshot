@@ -15,7 +15,7 @@ jobs:
       - uses: pnpm/action-setup@v2
         id: pnpm-install
         with:
-          version: 8.3.0
+          version: 8.9.2
           run_install: false
       - name: Get pnpm store directory
         id: pnpm-cache
@@ -55,7 +55,3 @@ jobs:
         run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
         env:
           SRC_ENDPOINT: https://demo.sourcegraph.com/
-      - name: Upload lsif to Codyintel
-        run: src lsif upload -github-token='${{ secrets.GITHUB_TOKEN }}' -no-progress || true
-        env:
-          SRC_ENDPOINT: https://codyintel.sourcegraphcloud.com/

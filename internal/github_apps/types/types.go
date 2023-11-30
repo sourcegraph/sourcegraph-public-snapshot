@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	gogithub "github.com/google/go-github/v41/github"
+	gogithub "github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )

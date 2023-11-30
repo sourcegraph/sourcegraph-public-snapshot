@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { act } from 'react-dom/test-utils'
 import { of } from 'rxjs'
 import sinon from 'sinon'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import type { ListSearchContextsResult, SearchContextMinimalFields } from '@sourcegraph/shared/src/graphql-operations'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -188,6 +189,6 @@ describe('SearchContextMenu', () => {
         })
 
         const items = screen.getAllByTestId('search-context-menu-item')
-        expect(items[items.length - 1]).toHaveTextContent('Error occurred while loading search contexts')
+        expect(items.at(-1)).toHaveTextContent('Error occurred while loading search contexts')
     })
 })

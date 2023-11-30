@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log/logtest"
@@ -33,7 +33,7 @@ import (
 
 func TestWebhooksHandler(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	u, err := db.Users().Create(context.Background(), database.NewUser{
 		Email:           "test@user.com",
 		Username:        "testuser",

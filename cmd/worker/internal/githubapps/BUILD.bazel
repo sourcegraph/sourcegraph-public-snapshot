@@ -1,0 +1,18 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "githubapps",
+    srcs = ["job.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/internal/githubapps",
+    visibility = ["//cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/internal/githubapps/worker",
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

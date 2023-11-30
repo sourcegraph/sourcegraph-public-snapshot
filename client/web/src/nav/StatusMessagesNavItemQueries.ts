@@ -38,6 +38,12 @@ export const STATUS_AND_REPO_COUNT = gql`
                 message
             }
 
+            ... on GitserverDiskThresholdReached {
+                __typename
+
+                message
+            }
+
             ... on ExternalServiceSyncError {
                 __typename
 

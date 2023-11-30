@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import sinon from 'sinon'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -10,6 +10,9 @@ import { CloudSignUpPage } from './CloudSignUpPage'
 
 const config: Meta = {
     title: 'web/auth/CloudSignUpPage',
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 }
 
 export default config
@@ -32,12 +35,20 @@ const context: Pick<SourcegraphContext, 'authProviders' | 'experimentalFeatures'
             authenticationURL: '/.auth/gitlab/login?pc=https%3A%2F%2Fgitlab.com%2F',
             serviceID: 'https://gitlab.com',
         },
+        {
+            clientID: '002',
+            serviceType: 'openidconnect',
+            displayName: 'Google',
+            isBuiltin: false,
+            authenticationURL: '/.auth/openidconnect/login?pc=google',
+            serviceID: 'https://gitlab.com',
+        },
     ],
     experimentalFeatures: {},
     authMinPasswordLength: 0,
 }
 
-export const Default: Story = () => (
+export const Default: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -53,7 +64,7 @@ export const Default: Story = () => (
     </WebStory>
 )
 
-export const EmailForm: Story = () => (
+export const EmailForm: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -69,7 +80,7 @@ export const EmailForm: Story = () => (
     </WebStory>
 )
 
-export const InvalidSource: Story = () => (
+export const InvalidSource: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage
@@ -85,7 +96,7 @@ export const InvalidSource: Story = () => (
     </WebStory>
 )
 
-export const OptimizationSignup: Story = () => (
+export const OptimizationSignup: StoryFn = () => (
     <WebStory>
         {({ isLightTheme }) => (
             <CloudSignUpPage

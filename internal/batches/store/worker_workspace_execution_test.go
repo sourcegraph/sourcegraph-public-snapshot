@@ -27,7 +27,7 @@ import (
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	user := bt.CreateTestUser(t, db, true)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
@@ -221,7 +221,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	user := bt.CreateTestUser(t, db, true)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
@@ -376,7 +376,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 func TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	user := bt.CreateTestUser(t, db, true)
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
@@ -461,7 +461,7 @@ stdout: {"operation":"CACHE_AFTER_STEP_RESULT","timestamp":"2021-11-04T12:43:19.
 func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 
@@ -510,7 +510,7 @@ func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin(t *testing.T)
 func TestBatchSpecWorkspaceExecutionWorkerStore_Dequeue_RoundRobin_NoDoubleDequeue(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	repo, _ := bt.CreateTestRepo(t, ctx, db)
 

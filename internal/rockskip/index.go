@@ -6,10 +6,10 @@ import (
 	"fmt"
 
 	"github.com/amit7itz/goset"
-	"github.com/inconshreveable/log15"
 	pg "github.com/lib/pq"
 	"k8s.io/utils/lru"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -235,7 +235,13 @@ func (s *Service) Index(ctx context.Context, repo, givenCommit string) (err erro
 						// determined by the file itself:
 						//
 						// https://github.com/universal-ctags/ctags/pull/3300
-						log15.Error("Could not find symbol that was supposedly deleted", "repo", repo, "commit", commit, "path", path, "symbol", symbol)
+						s.logger.Error(
+							"could not find symbol that was supposedly deleted",
+							log.String("repo", repo),
+							log.Int("commit", commit),
+							log.String("path", path),
+							log.String("symbol", symbol),
+						)
 						continue
 					}
 				}

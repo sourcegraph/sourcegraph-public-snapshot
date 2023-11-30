@@ -8,7 +8,6 @@ import { createDefaultSuggestions } from '@sourcegraph/branded'
 import { isMacPlatform as isMacPlatformFunc } from '@sourcegraph/common'
 import type { PathMatch } from '@sourcegraph/shared/src/search/stream'
 import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
-import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { Icon, Button, Input, InputStatus } from '@sourcegraph/wildcard'
 
 import type { BlockProps, FileBlockInput } from '../..'
@@ -46,9 +45,6 @@ const editorAttributes = [
 export const NotebookFileBlockInputs: React.FunctionComponent<
     React.PropsWithChildren<NotebookFileBlockInputsProps>
 > = ({ id, lineRange, onFileSelected, onLineRangeChange, isSourcegraphDotCom, ...inputProps }) => {
-    const applySuggestionsOnEnter =
-        useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
-
     const [lineRangeInput, setLineRangeInput] = useState(serializeLineRange(lineRange))
     const debouncedOnLineRangeChange = useMemo(() => debounce(onLineRangeChange, 300), [onLineRangeChange])
 
@@ -99,9 +95,8 @@ export const NotebookFileBlockInputs: React.FunctionComponent<
             createDefaultSuggestions({
                 isSourcegraphDotCom,
                 fetchSuggestions: fetchStreamSuggestions,
-                applyOnEnter: applySuggestionsOnEnter,
             }),
-        [isSourcegraphDotCom, applySuggestionsOnEnter]
+        [isSourcegraphDotCom]
     )
 
     return (

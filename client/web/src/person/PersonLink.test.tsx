@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
+import { describe, expect, test } from 'vitest'
 
 import { PersonLink } from './PersonLink'
 

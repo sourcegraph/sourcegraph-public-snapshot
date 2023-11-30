@@ -3,16 +3,14 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "auth",
-    srcs = [
-        "auth.go",
-        "bearer.go",
-    ],
+    srcs = ["auth.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth",
     visibility = ["//cmd/cody-gateway:__subpackages__"],
     deps = [
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/events",
         "//cmd/cody-gateway/internal/response",
+        "//internal/authbearer",
         "//internal/codygateway",
         "//internal/trace",
         "//lib/errors",
@@ -35,6 +33,7 @@ go_test(
         "//cmd/cody-gateway/internal/events",
         "//internal/codygateway",
         "//internal/licensing",
+        "//internal/productsubscription",
         "//lib/errors",
         "@com_github_derision_test_go_mockgen//testutil/require",
         "@com_github_gregjones_httpcache//:httpcache",

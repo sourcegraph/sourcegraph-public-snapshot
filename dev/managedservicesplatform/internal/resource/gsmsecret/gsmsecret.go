@@ -2,6 +2,7 @@ package gsmsecret
 
 import (
 	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/hashicorp/terraform-cdk-go/cdktf"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/datagooglesecretmanagersecretversion"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecret"
 	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/secretmanagersecretversion"
@@ -20,11 +21,13 @@ type Config struct {
 
 	ID    string
 	Value string
+
+	DependsOn []cdktf.ITerraformDependable
 }
 
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 	secret := secretmanagersecret.NewSecretManagerSecret(scope,
-		id.ResourceID("secret"),
+		id.TerraformID("secret"),
 		&secretmanagersecret.SecretManagerSecretConfig{
 			Project:  &config.ProjectID,
 			SecretId: &config.ID,
@@ -34,10 +37,11 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 		})
 
 	version := secretmanagersecretversion.NewSecretManagerSecretVersion(scope,
-		id.ResourceID("secret_version"),
+		id.TerraformID("secret_version"),
 		&secretmanagersecretversion.SecretManagerSecretVersionConfig{
 			Secret:     secret.Id(),
 			SecretData: &config.Value,
+			DependsOn:  &config.DependsOn,
 		})
 
 	return &Output{
@@ -57,7 +61,7 @@ type DataConfig struct {
 
 func Get(scope constructs.Construct, id resourceid.ID, config DataConfig) *Data {
 	data := datagooglesecretmanagersecretversion.NewDataGoogleSecretManagerSecretVersion(scope,
-		id.ResourceID("version_data"),
+		id.TerraformID("version_data"),
 		&datagooglesecretmanagersecretversion.DataGoogleSecretManagerSecretVersionConfig{
 			Secret:  &config.Secret,
 			Project: &config.ProjectID,

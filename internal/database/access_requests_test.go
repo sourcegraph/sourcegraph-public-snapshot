@@ -18,7 +18,7 @@ func TestAccessRequests_Create(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	store := db.AccessRequests()
 
@@ -82,7 +82,7 @@ func TestAccessRequests_Update(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	accessRequestsStore := db.AccessRequests()
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
@@ -119,7 +119,7 @@ func TestAccessRequests_GetByID(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.AccessRequests()
 
 	t.Run("non-existing access request", func(t *testing.T) {
@@ -146,7 +146,7 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	store := db.AccessRequests()
 
 	t.Run("non-existing access request", func(t *testing.T) {
@@ -173,7 +173,7 @@ func TestAccessRequests_Count(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	accessRequestStore := db.AccessRequests()
 
 	usersStore := db.Users()
@@ -221,7 +221,7 @@ func TestAccessRequests_List(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	accessRequestStore := db.AccessRequests()
 
 	usersStore := db.Users()

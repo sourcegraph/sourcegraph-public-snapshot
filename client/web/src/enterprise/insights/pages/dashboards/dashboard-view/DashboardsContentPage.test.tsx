@@ -6,6 +6,7 @@ import { within } from '@testing-library/dom'
 import { act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
@@ -35,7 +36,7 @@ type UserEvent = typeof userEvent
 
 const mockCopyURL = sinon.spy()
 
-jest.mock('../../../hooks/use-copy-url-handler', () => ({
+vi.mock('../../../hooks/use-copy-url-handler', () => ({
     useCopyURLHandler: () => [mockCopyURL],
 }))
 
@@ -192,7 +193,7 @@ const triggerDashboardMenuItem = async (
 }
 
 beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     window.IntersectionObserver = MockIntersectionObserver
 })
 

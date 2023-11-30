@@ -6,9 +6,9 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/dghubble/gologin"
-	"github.com/dghubble/gologin/bitbucket"
-	goauth2 "github.com/dghubble/gologin/oauth2"
+	"github.com/dghubble/gologin/v2"
+	"github.com/dghubble/gologin/v2/bitbucket"
+	goauth2 "github.com/dghubble/gologin/v2/oauth2"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -21,8 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const sessionKey = "bitbucketcloudoauth@0"
-const defaultBBCloudURL = "https://bitbucket.org"
+const (
+	sessionKey        = "bitbucketcloudoauth@0"
+	defaultBBCloudURL = "https://bitbucket.org"
+)
 
 func parseProvider(logger log.Logger, p *schema.BitbucketCloudAuthProvider, db database.DB, sourceCfg schema.AuthProviders) (provider *oauth.Provider, messages []string) {
 	rawURL := p.Url

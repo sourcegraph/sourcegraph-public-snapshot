@@ -1,8 +1,10 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import sinon from 'sinon'
+import { beforeAll, describe, expect, it } from 'vitest'
 
 import type { Progress } from '@sourcegraph/shared/src/search/stream'
+import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 
 import { StreamingProgressSkippedButton } from './StreamingProgressSkippedButton'
@@ -49,7 +51,12 @@ describe('StreamingProgressSkippedButton', () => {
         }
 
         renderWithBrandedContext(
-            <StreamingProgressSkippedButton query="" progress={progress} onSearchAgain={sinon.spy()} />
+            <StreamingProgressSkippedButton
+                query=""
+                progress={progress}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                onSearchAgain={sinon.spy()}
+            />
         )
         expect(screen.getByTestId('streaming-progress-skipped')).toBeInTheDocument()
         expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('outline-danger')
@@ -95,7 +102,12 @@ describe('StreamingProgressSkippedButton', () => {
         }
 
         renderWithBrandedContext(
-            <StreamingProgressSkippedButton query="" progress={progress} onSearchAgain={sinon.spy()} />
+            <StreamingProgressSkippedButton
+                query=""
+                progress={progress}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                onSearchAgain={sinon.spy()}
+            />
         )
         expect(screen.getByTestId('streaming-progress-skipped')).toHaveClass('btnOutline btnDanger')
         expect(screen.queryByTestId('streaming-progress-skipped')).not.toHaveClass('btnOutline btnSecondary')
@@ -131,7 +143,12 @@ describe('StreamingProgressSkippedButton', () => {
         }
 
         renderWithBrandedContext(
-            <StreamingProgressSkippedButton query="" progress={progress} onSearchAgain={sinon.spy()} />
+            <StreamingProgressSkippedButton
+                query=""
+                progress={progress}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                onSearchAgain={sinon.spy()}
+            />
         )
 
         const button = screen.getByTestId('streaming-progress-skipped')
@@ -179,7 +196,12 @@ describe('StreamingProgressSkippedButton', () => {
         const onSearchAgain = sinon.spy()
 
         renderWithBrandedContext(
-            <StreamingProgressSkippedButton query="" progress={progress} onSearchAgain={onSearchAgain} />
+            <StreamingProgressSkippedButton
+                query=""
+                progress={progress}
+                telemetryService={NOOP_TELEMETRY_SERVICE}
+                onSearchAgain={onSearchAgain}
+            />
         )
         const toggleButton = screen.getByTestId('streaming-progress-skipped')
 

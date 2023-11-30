@@ -39,6 +39,9 @@ commandTests:
     command: "coursier"
   - name: "p4-fusion is runnable"
     command: "p4-fusion-binary"
+    args:
+    expectedOutput: ["--noBaseCommit"]
+    exitCode: 1
 
   - name: "not running as root"
     command: "/usr/bin/id"

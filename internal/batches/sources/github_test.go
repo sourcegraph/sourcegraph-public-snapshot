@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -116,7 +115,6 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 }
 
 func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
-	github.SetupForTest(t)
 	cli := new(mockDoer)
 	// Version lookup
 	versionMatchedBy := func(req *http.Request) bool {
@@ -889,12 +887,8 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, 
 	// The GithubSource uses the github.Client under the hood, which uses rcache, a
 	// caching layer that uses Redis. We need to clear the cache before we run the tests
 	rcache.SetupForTest(t)
-	github.SetupForTest(t)
 
 	cf, save := newClientFactory(t, tName)
-
-	lg := log15.New()
-	lg.SetHandler(log15.DiscardHandler())
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,

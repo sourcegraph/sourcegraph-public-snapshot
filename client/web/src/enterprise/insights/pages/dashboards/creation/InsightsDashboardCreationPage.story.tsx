@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { of } from 'rxjs'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -34,7 +34,7 @@ const codeInsightsBackend: Partial<CodeInsightsGqlBackend> = {
         ]),
 }
 
-export const InsightsDashboardCreationLicensed: Story = () => {
+export const InsightsDashboardCreationLicensed: StoryFn = () => {
     useCodeInsightsLicenseState.setState({ licensed: true, insightsLimit: null })
 
     return (
@@ -44,7 +44,7 @@ export const InsightsDashboardCreationLicensed: Story = () => {
     )
 }
 
-export const InsightsDashboardCreationUnlicensed: Story = () => {
+export const InsightsDashboardCreationUnlicensed: StoryFn = () => {
     useCodeInsightsLicenseState.setState({ licensed: false, insightsLimit: 2 })
 
     return (

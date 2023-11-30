@@ -10,7 +10,7 @@ contents:
     - terraform@sourcegraph
     - helm=3.11.3-r1
     - kustomize=4.5.7-r0
-    - nodejs-18=18.17.1-r1
+    - nodejs-20=20.9.0
     - kubectl-1.24=1.24.17-r1
     - kubectl-1.24-default=1.24.17-r1
     - gke-gcloud-auth-plugin@sourcegraph
@@ -24,4 +24,4 @@ contents:
 accounts:
   run-as: root
 
-# MANUAL REBUILD: Tue Sep 12 12:34:03 EDT 2023
+# MANUAL REBUILD: Wed Oct 11 09:59:22 BST 2023

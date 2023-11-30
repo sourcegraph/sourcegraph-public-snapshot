@@ -14,7 +14,7 @@ import (
 // records that are marked as being processed but are no longer being processed
 // by a worker.
 func NewUploadResetter(logger log.Logger, store store.Store[shared.Upload], metrics *resetterMetrics) *dbworker.Resetter[shared.Upload] {
-	return dbworker.NewResetter(logger.Scoped("uploadResetter", ""), store, dbworker.ResetterOptions{
+	return dbworker.NewResetter(logger.Scoped("uploadResetter"), store, dbworker.ResetterOptions{
 		Name:     "precise_code_intel_upload_worker_resetter",
 		Interval: 30 * time.Second,
 		Metrics: dbworker.ResetterMetrics{

@@ -8,17 +8,22 @@ export const settingsGroup = {
         {
             to: '',
             exact: true,
-            label: 'Options',
+            label: 'Mirroring',
         },
         {
             to: '/index',
             exact: true,
-            label: 'Indexing',
+            label: 'Search Indexing',
         },
         {
-            to: '/mirror',
+            to: '/logs',
             exact: true,
-            label: 'Mirroring',
+            label: 'Logs',
+        },
+        {
+            to: '/permissions',
+            exact: true,
+            label: 'Repo Permissions',
         },
     ],
 }

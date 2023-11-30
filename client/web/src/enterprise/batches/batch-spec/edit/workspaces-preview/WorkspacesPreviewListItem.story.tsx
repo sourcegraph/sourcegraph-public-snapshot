@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { noop } from 'lodash'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -6,7 +6,7 @@ import { mockPreviewWorkspace } from '../../batch-spec.mock'
 
 import { WorkspacesPreviewListItem } from './WorkspacesPreviewListItem'
 
-const decorator: DecoratorFn = story => <div className="list-group d-flex flex-column w-100">{story()}</div>
+const decorator: Decorator = story => <div className="list-group d-flex flex-column w-100">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/edit/workspaces-preview/WorkspacesPreviewListItem',
@@ -15,7 +15,7 @@ const config: Meta = {
 
 export default config
 
-export const Basic: Story = () => (
+export const Basic: StoryFn = () => (
     <WebStory>
         {props => (
             <>
@@ -36,7 +36,7 @@ export const Basic: Story = () => (
     </WebStory>
 )
 
-export const Cached: Story = () => (
+export const Cached: StoryFn = () => (
     <WebStory>
         {props => (
             <>
@@ -57,7 +57,7 @@ export const Cached: Story = () => (
     </WebStory>
 )
 
-export const Stale: Story = () => (
+export const Stale: StoryFn = () => (
     <WebStory>
         {props => (
             <>
@@ -78,7 +78,7 @@ export const Stale: Story = () => (
     </WebStory>
 )
 
-export const ReadOnly: Story = () => (
+export const ReadOnly: StoryFn = () => (
     <WebStory>
         {props => (
             <>

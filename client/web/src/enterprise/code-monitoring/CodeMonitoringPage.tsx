@@ -1,13 +1,14 @@
-import React, { useMemo, useEffect, useState, useLayoutEffect } from 'react'
+import React, { useMemo, useEffect, useState, useLayoutEffect, useCallback } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
+import { type Location, useNavigate, useLocation, type NavigateFunction } from 'react-router-dom'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import type { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
+import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import {
     PageHeader,
     LoadingSpinner,
@@ -16,6 +17,7 @@ import {
     Link,
     ProductStatusBadge,
     Icon,
+    ButtonLink,
 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
@@ -32,12 +34,43 @@ import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
 import { CodeMonitoringLogs } from './CodeMonitoringLogs'
 import { CodeMonitorList } from './CodeMonitorList'
 
+type MonitorsTab = 'list' | 'getting-started' | 'logs'
+type Tabs = { tab: MonitorsTab; title: string; isActive: boolean }[]
+
+function getSelectedTabFromLocation(
+    locationSearch: string,
+    userHasCodeMonitors: boolean | Error | undefined
+): MonitorsTab {
+    const urlParameters = new URLSearchParams(locationSearch)
+    switch (urlParameters.get('tab')) {
+        case 'list': {
+            return 'list'
+        }
+        case 'getting-started': {
+            return 'getting-started'
+        }
+        case 'logs': {
+            return 'logs'
+        }
+    }
+
+    return userHasCodeMonitors ? 'list' : 'getting-started'
+}
+
+function setSelectedLocationTab(location: Location, navigate: NavigateFunction, selectedTab: MonitorsTab): void {
+    const urlParameters = new URLSearchParams(location.search)
+    urlParameters.set('tab', selectedTab)
+    if (location.search !== urlParameters.toString()) {
+        navigate({ ...location, search: urlParameters.toString() }, { replace: true })
+    }
+}
+
 export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
     fetchCodeMonitors?: typeof _fetchCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
     // For testing purposes only
     testForceTab?: 'list' | 'getting-started' | 'logs'
 }
@@ -48,7 +81,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     fetchCodeMonitors = _fetchCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     testForceTab,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     const userHasCodeMonitors = useObservable(
         useMemo(
@@ -67,18 +100,20 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
         )
     )
 
-    const [currentTab, setCurrentTab] = useState<'list' | 'getting-started' | 'logs' | null>(null)
+    const navigate = useNavigate()
+    const location = useLocation()
 
-    // Select the appropriate tab after loading:
-    // - If the user has code monitors, show the list tab
-    // - If the user has no code monitors, show the getting started tab
-    useLayoutEffect(() => {
-        if (userHasCodeMonitors === true) {
-            setCurrentTab('list')
-        } else if (userHasCodeMonitors === false) {
-            setCurrentTab('getting-started')
-        }
-    }, [userHasCodeMonitors])
+    const [currentTab, setCurrentTab] = useState<MonitorsTab>(() =>
+        getSelectedTabFromLocation(location.search, userHasCodeMonitors)
+    )
+
+    const onSelectTab = useCallback(
+        (tab: MonitorsTab) => {
+            setCurrentTab(tab)
+            setSelectedLocationTab(location, navigate, tab)
+        },
+        [navigate, location, setCurrentTab]
+    )
 
     // Force tab for testing
     useLayoutEffect(() => {
@@ -91,22 +126,43 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
     useEffect(() => {
         if (userHasCodeMonitors !== undefined) {
             switch (currentTab) {
-                case 'getting-started':
+                case 'getting-started': {
                     eventLogger.logPageView('CodeMonitoringGettingStartedPage')
                     break
-                case 'logs':
+                }
+                case 'logs': {
                     eventLogger.logPageView('CodeMonitoringLogsPage')
                     break
-                case 'list':
+                }
+                case 'list': {
                     eventLogger.logPageView('CodeMonitoringPage')
+                }
             }
         }
     }, [currentTab, userHasCodeMonitors])
 
     const showList = userHasCodeMonitors !== undefined && !isErrorLike(userHasCodeMonitors) && currentTab === 'list'
 
-    const showLogsTab =
-        useExperimentalFeatures(features => features.showCodeMonitoringLogs) && authenticatedUser && !isSourcegraphApp
+    const tabs: Tabs = useMemo(
+        () => [
+            {
+                tab: 'list',
+                title: 'Code monitors',
+                isActive: currentTab === 'list',
+            },
+            {
+                tab: 'getting-started',
+                title: 'Getting started',
+                isActive: currentTab === 'getting-started',
+            },
+            {
+                tab: 'logs',
+                title: 'Logs',
+                isActive: currentTab === 'logs',
+            },
+        ],
+        [currentTab]
+    )
 
     return (
         <div className="code-monitoring-page" data-testid="code-monitoring-page">
@@ -114,7 +170,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
             <PageHeader
                 actions={
                     authenticatedUser &&
-                    !isSourcegraphApp && (
+                    !isCodyApp && (
                         <Button to="/code-monitoring/new" variant="primary" as={Link}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} /> Create a code monitor
                         </Button>
@@ -136,64 +192,29 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                 <div className="d-flex flex-column">
                     <div className="code-monitoring-page-tabs mb-4">
                         <div className="nav nav-tabs">
-                            {!isSourcegraphApp && (
-                                <div className="nav-item">
-                                    <Link
+                            {tabs.map(({ tab, title, isActive }) => (
+                                <div className="nav-item" key={tab}>
+                                    <ButtonLink
                                         to=""
-                                        onClick={event => {
-                                            event.preventDefault()
-                                            setCurrentTab('list')
-                                        }}
-                                        className={classNames('nav-link', currentTab === 'list' && 'active')}
                                         role="button"
-                                    >
-                                        <span className="text-content" data-tab-content="Code monitors">
-                                            Code monitors
-                                        </span>
-                                    </Link>
-                                </div>
-                            )}
-                            <div className="nav-item">
-                                <Link
-                                    to=""
-                                    onClick={event => {
-                                        event.preventDefault()
-                                        setCurrentTab('getting-started')
-                                    }}
-                                    className={classNames('nav-link', currentTab === 'getting-started' && 'active')}
-                                    role="button"
-                                >
-                                    <span className="text-content" data-tab-content="Getting started">
-                                        Getting started
-                                    </span>
-                                </Link>
-                            </div>
-                            {showLogsTab && (
-                                <div className="nav-item">
-                                    <Link
-                                        to=""
-                                        onClick={event => {
+                                        onSelect={event => {
                                             event.preventDefault()
-                                            setCurrentTab('logs')
+                                            onSelectTab(tab)
                                         }}
-                                        className={classNames('nav-link flex-row', currentTab === 'logs' && 'active')}
-                                        role="button"
+                                        className={classNames('nav-link', isActive && 'active')}
                                     >
-                                        <span className="text-content" data-tab-content="Logs">
-                                            Logs
+                                        <span>
+                                            {title}
+                                            {tab === 'logs' && <ProductStatusBadge status="beta" className="ml-2" />}
                                         </span>
-                                        <ProductStatusBadge status="beta" className="ml-2" />
-                                    </Link>
+                                    </ButtonLink>
                                 </div>
-                            )}
+                            ))}
                         </div>
                     </div>
 
                     {currentTab === 'getting-started' && (
-                        <CodeMonitoringGettingStarted
-                            authenticatedUser={authenticatedUser}
-                            isSourcegraphApp={isSourcegraphApp}
-                        />
+                        <CodeMonitoringGettingStarted authenticatedUser={authenticatedUser} isCodyApp={isCodyApp} />
                     )}
 
                     {currentTab === 'logs' && <CodeMonitoringLogs />}

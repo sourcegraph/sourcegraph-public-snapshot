@@ -1,6 +1,6 @@
 package:
   name: qdrant
-  version: 1.4.1
+  version: 1.5.1
   epoch: 1
   description: "Qdrant vector database"
   target-architecture:
@@ -27,7 +27,7 @@ pipeline:
   - uses: fetch
     with:
       uri: https://github.com/qdrant/qdrant/releases/download/v${{package.version}}/qdrant-x86_64-unknown-linux-gnu.tar.gz
-      expected-sha256: b299a8123fbc4ee5c7cd7fb161ee7e1ee0be96a3ce40fdbcdd1610a2be64e69e
+      expected-sha256: 0d8b385590c1f1145f6114cde39eb8105305c6123b9a0505606cd489f322dbaa
       strip-components: 0
   - runs: |
       chmod +x qdrant

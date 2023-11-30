@@ -36,13 +36,26 @@ extend type Query {
     """
     searchJobs(
         """
-        The number of results to return. Defaults to 50.
+        The number of results to return.
         """
-        first: Int = 50
+        first: Int
+        """
+        Note: Use either last or first (see above) in the query. Setting both will
+        return an error.
+        """
+        last: Int
         """
         The cursor to start at.
         """
         after: String
+        """
+        Opaque pagination cursor to be used when paginating backwards.
+        """
+        before: String
+        """
+        List of users ids by which we will filter out search jobs list.
+        """
+        userIDs: [ID!]
         """
         The query to filter the results by.
         """
@@ -54,7 +67,7 @@ extend type Query {
         """
         The order by which to sort the results.
         """
-        orderBy: SearchJobsOrderBy = CREATED_DATE
+        orderBy: SearchJobsOrderBy = CREATED_AT
         """
         The determines the order of the returned searches. Defaults to ascending.
         """
@@ -86,7 +99,9 @@ enum SearchJobState {
     The search job has completed.
     """
     COMPLETED
-
+    """
+    The search job was canceled.
+    """
     CANCELED
 }
 
@@ -99,11 +114,11 @@ enum SearchJobsOrderBy {
     """
     QUERY
     """
-    Sort search jobs by their created date.
+    Sort search jobs by their creation date.
     """
-    CREATED_DATE
+    CREATED_AT
     """
-    Sort search jobs by their started date.
+    Sort search jobs by their state.
     """
     STATE
 }
@@ -144,6 +159,10 @@ type SearchJob implements Node {
     The url to download the search job results.
     """
     URL: String
+    """
+    The url to download search job logs.
+    """
+    logURL: String
     """
     The repository stats for the search job.
     """
@@ -187,5 +206,5 @@ type SearchJobConnection {
     """
     Information to aid in pagination.
     """
-    pageInfo: PageInfo!
+    pageInfo: BidirectionalPageInfo!
 }

@@ -94,7 +94,7 @@ export const resolveAccess = (path: string[], tree: Access[]): Access[] | undefi
 // - `foo(...))` succeeds up to the first `)`, which is recognized as the closing paren
 // - `foo(` does not succeed, it is not balanced
 // - `foo)` does not succeed, it is not balanced
-export const scanBalancedParens = (input: string): string | undefined => {
+const scanBalancedParens = (input: string): string | undefined => {
     let adjustedStart = 0
     let balanced = 0
     let current = ''
@@ -197,7 +197,7 @@ export const predicateCompletion = (field: string): Completion[] => {
             {
                 label: 'has.topic(...)',
                 insertText: 'has.topic(${1})',
-                description: 'Search only inside repositories that have a matching GitHub topic',
+                description: 'Search only inside repositories that have a matching GitHub/GitLab topic',
                 asSnippet: true,
             },
             {

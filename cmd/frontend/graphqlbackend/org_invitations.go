@@ -22,14 +22,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var EmailInvitesFeatureFlag = "org-email-invites"
 var SigningKeyMessage = "signing key not provided, cannot create JWT for invitation URL. Please add organizationInvitations signingKey to site configuration."
 var DefaultExpiryDuration = 48 * time.Hour
 
@@ -113,38 +111,6 @@ func checkEmail(ctx context.Context, db database.DB, inviteEmail string) (bool, 
 	return false, nil
 }
 
-func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
-	Organization graphql.ID
-}) ([]*organizationInvitationResolver, error) {
-	actor := sgactor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("no current user")
-	}
-
-	orgID, err := UnmarshalOrgID(args.Organization)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check that the current user is a member of the org that we get the invitations for
-	if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
-		return nil, err
-	}
-
-	pendingInvites, err := r.db.OrgInvitations().GetPendingByOrgID(ctx, orgID)
-
-	if err != nil {
-		return nil, err
-	}
-
-	var invitations []*organizationInvitationResolver
-	for _, invitation := range pendingInvites {
-		invitations = append(invitations, NewOrganizationInvitationResolver(r.db, invitation))
-	}
-
-	return invitations, nil
-}
-
 func newExpiryDuration() time.Duration {
 	expiryDuration := DefaultExpiryDuration
 	if orgInvitationConfigDefined() && conf.SiteConfig().OrganizationInvitations.ExpiryTime > 0 {
@@ -200,13 +166,8 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 
 func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
-	Username     *string
-	Email        *string
+	Username     string
 }) (*inviteUserToOrganizationResult, error) {
-	if args.Email == nil && args.Username == nil {
-		return nil, errors.New("either username or email must be defined")
-	}
-
 	var orgID int32
 	if err := relay.UnmarshalSpec(args.Organization, &orgID); err != nil {
 		return nil, err
@@ -215,12 +176,6 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// invited to.
 	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
 		return nil, err
-	}
-	// check org has feature flag for email invites enabled, we can ignore errors here as flag value would be false
-	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EmailInvitesFeatureFlag)
-	// return error if feature flag is not enabled and we got an email as an argument
-	if ((args.Email != nil && *args.Email != "") || args.Username == nil) && !enabled {
-		return nil, errors.New("inviting by email is not supported for this organization")
 	}
 
 	// Create the invitation.
@@ -237,23 +192,13 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	var recipientID int32
 	var recipientEmail string
 	var userEmail string
-	if args.Username != nil {
-		var recipient *types.User
-		recipient, userEmail, err = getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
-		if err != nil {
-			return nil, err
-		}
-		recipientID = recipient.ID
+	var recipient *types.User
+	recipient, userEmail, err = getUserToInviteToOrganization(ctx, r.db, args.Username, orgID)
+	if err != nil {
+		return nil, err
 	}
+	recipientID = recipient.ID
 	hasConfig := orgInvitationConfigDefined()
-	if args.Email != nil {
-		// we only support new URL schema for email invitations
-		if !hasConfig {
-			return nil, errors.New(SigningKeyMessage)
-		}
-		recipientEmail = *args.Email
-		userEmail = recipientEmail
-	}
 
 	expiryTime := newExpiryTime()
 	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipientID, recipientEmail, expiryTime)
@@ -263,7 +208,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 
 	// create invitation URL
 	var invitationURL string
-	if args.Email != nil || hasConfig {
+	if hasConfig {
 		invitationURL, err = orgInvitationURL(*invitation, false)
 	} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
 		invitationURL = orgInvitationURLLegacy(org, false)
@@ -346,100 +291,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		}
 
 		// Schedule permission sync for user that accepted the invite. Internally it will log an error if enqueuing fails.
-		permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}, Reason: database.ReasonUserAcceptedOrgInvite})
-	}
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Context, args *struct {
-	OrganizationInvitation graphql.ID
-}) (*EmptyResponse, error) {
-	id, err := UnmarshalOrgInvitationID(args.OrganizationInvitation)
-	if err != nil {
-		return nil, err
-	}
-
-	orgInvitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
-		return nil, err
-	}
-
-	// Do not allow to resend for expired invitation
-	if orgInvitation.Expired() {
-		return nil, database.NewOrgInvitationExpiredErr(orgInvitation.ID)
-	}
-
-	if !conf.CanSendEmail() {
-		return nil, errors.New("unable to send notification for invitation because sending emails is not enabled")
-	}
-
-	org, err := r.db.Orgs().GetByID(ctx, orgInvitation.OrgID)
-	if err != nil {
-		return nil, err
-	}
-	sender, err := r.db.Users().GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, err
-	}
-	var recipientEmail string
-	if orgInvitation.RecipientEmail != "" {
-		recipientEmail = orgInvitation.RecipientEmail
-	} else {
-		recipientEmailVerified := false
-		recipientEmail, recipientEmailVerified, err = r.db.UserEmails().GetPrimaryEmail(ctx, orgInvitation.RecipientUserID)
-		if err != nil {
-			return nil, err
-		}
-		if !recipientEmailVerified {
-			return nil, errors.New("refusing to send notification because recipient has no verified email address")
-		}
-	}
-
-	expiryTime := newExpiryTime()
-	orgInvitation.ExpiresAt = &expiryTime
-	if err := r.db.OrgInvitations().UpdateExpiryTime(ctx, orgInvitation.ID, expiryTime); err != nil {
-		return nil, err
-	}
-
-	var invitationURL string
-	if orgInvitationConfigDefined() {
-		invitationURL, err = orgInvitationURL(*orgInvitation, false)
-	} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
-		invitationURL = orgInvitationURLLegacy(org, false)
-	}
-	if err != nil {
-		return nil, err
-	}
-	if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL, *orgInvitation.ExpiresAt); err != nil {
-		return nil, err
-	}
-	return &EmptyResponse{}, nil
-}
-
-func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args *struct {
-	OrganizationInvitation graphql.ID
-}) (*EmptyResponse, error) {
-	id, err := UnmarshalOrgInvitationID(args.OrganizationInvitation)
-	if err != nil {
-		return nil, err
-	}
-	orgInvitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
-		return nil, err
-	}
-
-	if err := r.db.OrgInvitations().Revoke(ctx, orgInvitation.ID); err != nil {
-		return nil, err
+		permssync.SchedulePermsSync(ctx, r.logger, r.db, permssync.ScheduleSyncOpts{UserIDs: []int32{a.UID}, Reason: database.ReasonUserAcceptedOrgInvite})
 	}
 	return &EmptyResponse{}, nil
 }

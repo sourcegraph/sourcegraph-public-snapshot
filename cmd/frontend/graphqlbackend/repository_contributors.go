@@ -92,7 +92,7 @@ func (s *repositoryContributorConnectionStore) ComputeNodes(ctx context.Context,
 
 func (s *repositoryContributorConnectionStore) compute(ctx context.Context) ([]*gitdomain.ContributorCount, error) {
 	s.once.Do(func() {
-		client := gitserver.NewClient()
+		client := gitserver.NewClient("graphql.repocontributor")
 		var opt gitserver.ContributorOptions
 		if s.args.RevisionRange != nil {
 			opt.Range = *s.args.RevisionRange

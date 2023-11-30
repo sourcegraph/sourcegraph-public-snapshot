@@ -40,3 +40,14 @@ build:darwin-docker --//:darwin_docker=True
 
 # Helper to run only fast go unit tests
 test:go-short --test_tag_filters=go --test_timeout_filters=short
+
+# Helper to run go tests verbosely, useful for debugging test timeouts
+test:go-verbose-test --test_env=GO_TEST_WRAP_TESTV=1
+
+# .aspect/bazelrc/correctness.bazelrc sets this, but this breaks with a lot of Go external deps, so
+# we instead disable it.
+common --noincompatible_disallow_empty_glob
+
+# Ensure clippy runs for rust targets
+build --aspects=@rules_rust//rust:defs.bzl%rust_clippy_aspect
+build --output_groups=+clippy_checks

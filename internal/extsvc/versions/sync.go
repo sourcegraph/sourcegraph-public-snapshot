@@ -46,7 +46,7 @@ func (j *syncingJob) Routines(_ context.Context, observationCtx *observation.Con
 		return nil, err
 	}
 
-	sourcerLogger := observationCtx.Logger.Scoped("repos.Sourcer", "repository source for syncing")
+	sourcerLogger := observationCtx.Logger.Scoped("repos.Sourcer")
 	sourcerCF := httpcli.NewExternalClientFactory(
 		httpcli.NewLoggingMiddleware(sourcerLogger),
 	)

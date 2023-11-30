@@ -275,6 +275,17 @@ func getAndMarshalCodeInsightsUsageJSON(ctx context.Context, db database.DB) (_ 
 	return json.Marshal(codeInsightsUsage)
 }
 
+func getAndMarshalSearchJobsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalSearchJobsUsageJSON")
+
+	searchJobsUsage, err := usagestats.GetSearchJobsUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(searchJobsUsage)
+}
+
 func getAndMarshalCodeInsightsCriticalTelemetryJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalCodeInsightsUsageJSON")
 
@@ -374,7 +385,7 @@ func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ 
 }
 
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
-	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions", "gets the version of various dependency services"))
+	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions"))
 	var (
 		err error
 		dv  dependencyVersions
@@ -442,7 +453,7 @@ func parseRedisInfo(buf []byte) (map[string]string, error) {
 	return m, nil
 }
 
-// Create a ping body with limited fields, used in Sourcegraph App.
+// Create a ping body with limited fields, used in Cody App.
 func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
 	logFunc := logger.Debug
 
@@ -497,7 +508,7 @@ func getAndMarshalOwnUsageJSON(ctx context.Context, db database.DB) (json.RawMes
 }
 
 func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Reader, error) {
-	scopedLog := logger.Scoped("telemetry", "track and update various usages stats")
+	scopedLog := logger.Scoped("telemetry")
 	logFunc := scopedLog.Debug
 	if envvar.SourcegraphDotComMode() {
 		logFunc = scopedLog.Warn
@@ -522,6 +533,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		SearchOnboarding:              []byte("{}"),
 		ExtensionsUsage:               []byte("{}"),
 		CodeInsightsUsage:             []byte("{}"),
+		SearchJobsUsage:               []byte("{}"),
 		CodeInsightsCriticalTelemetry: []byte("{}"),
 		CodeMonitoringUsage:           []byte("{}"),
 		NotebooksUsage:                []byte("{}"),
@@ -589,11 +601,13 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	if err != nil {
 		logFunc("getAndMarshalBatchChangesUsageJSON failed", log.Error(err))
 	}
-	r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
-	if err != nil {
-		logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
+	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
+	if !envvar.SourcegraphDotComMode() {
+		r.GrowthStatistics, err = getAndMarshalGrowthStatisticsJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalGrowthStatisticsJSON failed", log.Error(err))
+		}
 	}
-
 	r.SavedSearches, err = getAndMarshalSavedSearchesJSON(ctx, db)
 	if err != nil {
 		logFunc("getAndMarshalSavedSearchesJSON failed", log.Error(err))
@@ -634,6 +648,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFuncWarn("getAndMarshalCodeInsightsUsageJSON failed", log.Error(err))
 	}
 
+	r.SearchJobsUsage, err = getAndMarshalSearchJobsUsageJSON(ctx, db)
+	if err != nil {
+		logFuncWarn("getAndMarshalSearchJobsUsageJSON failed", log.Error(err))
+	}
+
 	r.CodeMonitoringUsage, err = getAndMarshalCodeMonitoringUsageJSON(ctx, db)
 	if err != nil {
 		logFunc("getAndMarshalCodeMonitoringUsageJSON failed", log.Error(err))
@@ -654,9 +673,12 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("getAndMarshalIDEExtensionsUsageJSON failed", log.Error(err))
 	}
 
-	r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
-	if err != nil {
-		logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
+	// We don't bother doing this on Sourcegraph.com as it is expensive and not needed.
+	if !envvar.SourcegraphDotComMode() {
+		r.MigratedExtensionsUsage, err = getAndMarshalMigratedExtensionsUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("getAndMarshalMigratedExtensionsUsageJSON failed", log.Error(err))
+		}
 	}
 
 	r.CodeHostVersions, err = getAndMarshalCodeHostVersionsJSON(ctx, db)
@@ -703,23 +725,26 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		}
 	}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
-		}
-	}()
+	// We don't bother doing these on Sourcegraph.com as they are expensive and not needed.
+	if !envvar.SourcegraphDotComMode() {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.NewCodeIntelUsage, err = getAndMarshalAggregatedCodeIntelUsageJSON(ctx, db)
+			if err != nil {
+				logFunc("getAndMarshalAggregatedCodeIntelUsageJSON failed", log.Error(err))
+			}
+		}()
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
-		if err != nil {
-			logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
-		}
-	}()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			r.SearchUsage, err = getAndMarshalAggregatedSearchUsageJSON(ctx, db)
+			if err != nil {
+				logFunc("getAndMarshalAggregatedSearchUsageJSON failed", log.Error(err))
+			}
+		}()
+	}
 
 	wg.Wait()
 
@@ -792,7 +817,7 @@ func check(logger log.Logger, db database.DB) {
 	defer cancel()
 
 	updateBodyFunc := updateBody
-	// In Sourcegraph App mode, use limited pings.
+	// In Cody App mode, use limited pings.
 	if deploy.IsApp() {
 		updateBodyFunc = limitedUpdateBody
 	}
@@ -842,7 +867,7 @@ func check(logger log.Logger, db database.DB) {
 			return "", errors.Errorf("update endpoint returned HTTP error %d: %s", resp.StatusCode, description)
 		}
 
-		// Sourcegraph App: we always get ping responses back, as they may contain notification messages for us.
+		// Cody App: we always get ping responses back, as they may contain notification messages for us.
 		if deploy.IsApp() {
 			var response pingResponse
 			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
@@ -898,7 +923,7 @@ func Start(logger log.Logger, db database.DB) {
 	started = true
 
 	const delay = 30 * time.Minute
-	scopedLog := logger.Scoped("updatecheck", "checks for updates of services and updates usage telemetry")
+	scopedLog := logger.Scoped("updatecheck")
 	for {
 		check(scopedLog, db)
 

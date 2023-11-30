@@ -66,25 +66,25 @@ type globalRateLimiter struct {
 }
 
 func NewGlobalRateLimiter(logger log.Logger, bucketName string) GlobalLimiter {
-	logger = logger.Scoped(fmt.Sprintf("GlobalRateLimiter.%s", bucketName), "")
+	logger = logger.Scoped(fmt.Sprintf("GlobalRateLimiter.%s", bucketName))
 
 	// Pool can return false for ok if the implementation of `KeyValue` is not
 	// backed by a real redis server. For App, we implemented an in-memory version
 	// of redis that only supports a subset of commands that are not sufficient
 	// for our redis-based global rate limiter.
 	// Technically, other installations could use this limiter too, but it's undocumented
-	// and should really not be used. The intended use is for Sourcegraph App.
+	// and should really not be used. The intended use is for Cody App.
 	// In the unlucky case that we are NOT in App and cannot get a proper redis
 	// connection, we will fall back to an in-memory implementation as well to
 	// prevent the instance from breaking entirely. Note that the limits may NOT
 	// be enforced like configured then and should be treated as best effort only.
 	// Errors will be logged frequently.
-	// In App, this will still correctly limit globally, because all the services
-	// run in the same process and share memory. Outside of App, it is best effort only.
+	// In single-program mode, this will still correctly limit globally, because all the services
+	// run in the same process and share memory. Otherwise, it is best effort only.
 	pool, ok := kv().Pool()
 	if !ok {
-		if !deploy.IsApp() {
-			// Outside of app, this should be considered a configuration mistake.
+		if !deploy.IsSingleBinary() {
+			// Outside of single-program mode, this should be considered a configuration mistake.
 			logger.Error("Redis pool not set, global rate limiter will not work as expected")
 		}
 		rl := -1 // Documented default in site-config JSON schema. -1 means infinite.

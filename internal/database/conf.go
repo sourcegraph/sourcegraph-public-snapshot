@@ -67,7 +67,7 @@ var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
 func ConfStoreWith(other basestore.ShareableStore) ConfStore {
 	return &confStore{
 		Store:  basestore.NewWithHandle(other.Handle()),
-		logger: log.Scoped("confStore", "database confStore"),
+		logger: log.Scoped("confStore"),
 	}
 }
 

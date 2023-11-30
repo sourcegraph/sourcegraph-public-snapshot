@@ -7,7 +7,6 @@ import (
 
 	tfe "github.com/hashicorp/go-tfe"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/terraform"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -160,7 +159,7 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 	if projects, err := c.client.Projects.List(ctx, c.org, &tfe.ProjectListOptions{
 		Name: tfcProjectName,
 	}); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Projects.List")
 	} else {
 		for _, p := range projects.Items {
 			if p.Name == tfcProjectName {
@@ -175,39 +174,29 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			Name: tfcProjectName,
 		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "Projects.Create")
 		}
 	}
 
-	// Assign access to project
-	wantTeam := "team-gGtVVgtNRaCnkhKp" // TODO: Currently Core Services, parameterize later
-	var existingAccessID string
+	// Grant access to project for Core Services
 	if resp, err := c.client.TeamProjectAccess.List(ctx, tfe.TeamProjectAccessListOptions{
 		ProjectID: tfcProject.ID,
 	}); err != nil {
-		return nil, errors.Wrap(err, "TeamAccess.List")
+		return nil, errors.Wrap(err, "TeamProjectAccess.List")
 	} else {
-		for _, a := range resp.Items {
-			if a.Team.ID == wantTeam {
-				existingAccessID = a.ID
+		for _, team := range []struct {
+			name                 string // only for reference
+			terraformCloudTeamID string
+		}{
+			{name: "Core Services", terraformCloudTeamID: "team-gGtVVgtNRaCnkhKp"},
+			// Operators should use Entitle to request access to this team to
+			// get access to workspaces, if they aren't in Core Services
+			{name: "Managed Services Platform Operators", terraformCloudTeamID: "team-Wdejc42bWrRonQEY"},
+		} {
+			if err := c.ensureAccessForTeam(ctx, tfcProject, resp, team.terraformCloudTeamID); err != nil {
+				return nil, errors.Wrapf(err, "ensure access for %q Terraform Cloud team %q",
+					team.name, team.terraformCloudTeamID)
 			}
-		}
-	}
-	if existingAccessID != "" {
-		_, err := c.client.TeamProjectAccess.Update(ctx, existingAccessID, tfe.TeamProjectAccessUpdateOptions{
-			Access: pointers.Ptr(tfe.TeamProjectAccessWrite),
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "TeamAccess.Update")
-		}
-	} else {
-		_, err := c.client.TeamProjectAccess.Add(ctx, tfe.TeamProjectAccessAddOptions{
-			Project: &tfe.Project{ID: tfcProject.ID},
-			Team:    &tfe.Team{ID: wantTeam},
-			Access:  tfe.TeamProjectAccessWrite,
-		})
-		if err != nil {
-			return nil, errors.Wrap(err, "TeamAccess.Add")
 		}
 	}
 
@@ -222,6 +211,9 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			ExecutionMode:    pointers.Ptr("remote"),
 			TerraformVersion: pointers.Ptr(terraform.Version),
 			AutoApply:        pointers.Ptr(true),
+
+			// Allow all stacks to reference each other.
+			GlobalRemoteState: pointers.Ptr(true),
 		}
 		switch c.workspaceConfig.RunMode {
 		case WorkspaceRunModeVCS:
@@ -241,12 +233,6 @@ func (c *Client) SyncWorkspaces(ctx context.Context, svc spec.ServiceSpec, env s
 			wantWorkspaceOptions.WorkingDirectory = nil
 		default:
 			return nil, errors.Errorf("invalid WorkspaceRunModeVCS %q", c.workspaceConfig.RunMode)
-		}
-
-		// HACK: make project output available globally so that other stacks
-		// can reference the generated, randomized ID.
-		if s == project.StackName {
-			wantWorkspaceOptions.GlobalRemoteState = pointers.Ptr(true)
 		}
 
 		wantWorkspaceTags := []*tfe.Tag{
@@ -340,4 +326,32 @@ func (c *Client) DeleteWorkspaces(ctx context.Context, svc spec.ServiceSpec, env
 	}
 
 	return errs
+}
+
+func (c *Client) ensureAccessForTeam(ctx context.Context, project *tfe.Project, currentTeams *tfe.TeamProjectAccessList, teamID string) error {
+	var existingAccessID string
+	for _, a := range currentTeams.Items {
+		if a.Team.ID == teamID {
+			existingAccessID = a.ID
+		}
+	}
+	if existingAccessID != "" {
+		_, err := c.client.TeamProjectAccess.Update(ctx, existingAccessID, tfe.TeamProjectAccessUpdateOptions{
+			Access: pointers.Ptr(tfe.TeamProjectAccessWrite),
+		})
+		if err != nil {
+			return errors.Wrap(err, "TeamAccess.Update")
+		}
+	} else {
+		_, err := c.client.TeamProjectAccess.Add(ctx, tfe.TeamProjectAccessAddOptions{
+			Project: &tfe.Project{ID: project.ID},
+			Team:    &tfe.Team{ID: teamID},
+			Access:  tfe.TeamProjectAccessWrite,
+		})
+		if err != nil {
+			return errors.Wrap(err, "TeamAccess.Add")
+		}
+	}
+
+	return nil
 }

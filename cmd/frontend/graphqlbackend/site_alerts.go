@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/settings"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
@@ -67,8 +66,6 @@ type AlertFuncArgs struct {
 	IsAuthenticated     bool             // whether the viewer is authenticated
 	IsSiteAdmin         bool             // whether the viewer is a site admin
 	ViewerFinalSettings *schema.Settings // the viewer's final user/org/global settings
-
-	gitserverClient gitserver.Client // gitserver client
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
@@ -81,8 +78,6 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
 		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
 		ViewerFinalSettings: settings,
-
-		gitserverClient: gitserver.NewClient(),
 	}
 
 	var alerts []*Alert
@@ -99,7 +94,7 @@ var disableSecurity, _ = strconv.ParseBool(env.Get("DISABLE_SECURITY", "false", 
 
 func init() {
 	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
+		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsSingleBinary() {
 			return nil
 		}
 		if c.SiteConfig().ExternalURL == "" {
@@ -122,8 +117,6 @@ func init() {
 	AlertFuncs = append(AlertFuncs, updateAvailableAlert)
 
 	AlertFuncs = append(AlertFuncs, storageLimitReachedAlert)
-
-	AlertFuncs = append(AlertFuncs, gitserverDiskInfoThresholdAlert)
 
 	// Notify admins if critical alerts are firing, if Prometheus is configured.
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
@@ -274,7 +267,7 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 }
 
 func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
-	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsApp() {
+	if !args.IsSiteAdmin || deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) || deploy.IsSingleBinary() {
 		return nil
 	}
 	if conf.Get().EmailSmtp == nil || conf.Get().EmailSmtp.Host == "" {
@@ -473,33 +466,6 @@ func codyGatewayUsageAlert(args AlertFuncArgs) []*Alert {
 			alerts = append(alerts, &Alert{
 				TypeValue:    AlertTypeInfo,
 				MessageValue: fmt.Sprintf("The Cody limit for %s is 75%% used. If you run into this regularly, please contact Sourcegraph.", feat.DisplayName()),
-			})
-		}
-	}
-
-	return alerts
-}
-
-const gitserverDiskAlertThreshold = 90
-
-func gitserverDiskInfoThresholdAlert(args AlertFuncArgs) []*Alert {
-	// We only show this alert to site admins.
-	if !args.IsSiteAdmin {
-		return nil
-	}
-
-	si, err := args.gitserverClient.SystemsInfo(context.Background())
-	if err != nil {
-		log15.Warn("Failed to gitserver systems info", "error", err)
-		return nil
-	}
-
-	var alerts []*Alert
-	for _, s := range si {
-		if s.PercentUsed >= gitserverDiskAlertThreshold {
-			alerts = append(alerts, &Alert{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: fmt.Sprintf("The disk usage on gitserver **%q** is over %d%% (%.2f%% used). Free up disk space to avoid potential issues.", s.Address, gitserverDiskAlertThreshold, s.PercentUsed),
 			})
 		}
 	}

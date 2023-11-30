@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -74,14 +74,11 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 
 	ctx := context.Background()
 
-	svc := types.ExternalService{
-		Kind: extsvc.VariantLocalGit.AsKind(),
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.LocalGitExternalService{
-			Repos: repoPatterns,
-		})),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantLocalGit, &schema.LocalGitExternalService{
+		Repos: repoPatterns,
+	})
 
-	src, err := NewLocalGitSource(ctx, logtest.Scoped(t), &svc)
+	src, err := NewLocalGitSource(ctx, logtest.Scoped(t), svc)
 	if err != nil {
 		t.Fatal(err)
 	}

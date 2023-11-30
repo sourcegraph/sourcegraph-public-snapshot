@@ -1,7 +1,7 @@
 import { type ScanResult, scanSearchQuery } from './scanner'
 import { type Token, KeywordKind, type CharacterRange, type PatternKind } from './token'
 
-export interface Pattern {
+interface Pattern {
     type: 'pattern'
     kind: PatternKind
     value: string
@@ -22,7 +22,7 @@ export interface Parameter {
  * sequence is often thought about as "implicit AND", it's usually _not_
  * equivalent to 'a AND b AND c', which is why this gets its own node type.
  */
-export interface Sequence {
+interface Sequence {
     type: 'sequence'
     nodes: Node[]
     range: CharacterRange
@@ -91,10 +91,12 @@ const createNode = (node: Node): ParseSuccess => ({ type: 'success', node })
 const createSequence = (nodes: Node[]): ParseSuccess => {
     switch (nodes.length) {
         case 0:
-        case 1:
+        case 1: {
             return createNode(nodes[0])
-        default:
+        }
+        default: {
             return createNode({ type: 'sequence', nodes, range: rangeFromNodes(nodes) })
+        }
     }
 }
 
@@ -120,9 +122,10 @@ const createOperator = (
 
 const tokenToLeafNode = (token: Token): ParseResult => {
     switch (token.type) {
-        case 'pattern':
+        case 'pattern': {
             return createNode({ type: 'pattern', kind: token.kind, value: token.value, range: token.range })
-        case 'filter':
+        }
+        case 'filter': {
             return createNode({
                 type: 'parameter',
                 field: token.field.value,
@@ -131,11 +134,12 @@ const tokenToLeafNode = (token: Token): ParseResult => {
                 negated: token.negated,
                 range: token.range,
             })
+        }
     }
     return { type: 'error', expected: 'a convertable token to tree node' }
 }
 
-export const parseParenthesis = (tokens: Token[]): State => {
+const parseParenthesis = (tokens: Token[]): State => {
     const openingParen = tokens[0]
     tokens = tokens.slice(1) // Consume '('.
 
@@ -252,7 +256,7 @@ const parseSequence = (tokens: Token[]): State => {
  * parseAnd parses and-expressions. And operators bind tighter:
  * (a and b or c) => ((a and b) or c).
  */
-export const parseAnd = (tokens: Token[]): State => {
+const parseAnd = (tokens: Token[]): State => {
     const left = parseSequence(tokens)
     if (left.result.type === 'error') {
         return { result: left.result, tokens }
@@ -278,7 +282,7 @@ export const parseAnd = (tokens: Token[]): State => {
  * parseOr parses or-expressions. Or operators have lower precedence than And
  * operators, therefore this function calls parseAnd.
  */
-export const parseOr = (tokens: Token[]): State => {
+const parseOr = (tokens: Token[]): State => {
     const left = parseAnd(tokens)
     if (left.result.type === 'error') {
         return { result: left.result, tokens }

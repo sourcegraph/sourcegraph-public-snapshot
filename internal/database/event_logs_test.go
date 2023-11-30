@@ -24,6 +24,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/trace/tracetest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -37,9 +39,9 @@ func TestSanitizeEventURL(t *testing.T) {
 		externalURL string
 		output      string
 	}{{
-		input:       "https://about.sourcegraph.com/test", //CI:URL_OK
+		input:       "https://about.sourcegraph.com/test", // CI:URL_OK
 		externalURL: "https://sourcegraph.com",
-		output:      "https://about.sourcegraph.com/test", //CI:URL_OK
+		output:      "https://about.sourcegraph.com/test", // CI:URL_OK
 	}, {
 		input:       "https://test.sourcegraph.com/test",
 		externalURL: "https://sourcegraph.com",
@@ -85,10 +87,10 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
-	var testCases = []struct {
+	testCases := []struct {
 		name  string
 		event *Event
 		err   string // Stringified error
@@ -131,7 +133,7 @@ func TestEventLogs_CountUsersWithSetting(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	usersStore := db.Users()
@@ -200,7 +202,7 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// Several of the events will belong to Sourcegraph employee admin user and Sourcegraph Operator user account
@@ -208,16 +210,16 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 	require.NoError(t, err)
 	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
 	require.NoError(t, err)
-	soLoganID, err := db.UserExternalAccounts().CreateUserAndSave(
+	soLoganID, err := db.Users().CreateWithExternalAccount(
 		ctx,
 		NewUser{
 			Username: "sourcegraph-operator-logan",
 		},
-		extsvc.AccountSpec{
-			ServiceType: "sourcegraph-operator",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "sourcegraph-operator",
+			},
+		})
 	require.NoError(t, err)
 
 	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
@@ -279,7 +281,7 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -337,7 +339,7 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -450,7 +452,7 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -463,16 +465,16 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 	require.NoError(t, err)
 	err = db.UserEmails().Add(ctx, sgAdmin.ID, "admin@sourcegraph.com", nil)
 	require.NoError(t, err)
-	soLogan, err := db.UserExternalAccounts().CreateUserAndSave(
+	soLogan, err := db.Users().CreateWithExternalAccount(
 		ctx,
 		NewUser{
 			Username: "sourcegraph-operator-logan",
 		},
-		extsvc.AccountSpec{
-			ServiceType: "sourcegraph-operator",
-		},
-		extsvc.AccountData{},
-	)
+		&extsvc.Account{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: "sourcegraph-operator",
+			},
+		})
 	require.NoError(t, err)
 
 	user1, err := db.Users().Create(ctx, NewUser{Username: "a"})
@@ -595,7 +597,7 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences", "unknown event"}
@@ -659,7 +661,7 @@ func TestEventLogs_TestCodeIntelligenceRepositoryCounts(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	now := time.Now()
 
@@ -802,7 +804,7 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{
@@ -871,7 +873,7 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{"codeintel.lsifHover", "codeintel.searchReferences.xrepo", "unknown event"}
@@ -951,7 +953,7 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -1003,7 +1005,7 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{
@@ -1011,7 +1013,8 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 		"CodeIntelligenceIndexerSetupInvestigated", // duplicate
 		"CodeIntelligenceUploadErrorInvestigated",
 		"CodeIntelligenceIndexErrorInvestigated",
-		"unknown event"}
+		"unknown event",
+	}
 	users := []uint32{1, 2}
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -1080,7 +1083,7 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -1140,7 +1143,7 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	names := []string{"search.latencies.literal", "search.latencies.structural", "unknown event"}
@@ -1307,7 +1310,7 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	// This unix timestamp is equivalent to `Friday, May 15, 2020 10:30:00 PM GMT` and is set to
@@ -1315,8 +1318,10 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 	// time that falls too near the edge of a week.
 	now := time.Unix(1589581800, 0).UTC()
 
-	codyEventNames := []string{"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
-		"CodyVSCodeExtension:recipe:explain-code-high-level:executed"}
+	codyEventNames := []string{
+		"CodyVSCodeExtension:recipe:rewrite-to-functional:executed",
+		"CodyVSCodeExtension:recipe:explain-code-high-level:executed",
+	}
 	users := []uint32{1, 2}
 
 	days := []time.Time{
@@ -1404,7 +1409,7 @@ func TestEventLogs_ListAll(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	now := time.Now()
@@ -1418,7 +1423,8 @@ func TestEventLogs_ListAll(t *testing.T) {
 			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
-		}, {
+		},
+		{
 			UserID:    2,
 			Name:      "codeintel",
 			URL:       "http://sourcegraph.com",
@@ -1438,7 +1444,14 @@ func TestEventLogs_ListAll(t *testing.T) {
 			URL:       "http://sourcegraph.com",
 			Source:    "test",
 			Timestamp: startDate,
-		}}
+		},
+	}
+
+	// Run all the inserts under a mock trace so we can test trace data being
+	// attached
+	tracetest.ConfigureStaticTracerProvider(t)
+	var tr trace.Trace
+	tr, ctx = trace.New(ctx, t.Name())
 
 	for _, event := range events {
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
@@ -1474,6 +1487,18 @@ func TestEventLogs_ListAll(t *testing.T) {
 		assert.Len(t, have, 1)
 		assert.Equal(t, uint32(3), have[0].UserID)
 	})
+
+	t.Run("all events have trace context", func(t *testing.T) {
+		got, err := db.EventLogs().ListAll(ctx, EventLogsListOptions{})
+		require.NoError(t, err)
+		assert.Len(t, got, len(events))
+		for _, e := range got {
+			args := make(map[string]any)
+			require.NoError(t, json.Unmarshal(e.PublicArgument, &args))
+			assert.NotEmpty(t, args["interaction.trace_id"])
+			assert.Equal(t, tr.SpanContext().TraceID().String(), args["interaction.trace_id"])
+		}
+	})
 }
 
 func TestEventLogs_LatestPing(t *testing.T) {
@@ -1482,7 +1507,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 
 	t.Run("with no pings in database", func(t *testing.T) {
 		ctx := context.Background()
@@ -1594,7 +1619,7 @@ func TestEventLogs_RequestsByLanguage(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	t.Parallel()
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	if _, err := db.Handle().ExecContext(ctx, `
@@ -1864,7 +1889,7 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			logger := logtest.Scoped(t)
-			db := NewDB(logger, dbtest.NewDB(logger, t))
+			db := NewDB(logger, dbtest.NewDB(t))
 			ctx := context.Background()
 			for _, e := range testCase.events {
 				if err := db.EventLogs().Insert(ctx, e); err != nil {
@@ -1928,7 +1953,7 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 		},
 	}
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	for _, e := range events {
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
@@ -2029,7 +2054,7 @@ func TestMakeDateTruncExpression(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 
 	cases := []struct {

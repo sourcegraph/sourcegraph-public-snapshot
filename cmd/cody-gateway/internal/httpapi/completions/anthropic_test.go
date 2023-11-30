@@ -2,7 +2,6 @@ package completions
 
 import (
 	"encoding/json"
-	"fmt"
 	"strings"
 	"testing"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
 )
 
@@ -23,38 +23,57 @@ func TestIsFlaggedAnthropicRequest(t *testing.T) {
 
 	t.Run("missing known preamble", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
-		flagged, reason, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
+		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
 		require.NoError(t, err)
-		require.True(t, flagged)
-		require.Equal(t, "unknown_prompt", reason)
+		require.True(t, result.IsFlagged())
+		require.False(t, result.shouldBlock)
+		require.Contains(t, result.reasons, "unknown_prompt")
 	})
 
 	t.Run("preamble not configured ", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
-		flagged, _, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
+		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
 		require.NoError(t, err)
-		require.False(t, flagged)
+		require.False(t, result.IsFlagged())
 	})
 
 	t.Run("high max tokens to sample", func(t *testing.T) {
 		ar := anthropicRequest{Model: "claude-2", MaxTokensToSample: 10000, Prompt: validPreamble}
-		flagged, reason, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
+		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
 		require.NoError(t, err)
-		require.True(t, flagged)
-		require.Equal(t, "high_max_tokens_to_sample_10000", reason)
+		require.True(t, result.IsFlagged())
+		require.True(t, result.shouldBlock)
+		require.Contains(t, result.reasons, "high_max_tokens_to_sample")
+		require.Equal(t, int32(result.maxTokensToSample), ar.MaxTokensToSample)
 	})
-
-	t.Run("high prompt token count", func(t *testing.T) {
+	t.Run("high prompt token count (below block limit)", func(t *testing.T) {
 		tokenLengths, err := tk.Tokenize(validPreamble)
 		require.NoError(t, err)
 
 		validPreambleTokens := len(tokenLengths)
-		longPrompt := strings.Repeat("word ", promptTokenLimit+1)
+		longPrompt := strings.Repeat("word ", promptTokenFlaggingLimit+1)
 		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt}
-		flagged, reason, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
+		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
 		require.NoError(t, err)
-		require.True(t, flagged)
-		require.Equal(t, fmt.Sprintf("high_prompt_token_count_%d", promptTokenLimit+1+validPreambleTokens+1), reason)
+		require.True(t, result.IsFlagged())
+		require.False(t, result.shouldBlock)
+		require.Contains(t, result.reasons, "high_prompt_token_count")
+		require.Equal(t, result.promptTokenCount, validPreambleTokens+1+promptTokenFlaggingLimit+1)
+	})
+
+	t.Run("high prompt token count (below block limit)", func(t *testing.T) {
+		tokenLengths, err := tk.Tokenize(validPreamble)
+		require.NoError(t, err)
+
+		validPreambleTokens := len(tokenLengths)
+		longPrompt := strings.Repeat("word ", promptTokenBlockingLimit+1)
+		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt}
+		result, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
+		require.NoError(t, err)
+		require.True(t, result.IsFlagged())
+		require.True(t, result.shouldBlock)
+		require.Contains(t, result.reasons, "high_prompt_token_count")
+		require.Equal(t, result.promptTokenCount, validPreambleTokens+1+promptTokenBlockingLimit+1)
 	})
 }
 
@@ -95,5 +114,35 @@ func TestAnthropicRequestGetPromptTokenCount(t *testing.T) {
 		count2, err := newRequest.GetPromptTokenCount(tk)
 		require.NoError(t, err)
 		assert.Equal(t, originalRequest.promptTokens.count, count2, "token count should be unchanged")
+	})
+}
+
+func TestActor_IsDotComActor(t *testing.T) {
+	t.Run("with dotcom actor", func(t *testing.T) {
+		actor := &actor.Actor{
+			ID: "d3d2b638-d0a2-4539-a099-b36860b09819",
+		}
+
+		isDotCom := actor.IsDotComActor()
+
+		require.True(t, isDotCom)
+	})
+
+	t.Run("with nondotcom actor", func(t *testing.T) {
+		actor := &actor.Actor{
+			ID: "NOT_DOTCOM",
+		}
+
+		isDotCom := actor.IsDotComActor()
+
+		require.False(t, isDotCom)
+	})
+
+	t.Run("with nil actor", func(t *testing.T) {
+		var actor *actor.Actor = nil
+
+		isDotCom := actor.IsDotComActor()
+
+		require.False(t, isDotCom)
 	})
 }

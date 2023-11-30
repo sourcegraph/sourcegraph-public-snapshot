@@ -3,18 +3,16 @@ import { useCallback } from 'react'
 import { omit, uniq } from 'lodash'
 import type { Optional } from 'utility-types'
 
-import { useTemporarySetting, type TourLanguage } from '@sourcegraph/shared/src/settings/temporary'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
 export interface TourState {
     completedStepIds?: string[]
     status?: 'closed' | 'completed'
-    language?: TourLanguage
 }
 
 export type TourListState = Optional<Record<string, TourState>>
 
 export type UseTourReturnType = TourState & {
-    setLanguage: (language: TourLanguage) => void
     setStepCompleted: (stepId: string) => void
     setStatus: (status: TourState['status']) => void
     restart: () => void
@@ -22,16 +20,6 @@ export type UseTourReturnType = TourState & {
 
 export function useTour(tourKey: string): UseTourReturnType {
     const [allToursSate, setAllToursState, loadStatus] = useTemporarySetting('onboarding.quickStartTour')
-
-    const setLanguage = useCallback(
-        (language: TourLanguage): void => {
-            setAllToursState(previousState => ({
-                ...previousState,
-                [tourKey]: { ...previousState?.[tourKey], language },
-            }))
-        },
-        [setAllToursState, tourKey]
-    )
 
     const setStepCompleted = useCallback(
         (stepId: string): void =>
@@ -63,7 +51,6 @@ export function useTour(tourKey: string): UseTourReturnType {
         ...allToursSate?.[tourKey],
         // To avoid rendering Tour.tsx when state is still loading
         ...(loadStatus !== 'loaded' ? { status: 'closed' } : {}),
-        setLanguage,
         setStepCompleted,
         setStatus,
         restart,

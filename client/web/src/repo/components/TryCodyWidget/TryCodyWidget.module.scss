@@ -91,10 +91,6 @@
     gap: 0.813rem;
 }
 
-.button-icon {
-    margin-right: 0.065rem !important;
-}
-
 .terms-link {
     color: var(--cody-link-color);
     text-decoration: underline;
@@ -113,8 +109,8 @@
 }
 
 .auth-button {
-    background-color: var(--blue) !important;
-    color: var(--white) !important;
+    background-color: var(--white) !important;
+    color: var(--black) !important;
 }
 
 .email-auth-button {

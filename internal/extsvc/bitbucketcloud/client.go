@@ -103,15 +103,22 @@ func newClient(urn string, config *schema.BitbucketCloudConnection, httpClient h
 		return nil, err
 	}
 
+	var auther auth.Authenticator
+	if config.AccessToken != "" {
+		auther = &auth.OAuthBearerToken{Token: config.AccessToken}
+	} else {
+		auther = &auth.BasicAuth{
+			Username: config.Username,
+			Password: config.AppPassword,
+		}
+	}
+
 	return &client{
 		httpClient: httpClient,
 		URL:        extsvc.NormalizeBaseURL(apiURL),
-		Auth: &auth.BasicAuth{
-			Username: config.Username,
-			Password: config.AppPassword,
-		},
+		Auth:       auther,
 		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketCloudClient", ""), urn)),
+		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketCloudClient"), urn)),
 	}, nil
 }
 
@@ -241,9 +248,7 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (code in
 	var resp *http.Response
 	sleepTime := 10 * time.Second
 	for {
-		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth, func(r *http.Request) (*http.Response, error) {
-			return c.httpClient.Do(r)
-		})
+		resp, err = oauthutil.DoRequest(ctx, nil, c.httpClient, req, c.Auth)
 		if resp != nil {
 			code = resp.StatusCode
 		}

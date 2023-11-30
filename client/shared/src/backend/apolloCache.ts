@@ -19,6 +19,9 @@ const typePolicies: TypedTypePolicies = {
                 // We always want to merge responses from this field as it will be used through very different queries.
                 merge: true,
             },
+            site: {
+                merge: true,
+            },
         },
     },
 }
@@ -32,6 +35,8 @@ export const generateCache = (): InMemoryCache =>
             Changeset: ['ExternalChangeset', 'HiddenExternalChangeset'],
             TeamMember: ['User'],
             Owner: ['Person', 'Team'],
+            TreeEntry: ['GitBlob', 'GitTree'],
+            File2: ['GitBlob', 'VirtualFile'],
         },
     })
 

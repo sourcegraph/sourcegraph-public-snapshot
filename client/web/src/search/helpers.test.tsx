@@ -1,4 +1,5 @@
 import * as H from 'history'
+import { describe, expect, test } from 'vitest'
 
 import { SearchPatternType } from '../graphql-operations'
 

@@ -5,21 +5,20 @@ import classNames from 'classnames'
 import { partition } from 'lodash'
 import { Navigate, useLocation, useSearchParams } from 'react-router-dom'
 
-import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink } from '@sourcegraph/wildcard'
+import { Alert, Icon, Text, Link, Button, ErrorAlert, AnchorLink, Container } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
-import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import type { AuthProvider, SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
-import { SourcegraphIcon } from './icons'
+import { AuthPageWrapper } from './AuthPageWrapper'
 import { OrDivider } from './OrDivider'
 import { getReturnTo } from './SignInSignUpCommon'
 import { UsernamePasswordSignInForm } from './UsernamePasswordSignInForm'
 
-import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
+import styles from './SignInPage.module.scss'
 
 export interface SignInPageProps {
     authenticatedUser: AuthenticatedUser | null
@@ -94,15 +93,9 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
             No authentication providers are available. Contact a site administrator for help.
         </Alert>
     ) : (
-        <div className={classNames('mb-4 pb-5', signInSignUpCommonStyles.signinPageContainer)}>
-            {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
-            <div
-                className={classNames(
-                    'test-signin-form rounded p-4 my-3',
-                    signInSignUpCommonStyles.signinSignupForm,
-                    error ? 'mt-3' : 'mt-4'
-                )}
-            >
+        <>
+            {error && <ErrorAlert error={error} />}
+            <Container className="test-signin-form">
                 {showMoreProviders && (
                     <div className="mb-3 text-left">
                         <Button
@@ -125,81 +118,126 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                 {builtInAuthProvider && showMoreProviders && providers.length > 0 && (
                     <OrDivider className="mb-3 py-1" />
                 )}
-                {providers.map((provider, index) => (
+                {providers.map((provider, index) => {
                     // Use index as key because display name may not be unique. This is OK
                     // here because this list will not be updated during this component's lifetime.
                     /* eslint-disable react/no-array-index-key */
-                    <div className="mb-2" key={index}>
-                        <Button
-                            to={provider.authenticationURL}
-                            display="block"
-                            variant={showMoreProviders ? 'secondary' : 'primary'}
-                            as={AnchorLink}
-                        >
-                            {provider.serviceType === 'github' && <Icon aria-hidden={true} svgPath={mdiGithub} />}
-                            {provider.serviceType === 'gitlab' && <Icon aria-hidden={true} svgPath={mdiGitlab} />}
-                            {provider.serviceType === 'bitbucketCloud' && (
-                                <Icon aria-hidden={true} svgPath={mdiBitbucket} />
-                            )}
-                            {provider.serviceType === 'azuredevops' && (
-                                <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
-                            )}{' '}
-                            {provider.displayPrefix ?? 'Continue with'} {provider.displayName}
-                        </Button>
-                    </div>
-                ))}
+                    const authURL = new URL(provider.authenticationURL, window.location.href)
+                    if (returnTo) {
+                        // propagate return to callback parameter
+                        authURL.searchParams.set('returnTo', returnTo)
+                    }
+
+                    return (
+                        // Only add botton margin to every but the last providers.
+                        <div className={classNames(index !== providers.length - 1 && 'mb-2')} key={index}>
+                            <Button
+                                to={authURL.toString()}
+                                display="block"
+                                variant={showMoreProviders ? 'secondary' : 'primary'}
+                                as={AnchorLink}
+                            >
+                                <ProviderIcon serviceType={provider.serviceType} />{' '}
+                                {provider.displayPrefix ?? 'Continue with'} {provider.displayName}
+                            </Button>
+                        </div>
+                    )
+                })}
                 {showMoreWaysToLogin && (
-                    <div className="mb-2">
-                        <Button display="block" variant="secondary" onClick={() => toggleMoreProviders(true)}>
-                            <Icon aria-hidden={true} svgPath={mdiKeyVariant} /> Other login methods
-                        </Button>
-                    </div>
+                    <Button
+                        display="block"
+                        className="mt-2"
+                        variant="secondary"
+                        onClick={() => toggleMoreProviders(true)}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiKeyVariant} /> Other login methods
+                    </Button>
                 )}
-            </div>
-            {context.allowSignup ? (
-                <Text>
-                    New to Sourcegraph? <Link to="/sign-up">Sign up.</Link>{' '}
-                    {context.sourcegraphDotComMode && (
-                        <>
-                            To use Sourcegraph on private repositories,{' '}
-                            <Link
-                                to="https://about.sourcegraph.com/app"
-                                onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'SignInPage' })}
-                            >
-                                download Cody app
-                            </Link>{' '}
-                            or{' '}
-                            <Link
-                                to="https://sourcegraph.com/get-started?t=enterprise"
-                                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
-                            >
-                                get Sourcegraph Enterprise
-                            </Link>
-                            .
-                        </>
-                    )}
-                </Text>
-            ) : isRequestAccessAllowed ? (
-                <Text className="text-muted">
-                    Need an account? <Link to="/request-access">Request access</Link> or contact your site admin.
-                </Text>
-            ) : (
-                <Text className="text-muted">Need an account? Contact your site admin.</Text>
-            )}
-        </div>
+            </Container>
+            <SignUpNotice
+                allowSignup={context.allowSignup}
+                isRequestAccessAllowed={isRequestAccessAllowed}
+                sourcegraphDotComMode={context.sourcegraphDotComMode}
+            />
+        </>
     )
 
     return (
-        <div className={signInSignUpCommonStyles.signinSignupPage}>
+        <>
             <PageTitle title="Sign in" />
-            <HeroPage
-                icon={SourcegraphIcon}
-                iconLinkTo={context.sourcegraphDotComMode ? '/search' : undefined}
-                iconClassName="bg-transparent"
-                lessPadding={true}
+            <AuthPageWrapper
                 title="Sign in to Sourcegraph"
-                body={body}
-            />
-        </div>
+                sourcegraphDotComMode={context.sourcegraphDotComMode}
+                className={styles.wrapper}
+            >
+                {body}
+            </AuthPageWrapper>
+        </>
     )
+}
+
+const ProviderIcon: React.FunctionComponent<{ serviceType: AuthProvider['serviceType'] }> = ({ serviceType }) => {
+    switch (serviceType) {
+        case 'github': {
+            return <Icon aria-hidden={true} svgPath={mdiGithub} />
+        }
+        case 'gitlab': {
+            return <Icon aria-hidden={true} svgPath={mdiGitlab} />
+        }
+        case 'bitbucketCloud': {
+            return <Icon aria-hidden={true} svgPath={mdiBitbucket} />
+        }
+        case 'azuredevops': {
+            return <Icon aria-hidden={true} svgPath={mdiMicrosoftAzureDevops} />
+        }
+        default: {
+            return null
+        }
+    }
+}
+
+const SignUpNotice: React.FunctionComponent<{
+    allowSignup: boolean
+    sourcegraphDotComMode: boolean
+    isRequestAccessAllowed: boolean
+}> = ({ allowSignup, sourcegraphDotComMode, isRequestAccessAllowed }) => {
+    const dotcomCTAs = (
+        <>
+            <Link
+                to="https://sourcegraph.com/get-started?t=enterprise"
+                onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'SignInPage' })}
+            >
+                consider Sourcegraph Enterprise
+            </Link>
+            .
+        </>
+    )
+
+    if (allowSignup) {
+        return (
+            <Text className="mt-3 text-center">
+                New to Sourcegraph? <Link to="/sign-up">Sign up</Link>{' '}
+                {sourcegraphDotComMode && <>To use Sourcegraph on private repositories, {dotcomCTAs}</>}
+            </Text>
+        )
+    }
+
+    if (isRequestAccessAllowed) {
+        return (
+            <Text className="mt-3 text-center text-muted">
+                Need an account? <Link to="/request-access">Request access</Link> or contact your site admin.
+            </Text>
+        )
+    }
+
+    if (sourcegraphDotComMode) {
+        return (
+            <Text className="mt-3 text-center text-muted">
+                Currently, we are unable to create accounts using email. Please use the providers listed above to
+                continue. <br /> For private code, {dotcomCTAs}
+            </Text>
+        )
+    }
+
+    return <Text className="mt-3 text-center text-muted">Need an account? Contact your site admin.</Text>
 }

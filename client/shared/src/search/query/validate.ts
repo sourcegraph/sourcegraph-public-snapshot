@@ -11,12 +11,6 @@ import {
 import { scanSearchQuery } from './scanner'
 import type { Filter, Token } from './token'
 
-/** Returns true if the query contains operators. */
-export const operatorExists = (query: string): boolean => {
-    const result = scanSearchQuery(query)
-    return result.type === 'success' && result.term.some(term => term.type === 'keyword')
-}
-
 /**
  * Returns true if the query contains a pattern.
  */

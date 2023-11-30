@@ -149,7 +149,7 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 				return
 			}
 			allowSignup := p.config.AllowSignup == nil || *p.config.AllowSignup
-			actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, allowSignup, info)
+			newUserCreated, actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, allowSignup, info)
 			if err != nil {
 				log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
 				http.Error(w, safeErrMsg, http.StatusInternalServerError)
@@ -174,14 +174,17 @@ func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) 
 			// if info.SessionNotOnOrAfter != nil {
 			// 	exp = time.Until(*info.SessionNotOnOrAfter)
 			// }
-			if err := session.SetActor(w, r, actor, exp, user.CreatedAt); err != nil {
+			if _, err := session.SetActorFromUser(r.Context(), w, r, user, exp); err != nil {
 				log15.Error("Error setting SAML-authenticated actor in session.", "err", err)
 				http.Error(w, "Error starting SAML-authenticated session. Try signing in again.", http.StatusInternalServerError)
 				return
 			}
 
+			// Add a ?signup= or ?signin= parameter to the redirect URL.
+			redirectURL := auth.AddPostAuthRedirectParametersToString(relayState.ReturnToURL, newUserCreated, "SAML")
+
 			// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid an open-redirect vuln.
-			http.Redirect(w, r, auth.SafeRedirectURL(relayState.ReturnToURL), http.StatusFound)
+			http.Redirect(w, r, auth.SafeRedirectURL(redirectURL), http.StatusFound)
 
 		case "/logout":
 			encodedResp := r.FormValue("SAMLResponse")

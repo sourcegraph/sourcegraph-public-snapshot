@@ -12,9 +12,9 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/requestlogger"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
+	"github.com/sourcegraph/sourcegraph/internal/authbearer"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -27,10 +27,10 @@ import (
 // we do a simple auth on a static secret instead that is uniquely generated per
 // deployment.
 func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string, sources *actor.Sources) http.Handler {
-	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
+	baseLogger = baseLogger.Scoped("diagnostics")
 
 	hasValidSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) (yes bool) {
-		token, err := auth.ExtractBearer(r.Header)
+		token, err := authbearer.ExtractBearer(r.Header)
 		if err != nil {
 			response.JSONError(l, w, http.StatusBadRequest, err)
 			return false

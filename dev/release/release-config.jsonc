@@ -4,21 +4,32 @@
     "slackAnnounceChannel": "announce-engineering"
   },
   "scheduledReleases": {
-    "5.1.0": {
-      "codeFreezeDate": "2023-06-14T10:00:00.000-07:00",
-      "securityApprovalDate": "2023-06-21T10:00:00.000-07:00",
-      "releaseDate": "2023-06-28T10:00:00.000-07:00",
+    "5.2.0": {
+      "codeFreezeDate": "2023-09-20T10:00:00.000-07:00",
+      "securityApprovalDate": "2023-09-27T10:00:00.000-07:00",
+      "releaseDate": "2023-10-04T10:00:00.000-07:00",
       "patches": [
-        "2023-07-12T10:00:00.000-07:00",
-        "2023-07-26T10:00:00.000-07:00",
-        "2023-08-09T10:00:00.000-07:00",
-        "2023-08-23T10:00:00.000-07:00",
-        "2023-09-06T10:00:00.000-07:00",
-        "2023-09-20T10:00:00.000-07:00"
+        "2023-10-18T10:00:00.000+02:00",
+        "2023-11-01T10:00:00.000-07:00",
+        "2023-11-15T10:00:00.000-07:00",
+        "2023-11-29T10:00:00.000-07:00",
+        "2023-12-13T10:00:00.000-07:00",
+        "2023-12-27T10:00:00.000-07:00",
+        "2024-01-10T10:00:00.000-07:00",
+        "2024-01-24T10:00:00.000-07:00",
+        "2024-02-07T10:00:00.000-07:00"
       ],
-      "current": "5.1.0",
+      "current": "5.2.0",
       "captainGitHubUsername": "unknwon",
       "captainSlackUsername": "joe"
+    },
+    "5.2.4": {
+      "codeFreezeDate": "2023-11-22T10:18:45.722-08:00",
+      "securityApprovalDate": "2023-11-22T10:18:45.722-08:00",
+      "releaseDate": "2023-11-29T10:18:45.722-08:00",
+      "current": "5.2.4",
+      "captainGitHubUsername": "BolajiOlajide",
+      "captainSlackUsername": "bolaji.olajide"
     }
   },
   "dryRun": {
@@ -27,5 +38,15 @@
     "trackingIssues": false,
     "calendar": false,
     "slack": false
+  },
+  "in_progress": {
+    "captainGitHubUsername": "BolajiOlajide",
+    "captainSlackUsername": "bolaji.olajide",
+    "releases": [
+      {
+        "version": "5.2.4",
+        "previous": "5.2.3"
+      }
+    ]
   }
 }

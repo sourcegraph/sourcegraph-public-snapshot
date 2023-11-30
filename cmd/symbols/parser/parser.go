@@ -129,13 +129,6 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 	return symbolOrErrors, nil
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func (p *parser) handleParseRequest(
 	ctx context.Context,
 	symbolOrErrors chan<- SymbolOrError,
@@ -272,7 +265,7 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 }
 
 func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig, source ctags_config.ParserType) (ctags.Parser, error) {
-	logger = logger.Scoped("ctags", "ctags processes")
+	logger = logger.Scoped("ctags")
 
 	var options ctags.Options
 	if source == ctags_config.UniversalCtags {

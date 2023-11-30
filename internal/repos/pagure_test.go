@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -19,10 +19,7 @@ func TestPagureSource_ListRepos(t *testing.T) {
 	cf, save := NewClientFactory(t, t.Name())
 	defer save(t)
 
-	svc := &types.ExternalService{
-		Kind:   extsvc.KindPagure,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
-	}
+	svc := typestest.MakeExternalService(t, extsvc.VariantPagure, conf)
 
 	ctx := context.Background()
 	src, err := NewPagureSource(ctx, svc, cf)

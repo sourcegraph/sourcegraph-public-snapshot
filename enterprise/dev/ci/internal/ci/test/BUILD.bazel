@@ -1,5 +1,0 @@
-filegroup(
-    name = "test-image-configs",
-    srcs = glob(["wolfi-images/*"]),
-    visibility = ["//enterprise/dev/ci/internal/ci:__pkg__"],
-)

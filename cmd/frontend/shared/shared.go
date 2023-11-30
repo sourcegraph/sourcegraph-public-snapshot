@@ -12,9 +12,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/contentlibrary"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
@@ -25,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/compute"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/contentlibrary"
 	internalcontext "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/context"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/embeddings"
@@ -38,7 +36,9 @@ import (
 	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/scim"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -74,10 +74,11 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"searchcontexts": searchcontexts.Init,
 	"contentLibrary": contentlibrary.Init,
 	"search":         search.Init,
+	"telemetry":      telemetry.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
-	logger := log.Scoped("enterprise", "frontend enterprise edition")
+	logger := log.Scoped("enterprise")
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		logger.Debug("enterprise edition")

@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { WildcardMockLink } from 'wildcard-mock-link'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -9,7 +9,7 @@ import { WebStory } from '../../components/WebStory'
 import { PERMISSIONS_SYNC_JOBS_STATS } from './backend'
 import { PermissionsSyncStats } from './PermissionsSyncStats'
 
-const decorator: DecoratorFn = Story => <Story />
+const decorator: Decorator = Story => <Story />
 
 const config: Meta = {
     title: 'web/src/site-admin/permissions-center/PermissionsSyncStats',
@@ -18,7 +18,7 @@ const config: Meta = {
 
 export default config
 
-export const Stats: Story = () => (
+export const Stats: StoryFn = () => (
     <WebStory>
         {() => (
             <MockedTestProvider

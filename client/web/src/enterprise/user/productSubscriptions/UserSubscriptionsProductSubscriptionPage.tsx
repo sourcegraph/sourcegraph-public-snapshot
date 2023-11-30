@@ -35,7 +35,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
 
     useEffect(() => eventLogger.logViewEvent('UserSubscriptionsProductSubscription'), [])
 
-    const isValidUUID = validateUUID(subscriptionUUID!)
+    const isValidUUID = validateUUID(subscriptionUUID)
     const validationError = !isValidUUID && new Error('Subscription ID is not a valid UUID')
 
     const { data, loading, error, refetch } = useQuery<UserProductSubscriptionResult, UserProductSubscriptionVariables>(

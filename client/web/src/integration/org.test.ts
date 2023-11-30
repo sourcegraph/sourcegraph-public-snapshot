@@ -1,5 +1,7 @@
 import assert from 'assert'
 
+import { afterEach, beforeEach, describe, it } from 'mocha'
+
 import { subtypeOf } from '@sourcegraph/common'
 import type { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'

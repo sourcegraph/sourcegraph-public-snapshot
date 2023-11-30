@@ -6,7 +6,6 @@ import { omit, cloneDeep, curry } from 'lodash'
 import shelljs from 'shelljs'
 import signale from 'signale'
 import utcVersion from 'utc-version'
-import type { Configuration } from 'webpack'
 
 import manifestSpec from '../src/browser-extension/manifest.spec.json'
 import schema from '../src/browser-extension/schema.json'
@@ -20,7 +19,7 @@ const EXTENSION_PERMISSIONS_ALL_URLS = Boolean(
     process.env.EXTENSION_PERMISSIONS_ALL_URLS && JSON.parse(process.env.EXTENSION_PERMISSIONS_ALL_URLS)
 )
 
-export type BuildEnvironment = 'dev' | 'prod'
+type BuildEnvironment = 'dev' | 'prod'
 
 type Browser = 'firefox' | 'chrome' | 'safari' | 'edge'
 
@@ -36,14 +35,6 @@ const BUILDS_DIR = 'build'
  * `manifest.spec.json`.
  */
 const useUtcVersion = true
-
-export const WEBPACK_STATS_OPTIONS: Configuration['stats'] = {
-    all: false,
-    timings: true,
-    errors: true,
-    warnings: true,
-    colors: true,
-}
 
 function ensurePaths(browser?: Browser): void {
     shelljs.mkdir('-p', 'build/dist')
@@ -119,17 +110,27 @@ export function copyInlineExtensions(toDirectory: string): void {
 export function copyIntegrationAssets(): void {
     shelljs.mkdir('-p', 'build/integration/scripts')
     shelljs.mkdir('-p', 'build/integration/css')
-    shelljs.cp('build/dist/js/phabricator.bundle.js', 'build/integration/scripts')
-    shelljs.cp('build/dist/js/integration.bundle.js', 'build/integration/scripts')
+
+    // The destination filename is hardcoded in
+    // https://sourcegraph.com/github.com/sourcegraph/phabricator-extension@master/-/blob/src/application/SourcegraphApplication.php?L33.
+    shelljs.cp(
+        'build/dist/js/phabricatorNativeIntegration.main.bundle.js',
+        'build/integration/scripts/phabricator.bundle.js'
+    )
+
+    // The destination filename is hardcoded in
+    // https://sourcegraph.com/github.com/sourcegraph/bitbucket-server-plugin@master/-/blob/src/main/resources/js/sourcegraph-bitbucket.js?L23:52.
+    shelljs.cp('build/dist/js/nativeIntegration.main.bundle.js', 'build/integration/scripts/integration.bundle.js')
+
     shelljs.cp('build/dist/js/extensionHostWorker.bundle.js', 'build/integration/scripts')
-    shelljs.cp('build/dist/css/style.bundle.css', 'build/integration/css')
-    shelljs.cp('build/dist/css/inject.bundle.css', 'build/integration/css')
+    shelljs.cp('build/dist/css/app.bundle.css', 'build/integration/css')
+    shelljs.cp('build/dist/css/contentPage.main.bundle.css', 'build/integration/css')
     shelljs.cp('src/native-integration/extensionHostFrame.html', 'build/integration')
     copyInlineExtensions('build/integration')
-    // Copy to the ui/assets directory so that these files can be served by
+    // Copy to the dist directory so that these files can be served by
     // the webapp.
-    shelljs.mkdir('-p', '../../ui/assets/extension')
-    shelljs.cp('-r', 'build/integration/*', '../../ui/assets/extension')
+    shelljs.mkdir('-p', '../../client/web/dist/extension')
+    shelljs.cp('-r', 'build/integration/*', '../../client/web/dist/extension')
 }
 
 const BROWSER_TITLES = {
@@ -226,7 +227,14 @@ const buildForBrowser = curry((browser: Browser, environment: BuildEnvironment):
     writeSchema(buildDirectory)
 
     copyExtensionAssets(buildDirectory)
-    copyInlineExtensions(buildDirectory)
+
+    // TODO(@camdencheek): figure out whether we actually want to continue
+    // shipping the inline extensions with the browser extensions. For now,
+    // skip them for the firefox extension because they are being detected
+    // as non-human-readable assets, and will cause removal from the addon store.
+    if (browser !== 'firefox') {
+        copyInlineExtensions(buildDirectory)
+    }
 
     // Create a bundle by zipping the web extension directory.
     const browserBundleZip = BROWSER_BUNDLE_ZIPS[browser]

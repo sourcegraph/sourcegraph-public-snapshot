@@ -5,9 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -179,77 +177,4 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 			}
 		})
 	}
-}
-
-func Test_gitserverDiskInfoThresholdAlert(t *testing.T) {
-	t.Run("no alert for non-admin", func(t *testing.T) {
-		args := AlertFuncArgs{
-			IsSiteAdmin: false,
-		}
-
-		alerts := gitserverDiskInfoThresholdAlert(args)
-		require.Len(t, alerts, 0)
-	})
-
-	t.Run("alert when usage exceeds threshold", func(t *testing.T) {
-		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.SystemsInfoFunc.SetDefaultReturn([]gitserver.SystemInfo{
-			{
-				Address:     "gitserver1",
-				PercentUsed: 95.56394,
-			},
-		}, nil)
-
-		args := AlertFuncArgs{
-			IsSiteAdmin:     true,
-			gitserverClient: gitserverClient,
-		}
-
-		wantAlerts := []*Alert{
-			{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: "The disk usage on gitserver **\"gitserver1\"** is over 90% (95.56% used). Free up disk space to avoid potential issues.",
-			},
-		}
-
-		alerts := gitserverDiskInfoThresholdAlert(args)
-		require.Equal(t, wantAlerts, alerts)
-	})
-
-	t.Run("multiple alerts", func(t *testing.T) {
-		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.SystemsInfoFunc.SetDefaultReturn([]gitserver.SystemInfo{
-			{
-				Address:     "gitserver1",
-				PercentUsed: 95.56394,
-			},
-			{
-				Address:     "gitserver2",
-				PercentUsed: 50.12345,
-			},
-			{
-				Address:     "gitserver3",
-				PercentUsed: 92.8432,
-			},
-		}, nil)
-
-		args := AlertFuncArgs{
-			IsSiteAdmin:     true,
-			gitserverClient: gitserverClient,
-		}
-
-		wantAlerts := []*Alert{
-			{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: "The disk usage on gitserver **\"gitserver1\"** is over 90% (95.56% used). Free up disk space to avoid potential issues.",
-			},
-			{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: "The disk usage on gitserver **\"gitserver3\"** is over 90% (92.84% used). Free up disk space to avoid potential issues.",
-			},
-		}
-
-		alerts := gitserverDiskInfoThresholdAlert(args)
-		require.Equal(t, wantAlerts, alerts)
-	})
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -124,7 +123,7 @@ func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, com
 // explicitly via a GraphQL query parameter. If no configuration was supplield then a false valued
 // flag is returned.
 func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
-	logger := log.Scoped("explicitConfigurationFactory", "")
+	logger := log.Scoped("explicitConfigurationFactory")
 	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]uploadsshared.Index, bool, error) {
 		if configuration == "" {
 			return nil, false, nil
@@ -175,7 +174,7 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 		return nil, false, err
 	}
 
-	content, err := s.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
+	content, err := s.gitserverClient.ReadFile(ctx, repo.Name, api.CommitID(commit), "sourcegraph.yaml")
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, false, nil

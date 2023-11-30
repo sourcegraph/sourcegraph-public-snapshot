@@ -57,7 +57,7 @@ func New[K comparable, V any](newEntryFunc func(K) V, options ...Option[K, V]) *
 		newEntryFunc:   newEntryFunc,
 		expirationFunc: func(k K, v V) {},
 
-		logger: log.Scoped("ttlcache", "cache"),
+		logger: log.Scoped("ttlcache"),
 
 		sizeWarningThreshold: 0,
 

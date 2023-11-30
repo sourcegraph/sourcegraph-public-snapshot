@@ -73,3 +73,8 @@
   targets:
     # cody gateway
     - 127.0.0.1:6098
+- labels:
+    job: telemetry-gateway
+  targets:
+    # telemetry gateway
+    - 127.0.0.1:6080

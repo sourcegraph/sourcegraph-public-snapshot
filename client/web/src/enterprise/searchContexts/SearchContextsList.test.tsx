@@ -3,6 +3,7 @@ import { getAllByRole, getByRole, queryByRole, render, screen } from '@testing-l
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { spy, stub, assert } from 'sinon'
+import { describe, expect, it } from 'vitest'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 import {

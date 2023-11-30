@@ -13,7 +13,9 @@ import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
-import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
+import { useV2QueryInput } from '../../../search/useV2QueryInput'
+import { GettingStartedTour } from '../../../tour/GettingStartedTour'
+import { useShowOnboardingTour } from '../../../tour/hooks'
 
 import { AddCodeHostWidget } from './AddCodeHostWidget'
 import { SearchPageFooter } from './SearchPageFooter'
@@ -34,7 +36,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         useLegacyContext_onlyInStormRoutes()
 
     const isLightTheme = useIsLightTheme()
-    const [experimentalQueryInput] = useExperimentalQueryInput()
+    const [v2QueryInput] = useV2QueryInput()
 
     /** The value entered by the user in the query input */
     const [queryState, setQueryState] = useState<QueryState>({
@@ -48,7 +50,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         // we need properly "translate" the queries when switching between the both versions
         if (selectedSearchContextSpec) {
             setQueryState(state => {
-                if (experimentalQueryInput) {
+                if (v2QueryInput) {
                     return { query: appendContextFilter(state.query, selectedSearchContextSpec) }
                 }
                 const contextFilter = getGlobalSearchContextFilter(state.query)?.filter
@@ -58,11 +60,14 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                 return state
             })
         }
-    }, [experimentalQueryInput, selectedSearchContextSpec])
+    }, [v2QueryInput, selectedSearchContextSpec])
 
     const defaultSimpleSearchToggle = true
     const [simpleSearch, setSimpleSearch] = useLocalStorage('simple.search.toggle', defaultSimpleSearchToggle)
     const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
+
+    const showOnboardingTour = useShowOnboardingTour({ authenticatedUser, isSourcegraphDotCom })
+    const showCodyCTA = !showOnboardingTour
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -114,15 +119,25 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             queryState={queryState}
                             setQueryState={setQueryState}
                         />
-                        {authenticatedUser ? (
-                            <TryCodyCtaSection
-                                className="mx-auto my-5"
+                        {authenticatedUser && showOnboardingTour && (
+                            <GettingStartedTour
+                                className="mt-5"
                                 telemetryService={telemetryService}
-                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                variant="horizontal"
+                                authenticatedUser={authenticatedUser}
                             />
-                        ) : (
-                            <TryCodySignUpCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
                         )}
+                        {showCodyCTA ? (
+                            authenticatedUser ? (
+                                <TryCodyCtaSection
+                                    className="mx-auto my-5"
+                                    telemetryService={telemetryService}
+                                    isSourcegraphDotCom={isSourcegraphDotCom}
+                                />
+                            ) : (
+                                <TryCodySignUpCtaSection className="mx-auto my-5" telemetryService={telemetryService} />
+                            )
+                        ) : null}
                     </>
                 )}
             </div>
@@ -132,8 +147,6 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         <QueryExamples
                             selectedSearchContextSpec={selectedSearchContextSpec}
                             telemetryService={telemetryService}
-                            queryState={queryState}
-                            setQueryState={setQueryState}
                             isSourcegraphDotCom={isSourcegraphDotCom}
                         />
                     )}

@@ -130,6 +130,7 @@ func generateProductLicenseForSubscription(ctx context.Context, db database.DB, 
 	info := license.Info{
 		Tags:                     license.SanitizeTagsList(input.Tags),
 		UserCount:                uint(input.UserCount),
+		CreatedAt:                time.Now(),
 		ExpiresAt:                time.Unix(int64(input.ExpiresAt), 0),
 		SalesforceSubscriptionID: input.SalesforceSubscriptionID,
 		SalesforceOpportunityID:  input.SalesforceOpportunityID,

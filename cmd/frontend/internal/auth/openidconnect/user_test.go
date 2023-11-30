@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -43,14 +44,14 @@ func TestAllowSignup(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+			auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 				require.Equal(t, test.shouldAllowSignup, op.CreateIfNotExist)
 				require.True(
 					t,
 					strings.HasPrefix(op.UserProps.Username, test.usernamePrefix),
 					"The username %q does not have prefix %q", op.UserProps.Username, test.usernamePrefix,
 				)
-				return 0, "", nil
+				return false, 0, "", nil
 			}
 			p := &Provider{
 				config: schema.OpenIDConnectAuthProvider{
@@ -59,9 +60,10 @@ func TestAllowSignup(t *testing.T) {
 					RequireEmailDomain: "example.com",
 					AllowSignup:        test.allowSignup,
 				},
-				oidc: &oidcProvider{},
+				oidc:       &oidcProvider{},
+				httpClient: httpcli.ExternalClient,
 			}
-			_, _, err := getOrCreateUser(
+			_, _, _, err := getOrCreateUser(
 				context.Background(),
 				dbmocks.NewStrictMockDB(),
 				p,
@@ -72,6 +74,9 @@ func TestAllowSignup(t *testing.T) {
 				},
 				&userClaims{},
 				test.usernamePrefix,
+				"anonymous-user-id-123",
+				"https://example.com/",
+				"https://example.com/",
 			)
 			require.NoError(t, err)
 		})

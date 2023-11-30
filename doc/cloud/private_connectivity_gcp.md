@@ -1,10 +1,5 @@
 # Code hosts on GCP without public access
 
-<aside class="experimental">
-<p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental
-</p>
-
 <p>Please contact Sourcegraph directly via <a href="https://about.sourcegraph.com/contact">prefered contact method</a> for more informations</p>
 </aside>
 
@@ -17,6 +12,8 @@ When a customer has private code hosts inside the GCP and needs to expose it for
 Sourcegraph supports connecting to private code hosts on GCP using GCP [Private Service Connect] (PSC). It is used to securely expose and connect services across the project boundary within GCP.
 
 The customer is the Service Producer (the "producer"), and the Sourcegraph Cloud instance is the Service Consumer (the "consumer"). PSC can expose an internal regional load balancer for the private code host to the consumer. The consumer can then connect to the private code host over PSC transparently on their Sourcegraph Cloud instance.
+
+[link](https://link.excalidraw.com/readonly/Xiz9LWNPCa3DERBJUiZI)
 
 <iframe src="https://link.excalidraw.com/readonly/Xiz9LWNPCa3DERBJUiZI" width="100%" height="100%" style="border: none;"></iframe>
 

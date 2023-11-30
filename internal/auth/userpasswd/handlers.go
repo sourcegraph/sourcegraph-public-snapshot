@@ -15,6 +15,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/security"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -53,8 +55,8 @@ type unlockUserAccountInfo struct {
 }
 
 // HandleSignUp handles submission of the user signup form.
-func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleSignUp", "sign up request handler")
+func HandleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder) http.HandlerFunc {
+	logger = logger.Scoped("HandleSignUp")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -63,18 +65,18 @@ func HandleSignUp(logger log.Logger, db database.DB) http.HandlerFunc {
 			http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
 			return
 		}
-		handleSignUp(logger, db, w, r, false)
+		handleSignUp(logger, db, eventRecorder, w, r, false)
 	}
 }
 
 // HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
-func HandleSiteInit(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleSiteInit", "initial size initialization request handler")
+func HandleSiteInit(logger log.Logger, db database.DB, events *telemetry.EventRecorder) http.HandlerFunc {
+	logger = logger.Scoped("HandleSiteInit")
 	return func(w http.ResponseWriter, r *http.Request) {
 		// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
 		// allow signups after those conditions become true, so we don't need to check the builtin auth
 		// provider's allowSignup in site config.
-		handleSignUp(logger, db, w, r, true)
+		handleSignUp(logger, db, events, w, r, true)
 	}
 }
 
@@ -105,7 +107,9 @@ func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused b
 //
 // 🚨 SECURITY: Any change to this function could introduce security exploits
 // and/or break sign up / initial admin account creation. Be careful.
-func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
+func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder,
+	w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool,
+) {
 	if r.Method != "POST" {
 		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
 		return
@@ -121,10 +125,8 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		return
 	}
 
-	// Write the session cookie
-	a := &sgactor.Actor{UID: usr.ID}
-	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+	if _, err := session.SetActorFromUser(r.Context(), w, r, usr, 0); err != nil {
+		httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
 	}
 
 	// Track user data
@@ -132,6 +134,15 @@ func handleSignUp(logger log.Logger, db database.DB, w http.ResponseWriter, r *h
 		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
 	}
 
+	// New event - we record legacy event manually for now, hence teestore.WithoutV1
+	// TODO: Remove in 5.3
+	events := telemetry.NewBestEffortEventRecorder(logger, eventRecorder)
+	events.Record(teestore.WithoutV1(r.Context()), telemetry.FeatureSignUp, telemetry.ActionSucceeded, &telemetry.EventParameters{
+		Metadata: telemetry.EventMetadata{
+			"failIfNewUserIsNotInitialSiteAdmin": telemetry.MetadataBool(failIfNewUserIsNotInitialSiteAdmin),
+		},
+	})
+	// Legacy event
 	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
 		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
 	}
@@ -279,24 +290,32 @@ func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername s
 //
 // The account will be locked out after consecutive failed attempts in a certain
 // period of time.
-func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
-	logger = logger.Scoped("HandleSignin", "sign in request handler")
+func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorder *telemetry.EventRecorder) http.HandlerFunc {
+	logger = logger.Scoped("HandleSignin")
+	events := telemetry.NewBestEffortEventRecorder(logger, recorder)
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
 		}
 
+		// In this code, we still use legacy events (usagestats.LogBackendEvent),
+		// so do not tee events automatically.
+		// TODO: We should remove this in 5.3 entirely
+		ctx := teestore.WithoutV1(r.Context())
 		var user types.User
 
 		signInResult := database.SecurityEventNameSignInAttempted
-		logSignInEvent(r, db, &user, &signInResult)
+		recordSignInSecurityEvent(r, db, &user, &signInResult)
 
 		// We have more failure scenarios and ONLY one successful scenario. By default,
 		// assume a SignInFailed state so that the deferred logSignInEvent function call
 		// will log the correct security event in case of a failure.
 		signInResult = database.SecurityEventNameSignInFailed
+		telemetrySignInResult := telemetry.ActionFailed
 		defer func() {
-			logSignInEvent(r, db, &user, &signInResult)
+			recordSignInSecurityEvent(r, db, &user, &signInResult)
+			events.Record(ctx, telemetry.FeatureSignIn, telemetrySignInResult, nil)
 			checkAccountLockout(store, &user, &signInResult)
 		}()
 
@@ -309,8 +328,6 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 			http.Error(w, "Could not decode request body", http.StatusBadRequest)
 			return
 		}
-
-		ctx := r.Context()
 
 		// Validate user. Allow login by both email and username (for convenience).
 		u, err := getByEmailOrUsername(ctx, db, creds.Email)
@@ -355,20 +372,20 @@ func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore) http.Ha
 		}
 
 		// Write the session cookie
-		actor := sgactor.Actor{
-			UID: user.ID,
-		}
-		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
-			httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+		ctx, err = session.SetActorFromUser(ctx, w, r, &user, 0)
+		if err != nil {
+			httpLogError(logger.Error, w, fmt.Sprintf("Could not create new user session: %s", err.Error()), http.StatusInternalServerError, log.Error(err))
 			return
 		}
 
+		// Update the events we record
 		signInResult = database.SecurityEventNameSignInSucceeded
+		telemetrySignInResult = telemetry.ActionSucceeded
 	}
 }
 
 func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) http.HandlerFunc {
-	logger = logger.Scoped("HandleUnlockAccount", "unlock account request handler")
+	logger = logger.Scoped("HandleUnlockAccount")
 	return func(w http.ResponseWriter, r *http.Request) {
 		if handleEnabledCheck(logger, w) {
 			return
@@ -446,7 +463,7 @@ func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) h
 	}
 }
 
-func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
+func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
 	var anonymousID string
 	event := &database.SecurityEvent{
 		Name:            *name,
@@ -459,8 +476,11 @@ func logSignInEvent(r *http.Request, db database.DB, user *types.User, name *dat
 
 	// Safe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
-	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 	db.SecurityEventLogs().LogEvent(r.Context(), event)
+
+	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
+	// context.
+	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
 }
 
 func checkAccountLockout(store LockoutStore, user *types.User, event *database.SecurityEventName) {
@@ -477,7 +497,7 @@ func checkAccountLockout(store LockoutStore, user *types.User, event *database.S
 
 // HandleCheckUsernameTaken checks availability of username for signup form
 func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleCheckUsernameTaken", "checks for username uniqueness")
+	logger = logger.Scoped("HandleCheckUsernameTaken")
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		username, err := NormalizeUsername(vars["username"])

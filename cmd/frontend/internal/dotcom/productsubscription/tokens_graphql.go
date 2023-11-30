@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	internalproductsubscription "github.com/sourcegraph/sourcegraph/internal/productsubscription"
 )
 
 type ErrProductSubscriptionNotFound struct {
@@ -21,7 +21,7 @@ func (e ErrProductSubscriptionNotFound) Error() string {
 }
 
 func (e ErrProductSubscriptionNotFound) Extensions() map[string]any {
-	return map[string]any{"code": codygateway.GQLErrCodeProductSubscriptionNotFound}
+	return map[string]any{"code": internalproductsubscription.GQLErrCodeProductSubscriptionNotFound}
 }
 
 // ProductSubscriptionByAccessToken retrieves the subscription corresponding to the

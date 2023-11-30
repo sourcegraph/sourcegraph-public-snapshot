@@ -66,4 +66,4 @@ All notable changes to the Cody app are documented in this file.
 - Adding your Git repositories is now much easier
 - We made the app a much more native experience (by adopting [Tauri](https://tauri.app)), and you can now access Cody through the system tray.
 - You can now ask Cody questions side-by-side with your editor open
-- If you use VS Code, the Cody extension now offers a `Connect Sourcegraph App` option (you may need to sign out using the settings gear to see it). Cody in VS Code will then talk to your Sourcegraph app to answer questions. In the future, this will enable much more powerful answers including context about all of your local code - not just what's open in your editor.
+- If you use VS Code, the Cody extension now offers a `Connect Cody App` option (you may need to sign out using the settings gear to see it). Cody in VS Code will then talk to your Cody app to answer questions. In the future, this will enable much more powerful answers including context about all of your local code - not just what's open in your editor.

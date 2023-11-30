@@ -20,10 +20,10 @@ expression: dumped
 //     ^^^^^^^ definition(Function) scip-ctags example/Another().
   
   type MyThing struct{}
-//     ^^^^^^^ definition scip-ctags example/MyThing#
+//     ^^^^^^^ definition(Struct) scip-ctags example/MyThing#
   
   func (m *MyThing) DoSomething()    {}
-//                  ^^^^^^^^^^^ definition scip-ctags example/MyThing#DoSomething().
+//                  ^^^^^^^^^^^ definition(Method) scip-ctags example/MyThing#DoSomething().
   func (m MyThing) DoSomethingElse() {}
-//                 ^^^^^^^^^^^^^^^ definition scip-ctags example/MyThing#DoSomethingElse().
+//                 ^^^^^^^^^^^^^^^ definition(Method) scip-ctags example/MyThing#DoSomethingElse().
 

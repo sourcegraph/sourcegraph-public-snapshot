@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 
-import type { DecoratorFunction } from '@storybook/addons'
+import type { Decorator } from '@storybook/react'
 
 import { ChromaticRoot } from './ChromaticRoot'
 
@@ -13,7 +13,7 @@ import { ChromaticRoot } from './ChromaticRoot'
  * If the `chromatic.enableDarkMode` story parameter is set to `true`, the story will
  * be rendered twice in Chromatic — in light and dark modes.
  */
-export const withChromaticThemes: DecoratorFunction<ReactElement> = (StoryFunc, { parameters }) => {
+export const withChromaticThemes: Decorator<ReactElement> = (StoryFunc, { parameters }) => {
     if (parameters?.chromatic?.enableDarkMode) {
         return (
             <>

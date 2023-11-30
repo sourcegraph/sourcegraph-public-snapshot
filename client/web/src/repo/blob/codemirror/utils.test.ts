@@ -1,4 +1,5 @@
 import { Text } from '@codemirror/state'
+import { describe, expect, it } from 'vitest'
 
 import {
     isValidLineRange,

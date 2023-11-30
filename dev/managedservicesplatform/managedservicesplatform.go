@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/cloudrun"
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/iam"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/terraformversion"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/tfcbackend"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/project"
@@ -41,6 +42,9 @@ type Renderer struct {
 	TFC TerraformCloudOptions
 	// GCPOptions declares GCP-specific configuration for rendered CDKTF components.
 	GCP GCPOptions
+	// StableGenerate, if true, is propagated to stacks to indicate that any values
+	// populated at generation time should not be regenerated.
+	StableGenerate bool
 }
 
 // RenderEnvironment sets up a CDKTF application comprised of stacks that define
@@ -72,23 +76,45 @@ func (r *Renderer) RenderEnvironment(
 
 	// Render all required CDKTF stacks for this environment
 	projectOutput, err := project.NewStack(stacks, project.Variables{
-		ProjectIDPrefix: projectIDPrefix,
-		Name:            pointers.Deref(svc.Name, svc.ID),
-		Category:        env.Category,
+		ProjectIDPrefix:       projectIDPrefix,
+		ProjectIDSuffixLength: svc.ProjectIDSuffixLength,
+
+		DisplayName: fmt.Sprintf("%s - %s",
+			pointers.Deref(svc.Name, svc.ID), env.ID),
+
+		Category: env.Category,
 		Labels: map[string]string{
 			"service":     svc.ID,
 			"environment": env.ID,
 			"msp":         "true",
 		},
+		Services: func() []string {
+			if svc.IAM != nil && len(svc.IAM.Services) > 0 {
+				return svc.IAM.Services
+			}
+			return nil
+		}(),
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create project stack")
 	}
+	iamOutput, err := iam.NewStack(stacks, iam.Variables{
+		ProjectID: *projectOutput.Project.ProjectId(),
+		Image:     build.Image,
+		Service:   svc,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create IAM stack")
+	}
 	if _, err := cloudrun.NewStack(stacks, cloudrun.Variables{
-		ProjectID:   *projectOutput.Project.ProjectId(),
+		ProjectID:                      *projectOutput.Project.ProjectId(),
+		CloudRunWorkloadServiceAccount: iamOutput.CloudRunWorkloadServiceAccount,
+
 		Service:     svc,
 		Image:       build.Image,
 		Environment: env,
+
+		StableGenerate: r.StableGenerate,
 	}); err != nil {
 		return nil, errors.Wrap(err, "failed to create cloudrun stack")
 	}

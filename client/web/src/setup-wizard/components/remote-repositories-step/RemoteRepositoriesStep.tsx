@@ -25,7 +25,7 @@ interface RemoteRepositoriesStepProps extends TelemetryProps, HTMLAttributes<HTM
     baseURL: string
     description?: boolean
     progressBar?: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
@@ -34,7 +34,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
     baseURL,
     description = true,
     progressBar = true,
-    isSourcegraphApp = false,
+    isCodyApp = false,
     ...attributes
 }) => {
     const location = useLocation()
@@ -80,7 +80,7 @@ export const RemoteRepositoriesStep: FC<RemoteRepositoriesStepProps> = ({
 
                 <Container className={styles.contentMain}>
                     <Routes>
-                        <Route index={true} element={isSourcegraphApp ? <AppRemoteNotice /> : <CodeHostsPicker />} />
+                        <Route index={true} element={isCodyApp ? <AppRemoteNotice /> : <CodeHostsPicker />} />
                         <Route
                             path=":codeHostType/create"
                             element={<CodeHostCreation telemetryService={telemetryService} />}

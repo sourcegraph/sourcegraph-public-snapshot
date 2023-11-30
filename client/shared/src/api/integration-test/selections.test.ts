@@ -1,5 +1,6 @@
 import { from } from 'rxjs'
 import { distinctUntilChanged, filter, switchMap } from 'rxjs/operators'
+import { describe, test } from 'vitest'
 
 import { isDefined, isTaggedUnionMember } from '@sourcegraph/common'
 

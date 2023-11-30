@@ -2,29 +2,6 @@ name: Tracking Issue Syncer
 on:
   schedule:
   - cron: '*/15 * * * *'
-  issues:
-    types:
-    - opened
-    - edited
-    - deleted
-    - closed
-    - reopened
-    - assigned
-    - unassigned
-    - labeled
-    - unlabeled
-    - milestoned
-    - demilestoned
-  pull_request:
-    types:
-    - opened
-    - edited
-    - closed
-    - reopened
-    - assigned
-    - unassigned
-    - labeled
-    - unlabeled
 jobs:
   sync-tracking-issues:
     if: github.repository == 'sourcegraph/sourcegraph' || 'sourcegraph/security'

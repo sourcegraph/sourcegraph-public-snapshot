@@ -13,7 +13,7 @@ import (
 // All GCP resources created under a stack with this option should still explicitly
 // configure ProjectID individually.
 func With(projectID string) stack.NewStackOption {
-	return func(s stack.Stack) {
+	return func(s stack.Stack) error {
 		var project *string
 		if projectID != "" {
 			project = pointers.Ptr(projectID)
@@ -21,5 +21,6 @@ func With(projectID string) stack.NewStackOption {
 		_ = google.NewGoogleProvider(s.Stack, pointers.Ptr("google"), &google.GoogleProviderConfig{
 			Project: project,
 		})
+		return nil
 	}
 }

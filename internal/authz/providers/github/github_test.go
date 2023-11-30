@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/gregjones/httpcache"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -37,6 +38,10 @@ func mockClientFunc(mockClient client) func() (client, error) {
 	return func() (client, error) {
 		return mockClient, nil
 	}
+}
+
+func stableSortRepoID(v []extsvc.RepoID) {
+	slices.SortStableFunc(v, func(a, b extsvc.RepoID) bool { return strings.Compare(string(a), string(b)) < 1 })
 }
 
 // newMockClientWithTokenMock is used to keep the behaviour of WithToken function mocking
@@ -155,8 +160,8 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				switch page {
 				case 1:
 					return []*github.Repository{
-						{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}, // existing repo
 						{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234="},
+						{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}, // existing repo
 					}, true, 1, nil
 				case 2:
 					return []*github.Repository{
@@ -200,10 +205,13 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 		}
 
 		wantRepoIDs := []extsvc.RepoID{
-			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 			"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+			"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+			"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 		}
+
+		stableSortRepoID(wantRepoIDs)
+		stableSortRepoID(repoIDs.Exacts)
 		if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 			t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 		}
@@ -248,10 +256,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 
 			wantRepoIDs := []extsvc.RepoID{
-				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
+				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 			}
+			stableSortRepoID(wantRepoIDs)
+			stableSortRepoID(repoIDs.Exacts)
 			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 			}
@@ -279,13 +289,15 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 
 			wantRepoIDs := []extsvc.RepoID{
-				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=",
 				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
+				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 			}
+			stableSortRepoID(wantRepoIDs)
+			stableSortRepoID(repoIDs.Exacts)
 			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 			}
@@ -348,15 +360,17 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			}
 
 			wantRepoIDs := []extsvc.RepoID{
-				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1nsteam1=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2nsteam2=",
+				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
+				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zaXRvcnkyNDQ1nsteam1=",
+				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 			}
+			stableSortRepoID(wantRepoIDs)
+			stableSortRepoID(repoIDs.Exacts)
 			if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 				t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 			}
@@ -402,13 +416,15 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				}
 
 				wantRepoIDs := []extsvc.RepoID{
-					"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=", // from ListAffiliatedRepos
-					"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=", // from ListAffiliatedRepos
+					"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=", // from ListOrgRepositories
 					"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=", // from ListAffiliatedRepos
 					"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=", // from ListOrgRepositories
 					"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=", // from ListOrgRepositories
-					"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=", // from ListOrgRepositories
+					"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=", // from ListAffiliatedRepos
+					"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=", // from ListAffiliatedRepos
 				}
+				stableSortRepoID(wantRepoIDs)
+				stableSortRepoID(repoIDs.Exacts)
 				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 				}
@@ -453,15 +469,16 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			p.groupsCache = memCache
 
 			wantRepoIDs := []extsvc.RepoID{
-				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2NTadmin=",
-				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
-				"MDEwOlJlcG9zaXRvcnkyNDI2NTE5678=",
 				"MDEwOlJlcG9zaXRvcnkyNDI2nsteam1=",
+				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234=",
+				"MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY=",
+				"MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
 			}
 
+			stableSortRepoID(wantRepoIDs)
 			// first call
 			t.Run("first call", func(t *testing.T) {
 				repoIDs, err := p.FetchUserPerms(context.Background(),
@@ -475,6 +492,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					t.Fatalf("expected repos to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
 						callsToListOrgRepos, callsToListTeamRepos)
 				}
+				stableSortRepoID(repoIDs.Exacts)
 				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 				}
@@ -495,6 +513,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					t.Fatalf("expected repos not to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
 						callsToListOrgRepos, callsToListTeamRepos)
 				}
+				stableSortRepoID(repoIDs.Exacts)
 				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 				}
@@ -515,6 +534,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 					t.Fatalf("expected repos to be listed: callsToListOrgRepos=%d, callsToListTeamRepos=%d",
 						callsToListOrgRepos, callsToListTeamRepos)
 				}
+				stableSortRepoID(repoIDs.Exacts)
 				if diff := cmp.Diff(wantRepoIDs, repoIDs.Exacts); diff != "" {
 					t.Fatalf("RepoIDs mismatch (-want +got):\n%s", diff)
 				}

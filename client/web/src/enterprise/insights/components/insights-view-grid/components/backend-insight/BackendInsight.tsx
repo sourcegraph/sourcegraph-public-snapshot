@@ -232,3 +232,4 @@ export const BackendInsightView = forwardRef<HTMLElement, BackendInsightProps>((
         </InsightCard>
     )
 })
+BackendInsightView.displayName = 'BackendInsightView'

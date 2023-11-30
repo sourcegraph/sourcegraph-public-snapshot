@@ -1,5 +1,6 @@
 import { act, fireEvent } from '@testing-library/react'
 import { Route, Routes } from 'react-router-dom'
+import { afterEach, describe, expect, test } from 'vitest'
 
 import { renderWithBrandedContext } from '@sourcegraph/wildcard/src/testing'
 

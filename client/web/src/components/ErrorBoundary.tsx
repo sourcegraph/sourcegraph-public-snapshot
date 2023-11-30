@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo } from 'react'
 
 import type * as H from 'history'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ReloadIcon from 'mdi-react/ReloadIcon'
+import { default as AlertCircleIcon } from 'mdi-react/AlertCircleIcon'
+import { default as ReloadIcon } from 'mdi-react/ReloadIcon'
 import { isRouteErrorResponse, useRouteError } from 'react-router-dom'
 
 import { asError, logger } from '@sourcegraph/common'
 import { Button, Code, Text } from '@sourcegraph/wildcard'
 
-import { isWebpackChunkError } from '../monitoring'
+import { isChunkLoadError } from '../monitoring'
 
 import { HeroPage } from './HeroPage'
 
@@ -120,10 +120,10 @@ interface ErrorBoundaryMessageProps {
     className?: string
 }
 const ErrorBoundaryMessage: React.FC<ErrorBoundaryMessageProps> = ({ error, extraContext, render, className }) => {
-    if (isWebpackChunkError(error)) {
-        // "Loading chunk 123 failed" means that the JavaScript assets that correspond to the deploy
-        // version currently running are no longer available, likely because a redeploy occurred after the
-        // user initially loaded this page.
+    if (isChunkLoadError(error)) {
+        // This means that the JavaScript assets that correspond to the deploy version currently
+        // running are no longer available, likely because a redeploy occurred after the user
+        // initially loaded this page.
         return (
             <HeroPage
                 icon={ReloadIcon}

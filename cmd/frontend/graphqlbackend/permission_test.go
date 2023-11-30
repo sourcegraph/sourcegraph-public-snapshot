@@ -26,7 +26,7 @@ func TestPermissionResolver(t *testing.T) {
 
 	ctx := context.Background()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	user := createTestUser(t, db, false)
 	admin := createTestUser(t, db, true)

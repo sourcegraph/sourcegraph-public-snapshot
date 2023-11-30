@@ -16,6 +16,7 @@ func Frontend() *monitoring.Dashboard {
 		containerName = "(frontend|sourcegraph-frontend)"
 
 		grpcZoektConfigurationServiceName = "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"
+		grpcInternalAPIServiceName        = "api.internalapi.v1.ConfigService"
 	)
 
 	var sentinelSamplingIntervals []string
@@ -32,16 +33,8 @@ func Frontend() *monitoring.Dashboard {
 	}
 
 	defaultSamplingInterval := (90 * time.Minute).Round(time.Second)
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcZoektConfigurationServiceName)
-
-	orgMetricSpec := []struct{ name, route, description string }{
-		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
-		{"create_org", "CreateOrganization", "API requests to create an organisation"},
-		{"remove_org_member", "RemoveUserFromOrganization", "API requests to remove organisation member"},
-		{"invite_org_member", "InviteUserToOrganization", "API requests to invite a new organisation member"},
-		{"org_invite_respond", "RespondToOrganizationInvitation", "API requests to respond to an org invitation"},
-		{"org_repositories", "OrgRepositories", "API requests to list repositories owned by an org"},
-	}
+	grpcMethodVariableFrontendZoektConfiguration := shared.GRPCMethodVariable("zoekt_configuration", grpcZoektConfigurationServiceName)
+	grpcMethodVariableFrontendInternalAPI := shared.GRPCMethodVariable("internal_api", grpcInternalAPIServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "frontend",
@@ -67,7 +60,8 @@ func Frontend() *monitoring.Dashboard {
 				},
 				Multi: true,
 			},
-			grpcMethodVariable,
+			grpcMethodVariableFrontendZoektConfiguration,
+			grpcMethodVariableFrontendInternalAPI,
 		},
 
 		Groups: []monitoring.Group{
@@ -339,6 +333,11 @@ func Frontend() *monitoring.Dashboard {
 				},
 			},
 
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "frontend",
+				InstanceFilterRegex: `${internalInstance:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
+
 			shared.CodeIntelligence.NewResolversGroup(containerName),
 			shared.CodeIntelligence.NewAutoIndexEnqueuerGroup(containerName),
 			shared.CodeIntelligence.NewDBStoreGroup(containerName),
@@ -408,19 +407,38 @@ func Frontend() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "frontend",
+					HumanServiceName:   "zoekt_configuration",
 					RawGRPCServiceName: grpcZoektConfigurationServiceName,
 
-					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex: `${internalInstance:regex}`,
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
+					InstanceFilterRegex:  `${internalInstance:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSearchCore),
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "frontend",
+					HumanServiceName:   "zoekt_configuration",
 					RawGRPCServiceName: grpcZoektConfigurationServiceName,
 					Namespace:          "", // intentionally empty
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendZoektConfiguration.Name),
+				}, monitoring.ObservableOwnerSearchCore),
+
+			shared.NewGRPCServerMetricsGroup(
+				shared.GRPCServerMetricsOptions{
+					HumanServiceName:   "internal_api",
+					RawGRPCServiceName: grpcInternalAPIServiceName,
+
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendInternalAPI.Name),
+					InstanceFilterRegex:  `${internalInstance:regex}`,
+					MessageSizeNamespace: "src",
+				}, monitoring.ObservableOwnerSearchCore),
+			shared.NewGRPCInternalErrorMetricsGroup(
+				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   "internal_api",
+					RawGRPCServiceName: grpcInternalAPIServiceName,
+					Namespace:          "src",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariableFrontendInternalAPI.Name),
 				}, monitoring.ObservableOwnerSearchCore),
 
 			{
@@ -633,11 +651,6 @@ func Frontend() *monitoring.Dashboard {
 				}}},
 			},
 			{
-				Title:  "Organisation GraphQL API requests",
-				Hidden: true,
-				Rows:   orgMetricRows(orgMetricSpec),
-			},
-			{
 				Title:  "Cloud KMS and cache",
 				Hidden: true,
 				Rows: []monitoring.Row{
@@ -681,7 +694,7 @@ func Frontend() *monitoring.Dashboard {
 			},
 
 			// Resource monitoring
-			shared.NewDatabaseConnectionsMonitoringGroup("frontend"),
+			shared.NewDatabaseConnectionsMonitoringGroup("frontend", monitoring.ObservableOwnerDevOps),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
@@ -764,17 +777,24 @@ func Frontend() *monitoring.Dashboard {
 				Rows: []monitoring.Row{{
 					{
 						Name:        "email_delivery_failures",
-						Description: "email delivery failures every 30 minutes",
-						Query:       `sum(increase(src_email_send{success="false"}[30m]))`,
-						Panel:       monitoring.Panel().LegendFormat("failures"),
-						Warning:     monitoring.Alert().GreaterOrEqual(1),
-						Critical:    monitoring.Alert().GreaterOrEqual(2),
+						Description: "email delivery failure rate over 30 minutes",
+						Query:       `sum(increase(src_email_send{success="false"}[30m])) / sum(increase(src_email_send[30m])) * 100`,
+						Panel: monitoring.Panel().
+							LegendFormat("failures").
+							Unit(monitoring.Percentage).
+							Max(100).Min(0),
+
+						// Any failure is worth warning on, as failed email
+						// deliveries directly impact user experience.
+						Warning:  monitoring.Alert().Greater(0),
+						Critical: monitoring.Alert().GreaterOrEqual(10),
 
 						Owner: monitoring.ObservableOwnerDevOps,
 						NextSteps: `
 							- Check your SMTP configuration in site configuration.
-							- Check frontend logs for more detailed error messages.
+							- Check 'sourcegraph-frontend' logs for more detailed error messages.
 							- Check your SMTP provider for more detailed error messages.
+							- Use 'sum(increase(src_email_send{success="false"}[30m]))' to check the raw count of delivery failures.
 						`,
 					},
 				}, {
@@ -1051,45 +1071,4 @@ func Frontend() *monitoring.Dashboard {
 			shared.CodeInsights.NewSearchAggregationsGroup(containerName),
 		},
 	}
-}
-
-func orgMetricRows(orgMetricSpec []struct {
-	name        string
-	route       string
-	description string
-},
-) []monitoring.Row {
-	result := []monitoring.Row{}
-	for _, m := range orgMetricSpec {
-		result = append(result, monitoring.Row{
-			{
-				Name:           m.name + "_rate",
-				Description:    "rate of " + m.description,
-				Query:          `sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))`,
-				NoAlert:        true,
-				Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: `Rate (QPS) of ` + m.description,
-			},
-			{
-				Name:           m.name + "_latency_p99",
-				Description:    "99 percentile latency of " + m.description,
-				Query:          `histogram_quantile(0.99, sum(rate(src_graphql_request_duration_seconds_bucket{route="` + m.route + `"}[5m])) by (le))`,
-				NoAlert:        true,
-				Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: `99 percentile latency of` + m.description,
-			},
-			{
-				Name:           m.name + "_error_rate",
-				Description:    "percentage of " + m.description + " that return an error",
-				Query:          `sum (irate(src_graphql_request_duration_seconds_count{route="` + m.route + `",success="false"}[5m]))/sum(irate(src_graphql_request_duration_seconds_count{route="` + m.route + `"}[5m]))*100`,
-				NoAlert:        true,
-				Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: `Percentage of ` + m.description + ` that return an error`,
-			},
-		})
-	}
-	return result
 }

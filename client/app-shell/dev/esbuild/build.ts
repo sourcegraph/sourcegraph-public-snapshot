@@ -3,12 +3,7 @@ import path from 'path'
 
 import * as esbuild from 'esbuild'
 
-import {
-    stylePlugin,
-    packageResolutionPlugin,
-    experimentalNoticePlugin,
-    buildTimerPlugin,
-} from '@sourcegraph/build-config'
+import { stylePlugin, packageResolutionPlugin, buildTimerPlugin } from '@sourcegraph/build-config'
 import { isDefined } from '@sourcegraph/common'
 
 async function copyStaticFiles(sourceDir: string, destinationDir: string): Promise<void> {
@@ -37,7 +32,6 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
             path: require.resolve('path-browserify'),
         }),
         buildTimerPlugin,
-        experimentalNoticePlugin,
     ].filter(isDefined),
     define: {
         global: 'window',

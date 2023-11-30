@@ -23,11 +23,11 @@ import (
 // A BitbucketCloudSource yields repositories from a single BitbucketCloud connection configured
 // in Sourcegraph via the external services configuration.
 type BitbucketCloudSource struct {
-	svc     *types.ExternalService
-	config  *schema.BitbucketCloudConnection
-	exclude excludeFunc
-	client  bitbucketcloud.Client
-	logger  log.Logger
+	svc      *types.ExternalService
+	config   *schema.BitbucketCloudConnection
+	excluder repoExcluder
+	client   bitbucketcloud.Client
+	logger   log.Logger
 }
 
 var _ UserSource = &BitbucketCloudSource{}
@@ -55,14 +55,14 @@ func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *s
 		return nil, err
 	}
 
-	var eb excludeBuilder
+	var ex repoExcluder
 	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(r.Uuid)
-		eb.Pattern(r.Pattern)
+		ex.AddRule().
+			Exact(r.Name).
+			Exact(r.Uuid).
+			Pattern(r.Pattern)
 	}
-	exclude, err := eb.Build()
-	if err != nil {
+	if err := ex.RuleErrors(); err != nil {
 		return nil, err
 	}
 
@@ -72,11 +72,11 @@ func newBitbucketCloudSource(logger log.Logger, svc *types.ExternalService, c *s
 	}
 
 	return &BitbucketCloudSource{
-		svc:     svc,
-		config:  c,
-		exclude: exclude,
-		client:  client,
-		logger:  logger,
+		svc:      svc,
+		config:   c,
+		excluder: ex,
+		client:   client,
+		logger:   logger,
 	}, nil
 }
 
@@ -161,7 +161,7 @@ func (s *BitbucketCloudSource) remoteURL(repo *bitbucketcloud.Repo) string {
 }
 
 func (s *BitbucketCloudSource) excludes(r *bitbucketcloud.Repo) bool {
-	return s.exclude(r.FullName) || s.exclude(r.UUID)
+	return s.excluder.ShouldExclude(r.FullName) || s.excluder.ShouldExclude(r.UUID)
 }
 
 func (s *BitbucketCloudSource) listAllRepos(ctx context.Context, results chan SourceResult) {
@@ -238,7 +238,6 @@ func (s *BitbucketCloudSource) WithAuthenticator(a auth.Authenticator) (Source, 
 	sc.client = sc.client.WithAuthenticator(a)
 
 	return &sc, nil
-
 }
 
 // ValidateAuthenticator validates the currently set authenticator is usable.

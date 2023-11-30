@@ -50,7 +50,7 @@ func (m *migrator) Routines(startupCtx context.Context, observationCtx *observat
 	}
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
-		if !deploy.IsApp() {
+		if !deploy.IsSingleBinary() {
 			observationCtx.Logger.Warn("Skipping out-of-band migrations check")
 		}
 	} else {

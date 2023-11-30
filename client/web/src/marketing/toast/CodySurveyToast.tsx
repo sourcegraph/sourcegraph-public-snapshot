@@ -13,6 +13,7 @@ import type { AuthenticatedUser } from '../../auth'
 import { getReturnTo } from '../../auth/SignInSignUpCommon'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
 import { LoaderButton } from '../../components/LoaderButton'
+import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import type {
     SubmitCodySurveyResult,
     SubmitCodySurveyVariables,
@@ -21,6 +22,7 @@ import type {
 } from '../../graphql-operations'
 import { PageRoutes } from '../../routes.constants'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
+import { HubSpotForm } from '../components/HubSpotForm'
 
 import styles from './CodySurveyToast.module.scss'
 
@@ -160,6 +162,91 @@ const CodySurveyToastInner: React.FC<
     )
 }
 
+const CodyQualificationSurveryToastInner: React.FC<
+    { onSubmitEnd: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps
+> = ({ onSubmitEnd, telemetryService, authenticatedUser }) => {
+    const [updatePostSignupCompletion, { error: setPostSignupError }] = useMutation<
+        SetCompletedPostSignupResult,
+        SetCompletedPostSignupVariables
+    >(SET_COMPLETED_POST_SIGNUP, {
+        variables: {
+            userID: authenticatedUser.id,
+        },
+    })
+
+    const handleFormReady = useCallback(
+        (form: HTMLFormElement) => {
+            const input = form.querySelector('input[name="using_cody_for_work"]')
+
+            // Trigger telemetry event whenever the cody for work is selected.
+            const handleChange = (e: Event): void => {
+                const target = e.target as HTMLInputElement
+                const isChecked = target.checked
+
+                if (isChecked) {
+                    telemetryService.log('ViewCodyWorkQuestionnarie')
+                }
+            }
+
+            input?.addEventListener('change', handleChange)
+
+            return () => {
+                input?.removeEventListener('change', handleChange)
+            }
+        },
+        [telemetryService]
+    )
+
+    const primaryEmail = authenticatedUser.emails.find(email => email.isPrimary)?.email
+
+    const handleSubmit = useCallback(async () => {
+        try {
+            if (authenticatedUser.hasVerifiedEmail) {
+                await updatePostSignupCompletion()
+            }
+
+            onSubmitEnd()
+        } catch (error) {
+            /* eslint-disable no-console */
+            console.error(error)
+        }
+    }, [authenticatedUser.hasVerifiedEmail, onSubmitEnd, updatePostSignupCompletion])
+
+    useEffect(() => {
+        telemetryService.log('ViewCodyforWorkorPersonalForm')
+    }, [telemetryService])
+
+    return (
+        <Modal
+            className={styles.codySurveyToastModal}
+            position="center"
+            aria-label="View cody for work or personal form"
+            data-testid="cody-qualification-survey-form"
+            containerClassName={styles.modalOverlay}
+        >
+            <H3 className="mb-4 d-flex align-items-center">
+                <CodyColorIcon className={styles.codyIcon} />
+                <span>Quick question...</span>
+            </H3>
+            <Text>How will you be using Cody, our AI assistant?</Text>
+            <HubSpotForm
+                onFormSubmitted={handleSubmit}
+                userId={authenticatedUser?.id}
+                userEmail={primaryEmail}
+                onFormReady={handleFormReady}
+                masterFormName="qualificationSurvey"
+            />
+
+            {!!setPostSignupError && (
+                <Text size="small" className="text-danger mt-3 mb-2">
+                    An error occurred. Please reload the page and try again. If this persists, contact support at
+                    support@sourcegraph.com
+                </Text>
+            )}
+        </Modal>
+    )
+}
+
 const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps> = ({
     onNext,
     authenticatedUser,
@@ -238,8 +325,10 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
 export const CodySurveyToast: React.FC<
     {
         authenticatedUser: AuthenticatedUser
+        isExperimentEnabled?: boolean
     } & TelemetryProps
-> = ({ authenticatedUser, telemetryService }) => {
+> = ({ authenticatedUser, telemetryService, isExperimentEnabled }) => {
+    const [showQualificationSurvey] = useFeatureFlag('signup-survey-enabled', false)
     const [showVerifyEmail, setShowVerifyEmail] = useState(!authenticatedUser.hasVerifiedEmail)
 
     const location = useLocation()
@@ -255,12 +344,26 @@ export const CodySurveyToast: React.FC<
         setShowVerifyEmail(false)
     }, [telemetryService])
 
+    useEffect(() => {
+        telemetryService.log('CustomerQualificationSurveyExperiment001Enrolled')
+    }, [telemetryService])
+
     if (showVerifyEmail) {
         return (
             <CodyVerifyEmailToast
                 onNext={dismissVerifyEmail}
                 authenticatedUser={authenticatedUser}
                 telemetryService={telemetryService}
+            />
+        )
+    }
+
+    if (isExperimentEnabled || showQualificationSurvey) {
+        return (
+            <CodyQualificationSurveryToastInner
+                telemetryService={telemetryService}
+                onSubmitEnd={handleSubmitEnd}
+                authenticatedUser={authenticatedUser}
             />
         )
     }

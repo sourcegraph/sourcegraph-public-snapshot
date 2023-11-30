@@ -33,22 +33,10 @@ To install it, [see the instructions](../../setup/quickstart.md).
     sg start # which defaults to `sg start enterprise`
     ```
 
-    For the open-source version:
-
-    ```sh
-    sg start oss
-    ```
-
 3. Regenerate GraphQL schema, Typescript types for GraphQL operations and CSS Modules.
 
     ```sh
     pnpm generate
-    ```
-
-    To regenerate on file change:
-
-    ```sh
-    pnpm watch-generate
     ```
 
 ### Storybook

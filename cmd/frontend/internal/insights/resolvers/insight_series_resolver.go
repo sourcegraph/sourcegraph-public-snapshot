@@ -177,7 +177,7 @@ func (p *precalculatedInsightSeriesResolver) Label() string {
 
 func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
 	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
-	db := database.NewDBWith(log.Scoped("Points", ""), p.workerBaseStore)
+	db := database.NewDBWith(log.Scoped("Points"), p.workerBaseStore)
 	scHandler := store.NewSearchContextHandler(db)
 	modifiedPoints := removeClosePoints(p.points, p.series)
 	filterRepoIncludes := []string{}
@@ -364,7 +364,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 var loadingStrategyRED = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "src_insights_loading_strategy", metrics.WithLabels("in_mem", "capture"))
 
 func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filters types.InsightViewFilters, options types.SeriesDisplayOptions, r *baseInsightResolver) (points []store.SeriesPoint, err error) {
-	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("recordedSeries", ""), r.postgresDB), r.timeSeriesStore, definition, filters, options)
+	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("recordedSeries"), r.postgresDB), r.timeSeriesStore, definition, filters, options)
 	if err != nil {
 		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
 	}

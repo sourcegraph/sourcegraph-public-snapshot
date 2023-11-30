@@ -59,7 +59,7 @@ func NewBatchSpecWorkspaceExecutionWorkerStore(observationCtx *observation.Conte
 	return &batchSpecWorkspaceExecutionWorkerStore{
 		Store:          dbworkerstore.New(observationCtx, handle, batchSpecWorkspaceExecutionWorkerStoreOptions),
 		observationCtx: observationCtx,
-		logger:         log.Scoped("batch-spec-workspace-execution-worker-store", "The worker store backing the executor queue for Batch Changes"),
+		logger:         log.Scoped("batch-spec-workspace-execution-worker-store"),
 	}
 }
 

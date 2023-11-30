@@ -247,33 +247,6 @@ jobs:
                 }
               }
             }' -f project=$PROJECT_ID -f issue=$NODE_ID
-  source-board:
-    runs-on: ubuntu-latest
-    env:
-      PROJECT_ID: PVT_kwDOADy5QM0Pnw # https://github.com/orgs/sourcegraph/projects/209
-      GITHUB_TOKEN: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
-    steps:
-      - name: Get issue if relevant # checking for "source",  but also "iam" and "repo-management" for backwards compatibility. See https://github.com/sourcegraph/sourcegraph/issues/54705
-        if: ${{ contains(github.event.issue.labels.*.name, 'team/source') || contains(github.event.issue.labels.*.name, 'iam') || contains(github.event.issue.labels.*.name, 'repo-management') }}
-        env:
-          NODE_ID: ${{ github.event.issue.node_id }}
-        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-      - name: Get pull request if relevant
-        if: ${{ contains(github.event.pull_request.labels.*.name, 'team/source') }}
-        env:
-          NODE_ID: ${{ github.event.pull_request.node_id }}
-        run: echo 'NODE_ID='$NODE_ID >> $GITHUB_ENV
-      - name: Add to Source board
-        if: ${{ env.NODE_ID != '' }}
-        run: |
-          gh api graphql -f query='
-            mutation($project:ID!, $issue:ID!) {
-              addProjectV2ItemById(input: {projectId: $project, contentId: $issue}) {
-                item {
-                  id
-                }
-              }
-            }' -f project=$PROJECT_ID -f issue=$NODE_ID
   grpc-board:
     runs-on: ubuntu-latest
     env:

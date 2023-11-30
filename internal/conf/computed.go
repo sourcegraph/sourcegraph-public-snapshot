@@ -8,10 +8,10 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -40,13 +40,15 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
 	case deploy.IsDeployTypeApp(deployType):
 		return confdefaults.App
+	case deploy.IsDeployTypeSingleProgram(deployType):
+		return confdefaults.SingleProgram
 	default:
-		panic("deploy type did not register default configuration")
+		panic("deploy type did not register default configuration: " + deployType)
 	}
 }
 
 func ExecutorsAccessToken() string {
-	if deploy.IsApp() {
+	if deploy.IsSingleBinary() {
 		return confdefaults.AppInMemoryExecutorPassword
 	}
 	return Get().ExecutorsAccessToken
@@ -368,6 +370,14 @@ func SearchDocumentRanksWeight() float64 {
 	}
 }
 
+func RankingMaxQueueSizeBytes() int {
+	ranking := ExperimentalFeatures().Ranking
+	if ranking == nil || ranking.MaxQueueSizeBytes == nil {
+		return -1
+	}
+	return *ranking.MaxQueueSizeBytes
+}
+
 // SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For
 // larger codebases, it can be helpful to increase this to improve the ranking stability and quality.
 func SearchFlushWallTime(keywordScoring bool) time.Duration {
@@ -450,6 +460,29 @@ func PasswordPolicyEnabled() bool {
 	return pc.Enabled
 }
 
+func RateLimits() schema.RateLimits {
+	rl := schema.RateLimits{
+		GraphQLMaxAliases:    500,
+		GraphQLMaxFieldCount: 500_000,
+		GraphQLMaxDepth:      30,
+	}
+
+	configured := Get().RateLimits
+
+	if configured != nil {
+		if configured.GraphQLMaxAliases <= 0 {
+			rl.GraphQLMaxAliases = configured.GraphQLMaxAliases
+		}
+		if configured.GraphQLMaxFieldCount <= 0 {
+			rl.GraphQLMaxFieldCount = configured.GraphQLMaxFieldCount
+		}
+		if configured.GraphQLMaxDepth <= 0 {
+			rl.GraphQLMaxDepth = configured.GraphQLMaxDepth
+		}
+	}
+	return rl
+}
+
 // By default, password reset links are valid for 4 hours.
 const defaultPasswordLinkExpiry = 14400
 
@@ -485,41 +518,6 @@ func AuthLockout() *schema.AuthLockout {
 		val.LockoutPeriod = 1800
 	}
 	return val
-}
-
-type ExternalServiceMode int
-
-const (
-	ExternalServiceModeDisabled ExternalServiceMode = 0
-	ExternalServiceModePublic   ExternalServiceMode = 1
-	ExternalServiceModeAll      ExternalServiceMode = 2
-)
-
-func (e ExternalServiceMode) String() string {
-	switch e {
-	case ExternalServiceModeDisabled:
-		return "disabled"
-	case ExternalServiceModePublic:
-		return "public"
-	case ExternalServiceModeAll:
-		return "all"
-	default:
-		return "unknown"
-	}
-}
-
-// ExternalServiceUserMode returns the site level mode describing if users are
-// allowed to add external services for public and private repositories. It does
-// NOT take into account permissions granted to the current user.
-func ExternalServiceUserMode() ExternalServiceMode {
-	switch Get().ExternalServiceUserMode {
-	case "public":
-		return ExternalServiceModePublic
-	case "all":
-		return ExternalServiceModeAll
-	default:
-		return ExternalServiceModeDisabled
-	}
 }
 
 const defaultGitLongCommandTimeout = time.Hour
@@ -594,7 +592,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	if completionsConfig == nil {
 		completionsConfig = &schema.Completions{
 			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-2",
+			ChatModel:       "anthropic/claude-2.0",
 			FastChatModel:   "anthropic/claude-instant-1",
 			CompletionModel: "anthropic/claude-instant-1",
 		}
@@ -634,7 +632,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic/claude-2"
+			completionsConfig.ChatModel = "anthropic/claude-2.0"
 		}
 
 		// Set a default fast chat model.
@@ -649,7 +647,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://api.openai.com/v1/chat/completions"
+			completionsConfig.Endpoint = "https://api.openai.com"
 		}
 
 		// If not access token is set, we cannot talk to OpenAI. Bail.
@@ -669,7 +667,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "gpt-3.5-turbo"
+			completionsConfig.CompletionModel = "gpt-3.5-turbo-instruct"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAnthropic) {
 		// If no endpoint is configured, use a default value.
@@ -684,7 +682,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "claude-2"
+			completionsConfig.ChatModel = "claude-2.0"
 		}
 
 		// Set a default fast chat model.
@@ -699,11 +697,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
 		// If no endpoint is configured, this provider is misconfigured.
 		if completionsConfig.Endpoint == "" {
-			return nil
-		}
-
-		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
-		if completionsConfig.AccessToken == "" {
 			return nil
 		}
 
@@ -803,6 +796,14 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		Endpoint:                         completionsConfig.Endpoint,
 		PerUserDailyLimit:                completionsConfig.PerUserDailyLimit,
 		PerUserCodeCompletionsDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
+		PerCommunityUserChatMonthlyLLMRequestLimit:             completionsConfig.PerCommunityUserChatMonthlyLLMRequestLimit,
+		PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit:  completionsConfig.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit,
+		PerProUserChatDailyLLMRequestLimit:                     completionsConfig.PerProUserChatDailyLLMRequestLimit,
+		PerProUserCodeCompletionsDailyLLMRequestLimit:          completionsConfig.PerProUserCodeCompletionsDailyLLMRequestLimit,
+		PerCommunityUserChatMonthlyInteractionLimit:            completionsConfig.PerCommunityUserChatMonthlyInteractionLimit,
+		PerCommunityUserCodeCompletionsMonthlyInteractionLimit: completionsConfig.PerCommunityUserCodeCompletionsMonthlyInteractionLimit,
+		PerProUserChatDailyInteractionLimit:                    completionsConfig.PerProUserChatDailyInteractionLimit,
+		PerProUserCodeCompletionsDailyInteractionLimit:         completionsConfig.PerProUserCodeCompletionsDailyInteractionLimit,
 	}
 
 	return computedConfig
@@ -936,11 +937,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 			return nil
 		}
 
-		// If not access token is set, we cannot talk to OpenAI. Bail.
-		if embeddingsConfig.AccessToken == "" {
-			return nil
-		}
-
 		// If no model is set, we cannot do anything here.
 		if embeddingsConfig.Model == "" {
 			return nil
@@ -960,7 +956,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	if embeddingsConfig.FileFilters != nil {
 		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
 		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
-		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
+		if embeddingsConfig.FileFilters.MaxFileSizeBytes > 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
 			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSizeBytes
 		}
 	}
@@ -970,6 +966,59 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxFileSizeBytes:         maxFileSizeLimit,
 	}
 
+	// Default values should match the documented defaults in site.schema.json.
+	computedQdrantConfig := conftypes.QdrantConfig{
+		Enabled: false,
+		QdrantHNSWConfig: conftypes.QdrantHNSWConfig{
+			EfConstruct:       nil,
+			FullScanThreshold: nil,
+			M:                 nil,
+			OnDisk:            true,
+			PayloadM:          nil,
+		},
+		QdrantOptimizersConfig: conftypes.QdrantOptimizersConfig{
+			IndexingThreshold: 0,
+			MemmapThreshold:   100,
+		},
+		QdrantQuantizationConfig: conftypes.QdrantQuantizationConfig{
+			Enabled:  true,
+			Quantile: 0.98,
+		},
+	}
+	if embeddingsConfig.Qdrant != nil {
+		qc := embeddingsConfig.Qdrant
+		computedQdrantConfig.Enabled = qc.Enabled
+
+		if qc.Hnsw != nil {
+			computedQdrantConfig.QdrantHNSWConfig.EfConstruct = toUint64(qc.Hnsw.EfConstruct)
+			computedQdrantConfig.QdrantHNSWConfig.FullScanThreshold = toUint64(qc.Hnsw.FullScanThreshold)
+			computedQdrantConfig.QdrantHNSWConfig.M = toUint64(qc.Hnsw.M)
+			computedQdrantConfig.QdrantHNSWConfig.PayloadM = toUint64(qc.Hnsw.PayloadM)
+			if qc.Hnsw.OnDisk != nil {
+				computedQdrantConfig.QdrantHNSWConfig.OnDisk = *qc.Hnsw.OnDisk
+			}
+		}
+
+		if qc.Optimizers != nil {
+			if qc.Optimizers.IndexingThreshold != nil {
+				computedQdrantConfig.QdrantOptimizersConfig.IndexingThreshold = uint64(*qc.Optimizers.IndexingThreshold)
+			}
+			if qc.Optimizers.MemmapThreshold != nil {
+				computedQdrantConfig.QdrantOptimizersConfig.MemmapThreshold = uint64(*qc.Optimizers.MemmapThreshold)
+			}
+		}
+
+		if qc.Quantization != nil {
+			if qc.Quantization.Enabled != nil {
+				computedQdrantConfig.QdrantQuantizationConfig.Enabled = *qc.Quantization.Enabled
+			}
+
+			if qc.Quantization.Quantile != nil {
+				computedQdrantConfig.QdrantQuantizationConfig.Quantile = float32(*qc.Quantization.Quantile)
+			}
+		}
+	}
+
 	computedConfig := &conftypes.EmbeddingsConfig{
 		Provider:    conftypes.EmbeddingsProviderName(embeddingsConfig.Provider),
 		AccessToken: embeddingsConfig.AccessToken,
@@ -977,12 +1026,15 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		Endpoint:    embeddingsConfig.Endpoint,
 		Dimensions:  embeddingsConfig.Dimensions,
 		// This is definitely set at this point.
-		Incremental:                *embeddingsConfig.Incremental,
-		FileFilters:                fileFilters,
-		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
-		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
-		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
-		ExcludeChunkOnError:        pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
+		Incremental:                            *embeddingsConfig.Incremental,
+		FileFilters:                            fileFilters,
+		MaxCodeEmbeddingsPerRepo:               embeddingsConfig.MaxCodeEmbeddingsPerRepo,
+		MaxTextEmbeddingsPerRepo:               embeddingsConfig.MaxTextEmbeddingsPerRepo,
+		PolicyRepositoryMatchLimit:             embeddingsConfig.PolicyRepositoryMatchLimit,
+		ExcludeChunkOnError:                    pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
+		Qdrant:                                 computedQdrantConfig,
+		PerCommunityUserEmbeddingsMonthlyLimit: embeddingsConfig.PerCommunityUserEmbeddingsMonthlyLimit,
+		PerProUserEmbeddingsMonthlyLimit:       embeddingsConfig.PerProUserEmbeddingsMonthlyLimit,
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {
@@ -992,6 +1044,14 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	}
 
 	return computedConfig
+}
+
+func toUint64(input *int) *uint64 {
+	if input == nil {
+		return nil
+	}
+	u := uint64(*input)
+	return &u
 }
 
 func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteConfiguration) string {
@@ -1004,7 +1064,11 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 		if config.App.DotcomAuthToken == "" {
 			return ""
 		}
-		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		authToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		if err != nil {
+			return ""
+		}
+		return authToken
 	}
 	// Otherwise, use the current license key to compute an access token.
 	if config.LicenseKey == "" {
@@ -1065,7 +1129,7 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-v2" {
+	if model == "claude-2" || model == "claude-2.0" || model == "claude-2.1" || model == "claude-v2" {
 		// TODO: Technically, v2 also uses a 100k window, but we should validate
 		// that returning 100k here is the right thing to do.
 		return 12_000
@@ -1080,7 +1144,7 @@ func openaiDefaultMaxPromptTokens(model string) int {
 		return 8_000
 	case "gpt-4-32k":
 		return 32_000
-	case "gpt-3.5-turbo":
+	case "gpt-3.5-turbo", "gpt-3.5-turbo-instruct", "gpt-4-1106-preview":
 		return 4_000
 	case "gpt-3.5-turbo-16k":
 		return 16_000

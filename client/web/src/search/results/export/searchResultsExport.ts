@@ -22,9 +22,9 @@ import { eventLogger } from '../../../tracking/eventLogger'
 
 const sanitizeString = (str: string): string =>
     `"${str
-        .replaceAll(/"/g, '""') // escape quotes
+        .replaceAll('"', '""') // escape quotes
         .replaceAll(/ +(?= )/g, '') // remove extra spaces
-        .replaceAll(/\n/g, '')}"` // remove extra newlines
+        .replaceAll('\n', '')}"` // remove extra newlines
 
 export const searchResultsToFileContent = (
     searchResults: SearchMatch[],
@@ -202,8 +202,9 @@ export const searchResultsToFileContent = (
             break
         }
 
-        default:
+        default: {
             return ''
+        }
     }
 
     return content
@@ -213,10 +214,10 @@ export const searchResultsToFileContent = (
 }
 
 export const buildFileName = (query?: string): string => {
-    const formattedQuery = query?.trim().replace(/\W/g, '-')
-    const downloadFilename = `sourcegraph-search-export${formattedQuery ? `-${formattedQuery}` : ''}.csv`
-
-    return downloadFilename
+    const formattedQuery = query?.trim().replaceAll(/\W/g, '-')
+    // truncate query to account for Windows OS failing to build a file with a name > 255 characters in length
+    const truncatedQuery = formattedQuery?.slice(0, 225)
+    return `sourcegraph-search-export${truncatedQuery ? `-${truncatedQuery}` : ''}.csv`
 }
 
 // If this number is too big, the search will take a very long time and likely fail

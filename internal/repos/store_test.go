@@ -520,7 +520,7 @@ func getTestRepoStore(t *testing.T) repos.Store {
 	}
 
 	logger := logtest.Scoped(t)
-	store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
+	store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(t)))
 	store.SetMetrics(repos.NewStoreMetrics())
 	return store
 }

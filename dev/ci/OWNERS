@@ -1,4 +1,3 @@
 # See https://github.com/sourcegraph/codenotify for documentation.
 
-go-build.sh @sourcegraph/dev-experience
-go-test.sh @sourcegraph/dev-experience
+**/* @sourcegraph/dev-experience

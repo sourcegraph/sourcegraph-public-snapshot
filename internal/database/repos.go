@@ -612,21 +612,16 @@ type ReposListOptions struct {
 	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
 	IDs []api.RepoID
 
-	// UserID, if non zero, will limit the set of results to repositories added by the user
-	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
-	UserID int32
-
-	// OrgID, if non zero, will limit the set of results to repositories owned by the organization
-	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
-	OrgID int32
-
 	// SearchContextID, if non zero, will limit the set of results to repositories listed in
 	// the search context.
+	//
+	// Mutually exclusive with ExternalServiceIDs
 	SearchContextID int64
 
 	// ExternalServiceIDs, if non empty, will only return repos added by the given external services.
 	// The id is that of the external_services table NOT the external_service_id in the repo table
-	// Mutually exclusive with the UserID option.
+	//
+	// Mutually exclusive with the SearchContextID option.
 	ExternalServiceIDs []int64
 
 	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
@@ -1142,22 +1137,14 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 		where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
 	}
 
-	if (len(opt.ExternalServiceIDs) != 0 && (opt.UserID != 0 || opt.OrgID != 0)) ||
-		(opt.UserID != 0 && opt.OrgID != 0) {
-		return nil, errors.New("options ExternalServiceIDs, UserID and OrgID are mutually exclusive")
+	if len(opt.ExternalServiceIDs) != 0 && opt.SearchContextID != 0 {
+		return nil, errors.New("options ExternalServiceIDs and SearchContextID are mutually exclusive")
 	} else if len(opt.ExternalServiceIDs) != 0 {
 		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
 	} else if opt.SearchContextID != 0 {
 		// Joining on distinct search context repos to avoid returning duplicates
 		joins = append(joins, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
 		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
-	} else if opt.UserID != 0 {
-		userReposCTE := sqlf.Sprintf(userReposCTEFmtstr, opt.UserID)
-		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
-		joins = append(joins, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
-	} else if opt.OrgID != 0 {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
-		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
 	}
 
 	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.OnlyCorrupted || opt.joinGitserverRepos ||
@@ -1202,22 +1189,14 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 	if len(opt.TopicFilters) > 0 {
 		var ands []*sqlf.Query
 		for _, filter := range opt.TopicFilters {
-			// This condition checks that the requested topics are contained in
-			// the repo's metadata. This is designed to work with the
-			// idx_repo_github_topics index.
-			//
-			// We use the unusual `jsonb_build_array` and `jsonb_build_object`
-			// syntax instead of JSONB literals so that we can use SQL
-			// variables for the user-provided topic names (don't want SQL
-			// injections here).
-			cond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
+			filter := filter
+
+			// This is designed to work with the idx_repo_topics
+			cond := sqlf.Sprintf("topics @> ARRAY[%s]::text[]", filter.Topic)
 			if filter.Negated {
-				// Use Coalesce in case the JSON access evaluates to NULL.
-				// Since negating a NULL evaluates to NULL, we want to
-				// explicitly treat NULLs as false first
-				cond = `NOT COALESCE(` + cond + `, false)`
+				cond = sqlf.Sprintf("NOT (%s)", cond)
 			}
-			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
+			ands = append(ands, cond)
 		}
 		where = append(where, sqlf.Join(ands, "AND"))
 	}
@@ -1293,10 +1272,6 @@ func containsOrderBySizeField(orderBy OrderBy) bool {
 
 const embeddedReposQueryFmtstr = `
 	SELECT DISTINCT ON (repo_id) repo_id, true embedded FROM repo_embedding_jobs WHERE state = 'completed'
-`
-
-const userReposCTEFmtstr = `
-SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
 `
 
 type ListSourcegraphDotComIndexableReposOptions struct {
@@ -1601,15 +1576,11 @@ insert_sources AS (
   INSERT INTO external_service_repos (
     external_service_id,
     repo_id,
-    user_id,
-    org_id,
     clone_url
   )
   SELECT
     external_service_id,
     repo_id,
-    es.namespace_user_id,
-    es.namespace_org_id,
     clone_url
   FROM sources_list
   JOIN external_services es ON (es.id = external_service_id)

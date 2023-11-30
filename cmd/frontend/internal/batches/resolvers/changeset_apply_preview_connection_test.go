@@ -35,7 +35,7 @@ func TestChangesetApplyPreviewConnectionResolver(t *testing.T) {
 	}
 
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := bt.CreateTestUser(t, db, false).ID
 

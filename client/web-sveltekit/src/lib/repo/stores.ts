@@ -15,7 +15,11 @@ export const getSidebarFileTreeStateForRepo = memoize(
     repoName => repoName
 )
 
-type HistoryPanelStoreValue = { loading: boolean; history?: HistoryResult; error?: Error }
+interface HistoryPanelStoreValue {
+    loading: boolean
+    history?: HistoryResult
+    error?: Error
+}
 
 interface HistoryPanelStore extends Readable<HistoryPanelStoreValue> {
     capture(): HistoryResult | null

@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 
 import { H1, H2 } from '../..'
 import { BrandedStory } from '../../../stories/BrandedStory'
@@ -46,7 +46,7 @@ const BaseCheckbox = ({ name, ...props }: { name: string } & Pick<CheckboxProps,
     )
 }
 
-export const CheckboxExamples: Story = () => (
+export const CheckboxExamples: StoryFn = () => (
     <>
         <H1>Checkbox</H1>
         <Grid columnCount={4}>

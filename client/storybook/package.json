@@ -8,14 +8,10 @@
   "main": "./src/index.ts",
   "scripts": {
     "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
-    "start": "TS_NODE_TRANSPILE_ONLY=true start-storybook -p 9001 -c ./src",
-    "start:chromatic": "CHROMATIC=true TS_NODE_TRANSPILE_ONLY=true start-storybook -p 9001 -c ./src",
-    "build": "TS_NODE_TRANSPILE_ONLY=true build-storybook -c ./src",
-    "build:webpack-stats": "TS_NODE_TRANSPILE_ONLY=true WEBPACK_DLL_PLUGIN=false start-storybook -c ./src --smoke-test --webpack-stats-json ./storybook-static --loglevel warn",
-    "build:dll-bundle": "TS_NODE_TRANSPILE_ONLY=true webpack --config ./src/webpack.config.dll.ts --no-stats",
-    "start:dll": "TS_NODE_TRANSPILE_ONLY=true WEBPACK_DLL_PLUGIN=true start-storybook -p 9001 -c ./src",
-    "clean:dll": "rm -rf assets/dll-bundle storybook-static/*-stats.json",
-    "test": "jest"
+    "start": "TS_NODE_TRANSPILE_ONLY=true sb dev -p 9001 -c ./src",
+    "start:chromatic": "CHROMATIC=true TS_NODE_TRANSPILE_ONLY=true sb dev -p 9001 -c ./src",
+    "build": "TS_NODE_TRANSPILE_ONLY=true sb build -c ./src",
+    "test": "echo no tests"
   },
   "dependencies": {
     "@sourcegraph/wildcard": "workspace:*",

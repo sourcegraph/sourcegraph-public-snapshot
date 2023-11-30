@@ -15,13 +15,13 @@ import {
 } from './patternMatcher'
 import type { CharacterRange, Filter, Token } from './token'
 
-export interface ChangeSpec {
+interface ChangeSpec {
     from: number
     to?: number
     insert?: string
 }
 
-export interface Action {
+interface Action {
     label: string
     change?: ChangeSpec
     selection?: { head?: number; anchor: number }
@@ -50,7 +50,7 @@ function createDiagnostic(
     }
 }
 
-export function validFilterValue(filter: Filter): Diagnostic[] {
+function validFilterValue(filter: Filter): Diagnostic[] {
     if (!filter.value) {
         return []
     }
@@ -62,7 +62,7 @@ export function validFilterValue(filter: Filter): Diagnostic[] {
     return [createDiagnostic(validationResult.reason, filter)]
 }
 
-export function emptyFilterValue(filter: Filter): Diagnostic[] {
+function emptyFilterValue(filter: Filter): Diagnostic[] {
     if (filter.value?.value !== '') {
         return []
     }
@@ -78,7 +78,7 @@ export function emptyFilterValue(filter: Filter): Diagnostic[] {
 // Returns the first nonempty diagnostic for a filter, or nothing otherwise. We return
 // the only the first so that we don't overwhelm the the user with multiple diagnostics
 // for a single filter.
-export function checkFilter(filter: Filter): Diagnostic[] {
+function checkFilter(filter: Filter): Diagnostic[] {
     const checks: FilterCheck[] = [validFilterValue, emptyFilterValue]
     return checks.map(check => check(filter)).find(value => value.length !== 0) || []
 }

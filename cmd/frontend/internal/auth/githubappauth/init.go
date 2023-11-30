@@ -20,6 +20,6 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.GitHubAppsResolver = NewResolver(log.Scoped("GitHubAppsResolver", ""), db)
+	enterpriseServices.GitHubAppsResolver = NewResolver(log.Scoped("GitHubAppsResolver"), db)
 	return nil
 }

@@ -314,10 +314,10 @@ func (s *gitHubAppsStore) GetInstallID(ctx context.Context, appID int, account s
 		FROM github_app_installs
 		JOIN github_apps ON github_app_installs.app_id = github_apps.id
 		WHERE github_apps.app_id = %s
-		AND github_app_installs.account_login = %s
+		AND LOWER(github_app_installs.account_login) = %s
 		-- We get the most recent installation, in case it's recently been removed and readded and the old ones aren't cleaned up yet.
 		ORDER BY github_app_installs.id DESC LIMIT 1
-		`, appID, account)
+		`, appID, strings.ToLower(account))
 	installID, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return installID, err
 }

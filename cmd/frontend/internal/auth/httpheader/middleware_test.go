@@ -26,7 +26,7 @@ func TestMiddleware(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	handler := middleware(db)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := sgactor.FromContext(r.Context())
@@ -73,12 +73,12 @@ func TestMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(headerName, "alice")
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice" {
-				return 1, "", nil
+				return false, 1, "", nil
 			}
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			return false, 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
 		}
 		defer func() { auth.MockGetAndSaveUser = nil }()
 		handler.ServeHTTP(rr, req)
@@ -107,15 +107,15 @@ func TestMiddleware(t *testing.T) {
 		req.Header.Set(headerName, "alice%zhao")
 		const wantNormalizedUsername = "alice-zhao"
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if op.UserProps.Username != wantNormalizedUsername {
 				t.Errorf("got %q, want %q", op.UserProps.Username, wantNormalizedUsername)
 			}
 			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice%zhao" {
-				return 1, "", nil
+				return false, 1, "", nil
 			}
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			return false, 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
 		}
 		defer func() { auth.MockGetAndSaveUser = nil }()
 		handler.ServeHTTP(rr, req)
@@ -132,7 +132,7 @@ func TestMiddleware(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(emailHeaderName, "alice@example.com")
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if got, want := op.UserProps.Username, "alice"; got != want {
 				t.Errorf("expected %v got %v", want, got)
@@ -144,10 +144,10 @@ func TestMiddleware(t *testing.T) {
 				t.Errorf("expected %v got %v", want, got)
 			}
 			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice@example.com" {
-				return 1, "", nil
+				return false, 1, "", nil
 			}
 			t.Log(op.ExternalAccount)
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			return false, 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
 		}
 		defer func() { auth.MockGetAndSaveUser = nil }()
 		handler.ServeHTTP(rr, req)
@@ -165,7 +165,7 @@ func TestMiddleware(t *testing.T) {
 		req.Header.Set(emailHeaderName, "alice@example.com")
 		req.Header.Set(headerName, "bob")
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if got, want := op.UserProps.Username, "bob"; got != want {
 				t.Errorf("expected %v got %v", want, got)
@@ -177,9 +177,9 @@ func TestMiddleware(t *testing.T) {
 				t.Errorf("expected %v got %v", want, got)
 			}
 			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice@example.com" {
-				return 1, "", nil
+				return false, 1, "", nil
 			}
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			return false, 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
 		}
 		defer func() { auth.MockGetAndSaveUser = nil }()
 		handler.ServeHTTP(rr, req)
@@ -197,7 +197,7 @@ func TestMiddleware_stripPrefix(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	handler := middleware(db)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		actor := sgactor.FromContext(r.Context())
@@ -224,12 +224,12 @@ func TestMiddleware_stripPrefix(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/", nil)
 		req.Header.Set(headerName, "accounts.google.com:alice")
 		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 			calledMock = true
 			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice" {
-				return 1, "", nil
+				return false, 1, "", nil
 			}
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			return false, 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
 		}
 		defer func() { auth.MockGetAndSaveUser = nil }()
 		handler.ServeHTTP(rr, req)

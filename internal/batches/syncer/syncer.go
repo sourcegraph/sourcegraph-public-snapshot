@@ -54,7 +54,7 @@ var (
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
 func NewSyncRegistry(ctx context.Context, observationCtx *observation.Context, bstore SyncStore, cf *httpcli.Factory) *SyncRegistry {
-	logger := observationCtx.Logger.Scoped("SyncRegistry", "starts a syncer for each code host and updates them")
+	logger := observationCtx.Logger.Scoped("SyncRegistry")
 	ctx, cancel := context.WithCancel(ctx)
 	return &SyncRegistry{
 		ctx:            ctx,
@@ -137,7 +137,7 @@ func (s *SyncRegistry) EnqueueChangesetSyncsForRepos(ctx context.Context, repoID
 func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
 	// This should never happen since the store does the filtering for us, but let's be super duper extra cautious.
 	if !codeHost.IsSupported() {
-		s.logger.Info("Code host not support by batch changes",
+		s.logger.Info("Code host not supported by batch changes",
 			log.String("type", codeHost.ExternalServiceType),
 			log.String("url", codeHost.ExternalServiceID))
 		return
@@ -228,7 +228,7 @@ func (s *SyncRegistry) syncCodeHosts(ctx context.Context) error {
 		return err
 	}
 
-	codeHostsByExternalServiceID := make(map[string]*btypes.CodeHost)
+	codeHostsByExternalServiceID := make(map[string]*btypes.CodeHost, len(codeHosts))
 
 	// Add and start syncers
 	for _, host := range codeHosts {
@@ -325,13 +325,16 @@ func makeMetrics(observationCtx *observation.Context) *syncerMetrics {
 	return m
 }
 
+const defaultChangesetScheduleInterval = 2 * time.Minute
+
 // Run will start the process of changeset syncing. It is long running
 // and is expected to be launched once at startup.
 func (s *changesetSyncer) Run(ctx context.Context) {
 	s.logger.Debug("Starting changeset syncer")
 	scheduleInterval := s.scheduleInterval
+	// When a scheduleInterval is not set, use the default schedule interval.
 	if scheduleInterval == 0 {
-		scheduleInterval = 2 * time.Minute
+		scheduleInterval = defaultChangesetScheduleInterval
 	}
 	if s.syncFunc == nil {
 		s.syncFunc = s.SyncChangeset
@@ -353,8 +356,8 @@ func (s *changesetSyncer) Run(ctx context.Context) {
 	var next scheduledSync
 	var ok bool
 
-	// NOTE: All mutations of the queue should be done is this loop as operations on the queue
-	// are not safe for concurrent use
+	// NOTE: All mutations of the queue should be done in this loop as operations on the queue
+	// are not safe for concurrent use.
 	for {
 		var timer *time.Timer
 		var timerChan <-chan time.Time
@@ -486,7 +489,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	}
 
 	srcer := sources.NewSourcer(s.httpFactory)
-	source, err := srcer.ForChangeset(ctx, s.syncStore, cs, sources.AuthenticationStrategyUserCredential)
+	source, err := srcer.ForChangeset(ctx, s.syncStore, cs, sources.AuthenticationStrategyUserCredential, repo)
 	if err != nil {
 		if errors.Is(err, store.ErrDeletedNamespace) {
 			syncLogger.Debug("SyncChangeset skipping changeset: namespace deleted")
@@ -495,7 +498,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 		return err
 	}
 
-	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient(), source, repo, cs)
+	return SyncChangeset(ctx, s.syncStore, gitserver.NewClient("batches.changesetsyncer"), source, repo, cs)
 }
 
 // SyncChangeset refreshes the metadata of the given changeset and

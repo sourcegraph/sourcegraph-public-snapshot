@@ -5,10 +5,12 @@
 export function isInputElement(element: Element): boolean {
     switch (element.nodeName) {
         case 'INPUT':
-        case 'TEXTAREA':
+        case 'TEXTAREA': {
             return true
-        default:
+        }
+        default: {
             return elementIsContentEditable(element as HTMLElement)
+        }
     }
 }
 
@@ -22,12 +24,15 @@ export function isInputElement(element: Element): boolean {
 function elementIsContentEditable(element: HTMLElement): boolean {
     switch (element.contentEditable) {
         case '':
-        case 'true':
+        case 'true': {
             return true
-        case 'false':
+        }
+        case 'false': {
             return false
-        default:
+        }
+        default: {
             return element.parentElement ? elementIsContentEditable(element.parentElement) : false
+        }
     }
 }
 

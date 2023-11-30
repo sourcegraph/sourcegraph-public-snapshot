@@ -51,7 +51,7 @@ func TestNullIDResilience(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	sr := New(db, store.New(db, &observation.TestContext, nil), gitserver.NewMockClient(), logger)
 
 	s, err := newSchema(db, sr)
@@ -139,7 +139,7 @@ func TestCreateBatchSpec(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	user := bt.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -343,7 +343,7 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	user := bt.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -479,7 +479,7 @@ func TestCreateChangesetSpec(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
@@ -573,7 +573,7 @@ func TestCreateChangesetSpecs(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
@@ -679,7 +679,7 @@ func TestApplyBatchChange(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -864,7 +864,7 @@ func TestCreateEmptyBatchChange(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
 
@@ -972,7 +972,7 @@ func TestUpsertEmptyBatchChange(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	bstore := store.New(db, &observation.TestContext, nil)
 
@@ -1061,7 +1061,7 @@ func TestCreateBatchChange(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	userID := bt.CreateTestUser(t, db, true).ID
 	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
@@ -1158,7 +1158,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	// Ensure our site configuration doesn't have rollout windows so we get a
 	// consistent initial state.
@@ -1373,7 +1373,7 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -1518,7 +1518,7 @@ func TestMoveBatchChange(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	user := bt.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -1828,7 +1828,7 @@ func TestCreateBatchChangesCredential(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -1958,7 +1958,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	bt.MockRSAKeygen(t)
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -2049,7 +2049,7 @@ func TestCreateChangesetComments(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
@@ -2169,7 +2169,7 @@ func TestReenqueueChangesets(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
@@ -2298,7 +2298,7 @@ func TestMergeChangesets(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
@@ -2428,7 +2428,7 @@ func TestCloseChangesets(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
@@ -2558,7 +2558,7 @@ func TestPublishChangesets(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	bstore := store.New(db, &observation.TestContext, nil)
 
 	userID := bt.CreateTestUser(t, db, true).ID
@@ -2703,7 +2703,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	pruneUserCredentials(t, db, nil)
 
@@ -2800,7 +2800,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	userID := bt.CreateTestUser(t, db, true).ID
 
 	var response struct{ MaxUnlicensedChangesets int32 }
@@ -2825,7 +2825,7 @@ query {
 func TestListBatchSpecs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	user := bt.CreateTestUser(t, db, true)
 	userID := user.ID
@@ -2886,6 +2886,72 @@ func TestListBatchSpecs(t *testing.T) {
 const queryListBatchSpecs = `
 query($includeLocallyExecutedSpecs: Boolean!) {
 	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { nodes { id } }
+}
+`
+
+func TestGetChangesetsByIDs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(t))
+	bstore := store.New(db, &observation.TestContext, nil)
+
+	userID := bt.CreateTestUser(t, db, true).ID
+	// We give this user the `BATCH_CHANGES#WRITE` permission so they're authorized
+	// to create Batch Changes.
+	assignBatchChangesWritePermissionToUser(ctx, t, db, userID)
+
+	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test-close", userID, 0)
+	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test-close", userID, batchSpec.ID)
+	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		PublicationState: btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateOpen,
+	})
+
+	r := &Resolver{store: bstore}
+	s, err := newSchema(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]any{
+		"batchChange": bgql.MarshalBatchChangeID(batchChange.ID),
+		"changesets":  []string{string(bgql.MarshalChangesetID(changeset.ID))},
+	}
+
+	var response struct {
+		GetChangesetsByIDs apitest.ChangesetConnection
+	}
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	apitest.MustExec(actorCtx, t, s, input, &response, queryGetChangesetsByIDs)
+
+	if len(response.GetChangesetsByIDs.Nodes) != 1 {
+		t.Fatalf("expected one changeset, got %d", len(response.GetChangesetsByIDs.Nodes))
+	}
+
+	firstChangeset := response.GetChangesetsByIDs.Nodes[0]
+	if firstChangeset.ID != string(bgql.MarshalChangesetID(changeset.ID)) {
+		t.Errorf("expected changeset ID %q, got %q", changeset.ID, firstChangeset.ID)
+	}
+}
+
+const queryGetChangesetsByIDs = `
+query($changesets: [ID!]!, $batchChange: ID!) {
+	getChangesetsByIDs(batchChange: $batchChange, changesets: $changesets) {
+		nodes {
+			... on ExternalChangeset {
+				id
+			}
+		}
+	}
 }
 `
 

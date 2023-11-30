@@ -16,6 +16,7 @@ local burst_exists = redis.call('EXISTS', burst_key)
 if burst_exists == 0 then
   redis.call('SET', burst_key, default_burst)
 end
+redis.call('EXPIRE', burst_key, 86400)
 
 local burst = tonumber(redis.call('GET', burst_key))
 
@@ -27,6 +28,8 @@ if bucket_exists == 0 then
     redis.call('SET', bucket_key, burst)
     redis.call('SET', last_replenishment_timestamp_key, current_time)
 end
+redis.call('EXPIRE', bucket_key, 86400)
+redis.call('EXPIRE', last_replenishment_timestamp_key, 86400)
 
 -- Check if bucket quota key and replenishment interval keys both exist
 local rate_exists = redis.call('EXISTS', bucket_rate_key)
@@ -36,6 +39,8 @@ if rate_exists == 0 or bucket_replenishment_interval_exists == 0 then
 	redis.call('SET', bucket_rate_key, default_rate)
 	redis.call('SET', bucket_replenishment_interval_key, default_replenishment_interval)
 end
+redis.call('EXPIRE', bucket_rate_key, 86400)
+redis.call('EXPIRE', bucket_replenishment_interval_key, 86400)
 
 local bucket_rate = tonumber(redis.call('GET', bucket_rate_key))
 

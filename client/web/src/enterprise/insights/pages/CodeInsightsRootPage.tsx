@@ -67,10 +67,12 @@ export const CodeInsightsRootPage: FC<CodeInsightsRootPageProps> = memo(props =>
 
                 return navigate('/insights/dashboards')
             }
-            case CodeInsightsRootPageTab.AllInsights:
+            case CodeInsightsRootPageTab.AllInsights: {
                 return navigate(encodeDashboardIdQueryParam('/insights/all', absoluteDashboardId))
-            case CodeInsightsRootPageTab.GettingStarted:
+            }
+            case CodeInsightsRootPageTab.GettingStarted: {
                 return navigate(encodeDashboardIdQueryParam('/insights/about', absoluteDashboardId))
+            }
         }
     }
 

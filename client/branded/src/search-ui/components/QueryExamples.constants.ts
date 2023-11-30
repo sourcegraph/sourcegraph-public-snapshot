@@ -1,97 +1,70 @@
 /** Static query examples */
 
+import { isDefined } from '@sourcegraph/common'
+
+import type { QueryExamplesSection } from './useQueryExamples'
+
 export const exampleQueryColumns = [
     [
         {
-            title: 'Find to-dos on a specific repository',
+            title: 'Find usage examples',
             queryExamples: [
-                {
-                    id: 'find-todos',
-                    query: 'repo:facebook/react content:TODO',
-                    slug: '?q=context%3Aglobal+repo%3Afacebook%2Freact+content%3ATODO',
-                },
-            ],
-        },
-        {
-            title: 'Error boundaries in React',
-            queryExamples: [
-                {
-                    id: 'error-boundaries',
-                    query: 'static getDerivedStateFromError(',
-                    slug: '?q=context%3Aglobal+static+getDerivedStateFromError%28',
-                },
+                { query: 'context.WithCancel lang:go' },
+                { query: '<Suspense lang:typescript' },
+                { query: 'readFileSync lang:javascript' },
+                { query: 'import torch lang:python' },
             ],
         },
     ],
     [
         {
-            title: 'Discover how developers are using hooks',
-            queryExamples: [
-                {
-                    id: 'hooks',
-                    query: 'useState AND useRef lang:javascript',
-                    slug: '?q=context:global+useState+AND+useRef+lang:javascript',
-                },
-            ],
+            title: 'Find TODOs in a repository',
+            queryExamples: [{ query: 'repo:facebook/react TODO' }],
         },
         {
-            title: "Type check, find what's passed to propTypes",
-            queryExamples: [
-                {
-                    id: 'prop-types',
-                    query: '.propTypes = {...} patterntype:structural',
-                    slug: '?q=context:global+.propTypes+%3D+%7B...%7D',
-                },
-            ],
+            title: 'See API usage and changes over time',
+            queryExamples: [{ query: 'repo:pytorch/pytorch type:diff is_cpu' }],
         },
     ],
 ]
 
-export const basicSyntaxColumns = [
+export const basicSyntaxColumns = (
+    fileName: string,
+    singleRepoExample: string,
+    orgReposExample: string | undefined
+): QueryExamplesSection[][] => [
     [
         {
-            title: 'Scope search to specific repos',
+            title: 'Search in files',
             queryExamples: [
-                { id: 'org-repos', query: 'repo:sourcegraph/.*' },
-                { id: 'single-repo', query: 'repo:facebook/react' },
+                { query: 'fetch(' },
+                { query: 'some error message', helperText: '(no quotes needed)' },
+                { query: 'foo AND bar' },
+                { query: '/open(File|Dir)/', helperText: '(regular expression)' },
             ],
         },
         {
-            title: 'Jump into code navigation',
-            queryExamples: [
-                { id: 'file-filter', query: 'file:README.md' },
-                { id: 'type-symbol', query: 'type:symbol SymbolName' },
-            ],
-        },
-        {
-            title: 'Get logical',
-            queryExamples: [
-                { id: 'not-operator', query: 'lang:go NOT file:main.go' },
-                { id: 'or-operator', query: 'lang:javascript OR lang:typescript' },
-                { id: 'and-operator', query: 'hello AND world' },
-            ],
+            title: 'Search in commit diffs',
+            queryExamples: [{ query: 'type:diff after:1week fix' }, { query: 'type:diff author:alice add' }],
         },
     ],
     [
         {
-            title: 'Find content or patterns',
+            title: 'Filter by...',
             queryExamples: [
-                { id: 'exact-matches', query: 'some exact error message', helperText: 'No quotes needed' },
-                { id: 'regex-pattern', query: '/regex.*pattern/' },
-            ],
+                { query: `file:${fileName} foo` },
+                { query: `repo:${singleRepoExample}` },
+                orgReposExample ? { query: `repo:${orgReposExample}`, helperText: '(all repositories in org)' } : null,
+                { query: 'lang:javascript' },
+            ].filter(isDefined),
         },
         {
-            title: 'Explore code history',
+            title: 'Advanced',
             queryExamples: [
-                { id: 'type-diff-author', query: 'type:diff author:torvalds' },
-                { id: 'type-commit-message', query: 'type:commit some message' },
-            ],
-        },
-        {
-            title: 'Get advanced',
-            queryExamples: [
-                { id: 'repo-has-description', query: 'repo:has.description(scientific computing)' },
-                { id: 'commit-search', query: 'repo:has.commit.after(june 25 2017)' },
+                { query: 'repo:has.description(foo)' },
+                { query: 'file:^some_path file:has.owner(alice)' },
+                { query: 'file:^some_path select:file.owners' },
+                { query: 'file:has.commit.after(1week)' },
             ],
         },
     ],

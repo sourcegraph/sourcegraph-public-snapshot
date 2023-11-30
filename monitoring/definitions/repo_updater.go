@@ -23,7 +23,7 @@ func RepoUpdater() *monitoring.Dashboard {
 		},
 	}
 
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
+	grpcMethodVariable := shared.GRPCMethodVariable("repo_updater", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "repo-updater",
@@ -569,6 +569,8 @@ func RepoUpdater() *monitoring.Dashboard {
 				},
 			},
 
+			shared.GitServer.NewClientGroup(containerName),
+
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
 
@@ -580,8 +582,9 @@ func RepoUpdater() *monitoring.Dashboard {
 					HumanServiceName:   "repo_updater",
 					RawGRPCServiceName: grpcServiceName,
 
-					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex: `${instance:regex}`,
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex:  `${instance:regex}`,
+					MessageSizeNamespace: "src",
 				}, monitoring.ObservableOwnerSource),
 
 			shared.NewGRPCInternalErrorMetricsGroup(
@@ -593,9 +596,13 @@ func RepoUpdater() *monitoring.Dashboard {
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSource),
 
+			shared.NewSiteConfigurationClientMetricsGroup(shared.SiteConfigurationMetricsOptions{
+				HumanServiceName:    "repo_updater",
+				InstanceFilterRegex: `${instance:regex}`,
+			}, monitoring.ObservableOwnerDevOps),
 			shared.HTTP.NewHandlersGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerSource),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSource, containerMonitoringOptions),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSource, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),

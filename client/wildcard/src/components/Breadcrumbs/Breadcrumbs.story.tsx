@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { ResizableBox } from 'react-resizable'
 
 import { BrandedStory } from '../../stories'
@@ -12,7 +12,7 @@ const config: Meta = {
 
 export default config
 
-export const BreadcrumbsGallery: Story = () => (
+export const BreadcrumbsGallery: StoryFn = () => (
     <ResizableBox width={500} height={30} axis="x" minConstraints={[100, 0]}>
         <Breadcrumbs
             filename="sourcegraph/client/web/src/enteprise/insights/components/insight-view/components/InsighBackend.tsx"

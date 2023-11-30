@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v41/github"
+	"github.com/google/go-github/v55/github"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 
@@ -28,6 +28,11 @@ func newCacheItem[T any](value T) *cacheItem[T] {
 		Value:     value,
 		Timestamp: time.Now(),
 	}
+}
+
+type NotificationClient interface {
+	Send(info *BuildNotification) error
+	GetNotification(buildNumber int) *SlackNotification
 }
 
 type Client struct {
@@ -107,7 +112,7 @@ func NewClient(logger log.Logger, slackToken, githubToken, channel string) *Clie
 	history := make(map[int]*SlackNotification)
 
 	return &Client{
-		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
+		logger:  logger.Scoped("notificationClient"),
 		slack:   *slackClient,
 		team:    teamResolver,
 		channel: channel,
@@ -243,7 +248,6 @@ func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 		return nil, err
 	}
 	return result, nil
-
 }
 
 func (c *Client) createMessageBlocks(info *BuildNotification, author string) []slack.Block {
@@ -281,8 +285,8 @@ func (c *Client) createMessageBlocks(info *BuildNotification, author string) []s
 				},
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,
-					URL:  "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake?"},
+					URL:  "https://buildkite.com/organizations/sourcegraph/analytics/suites/sourcegraph-bazel?branch=main",
+					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View test analytics"},
 				},
 			}...,
 		),

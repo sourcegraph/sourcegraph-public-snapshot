@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/apptoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -24,7 +23,7 @@ import (
 
 const appUsername = "admin"
 
-// appSecret stores the in-memory secret used by Sourcegraph App to enable passworldless
+// appSecret stores the in-memory secret used by Cody App to enable passworldless
 // login from the console.
 var appSecret secret
 
@@ -97,11 +96,7 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 			return errors.Wrap(err, "Failed to find admin account")
 		}
 
-		// Write the session cookie
-		actor := sgactor.Actor{
-			UID: user.ID,
-		}
-		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
+		if _, err := session.SetActorFromUser(r.Context(), w, r, user, 0); err != nil {
 			return errors.Wrap(err, "Could not create new user session")
 		}
 
@@ -128,7 +123,7 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 	}
 }
 
-// AppSiteInit is called in the case of Sourcegraph App to create the initial site admin account.
+// AppSiteInit is called in the case of Cody App to create the initial site admin account.
 //
 // Returns a sign-in URL which will automatically sign in the user. This URL
 // can only be used once.

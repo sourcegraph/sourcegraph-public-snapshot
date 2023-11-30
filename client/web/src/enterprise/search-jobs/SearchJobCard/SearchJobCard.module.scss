@@ -18,4 +18,10 @@
 .creator {
     display: flex;
     gap: 0.25rem;
+    align-items: center;
+}
+
+.avatar {
+    width: 1.5rem;
+    height: 1.5rem;
 }

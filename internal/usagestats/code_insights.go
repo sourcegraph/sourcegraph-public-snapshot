@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/sourcegraph/log"
 	"time"
 
 	"github.com/lib/pq"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -33,7 +32,7 @@ func (p *pingLoader) withOperation(name string, loadFunc pingLoadFunc) {
 
 func (p *pingLoader) generate(ctx context.Context, db database.DB) *types.CodeInsightsUsageStatistics {
 	stats := &types.CodeInsightsUsageStatistics{}
-	logger := log.Scoped("code insights ping loader", "pings for code insights")
+	logger := log.Scoped("code insights ping loader")
 
 	for name, loadFunc := range p.operations {
 		err := loadFunc(ctx, db, stats, p.now)

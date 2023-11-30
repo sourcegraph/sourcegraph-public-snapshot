@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect } from 'react'
 
-import { mdiClose, mdiEmailOutline } from '@mdi/js'
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
@@ -85,19 +85,11 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                         context={context}
                         githubLabel="GitHub"
                         gitlabLabel="GitLab"
+                        googleLabel="Google"
                         withCenteredText={true}
                         onClick={logEvent}
                         ctaClassName={styles.authButton}
-                        iconClassName={styles.buttonIcon}
                     />
-                    <Link
-                        to="https://sourcegraph.com/sign-up?showEmail=true"
-                        className={classNames('text-decoration-none', styles.emailAuthButton)}
-                        onClick={() => logEvent('builtin')}
-                    >
-                        <Icon className="mr-1" svgPath={mdiEmailOutline} inline={false} aria-hidden={true} />
-                        Email
-                    </Link>
                 </div>
                 <Text className="mb-2 mt-2">
                     By registering, you agree to our{' '}
@@ -133,7 +125,7 @@ const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme, isSo
                   image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-action-bar-${theme}.png`,
               }
             : {
-                  title: 'Try Cody AI assist on this repo',
+                  title: 'Try Cody on this repository',
                   useCases: [
                       'Click the Ask Cody button above and to the right of this banner',
                       'Ask Cody a question like “Explain the structure of this repository”',
@@ -142,12 +134,12 @@ const AuthUserWidgetContent: React.FC<WidgetContentProps> = ({ type, theme, isSo
               }
         : type === 'blob'
         ? {
-              title: 'Try Cody AI assist on this file',
+              title: 'Try Cody on this file',
               useCases: ['Select code in the file below', 'Select an action with Cody widget'],
               image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-action-bar-${theme}.png`,
           }
         : {
-              title: 'Try Cody AI assist on this repo',
+              title: 'Try Cody on this repository',
               useCases: [
                   'Click the Ask Cody button above and to the right of this banner',
                   'Ask Cody a question like “Explain the structure of this repository”',

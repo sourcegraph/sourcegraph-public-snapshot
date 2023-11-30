@@ -64,9 +64,9 @@ type AppNotifications struct {
 	Key string `json:"key"`
 	// Message description: The Markdown message to display
 	Message string `json:"message"`
-	// VersionMax description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	// VersionMax description: If present, this message will only be shown to Cody App instances in this inclusive version range.
 	VersionMax string `json:"version.max,omitempty"`
-	// VersionMin description: If present, this message will only be shown to Sourcegraph App instances in this inclusive version range.
+	// VersionMin description: If present, this message will only be shown to Cody App instances in this inclusive version range.
 	VersionMin string `json:"version.min,omitempty"`
 }
 
@@ -224,6 +224,12 @@ type AzureDevOpsConnection struct {
 	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Azure DevOps Services.
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories.
+	//
+	// If "http", Sourcegraph will access repositories using Git URLs of the form http(s)://dev.azure.com/myrepo.git.
+	//
+	// If "ssh", Sourcegraph will access repositories using Git URLs of the form git@ssh.dev.azure.com:v3/myrepo. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	GitURLType string `json:"gitURLType,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
 	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps projects' repositories should be mirrored on Sourcegraph.
@@ -301,10 +307,12 @@ type BitbucketCloudAuthorization struct {
 
 // BitbucketCloudConnection description: Configuration for a connection to Bitbucket Cloud.
 type BitbucketCloudConnection struct {
+	// AccessToken description: The workspace access token to use when authenticating with Bitbucket Cloud.
+	AccessToken string `json:"accessToken,omitempty"`
 	// ApiURL description: The API URL of Bitbucket Cloud, such as https://api.bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	ApiURL string `json:"apiURL,omitempty"`
 	// AppPassword description: The app password to use when authenticating to the Bitbucket Cloud. Also set the corresponding "username" field.
-	AppPassword string `json:"appPassword"`
+	AppPassword string `json:"appPassword,omitempty"`
 	// Authorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
 	Authorization *BitbucketCloudAuthorization `json:"authorization,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "teams" configuration.
@@ -332,7 +340,7 @@ type BitbucketCloudConnection struct {
 	// Url description: URL of Bitbucket Cloud, such as https://bitbucket.org. Generally, admin should not modify the value of this option because Bitbucket Cloud is a public hosting platform.
 	Url string `json:"url"`
 	// Username description: The username to use when authenticating to the Bitbucket Cloud. Also set the corresponding "appPassword" field.
-	Username string `json:"username"`
+	Username string `json:"username,omitempty"`
 	// WebhookSecret description: A shared secret used to authenticate incoming webhooks (minimum 12 characters).
 	WebhookSecret string `json:"webhookSecret,omitempty"`
 }
@@ -478,6 +486,8 @@ type BranchChangesetSpec struct {
 	Body string `json:"body"`
 	// Commits description: The Git commits with the proposed changes. These commits are pushed to the head ref.
 	Commits []*GitCommitDescription `json:"commits"`
+	// Fork description: Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global `batches.enforceFork` setting is enabled. If set, this property will override any global setting.
+	Fork bool `json:"fork,omitempty"`
 	// HeadRef description: The full name of the Git ref that holds the changes proposed by this changeset. This ref will be created or updated with the commits.
 	HeadRef string `json:"headRef"`
 	// HeadRepository description: The GraphQL ID of the repository that contains the branch with this changeset's changes. Fork repositories and cross-repository changesets are not yet supported. Therefore, headRepository must be equal to baseRepository.
@@ -590,9 +600,25 @@ type Completions struct {
 	FastChatModelMaxTokens int `json:"fastChatModelMaxTokens,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model,omitempty"`
-	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
+	// PerCommunityUserChatMonthlyInteractionLimit description: If > 0, enables the maximum number of completions interactions allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.
+	PerCommunityUserChatMonthlyInteractionLimit int `json:"perCommunityUserChatMonthlyInteractionLimit,omitempty"`
+	// PerCommunityUserChatMonthlyLLMRequestLimit description: If > 0, limits the number of completions requests allowed for a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.
+	PerCommunityUserChatMonthlyLLMRequestLimit int `json:"perCommunityUserChatMonthlyLLMRequestLimit,omitempty"`
+	// PerCommunityUserCodeCompletionsMonthlyInteractionLimit description: If > 0, enables the maximum number of code completions interactions allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.
+	PerCommunityUserCodeCompletionsMonthlyInteractionLimit int `json:"perCommunityUserCodeCompletionsMonthlyInteractionLimit,omitempty"`
+	// PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit description: If > 0, limits the number of code completions requests allowed for a Community user in a month.  This is for Self-serve Cody and applies to Dotcom only.
+	PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit int `json:"perCommunityUserCodeCompletionsMonthlyLLMRequestLimit,omitempty"`
+	// PerProUserChatDailyInteractionLimit description: If > 0, enables the maximum number of completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerProUserChatDailyInteractionLimit int `json:"perProUserChatDailyInteractionLimit,omitempty"`
+	// PerProUserChatDailyLLMRequestLimit description: If > 0, limits the number of completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.
+	PerProUserChatDailyLLMRequestLimit int `json:"perProUserChatDailyLLMRequestLimit,omitempty"`
+	// PerProUserCodeCompletionsDailyInteractionLimit description: If > 0, enables the maximum number of code completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.
+	PerProUserCodeCompletionsDailyInteractionLimit int `json:"perProUserCodeCompletionsDailyInteractionLimit,omitempty"`
+	// PerProUserCodeCompletionsDailyLLMRequestLimit description: If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.
+	PerProUserCodeCompletionsDailyLLMRequestLimit int `json:"perProUserCodeCompletionsDailyLLMRequestLimit,omitempty"`
+	// PerUserCodeCompletionsDailyLimit description: If > 0, limits the number of code completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.
 	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
-	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
+	// PerUserDailyLimit description: If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.
 	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
 	// Provider description: The external completions provider. Defaults to 'sourcegraph'.
 	Provider string `json:"provider,omitempty"`
@@ -678,10 +704,16 @@ type Embeddings struct {
 	MinimumInterval string `json:"minimumInterval,omitempty"`
 	// Model description: The model used for embedding. A default model will be used for each provider, if not set.
 	Model string `json:"model,omitempty"`
+	// PerCommunityUserEmbeddingsMonthlyLimit description: If > 0, limits the number of tokens allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.
+	PerCommunityUserEmbeddingsMonthlyLimit int `json:"perCommunityUserEmbeddingsMonthlyLimit,omitempty"`
+	// PerProUserEmbeddingsMonthlyLimit description: If > 0, limits the number of tokens allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.
+	PerProUserEmbeddingsMonthlyLimit int `json:"perProUserEmbeddingsMonthlyLimit,omitempty"`
 	// PolicyRepositoryMatchLimit description: The maximum number of repositories that can be matched by a global embeddings policy
 	PolicyRepositoryMatchLimit *int `json:"policyRepositoryMatchLimit,omitempty"`
 	// Provider description: The provider to use for generating embeddings. Defaults to sourcegraph.
 	Provider string `json:"provider,omitempty"`
+	// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+	Qdrant *Qdrant `json:"qdrant,omitempty"`
 	// Url description: The url to the external embedding API service. Deprecated, use endpoint instead.
 	Url string `json:"url,omitempty"`
 }
@@ -783,6 +815,10 @@ type ExcludedGitHubRepo struct {
 	Name string `json:"name,omitempty"`
 	// Pattern description: Regular expression which matches against the name of a GitHub repository ("owner/name").
 	Pattern string `json:"pattern,omitempty"`
+	// Size description: If set, repositories with a size above the specified one will be excluded.
+	Size string `json:"size,omitempty"`
+	// Stars description: If set, repositories stars less than the specified number will be.
+	Stars string `json:"stars,omitempty"`
 }
 type ExcludedGitLabProject struct {
 	// EmptyRepos description: Whether to exclude empty repositories.
@@ -838,7 +874,7 @@ type ExperimentalFeatures struct {
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// EnableGRPC description: Enables gRPC for communication between internal services
-	EnableGRPC bool `json:"enableGRPC,omitempty"`
+	EnableGRPC *bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
 	// EnablePermissionsWebhooks description: DEPRECATED: No longer has any effect.
@@ -887,6 +923,8 @@ type ExperimentalFeatures struct {
 	SearchIndexRevisions []*SearchIndexRevisionsRule `json:"search.index.revisions,omitempty"`
 	// SearchSanitization description: Allows site admins to specify a list of regular expressions representing matched content that should be omitted from search results. Also allows admins to specify the name of an organization within their Sourcegraph instance whose members are trusted and will not have their search results sanitized. Enable this feature by adding at least one valid regular expression to the value of the `sanitizePatterns` field on this object. Site admins will not have their searches sanitized.
 	SearchSanitization *SearchSanitization `json:"search.sanitization,omitempty"`
+	// SearchJobs description: Enables search jobs (long-running exhaustive) search feature and its UI
+	SearchJobs *bool `json:"searchJobs,omitempty"`
 	// StructuralSearch description: Enables structural search.
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
@@ -953,6 +991,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "search.index.query.contexts")
 	delete(m, "search.index.revisions")
 	delete(m, "search.sanitization")
+	delete(m, "searchJobs")
 	delete(m, "structuralSearch")
 	delete(m, "subRepoPermissions")
 	delete(m, "tls.external")
@@ -1004,7 +1043,7 @@ type FusionClient struct {
 	// IncludeBinaries description: Whether to include binary files
 	IncludeBinaries bool `json:"includeBinaries,omitempty"`
 	// LookAhead description: How many CLs in the future, at most, shall we keep downloaded by the time it is to commit them
-	LookAhead int `json:"lookAhead"`
+	LookAhead int `json:"lookAhead,omitempty"`
 	// MaxChanges description: How many changes to fetch during initial clone. The default of -1 will fetch all known changes
 	MaxChanges int `json:"maxChanges,omitempty"`
 	// NetworkThreads description: The number of threads in the threadpool for running network calls. Defaults to the number of logical CPUs.
@@ -1125,6 +1164,10 @@ type GitHubAuthProvider struct {
 type GitHubAuthorization struct {
 	// GroupsCacheTTL description: Experimental: If set, configures hours cached permissions from teams and organizations should be kept for. Setting a negative value disables syncing from teams and organizations, and falls back to the default behaviour of syncing all permisisons directly from user-repository affiliations instead. [Learn more](https://docs.sourcegraph.com/admin/external_service/github#teams-and-organizations-permissions-caching).
 	GroupsCacheTTL float64 `json:"groupsCacheTTL,omitempty"`
+	// MarkInternalReposAsPublic description: If true, internal repositories will be accessible to all users on Sourcegraph as if they were public. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.
+	MarkInternalReposAsPublic bool `json:"markInternalReposAsPublic,omitempty"`
+	// SyncInternalRepoPermissions description: If true, access to internal repositories will be synced as part of user permission syncs. This can lead to slower user permission syncs for organizations with many internal repositories. Defaults to false.
+	SyncInternalRepoPermissions bool `json:"syncInternalRepoPermissions,omitempty"`
 }
 
 // GitHubConnection description: Configuration for a connection to GitHub or GitHub Enterprise.
@@ -1226,6 +1269,8 @@ type GitLabAuthProvider struct {
 	Order         int     `json:"order,omitempty"`
 	// SsoURL description: An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx
 	SsoURL string `json:"ssoURL,omitempty"`
+	// SyncInternalRepoPermissions description: Whether to sync permissions for internal repositories on GitLab. Setting this to false can be useful when internal repositories are configured to be public on Sourcegraph.
+	SyncInternalRepoPermissions *bool `json:"syncInternalRepoPermissions,omitempty"`
 	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
 	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
 	Type                      string `json:"type"`
@@ -1259,6 +1304,8 @@ type GitLabConnection struct {
 	GitURLType string `json:"gitURLType,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitLab repositories can no longer be enabled or disabled explicitly.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
+	// MarkInternalReposAsPublic description: If true, internal repositories will be accessible to all users on Sourcegraph as if they were public, and user permission syncs will no longer check for public repositories. This overrides repository permissions but allows easier discovery and access to internal repositories, and may be desirable if all users on the Sourcegraph instance should have access to all internal repositories anyways. Defaults to false.
+	MarkInternalReposAsPublic bool `json:"markInternalReposAsPublic,omitempty"`
 	// NameTransformations description: An array of transformations will apply to the repository name. Currently, only regex replacement is supported. All transformations happen after "repositoryPathPattern" is processed.
 	NameTransformations []*GitLabNameTransformation `json:"nameTransformations,omitempty"`
 	// ProjectQuery description: An array of strings specifying which GitLab projects to mirror on Sourcegraph. Each string is a URL path and query that targets a GitLab API endpoint returning a list of projects. If the string only contains a query, then "projects" is used as the path. Examples: "?membership=true&search=foo", "groups/mygroup/projects".
@@ -1385,6 +1432,20 @@ type Header struct {
 	Value     string `json:"value"`
 }
 
+// Hnsw description: Overrides for the HNSW index config.
+type Hnsw struct {
+	// EfConstruct description: Number of neighbours to consider during the index building. Larger the value, more accurate the search, more time required to build the index.
+	EfConstruct *int `json:"efConstruct,omitempty"`
+	// FullScanThreshold description: Minimal size (in KiloBytes) of vectors for additional payload-based indexing.
+	FullScanThreshold *int `json:"fullScanThreshold,omitempty"`
+	// M description: Number of edges per node in the index graph. Larger the value - more accurate the search, more space required.
+	M *int `json:"m,omitempty"`
+	// OnDisk description: Store HNSW index on disk.
+	OnDisk *bool `json:"onDisk,omitempty"`
+	// PayloadM description: Number of edges per node in the index graph. Larger the value, more accurate the search, more space required.
+	PayloadM *int `json:"payloadM,omitempty"`
+}
+
 // IdentityProvider description: The source of identity to use when computing permissions. This defines how to compute the GitLab identity to use for a given Sourcegraph user.
 type IdentityProvider struct {
 	Oauth    *OAuthIdentity
@@ -1437,9 +1498,9 @@ type JVMPackagesConnection struct {
 
 // LinkStep description: Link step
 type LinkStep struct {
-	Type    any `json:"type"`
-	Value   any `json:"value"`
-	Variant any `json:"variant,omitempty"`
+	Type    any    `json:"type"`
+	Value   string `json:"value"`
+	Variant any    `json:"variant,omitempty"`
 }
 
 // LocalGitExternalService description: Configuration for integration local Git repositories.
@@ -1695,8 +1756,9 @@ type OnboardingStep struct {
 
 // OnboardingTask description: An onboarding task
 type OnboardingTask struct {
-	// DataAttributes description: Additional attributes to add to the task HTML element as data-* attributes
-	DataAttributes map[string]any `json:"dataAttributes,omitempty"`
+	Icon any `json:"icon,omitempty"`
+	// RequiredSteps description: Set this property if only a subset of steps are required for this task to complete.
+	RequiredSteps float64 `json:"requiredSteps,omitempty"`
 	// Steps description: Steps that need to be completed by the user
 	Steps []*OnboardingStep `json:"steps"`
 	// Title description: Title of this task
@@ -1705,7 +1767,8 @@ type OnboardingTask struct {
 
 // OnboardingTourConfiguration description: Configuration for a onboarding tour.
 type OnboardingTourConfiguration struct {
-	Tasks []*OnboardingTask `json:"tasks"`
+	DefaultSnippets map[string]any    `json:"defaultSnippets,omitempty"`
+	Tasks           []*OnboardingTask `json:"tasks"`
 }
 
 // OpenIDConnectAuthProvider description: Configures the OpenID Connect authentication provider for SSO.
@@ -1740,6 +1803,12 @@ type OpenTelemetry struct {
 	// Endpoint description: OpenTelemetry tracing collector endpoint. By default, Sourcegraph's "/-/debug/otlp" endpoint forwards data to the configured collector backend.
 	Endpoint string `json:"endpoint,omitempty"`
 }
+type Optimizers struct {
+	// IndexingThreshold description: Maximum size (in kilobytes) of vectors allowed for plain index, exceeding this threshold will enable vector indexing. Set to 0 to disable indexing
+	IndexingThreshold *int `json:"indexingThreshold,omitempty"`
+	// MemmapThreshold description: Maximum size (in kilobytes) of vectors to store in-memory per segment.
+	MemmapThreshold *int `json:"memmapThreshold,omitempty"`
+}
 
 // OrganizationInvitations description: Configuration for organization invitations.
 type OrganizationInvitations struct {
@@ -1769,7 +1838,7 @@ type OtherExternalServiceConnection struct {
 	//
 	// Note: These patterns are ignored if using src-expose / src-serve / src-serve-local.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Sourcegraph App and define the repos configuration property such as ["src-serve-local"].
+	// Root description: The root directory to walk for discovering local git repositories to mirror. To sync with local repositories and use this root property one must run Cody App and define the repos configuration property such as ["src-serve-local"].
 	Root string `json:"root,omitempty"`
 	Url  string `json:"url,omitempty"`
 }
@@ -1851,22 +1920,12 @@ type PerforceConnection struct {
 	P4Port string `json:"p4.port"`
 	// P4User description: The user to be authenticated for p4 CLI (P4USER).
 	P4User string `json:"p4.user"`
-	// RateLimit description: Rate limit applied when making background API requests to Perforce.
-	RateLimit *PerforceRateLimit `json:"rateLimit,omitempty"`
 	// RepositoryPathPattern description: The pattern used to generate the corresponding Sourcegraph repository name for a Perforce depot. In the pattern, the variable "{depot}" is replaced with the Perforce depot's path.
 	//
 	// For example, if your Perforce depot path is "//Sourcegraph/" and your Sourcegraph URL is https://src.example.com, then a repositoryPathPattern of "perforce/{depot}" would mean that the Perforce depot is available on Sourcegraph at https://src.example.com/perforce/Sourcegraph.
 	//
 	// It is important that the Sourcegraph repository name generated with this pattern be unique to this Perforce Server. If different Perforce Servers generate repository names that collide, Sourcegraph's behavior is undefined.
 	RepositoryPathPattern string `json:"repositoryPathPattern,omitempty"`
-}
-
-// PerforceRateLimit description: Rate limit applied when making background API requests to Perforce.
-type PerforceRateLimit struct {
-	// Enabled description: true if rate limiting is enabled.
-	Enabled bool `json:"enabled"`
-	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
-	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
 // PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
@@ -1912,6 +1971,24 @@ type PythonRateLimit struct {
 	// RequestsPerHour description: Requests per hour permitted. This is an average, calculated per second. Internally, the burst limit is set to 100, which implies that for a requests per hour limit as low as 1, users will continue to be able to send a maximum of 100 requests immediately, provided that the complexity cost of each request is 1.
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
+
+// Qdrant description: Overrides for the default qdrant config. These should generally not be modified without direction from the Sourcegraph support team.
+type Qdrant struct {
+	Enabled bool `json:"enabled,omitempty"`
+	// Hnsw description: Overrides for the HNSW index config.
+	Hnsw       *Hnsw       `json:"hnsw,omitempty"`
+	Optimizers *Optimizers `json:"optimizers,omitempty"`
+	// Quantization description: Overrides for quantization config.
+	Quantization *Quantization `json:"quantization,omitempty"`
+}
+
+// Quantization description: Overrides for quantization config.
+type Quantization struct {
+	// Enabled description: Whether to enable int8 scalar quantization
+	Enabled *bool `json:"enabled,omitempty"`
+	// Quantile description: Any values that lie outside the quantile range will be truncated
+	Quantile *float64 `json:"quantile,omitempty"`
+}
 type QuickLink struct {
 	// Description description: A description for this quick link
 	Description string `json:"description,omitempty"`
@@ -1927,16 +2004,24 @@ type Ranking struct {
 	DocumentRanksWeight *float64 `json:"documentRanksWeight,omitempty"`
 	// FlushWallTimeMS description: Controls the amount of time that Zoekt shards collect and rank results. Larger values give a more stable ranking, but searches can take longer to return an initial result.
 	FlushWallTimeMS int `json:"flushWallTimeMS,omitempty"`
-	// MaxQueueMatchCount description: The maximum number of matches that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs for queries with extremely high count of matches per repository.
+	// MaxQueueMatchCount description: DEPRECATED: This setting has no effect.
 	MaxQueueMatchCount *int `json:"maxQueueMatchCount,omitempty"`
 	// MaxQueueSizeBytes description: The maximum number of bytes that can be buffered to sort results. The default is -1 (unbounded). Setting this to a positive integer protects frontend against OOMs.
 	MaxQueueSizeBytes *int `json:"maxQueueSizeBytes,omitempty"`
-	// MaxReorderDurationMS description: The maximum time in milliseconds we wait until we flush the results queue. The default is 0 (unbounded). The larger the value the more stable the ranking and the higher the MEM pressure on frontend.
+	// MaxReorderDurationMS description: DEPRECATED: This setting has no effect.
 	MaxReorderDurationMS int `json:"maxReorderDurationMS,omitempty"`
-	// MaxReorderQueueSize description: The maximum number of search results that can be buffered to sort results. -1 is unbounded. The default is 24. Set this to small integers to limit latency increases from slow backends.
+	// MaxReorderQueueSize description: DEPRECATED: This setting has no effect.
 	MaxReorderQueueSize *int `json:"maxReorderQueueSize,omitempty"`
 	// RepoScores description: a map of URI directories to numeric scores for specifying search result importance, like {"github.com": 500, "github.com/sourcegraph": 300, "github.com/sourcegraph/sourcegraph": 100}. Would rank "github.com/sourcegraph/sourcegraph" as 500+300+100=900, and "github.com/other/foo" as 500.
 	RepoScores map[string]float64 `json:"repoScores,omitempty"`
+}
+type RateLimits struct {
+	// GraphQLMaxAliases description: Maximum number of aliases allowed in a GraphQL query
+	GraphQLMaxAliases int `json:"graphQLMaxAliases,omitempty"`
+	// GraphQLMaxDepth description: Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.
+	GraphQLMaxDepth int `json:"graphQLMaxDepth,omitempty"`
+	// GraphQLMaxFieldCount description: Maximum number of estimated fields allowed in a GraphQL response
+	GraphQLMaxFieldCount int `json:"graphQLMaxFieldCount,omitempty"`
 }
 
 // RepoPurgeWorker description: Configuration for repository purge worker.
@@ -2081,7 +2166,7 @@ type SearchLimits struct {
 	CommitDiffWithTimeFilterMaxRepos int `json:"commitDiffWithTimeFilterMaxRepos,omitempty"`
 	// MaxRepos description: The maximum number of repositories to search across. The user is prompted to narrow their query if exceeded. Any value less than or equal to zero means unlimited.
 	MaxRepos int `json:"maxRepos,omitempty"`
-	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Defaults to 1 minute.
+	// MaxTimeoutSeconds description: The maximum value for "timeout:" that search will respect. "timeout:" values larger than maxTimeoutSeconds are capped at maxTimeoutSeconds. Note: You need to ensure your load balancer / reverse proxy in front of Sourcegraph won't timeout the request for larger values. Note: Too many large rearch requests may harm Soucregraph for other users. Note: Experimental search jobs do not respect this limit. Defaults to 1 minute.
 	MaxTimeoutSeconds int `json:"maxTimeoutSeconds,omitempty"`
 }
 
@@ -2109,6 +2194,15 @@ type SearchScope struct {
 	Name string `json:"name"`
 	// Value description: The query string of this search scope
 	Value string `json:"value"`
+}
+
+// SearchStep description: Search query step
+type SearchStep struct {
+	// Query description: The query template to use.
+	Query string `json:"query"`
+	// Snippets description: Possible code snippets for this query. Can also be a language -> code snippets map.
+	Snippets any `json:"snippets,omitempty"`
+	Type     any `json:"type"`
 }
 
 // SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
@@ -2153,8 +2247,6 @@ type Settings struct {
 	CodeIntelMixPreciseAndSearchBasedReferences bool `json:"codeIntel.mixPreciseAndSearchBasedReferences,omitempty"`
 	// CodeIntelTraceExtension description: Whether to enable trace logging on the extension.
 	CodeIntelTraceExtension bool `json:"codeIntel.traceExtension,omitempty"`
-	// CodeIntelligenceAutoIndexPopularRepoLimit description: Up to this number of repos are auto-indexed automatically. Ordered by star count.
-	CodeIntelligenceAutoIndexPopularRepoLimit int `json:"codeIntelligence.autoIndexPopularRepoLimit,omitempty"`
 	// ExperimentalFeatures description: Experimental features and settings.
 	ExperimentalFeatures *SettingsExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	// FileSidebarVisibleByDefault description: Whether the sidebar on the repo view should be open by default.
@@ -2250,7 +2342,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntel.disableSearchBased")
 	delete(m, "codeIntel.mixPreciseAndSearchBasedReferences")
 	delete(m, "codeIntel.traceExtension")
-	delete(m, "codeIntelligence.autoIndexPopularRepoLimit")
 	delete(m, "experimentalFeatures")
 	delete(m, "fileSidebarVisibleByDefault")
 	delete(m, "history.defaultPageSize")
@@ -2282,8 +2373,6 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 
 // SettingsExperimentalFeatures description: Experimental features and settings.
 type SettingsExperimentalFeatures struct {
-	// ApplySearchQuerySuggestionOnEnter description: This changes the behavior of the autocompletion feature in the search query input. If set the first suggestion won't be selected by default and a selected suggestion can be selected by pressing Enter (application by pressing Tab continues to work)
-	ApplySearchQuerySuggestionOnEnter *bool `json:"applySearchQuerySuggestionOnEnter,omitempty"`
 	// BatchChangesExecution description: Enables/disables the Batch Changes server side execution feature.
 	BatchChangesExecution *bool `json:"batchChangesExecution,omitempty"`
 	// ClientSearchResultRanking description: How to rank search results in the client
@@ -2318,12 +2407,12 @@ type SettingsExperimentalFeatures struct {
 	FuzzyFinderSymbols *bool `json:"fuzzyFinderSymbols,omitempty"`
 	// GoCodeCheckerTemplates description: Shows a panel with code insights templates for go code checker results.
 	GoCodeCheckerTemplates *bool `json:"goCodeCheckerTemplates,omitempty"`
+	// NewSearchNavigationUI description: Enables new experimental search UI navigation
+	NewSearchNavigationUI *bool `json:"newSearchNavigationUI,omitempty"`
 	// ProactiveSearchResultsAggregations description: Search results aggregations are triggered automatically with a search.
 	ProactiveSearchResultsAggregations *bool `json:"proactiveSearchResultsAggregations,omitempty"`
 	// SearchContextsQuery description: DEPRECATED: This feature is now permanently enabled. Enables query based search contexts
 	SearchContextsQuery *bool `json:"searchContextsQuery,omitempty"`
-	// SearchJobs description: Enables search jobs (long-running exhaustive) search feature and its UI
-	SearchJobs *bool `json:"searchJobs,omitempty"`
 	// SearchQueryInput description: Specify which version of the search query input to use
 	SearchQueryInput *string `json:"searchQueryInput,omitempty"`
 	// SearchResultsAggregations description: Display aggregations for your search results on the search screen.
@@ -2367,7 +2456,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return err
 	}
-	delete(m, "applySearchQuerySuggestionOnEnter")
 	delete(m, "batchChangesExecution")
 	delete(m, "clientSearchResultRanking")
 	delete(m, "codeInsightsCompute")
@@ -2385,9 +2473,9 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "fuzzyFinderRepositories")
 	delete(m, "fuzzyFinderSymbols")
 	delete(m, "goCodeCheckerTemplates")
+	delete(m, "newSearchNavigationUI")
 	delete(m, "proactiveSearchResultsAggregations")
 	delete(m, "searchContextsQuery")
-	delete(m, "searchJobs")
 	delete(m, "searchQueryInput")
 	delete(m, "searchResultsAggregations")
 	delete(m, "showCodeMonitoringLogs")
@@ -2490,6 +2578,8 @@ type SiteConfiguration struct {
 	BatchChangesEnabled *bool `json:"batchChanges.enabled,omitempty"`
 	// BatchChangesEnforceForks description: When enabled, all branches created by batch changes will be pushed to forks of the original repository.
 	BatchChangesEnforceForks bool `json:"batchChanges.enforceForks,omitempty"`
+	// BatchChangesRejectUnverifiedCommit description: Reject unverified commits when creating a Batch Change
+	BatchChangesRejectUnverifiedCommit *bool `json:"batchChanges.rejectUnverifiedCommit,omitempty"`
 	// BatchChangesRestrictToAdmins description: When enabled, only site admins can create and apply batch changes.
 	BatchChangesRestrictToAdmins *bool `json:"batchChanges.restrictToAdmins,omitempty"`
 	// BatchChangesRolloutWindows description: Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.
@@ -2575,8 +2665,6 @@ type SiteConfiguration struct {
 	// ExperimentalFeatures description: Experimental features and settings.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
 	ExportUsageTelemetry *ExportUsageTelemetry `json:"exportUsageTelemetry,omitempty"`
-	// ExternalServiceUserMode description: Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.
-	ExternalServiceUserMode string `json:"externalService.userMode,omitempty"`
 	// ExternalURL description: The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
@@ -2593,6 +2681,8 @@ type SiteConfiguration struct {
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
+	// GitserverDiskUsageWarningThreshold description: Disk usage threshold at which to display warning notification. Value is a percentage.
+	GitserverDiskUsageWarningThreshold *int `json:"gitserver.diskUsageWarningThreshold,omitempty"`
 	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
 	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
@@ -2680,7 +2770,8 @@ type SiteConfiguration struct {
 	// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
-	ProductResearchPageEnabled *bool `json:"productResearchPage.enabled,omitempty"`
+	ProductResearchPageEnabled *bool       `json:"productResearchPage.enabled,omitempty"`
+	RateLimits                 *RateLimits `json:"rateLimits,omitempty"`
 	// RedactOutboundRequestHeaders description: Enables redacting sensitive information from outbound requests. Important: We only respect this setting in development environments. In production, we always redact outbound requests.
 	RedactOutboundRequestHeaders *bool `json:"redactOutboundRequestHeaders,omitempty"`
 	// RepoConcurrentExternalServiceSyncers description: The number of concurrent external service syncers that can run.
@@ -2693,6 +2784,8 @@ type SiteConfiguration struct {
 	ScimAuthToken string `json:"scim.authToken,omitempty"`
 	// ScimIdentityProvider description: Identity provider used for SCIM support.  "STANDARD" should be used unless a more specific value is available
 	ScimIdentityProvider string `json:"scim.identityProvider,omitempty"`
+	// SearchIndexShardConcurrency description: The number of threads each indexserver should use to index shards. If not set, indexserver will use the number of available CPUs. This is exposed as a safeguard and should usually not require being set.
+	SearchIndexShardConcurrency int `json:"search.index.shardConcurrency,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`
 	// SearchLargeFiles description: A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.
@@ -2761,6 +2854,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")
 	delete(m, "batchChanges.enforceForks")
+	delete(m, "batchChanges.rejectUnverifiedCommit")
 	delete(m, "batchChanges.restrictToAdmins")
 	delete(m, "batchChanges.rolloutWindows")
 	delete(m, "branding")
@@ -2802,7 +2896,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "executors.srcCLIImageTag")
 	delete(m, "experimentalFeatures")
 	delete(m, "exportUsageTelemetry")
-	delete(m, "externalService.userMode")
 	delete(m, "externalURL")
 	delete(m, "git.cloneURLToRepositoryName")
 	delete(m, "gitHubApp")
@@ -2811,6 +2904,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "gitMaxConcurrentClones")
 	delete(m, "gitRecorder")
 	delete(m, "gitUpdateInterval")
+	delete(m, "gitserver.diskUsageWarningThreshold")
 	delete(m, "htmlBodyBottom")
 	delete(m, "htmlBodyTop")
 	delete(m, "htmlHeadBottom")
@@ -2855,12 +2949,14 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "permissions.syncUsersMaxConcurrency")
 	delete(m, "permissions.userMapping")
 	delete(m, "productResearchPage.enabled")
+	delete(m, "rateLimits")
 	delete(m, "redactOutboundRequestHeaders")
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")
 	delete(m, "repoPurgeWorker")
 	delete(m, "scim.authToken")
 	delete(m, "scim.identityProvider")
+	delete(m, "search.index.shardConcurrency")
 	delete(m, "search.index.symbols.enabled")
 	delete(m, "search.largeFiles")
 	delete(m, "search.limits")
@@ -2923,7 +3019,7 @@ type SyntaxHighlighting struct {
 	Engine    SyntaxHighlightingEngine   `json:"engine"`
 	Languages SyntaxHighlightingLanguage `json:"languages"`
 	// Symbols description: Configure symbol generation
-	Symbols SymbolConfiguration `json:"symbols"`
+	Symbols *SymbolConfiguration `json:"symbols,omitempty"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use
@@ -2978,8 +3074,8 @@ type UsernameIdentity struct {
 
 // VideoStep description: Video step
 type VideoStep struct {
-	Type  any `json:"type"`
-	Value any `json:"value"`
+	Type  any    `json:"type"`
+	Value string `json:"value"`
 }
 
 // WebhookLogging description: Configuration for logging incoming webhooks.

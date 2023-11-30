@@ -150,7 +150,7 @@ Promise.all([domContentLoadedPromise, importEventLoggerPromise]).then(([_, { Eve
   eventLogger.log('ViewStaticPage', eventArguments, eventArguments)
 
   // Log download links which have a "data-download-name" attribute
-  // This is used to track Sourcegraph App download links
+  // This is used to track Cody App download links
   document.addEventListener('click', event => {
     if (event.target.matches('a[data-download-name]')) {
       const downloadName = event.target.getAttribute('data-download-name')

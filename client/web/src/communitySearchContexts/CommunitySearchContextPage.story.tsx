@@ -1,5 +1,5 @@
 import { action } from '@storybook/addon-actions'
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { subDays } from 'date-fns'
 import { EMPTY, NEVER, type Observable, of } from 'rxjs'
 
@@ -64,7 +64,6 @@ const authUser: AuthenticatedUser = {
     completedPostSignup: true,
     databaseID: 0,
     tosAccepted: true,
-    searchable: true,
     emails: [{ email: 'alice@sourcegraph.com', isPrimary: true, verified: true }],
     latestSettings: null,
     permissions: { nodes: [] },
@@ -132,11 +131,11 @@ const commonProps = () =>
         fetchSearchContextBySpec: fetchCommunitySearchContext,
     })
 
-export const Temporal: Story = () => (
+export const Temporal: StoryFn = () => (
     <WebStory>{webProps => <CommunitySearchContextPage {...webProps} {...commonProps()} />}</WebStory>
 )
 
-export const CNCFStory: Story = () => (
+export const CNCFStory: StoryFn = () => (
     <WebStory>
         {webProps => (
             <CommunitySearchContextPage {...webProps} {...commonProps()} communitySearchContextMetadata={cncf} />

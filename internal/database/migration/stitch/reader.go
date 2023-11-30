@@ -23,6 +23,7 @@ var ignoreMap = map[string]struct{}{
 	"migrations_test.go": {},
 	"README.md":          {},
 	"squashed.sql":       {},
+	"BUILD.bazel":        {},
 }
 
 // readRawMigrations reads migrations from a locally available git revision for the given schema.

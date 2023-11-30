@@ -24,7 +24,7 @@ import styles from './RepoEmbeddingJobNode.module.scss'
 
 interface RepoEmbeddingJobNodeProps extends RepoEmbeddingJobFields {
     onCancel: (id: string) => void
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
@@ -39,7 +39,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
     failureMessage,
     stats,
     onCancel,
-    isSourcegraphApp,
+    isCodyApp,
 }) => (
     <li className="list-group-item p-2">
         <div className="d-flex justify-content-between">
@@ -49,7 +49,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                 </div>
                 <div className="d-flex flex-column ml-3">
                     {repo && revision ? (
-                        isSourcegraphApp ? (
+                        isCodyApp ? (
                             <>
                                 {repo.name}@{revision.abbreviatedOID}
                             </>
@@ -196,16 +196,20 @@ function calculateEstimatedFinish(
 
 function getRepoEmbeddingJobStateBadgeVariant(state: RepoEmbeddingJobState): BadgeVariantType {
     switch (state) {
-        case RepoEmbeddingJobState.COMPLETED:
+        case RepoEmbeddingJobState.COMPLETED: {
             return 'success'
-        case RepoEmbeddingJobState.CANCELED:
+        }
+        case RepoEmbeddingJobState.CANCELED: {
             return 'warning'
+        }
         case RepoEmbeddingJobState.ERRORED:
-        case RepoEmbeddingJobState.FAILED:
+        case RepoEmbeddingJobState.FAILED: {
             return 'danger'
+        }
         case RepoEmbeddingJobState.QUEUED:
-        case RepoEmbeddingJobState.PROCESSING:
+        case RepoEmbeddingJobState.PROCESSING: {
             return 'info'
+        }
     }
 }
 

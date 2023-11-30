@@ -1,4 +1,4 @@
-import type { DecoratorFn, Meta, Story } from '@storybook/react'
+import type { Decorator, Meta, StoryFn } from '@storybook/react'
 import { createBrowserHistory } from 'history'
 import { EMPTY, NEVER, of } from 'rxjs'
 
@@ -45,7 +45,7 @@ const defaultProps: StreamingSearchResultsProps = {
         subjects: null,
         final: null,
     },
-    platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' },
+    platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' } as any,
 
     streamSearch: () => of(streamingSearchResult),
 
@@ -55,9 +55,10 @@ const defaultProps: StreamingSearchResultsProps = {
     searchAggregationEnabled: true,
     codeMonitoringEnabled: true,
     ownEnabled: true,
+    extensionsController: {} as any,
 }
 
-const decorator: DecoratorFn = Story => {
+const decorator: Decorator = Story => {
     useNavbarQueryState.setState({ searchQueryFromURL: 'r:golang/oauth2 test f:travis' })
     return <Story />
 }
@@ -72,7 +73,7 @@ const config: Meta = {
 
 export default config
 
-export const StandardRender: Story = () => (
+export const StandardRender: StoryFn = () => (
     <WebStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
@@ -84,7 +85,7 @@ export const StandardRender: Story = () => (
 
 StandardRender.storyName = 'standard render'
 
-export const UnauthenticatedUserStandardRender: Story = () => (
+export const UnauthenticatedUserStandardRender: StoryFn = () => (
     <WebStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
@@ -96,7 +97,7 @@ export const UnauthenticatedUserStandardRender: Story = () => (
 
 UnauthenticatedUserStandardRender.storyName = 'unauthenticated user standard render'
 
-export const NoResults: Story = () => {
+export const NoResults: StoryFn = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: [],
@@ -121,7 +122,7 @@ export const NoResults: Story = () => {
 
 NoResults.storyName = 'no results'
 
-export const DidYouMean: Story = () => {
+export const DidYouMean: StoryFn = () => {
     useNavbarQueryState.setState({ searchQueryFromURL: 'javascript test' })
 
     return (
@@ -137,7 +138,7 @@ export const DidYouMean: Story = () => {
 
 DidYouMean.storyName = 'did you mean'
 
-export const ProgressWithWarning: Story = () => {
+export const ProgressWithWarning: StoryFn = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
@@ -193,7 +194,7 @@ export const ProgressWithWarning: Story = () => {
 
 ProgressWithWarning.storyName = 'progress with warnings'
 
-export const LoadingWithNoResults: Story = () => (
+export const LoadingWithNoResults: StoryFn = () => (
     <WebStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={useNavbarQueryState}>
@@ -205,7 +206,7 @@ export const LoadingWithNoResults: Story = () => (
 
 LoadingWithNoResults.storyName = 'loading with no results'
 
-export const LoadingWithSomeResults: Story = () => {
+export const LoadingWithSomeResults: StoryFn = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'loading',
         results: MULTIPLE_SEARCH_RESULT.results,
@@ -230,7 +231,7 @@ export const LoadingWithSomeResults: Story = () => {
 
 LoadingWithSomeResults.storyName = 'loading with some results'
 
-export const ServerSideAlert: Story = () => {
+export const ServerSideAlert: StoryFn = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,
@@ -260,7 +261,7 @@ export const ServerSideAlert: Story = () => {
 
 ServerSideAlert.storyName = 'server-side alert'
 
-export const ServerSideAlertNoResults: Story = () => {
+export const ServerSideAlertNoResults: StoryFn = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: [],
@@ -290,7 +291,7 @@ export const ServerSideAlertNoResults: Story = () => {
 
 ServerSideAlertNoResults.storyName = 'server-side alert with no results'
 
-export const ServerSideAlertUnownedResults: Story = () => {
+export const ServerSideAlertUnownedResults: StoryFn = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: [],
@@ -322,7 +323,7 @@ export const ServerSideAlertUnownedResults: Story = () => {
 
 ServerSideAlertUnownedResults.storyName = 'server-side alert with unowned results'
 
-export const ErrorWithNoResults: Story = () => {
+export const ErrorWithNoResults: StoryFn = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'error',
         results: [],
@@ -348,7 +349,7 @@ export const ErrorWithNoResults: Story = () => {
 
 ErrorWithNoResults.storyName = 'error with no results'
 
-export const ErrorWithSomeResults: Story = () => {
+export const ErrorWithSomeResults: StoryFn = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'error',
         results: MULTIPLE_SEARCH_RESULT.results,
@@ -374,7 +375,7 @@ export const ErrorWithSomeResults: Story = () => {
 
 ErrorWithSomeResults.storyName = 'error with some results'
 
-export const LimitHitWithSomeResults: Story = () => {
+export const LimitHitWithSomeResults: StoryFn = () => {
     const result: AggregateStreamingSearchResults = {
         state: 'complete',
         results: MULTIPLE_SEARCH_RESULT.results,

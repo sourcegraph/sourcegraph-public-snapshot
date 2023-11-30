@@ -1,0 +1,51 @@
+.modal {
+    padding: 3rem;
+    width: 44rem;
+    box-shadow: var(--box-shadow);
+    background: var(--body-bg);
+}
+
+.modal-container {
+    background: var(--modal-bg);
+}
+
+.title {
+    font-size: 1.5rem;
+    font-style: normal;
+    color: var(--body-color);
+
+    font-weight: 600;
+    line-height: 2.125rem; /* 141.667% */
+    margin: 0;
+    padding-bottom: 1.5rem;
+}
+
+.button {
+    padding: 0.5rem 1.5rem;
+}
+
+.wrapper {
+    padding-bottom: 1.5rem;
+}
+
+.container {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    justify-items: end;
+    column-gap: 1rem;
+}
+
+.fade {
+    animation: fadeIn 250ms;
+    animation-timing-function: ease-in;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}

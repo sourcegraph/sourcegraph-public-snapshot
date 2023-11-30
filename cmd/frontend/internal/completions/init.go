@@ -24,7 +24,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	logger := log.Scoped("completions", "Cody completions")
+	logger := log.Scoped("completions")
 
 	enterpriseServices.NewChatCompletionsStreamHandler = func() http.Handler {
 		completionsHandler := httpapi.NewChatCompletionsStreamHandler(logger, db)

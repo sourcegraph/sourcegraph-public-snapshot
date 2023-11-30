@@ -24,13 +24,13 @@ func Init(
 	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
 
 	accessToken := func() string {
-		if deploy.IsApp() {
+		if deploy.IsSingleBinary() {
 			return confdefaults.AppInMemoryExecutorPassword
 		}
 		return conf.SiteConfig().ExecutorsAccessToken
 	}
 
-	logger := log.Scoped("executorqueue", "")
+	logger := log.Scoped("executorqueue")
 
 	queueHandler := newExecutorQueuesHandler(
 		observationCtx,

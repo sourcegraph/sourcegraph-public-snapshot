@@ -38,8 +38,8 @@ import type {
     InsightRepositoriesCountVariables,
 } from '../../../../../graphql-operations'
 import type { CreateInsightFormFields } from '../../../pages/insights/creation/search-insight'
-import { getRepoQueryPreview, RepositoriesField, MonacoField } from '../../form'
-import { MonacoPreviewLink } from '../../form/monaco-field'
+import { getRepoQueryPreview, RepositoriesField, Field } from '../../form'
+import { PreviewLink } from '../../form/field'
 
 import styles from './InsightRepoSection.module.scss'
 
@@ -203,7 +203,7 @@ function RadioGroupSection(props: PropsWithChildren<RadioGroupSectionProps>): Re
     )
 }
 
-const EMPTY_QUERY_STATA: QueryState = { query: '' }
+const EMPTY_QUERY_STATE: QueryState = { query: '' }
 
 interface SmartSearchQueryRepoFieldProps {
     repoQuery: useFieldAPI<CreateInsightFormFields['repoQuery']>
@@ -235,7 +235,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
         }
     }
 
-    const queryState = disabled ? EMPTY_QUERY_STATA : value
+    const queryState = disabled ? EMPTY_QUERY_STATE : value
     const previewQuery = value.query ? getRepoQueryPreview(value.query) : value.query
     const fieldStatus = getDefaultInputStatus(repoQuery, value => value.query)
     const LabelComponent = label ? Label : 'div'
@@ -251,7 +251,7 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                 )}
 
                 <InputElement
-                    as={MonacoField}
+                    as={Field}
                     queryState={queryState}
                     status={fieldStatus}
                     placeholder="Example: repo:sourcegraph/*"
@@ -264,14 +264,14 @@ function SmartSearchQueryRepoField(props: SmartSearchQueryRepoFieldProps): React
                     {...attributes}
                 />
 
-                <MonacoPreviewLink
+                <PreviewLink
                     query={previewQuery}
                     patternType={SearchPatternType.standard}
                     className={styles.repoLabelPreviewLink}
                     tabIndex={disabled ? -1 : 0}
                 >
                     <LinkExternalIcon size={18} />
-                </MonacoPreviewLink>
+                </PreviewLink>
             </LabelComponent>
 
             <SmartRepoQueryChips disabled={disabled} onChipClick={handleChipSuggestions} />

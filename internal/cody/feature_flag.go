@@ -57,7 +57,7 @@ func isCodyEnabled(ctx context.Context) bool {
 	return true
 }
 
-// isCodyEnabledInApp determines if cody is enabled within Sourcegraph App.
+// isCodyEnabledInApp determines if cody is enabled within Cody App.
 // If cody.enabled is set to true, cody is enabled.
 // If the App user's dotcom auth token is present, cody is enabled.
 // In all other cases Cody is disabled.

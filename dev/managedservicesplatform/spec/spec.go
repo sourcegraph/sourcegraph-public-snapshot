@@ -1,10 +1,10 @@
 package spec
 
 import (
-	// We intentionally use sigs.k8s.io/yaml because it has some convenience features,
-	// and nicer formatting. We use this in Sourcegraph Cloud as well.
 	"os"
 
+	// We intentionally use sigs.k8s.io/yaml because it has some convenience features,
+	// and nicer formatting. We use this in Sourcegraph Cloud as well.
 	"sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,16 +24,6 @@ type Spec struct {
 	Service      ServiceSpec       `json:"service"`
 	Build        BuildSpec         `json:"build"`
 	Environments []EnvironmentSpec `json:"environments"`
-}
-
-func (s Spec) Validate() []error {
-	var errs []error
-	errs = append(errs, s.Service.Validate()...)
-	errs = append(errs, s.Build.Validate()...)
-	for _, env := range s.Environments {
-		errs = append(errs, env.Validate()...)
-	}
-	return errs
 }
 
 // Open is a shortcut for opening a spec, validating it, and unmarshalling the
@@ -58,6 +48,28 @@ func Parse(data []byte) (*Spec, error) {
 	return &s, nil
 }
 
+func (s Spec) Validate() []error {
+	var errs []error
+
+	if s.Service.Kind.Is(ServiceKindJob) {
+		for _, e := range s.Environments {
+			if e.EnvironmentServiceSpec != nil {
+				errs = append(errs, errors.New("service specifications are not supported for 'kind: job'"))
+			}
+			if e.Instances.Scaling != nil {
+				errs = append(errs, errors.New("'environments.instances.scaling' not supported for 'kind: job'"))
+			}
+		}
+	}
+
+	errs = append(errs, s.Service.Validate()...)
+	errs = append(errs, s.Build.Validate()...)
+	for _, env := range s.Environments {
+		errs = append(errs, env.Validate()...)
+	}
+	return errs
+}
+
 // GetEnvironment retrieves the environment with the given ID, returning nil if
 // it doesn't exist.
 func (s Spec) GetEnvironment(id string) *EnvironmentSpec {
@@ -69,6 +81,15 @@ func (s Spec) GetEnvironment(id string) *EnvironmentSpec {
 	return nil
 }
 
+func (s Spec) ListEnvironmentIDs() []string {
+	var ids []string
+	for _, e := range s.Environments {
+		ids = append(ids, e.ID)
+	}
+	return ids
+}
+
+// MarshalYAML marshals the spec to YAML using our YAML library of choice.
 func (s Spec) MarshalYAML() ([]byte, error) {
 	return yaml.Marshal(s)
 }

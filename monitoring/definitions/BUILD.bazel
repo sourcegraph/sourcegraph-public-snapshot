@@ -14,7 +14,6 @@ go_library(
         "executor.go",
         "frontend.go",
         "git_server.go",
-        "github.go",
         "otel_collector.go",
         "postgres.go",
         "precise_code_intel_worker.go",
@@ -31,8 +30,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/monitoring/definitions",
     visibility = ["//visibility:public"],
     deps = [
+        "//lib/pointers",
         "//monitoring/definitions/shared",
         "//monitoring/monitoring",
         "@com_github_grafana_tools_sdk//:sdk",
+        "@com_github_prometheus_common//model",
     ],
 )

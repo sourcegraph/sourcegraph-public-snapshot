@@ -94,7 +94,7 @@ interface UserAreaProps
     authenticatedUser: AuthenticatedUser | null
 
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /**
@@ -127,7 +127,7 @@ export interface UserAreaRouteContext
     userSettingsAreaRoutes: readonly UserSettingsAreaRoute[]
 
     isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 /**
@@ -137,7 +137,7 @@ export const UserArea: FC<UserAreaProps> = ({
     useBreadcrumb,
     userAreaRoutes,
     isSourcegraphDotCom,
-    isSourcegraphApp,
+    isCodyApp,
     ...props
 }) => {
     const { username } = useParams()
@@ -194,7 +194,7 @@ export const UserArea: FC<UserAreaProps> = ({
         namespace: user,
         ...childBreadcrumbSetters,
         isSourcegraphDotCom,
-        isSourcegraphApp,
+        isCodyApp,
     }
 
     return (

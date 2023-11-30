@@ -58,6 +58,9 @@ type MockRepoEmbeddingJobsStore struct {
 	// ListRepoEmbeddingJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method ListRepoEmbeddingJobs.
 	ListRepoEmbeddingJobsFunc *RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc
+	// RescheduleAllReposFunc is an instance of a mock function object
+	// controlling the behavior of the method RescheduleAllRepos.
+	RescheduleAllReposFunc *RepoEmbeddingJobsStoreRescheduleAllReposFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *RepoEmbeddingJobsStoreTransactFunc
@@ -129,6 +132,11 @@ func NewMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 		},
 		ListRepoEmbeddingJobsFunc: &RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc{
 			defaultHook: func(context.Context, ListOpts) (r0 []*RepoEmbeddingJob, r1 error) {
+				return
+			},
+		},
+		RescheduleAllReposFunc: &RepoEmbeddingJobsStoreRescheduleAllReposFunc{
+			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
 		},
@@ -210,6 +218,11 @@ func NewStrictMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 				panic("unexpected invocation of MockRepoEmbeddingJobsStore.ListRepoEmbeddingJobs")
 			},
 		},
+		RescheduleAllReposFunc: &RepoEmbeddingJobsStoreRescheduleAllReposFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockRepoEmbeddingJobsStore.RescheduleAllRepos")
+			},
+		},
 		TransactFunc: &RepoEmbeddingJobsStoreTransactFunc{
 			defaultHook: func(context.Context) (RepoEmbeddingJobsStore, error) {
 				panic("unexpected invocation of MockRepoEmbeddingJobsStore.Transact")
@@ -263,6 +276,9 @@ func NewMockRepoEmbeddingJobsStoreFrom(i RepoEmbeddingJobsStore) *MockRepoEmbedd
 		},
 		ListRepoEmbeddingJobsFunc: &RepoEmbeddingJobsStoreListRepoEmbeddingJobsFunc{
 			defaultHook: i.ListRepoEmbeddingJobs,
+		},
+		RescheduleAllReposFunc: &RepoEmbeddingJobsStoreRescheduleAllReposFunc{
+			defaultHook: i.RescheduleAllRepos,
 		},
 		TransactFunc: &RepoEmbeddingJobsStoreTransactFunc{
 			defaultHook: i.Transact,
@@ -1589,6 +1605,112 @@ func (c RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall) Args() []interface{
 // invocation.
 func (c RepoEmbeddingJobsStoreListRepoEmbeddingJobsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoEmbeddingJobsStoreRescheduleAllReposFunc describes the behavior when
+// the RescheduleAllRepos method of the parent MockRepoEmbeddingJobsStore
+// instance is invoked.
+type RepoEmbeddingJobsStoreRescheduleAllReposFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []RepoEmbeddingJobsStoreRescheduleAllReposFuncCall
+	mutex       sync.Mutex
+}
+
+// RescheduleAllRepos delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockRepoEmbeddingJobsStore) RescheduleAllRepos(v0 context.Context) error {
+	r0 := m.RescheduleAllReposFunc.nextHook()(v0)
+	m.RescheduleAllReposFunc.appendCall(RepoEmbeddingJobsStoreRescheduleAllReposFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RescheduleAllRepos
+// method of the parent MockRepoEmbeddingJobsStore instance is invoked and
+// the hook queue is empty.
+func (f *RepoEmbeddingJobsStoreRescheduleAllReposFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RescheduleAllRepos method of the parent MockRepoEmbeddingJobsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RepoEmbeddingJobsStoreRescheduleAllReposFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoEmbeddingJobsStoreRescheduleAllReposFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoEmbeddingJobsStoreRescheduleAllReposFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *RepoEmbeddingJobsStoreRescheduleAllReposFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoEmbeddingJobsStoreRescheduleAllReposFunc) appendCall(r0 RepoEmbeddingJobsStoreRescheduleAllReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoEmbeddingJobsStoreRescheduleAllReposFuncCall objects describing the
+// invocations of this function.
+func (f *RepoEmbeddingJobsStoreRescheduleAllReposFunc) History() []RepoEmbeddingJobsStoreRescheduleAllReposFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoEmbeddingJobsStoreRescheduleAllReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoEmbeddingJobsStoreRescheduleAllReposFuncCall is an object that
+// describes an invocation of method RescheduleAllRepos on an instance of
+// MockRepoEmbeddingJobsStore.
+type RepoEmbeddingJobsStoreRescheduleAllReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoEmbeddingJobsStoreRescheduleAllReposFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoEmbeddingJobsStoreRescheduleAllReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // RepoEmbeddingJobsStoreTransactFunc describes the behavior when the

@@ -36,10 +36,14 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
         }
         setIsLoading(true)
 
+        const authURL = new URL(authProvider.authenticationURL, window.location.origin)
+        authURL.searchParams.set('connect', 'true')
+
         if (authProvider.serviceType === 'saml') {
-            window.location.assign(authProvider.authenticationURL)
+            window.location.assign(authURL.toString())
         } else {
-            window.location.assign(`${authProvider.authenticationURL}&redirect=${window.location.href}`)
+            authURL.searchParams.set('redirect', window.location.href)
+            window.location.assign(authURL.toString())
         }
     }, [authProvider.serviceType, authProvider.authenticationURL])
 
@@ -60,15 +64,17 @@ export const ExternalAccount: React.FunctionComponent<React.PropsWithChildren<Pr
                     isOpen={isRemoveAccountModalOpen}
                 />
             )}
-            <AddGerritAccountModal
-                serviceID={authProvider.serviceID}
-                onDidAdd={() => {
-                    onDidAdd()
-                    setIsGerritAccountModalOpen(false)
-                }}
-                onDismiss={() => setIsGerritAccountModalOpen(false)}
-                isOpen={isAddGerritAccountModalOpen}
-            />
+            {isAddGerritAccountModalOpen && (
+                <AddGerritAccountModal
+                    serviceID={authProvider.serviceID}
+                    onDidAdd={() => {
+                        onDidAdd()
+                        setIsGerritAccountModalOpen(false)
+                    }}
+                    onDismiss={() => setIsGerritAccountModalOpen(false)}
+                    isOpen={isAddGerritAccountModalOpen}
+                />
+            )}
             <div className="align-self-center">
                 <AccountIcon className="mb-0 mr-2" />
             </div>
@@ -113,9 +119,10 @@ export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetai
     switch (serviceType) {
         case 'openidconnect':
         case 'saml':
-        case 'gerrit':
+        case 'gerrit': {
             return <span>{account.external?.displayName || 'Not connected'}</span>
-        case 'azuredevops':
+        }
+        case 'azuredevops': {
             return (
                 <>
                     {account.external?.displayName ? (
@@ -127,7 +134,8 @@ export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetai
                     )}
                 </>
             )
-        default:
+        }
+        default: {
             return (
                 <>
                     {account.external?.url ? (
@@ -143,5 +151,6 @@ export const ExternalAccountConnectionDetails: FC<ExternalAccountConnectionDetai
                     )}
                 </>
             )
+        }
     }
 }

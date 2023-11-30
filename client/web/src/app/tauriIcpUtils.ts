@@ -5,7 +5,7 @@ export function tauriInvoke(command: string): void {
 }
 
 /**
- * Utility function to open the callback URL in Sourcegraph App. Used where
+ * Utility function to open the callback URL in Cody App. Used where
  * window.open or target="_blank" cannot be used.
  */
 export function tauriShellOpen(uri: string): void {

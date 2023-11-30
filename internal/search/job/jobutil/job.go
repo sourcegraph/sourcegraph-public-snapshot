@@ -93,10 +93,10 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 		// a basic query rather than first being expanded into
 		// flat queries.
 		resultTypes := computeResultTypes(b, inputs.PatternType)
-		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
+		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.DefaultLimit()))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
-		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
+		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, repoOptions, resultTypes, inputs)
 
 		builder := &jobBuilder{
 			query:          b,
@@ -165,7 +165,6 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker) || own,
-				Concurrency:          4,
 			})
 		}
 
@@ -242,7 +241,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic) (job.Job, error) {
 	}
 
 	{ // Apply timeout
-		timeout := timeoutDuration(b)
+		timeout := timeoutDuration(inputs.Protocol, b)
 		basicJob = NewTimeoutJob(timeout, basicJob)
 	}
 
@@ -323,14 +322,14 @@ func orderRacingJobs(j job.Job) job.Job {
 func NewFlatJob(searchInputs *search.Inputs, f query.Flat) (job.Job, error) {
 	maxResults := f.MaxResults(searchInputs.DefaultLimit())
 	resultTypes := computeResultTypes(f.ToBasic(), searchInputs.PatternType)
-	patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.Protocol)
+	patternInfo := toTextPatternInfo(f.ToBasic(), resultTypes, searchInputs.DefaultLimit())
 
-	// searcher to use full deadline if timeout: set or we are streaming.
-	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol == search.Streaming
+	// searcher to use full deadline if timeout: set or we are not batch.
+	useFullDeadline := f.GetTimeout() != nil || f.Count() != nil || searchInputs.Protocol != search.Batch
 
 	repoOptions := toRepoOptions(f.ToBasic(), searchInputs.UserSettings)
 
-	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), repoOptions, resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
+	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), repoOptions, resultTypes, searchInputs)
 
 	var allJobs []job.Job
 	addJob := func(job job.Job) {
@@ -527,7 +526,7 @@ func getPathRegexpsFromTextPatternInfo(patternInfo *search.TextPatternInfo) (pat
 	return pathRegexps
 }
 
-func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
+func computeFileMatchLimit(b query.Basic, defaultLimit int) int {
 	// Temporary fix:
 	// If doing ownership or contributor search, we post-filter results so we may need more than
 	// b.Count() results from the search backends to end up with enough results
@@ -555,17 +554,7 @@ func computeFileMatchLimit(b query.Basic, p search.Protocol) int {
 		}
 	}
 
-	if count := b.Count(); count != nil {
-		return *count
-	}
-
-	switch p {
-	case search.Batch:
-		return limits.DefaultMaxSearchResults
-	case search.Streaming:
-		return limits.DefaultMaxSearchResultsStreaming
-	}
-	panic("unreachable")
+	return b.MaxResults(defaultLimit)
 }
 
 func isOwnershipSearch(b query.Basic) (include, exclude []string, ok bool) {
@@ -598,7 +587,18 @@ func contributorsAsRegexp(contributors []string, isCaseSensitive bool) (res []*r
 	return res
 }
 
-func timeoutDuration(b query.Basic) time.Duration {
+func timeoutDuration(protocol search.Protocol, b query.Basic) time.Duration {
+	// If we are an exhaustive search our logic is much simpler since we have
+	// a very high default timeout and we ignore maxTimeout. We either use
+	// the default or the value specified in timeout.
+	if protocol == search.Exhaustive {
+		if timeout := b.GetTimeout(); timeout != nil {
+			return *timeout
+		} else {
+			return limits.DefaultTimeoutExhaustive
+		}
+	}
+
 	d := limits.DefaultTimeout
 	maxTimeout := time.Duration(limits.SearchLimits(conf.Get()).MaxTimeoutSeconds) * time.Second
 	timeout := b.GetTimeout()
@@ -622,25 +622,11 @@ func mapSlice(values []string, f func(string) string) []string {
 	return res
 }
 
-func count(b query.Basic, p search.Protocol) int {
-	if count := b.Count(); count != nil {
-		return *count
-	}
-
-	switch p {
-	case search.Batch:
-		return limits.DefaultMaxSearchResults
-	case search.Streaming:
-		return limits.DefaultMaxSearchResultsStreaming
-	}
-	panic("unreachable")
-}
-
 // toTextPatternInfo converts a an atomic query to internal values that drive
 // text search. An atomic query is a Basic query where the Pattern is either
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
-func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protocol) *search.TextPatternInfo {
+func toTextPatternInfo(b query.Basic, resultTypes result.Types, defaultLimit int) *search.TextPatternInfo {
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
@@ -648,7 +634,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
-	count := count(b, p)
+	count := b.MaxResults(defaultLimit)
 
 	// Ugly assumption: for a literal search, the IsRegexp member of
 	// TextPatternInfo must be set true. The logic assumes that a literal
@@ -823,7 +809,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		PatternType:    b.patternType,
 	}
 
 	switch typ {
@@ -854,7 +840,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
-		KeywordScoring: b.patternType == query.SearchTypeKeyword,
+		PatternType:    b.patternType,
 	}
 
 	switch typ {
@@ -898,8 +884,17 @@ func zoektQueryPatternsAsRegexps(q zoektquery.Q) (res []*regexp.Regexp) {
 	return res
 }
 
-func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.Types, st query.SearchType, onSourcegraphDotCom bool) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
-	isGlobalSearch := isGlobal(repoOptions) && st != query.SearchTypeStructural
+func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.Types, inputs *search.Inputs) (repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos bool) {
+	// Exhaustive search avoids zoekt since it splits up a search in a worker
+	// run per repo@revision.
+	if inputs.Protocol == search.Exhaustive {
+		repoUniverseSearch = false
+		skipRepoSubsetSearch = false
+		runZoektOverRepos = false
+		return
+	}
+
+	isGlobalSearch := isGlobal(repoOptions) && inputs.PatternType != query.SearchTypeStructural
 
 	hasGlobalSearchResultType := resultTypes.Has(result.TypeFile | result.TypePath | result.TypeSymbol)
 	isIndexedSearch := b.Index() != query.No
@@ -916,7 +911,7 @@ func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.T
 	// repos to search. This control flow implies len(searcherRepos)
 	// is always 0, meaning that we should not create jobs to run
 	// unindexed searcher.
-	skipRepoSubsetSearch = isEmpty || (repoUniverseSearch && onSourcegraphDotCom)
+	skipRepoSubsetSearch = isEmpty || (repoUniverseSearch && inputs.OnSourcegraphDotCom)
 
 	// runZoektOverRepos controls whether we run Zoekt over a set of
 	// resolved repositories. Because Zoekt can run natively run over all
@@ -928,7 +923,7 @@ func jobMode(b query.Basic, repoOptions search.RepoOptions, resultTypes result.T
 	// we'd be skipping indexed search entirely).
 	// (2) If on Sourcegraph.com, resolve repos unconditionally (we run both global search
 	// and search over resolved repos, and return results from either job).
-	runZoektOverRepos = !repoUniverseSearch || onSourcegraphDotCom
+	runZoektOverRepos = !repoUniverseSearch || inputs.OnSourcegraphDotCom
 
 	return repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos
 }

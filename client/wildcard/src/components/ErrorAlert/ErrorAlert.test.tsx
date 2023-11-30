@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest'
+
 import { renderWithBrandedContext } from '../../testing'
 
 import { ErrorAlert } from './ErrorAlert'

@@ -64,6 +64,7 @@ type DB interface {
 	Settings() SettingsStore
 	SubRepoPerms() SubRepoPermsStore
 	TemporarySettings() TemporarySettingsStore
+	TelemetryEventsExportQueue() TelemetryEventsExportQueueStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
@@ -134,11 +135,11 @@ func (d *db) Done(err error) error {
 }
 
 func (d *db) AccessTokens() AccessTokenStore {
-	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore", ""))
+	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore"))
 }
 
 func (d *db) AccessRequests() AccessRequestStore {
-	return AccessRequestsWith(d.Store, d.logger.Scoped("AccessRequestStore", ""))
+	return AccessRequestsWith(d.Store, d.logger.Scoped("AccessRequestStore"))
 }
 
 func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
@@ -299,6 +300,13 @@ func (d *db) SubRepoPerms() SubRepoPermsStore {
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
 	return TemporarySettingsWith(d.Store)
+}
+
+func (d *db) TelemetryEventsExportQueue() TelemetryEventsExportQueueStore {
+	return TelemetryEventsExportQueueWith(
+		d.logger.Scoped("telemetry_events"),
+		d.Store,
+	)
 }
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {

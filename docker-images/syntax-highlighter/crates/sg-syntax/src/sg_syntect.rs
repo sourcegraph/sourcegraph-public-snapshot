@@ -250,8 +250,6 @@ mod tests {
             code: "package main\n".to_string(),
             line_length_limit: None,
             extension: String::new(),
-            theme: String::new(),
-            css: true,
         };
         let expected = "<table>\
                             <tbody>\
@@ -280,8 +278,6 @@ mod tests {
             code: "<div>test</div>".to_string(),
             line_length_limit: Some(10),
             extension: String::new(),
-            theme: String::new(),
-            css: true,
         };
         let expected = "<table>\
                             <tbody>\
@@ -304,8 +300,6 @@ mod tests {
             code: "package main\n".to_string(),
             line_length_limit: Some(5),
             extension: String::new(),
-            theme: String::new(),
-            css: true,
         };
         let expected = "<table>\
                             <tbody>\
@@ -329,8 +323,6 @@ mod tests {
                 .to_string(),
             line_length_limit: None,
             extension: String::new(),
-            theme: String::new(),
-            css: true,
         };
         let expected = "<table>\
                             <tbody>\
@@ -395,5 +387,25 @@ mod tests {
                             </tbody>\
                         </table>";
         test_css_table_highlight(query, expected)
+    }
+
+    #[test]
+    fn multi_line_matlab() {
+        let query = SourcegraphQuery {
+            filepath: "test.m".to_string(),
+            filetype: Option::Some("matlab".to_string()),
+            code: "function setupPythonIfNeeded()\n
+            % Python setup is only supported in R2019a (ver 9.6) and later\n
+            if verLessThan('matlab','9.6')\n
+            error(\"setupPythonIfNeeded:unsupportedVersion\",\"Only version R2019a and later are supported\")\n
+            end\n
+            end"
+                .to_string(),
+            line_length_limit: None,
+            extension: String::new(),
+        };
+
+        let expected = "<table><tbody><tr><td class=\"line\" data-line=\"1\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\"><span class=\"hl-keyword hl-other hl-matlab\">function</span><span class=\"hl-meta hl-function hl-parameters hl-matlab\"> <span class=\"hl-entity hl-name hl-function hl-matlab\">setupPythonIfNeeded</span><span class=\"hl-punctuation hl-section hl-parens hl-begin hl-matlab\">(</span><span class=\"hl-punctuation hl-section hl-parens hl-end hl-matlab\">)</span></span>\n</span></div></td></tr><tr><td class=\"line\" data-line=\"2\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">\n</span></div></td></tr><tr><td class=\"line\" data-line=\"3\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">            <span class=\"hl-comment hl-line hl-percentage hl-matlab\"><span class=\"hl-punctuation hl-definition hl-comment hl-matlab\">%</span> Python setup is only supported in R2019a (ver 9.6) and later\n</span></span></div></td></tr><tr><td class=\"line\" data-line=\"4\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">\n</span></div></td></tr><tr><td class=\"line\" data-line=\"5\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">            <span class=\"hl-keyword hl-control hl-matlab\">if</span> <span class=\"hl-keyword hl-desktop hl-matlab\">verLessThan</span><span class=\"hl-meta hl-parens hl-matlab\"><span class=\"hl-punctuation hl-section hl-parens hl-begin hl-matlab\">(</span><span class=\"hl-string hl-quoted hl-single hl-matlab\"><span class=\"hl-punctuation hl-definition hl-string hl-begin hl-matlab\">&#39;</span>matlab<span class=\"hl-punctuation hl-definition hl-string hl-end hl-matlab\">&#39;</span></span>,<span class=\"hl-string hl-quoted hl-single hl-matlab\"><span class=\"hl-punctuation hl-definition hl-string hl-begin hl-matlab\">&#39;</span>9.6<span class=\"hl-punctuation hl-definition hl-string hl-end hl-matlab\">&#39;</span></span><span class=\"hl-punctuation hl-section hl-parens hl-end hl-matlab\">)</span></span>\n</span></div></td></tr><tr><td class=\"line\" data-line=\"6\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">\n</span></div></td></tr><tr><td class=\"line\" data-line=\"7\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">            <span class=\"hl-keyword hl-other hl-matlab\">error</span><span class=\"hl-meta hl-parens hl-matlab\"><span class=\"hl-punctuation hl-section hl-parens hl-begin hl-matlab\">(</span><span class=\"hl-string hl-quoted hl-double hl-matlab\"><span class=\"hl-punctuation hl-definition hl-string hl-begin hl-matlab\">&quot;</span>setupPythonIfNeeded:unsupportedVersion<span class=\"hl-punctuation hl-definition hl-string hl-end hl-matlab\">&quot;</span></span>,<span class=\"hl-string hl-quoted hl-double hl-matlab\"><span class=\"hl-punctuation hl-definition hl-string hl-begin hl-matlab\">&quot;</span>Only version R2019a and later are supported<span class=\"hl-punctuation hl-definition hl-string hl-end hl-matlab\">&quot;</span></span><span class=\"hl-punctuation hl-section hl-parens hl-end hl-matlab\">)</span></span>\n</span></div></td></tr><tr><td class=\"line\" data-line=\"8\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">\n</span></div></td></tr><tr><td class=\"line\" data-line=\"9\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">            <span class=\"hl-keyword hl-control hl-matlab\">end</span>\n</span></div></td></tr><tr><td class=\"line\" data-line=\"10\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">\n</span></div></td></tr><tr><td class=\"line\" data-line=\"11\"/><td class=\"code\"><div><span class=\"hl-source hl-matlab\">            <span class=\"hl-keyword hl-control hl-matlab\">end</span></span></div></td></tr></tbody></table>";
+        test_css_table_highlight(query, expected);
     }
 }

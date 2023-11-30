@@ -59,12 +59,14 @@ export function buildSearchURLQueryForMeta(queryState: QueryState, meta: Meta): 
 
 export function getOwnerDisplayName(result: OwnerMatch): string {
     switch (result.type) {
-        case 'team':
+        case 'team': {
             return result.displayName || result.name || result.handle || result.email || 'Unknown team'
-        case 'person':
+        }
+        case 'person': {
             return (
                 result.user?.displayName || result.user?.username || result.handle || result.email || 'Unknown person'
             )
+        }
     }
 }
 

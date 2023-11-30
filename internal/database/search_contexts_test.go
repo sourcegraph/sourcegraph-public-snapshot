@@ -31,7 +31,7 @@ func createSearchContexts(ctx context.Context, store SearchContextsStore, search
 
 func TestSearchContexts_Get(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := db.Users()
@@ -84,7 +84,7 @@ func TestSearchContexts_Get(t *testing.T) {
 
 func TestSearchContexts_Update(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := db.Users()
@@ -157,7 +157,7 @@ func TestSearchContexts_Update(t *testing.T) {
 
 func TestSearchContexts_List(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := db.Users()
@@ -205,7 +205,7 @@ func TestSearchContexts_List(t *testing.T) {
 
 func TestSearchContexts_PaginationAndCount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := db.Users()
@@ -304,7 +304,7 @@ func TestSearchContexts_PaginationAndCount(t *testing.T) {
 
 func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	u := db.Users()
@@ -366,7 +366,7 @@ func TestSearchContexts_CaseInsensitiveNames(t *testing.T) {
 
 func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	ctx := actor.WithInternalActor(context.Background())
 	sc := db.SearchContexts()
@@ -429,7 +429,7 @@ func TestSearchContexts_CreateAndSetRepositoryRevisions(t *testing.T) {
 
 func TestSearchContexts_Permissions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()
@@ -633,7 +633,7 @@ func TestSearchContexts_Permissions(t *testing.T) {
 
 func TestSearchContexts_Delete(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	ctx := context.Background()
 	sc := db.SearchContexts()
@@ -667,7 +667,7 @@ func TestSearchContexts_Delete(t *testing.T) {
 
 func TestSearchContexts_Count(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	ctx := context.Background()
 	sc := db.SearchContexts()
@@ -734,7 +734,7 @@ func getSearchContextNames(s []*types.SearchContext) []string {
 
 func TestSearchContexts_OrderBy(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()
@@ -849,7 +849,7 @@ func TestSearchContexts_OrderBy(t *testing.T) {
 
 func TestSearchContexts_OrderByWithDefaultAndStarred(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()
@@ -935,7 +935,7 @@ func TestSearchContexts_OrderByWithDefaultAndStarred(t *testing.T) {
 
 func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	// Required for this DB query.
 	internalCtx := actor.WithInternalActor(context.Background())
@@ -1010,7 +1010,7 @@ func TestSearchContexts_GetAllRevisionsForRepos(t *testing.T) {
 
 func TestSearchContexts_DefaultContexts(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()
@@ -1134,7 +1134,7 @@ func getStarredContexts(searchContexts []*types.SearchContext) []*types.SearchCo
 
 func TestSearchContexts_StarringContexts(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(t))
 	t.Parallel()
 	internalCtx := actor.WithInternalActor(context.Background())
 	u := db.Users()

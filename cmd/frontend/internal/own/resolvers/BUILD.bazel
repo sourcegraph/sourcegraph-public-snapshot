@@ -60,7 +60,6 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/auth",
-        "//internal/authz",
         "//internal/database",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",

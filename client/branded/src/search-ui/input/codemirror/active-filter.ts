@@ -8,6 +8,11 @@ import { queryTokens } from './parsedQuery'
 
 const activeFilterFacet = Facet.define<Filter>()
 const activeFilterExtension = activeFilterFacet.computeN([queryTokens, 'selection'], state => {
+    // Do not mark a token as active if the user is selecting text. This avoids
+    // conflicts with the selection color.
+    if (!state.selection.main.empty) {
+        return []
+    }
     const query = state.facet(queryTokens)
     const position = state.selection.main.head
     return query.tokens.filter(
@@ -46,7 +51,6 @@ class PlaceholderWidget extends WidgetType {
         super()
     }
 
-    /* eslint-disable-next-line id-length */
     public eq(other: PlaceholderWidget): boolean {
         return this.placeholder === other.placeholder
     }

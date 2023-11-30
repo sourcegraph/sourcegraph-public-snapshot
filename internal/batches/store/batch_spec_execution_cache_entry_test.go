@@ -149,7 +149,7 @@ func TestStore_CleanBatchSpecExecutionCacheEntries(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	c := &bt.TestClock{Time: timeutil.Now()}
 	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
 	user := bt.CreateTestUser(t, db, true)

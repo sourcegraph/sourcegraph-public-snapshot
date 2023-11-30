@@ -7,7 +7,7 @@ env:
   PGPASSWORD: sourcegraph
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
-  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: "true"
+  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
   INSECURE_DEV: true
 
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
@@ -25,11 +25,11 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
-  GO111MODULE: "on"
+  GO111MODULE: 'on'
 
   DEPLOY_TYPE: dev
 
-  SRC_HTTP_ADDR: ":3082"
+  SRC_HTTP_ADDR: ':3082'
 
   # I don't think we even need to set these?
   SEARCHER_URL: http://127.0.0.1:3181
@@ -43,9 +43,9 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
 
-  SRC_GRPC_ENABLE_CONF: "true"
-  SRC_DEVELOPMENT: "true"
-  SRC_PROF_HTTP: ""
+  SRC_GRPC_ENABLE_CONF: 'true'
+  SRC_DEVELOPMENT: 'true'
+  SRC_PROF_HTTP: ''
   SRC_PROF_SERVICES: |
     [
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
@@ -84,7 +84,7 @@ env:
   SOURCEGRAPH_HTTPS_PORT: 3443
 
   # Required for `web` commands
-  NODE_OPTIONS: "--max_old_space_size=8192"
+  NODE_OPTIONS: '--max_old_space_size=8192'
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
@@ -121,16 +121,22 @@ env:
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
   # Enable gRPC Web UI for debugging
-  GRPC_WEB_UI_ENABLED: "true"
+  GRPC_WEB_UI_ENABLED: 'true'
 
   # Enable full protobuf message logging when an internal error occurred
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
-  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: 'true'
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
+  SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
   ## zoekt-specific message logging
-  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: "true"
-  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: "1KB"
-  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: "100MB"
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED: 'true'
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES: '1KB'
+  GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES: '100MB'
+
+  TELEMETRY_GATEWAY_EXPORTER_EXPORT_ADDR: 'http://127.0.0.1:10080'
+  SRC_TELEMETRY_EVENTS_EXPORT_ALL: 'true'
+
+  # By default, allow temporary edits to external services.
+  EXTSVC_CONFIG_ALLOW_EDITS: true
 
 commands:
   server:
@@ -138,9 +144,9 @@ commands:
     cmd: ./dev/run-server-image.sh
     env:
       TAG: insiders
-      CLEAN: "true"
-      DATA: "/tmp/sourcegraph-data"
-      URL: "http://localhost:7080"
+      CLEAN: 'true'
+      DATA: '/tmp/sourcegraph-data'
+      URL: 'http://localhost:7080'
 
   frontend:
     description: Frontend
@@ -160,11 +166,10 @@ commands:
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
-      ENTERPRISE: 1
-      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - lib
       - internal
@@ -218,8 +223,6 @@ commands:
       fi
       go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
-    env:
-      ENTERPRISE: 1
     watch:
       - lib
       - internal
@@ -232,18 +235,23 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+      # Ensure scip-ctags-dev is installed to avoid prompting the user to
+      # install it manually.
+      if [ ! -f $(./dev/scip-ctags-install.sh which) ]; then
+        ./dev/scip-ctags-install.sh
+      fi
+
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
       SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
-      USE_ROCKSKIP: "false"
+      USE_ROCKSKIP: 'false'
     watch:
       - lib
       - internal
       - cmd/symbols
-      - enterprise/cmd/symbols
       - internal/rockskip
 
   embeddings:
@@ -255,12 +263,12 @@ commands:
         export GCFLAGS='all=-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/embeddings github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings
+      go build -gcflags="$GCFLAGS" -o .bin/embeddings github.com/sourcegraph/sourcegraph/cmd/embeddings
     checkBinary: .bin/embeddings
     watch:
       - lib
       - internal
-      - enterprise/cmd/embeddings
+      - cmd/embeddings
       - internal/embeddings
   qdrant:
     cmd: |
@@ -270,6 +278,7 @@ commands:
         -e QDRANT__LOG_LEVEL=INFO \
         -e QDRANT__STORAGE__STORAGE_PATH=/data \
         -e QDRANT__STORAGE__SNAPSHOTS_PATH=/data \
+        -e QDRANT_INIT_FILE_PATH=/data/.qdrant-initialized \
         --entrypoint /usr/local/bin/qdrant \
         sourcegraph/qdrant:insiders
   worker:
@@ -280,12 +289,11 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
+      go build -gcflags="$GCFLAGS" -o .bin/worker github.com/sourcegraph/sourcegraph/cmd/worker
     watch:
       - lib
       - internal
       - cmd/worker
-      - enterprise/cmd/worker
 
   cody-gateway:
     cmd: |
@@ -300,17 +308,42 @@ commands:
     env:
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
       # Set in override if you want to test local Cody Gateway: https://docs.sourcegraph.com/dev/how-to/cody_gateway
-      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ""
+      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ''
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: info
       # Enables metrics in dev via debugserver
-      SRC_PROF_HTTP: "127.0.0.1:6098"
+      SRC_PROF_HTTP: '127.0.0.1:6098'
     watch:
       - lib
       - internal
       - cmd/cody-gateway
+
+  telemetry-gateway:
+    cmd: |
+      # Telemetry Gateway needs this to parse and validate incoming license keys.
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      .bin/telemetry-gateway
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/telemetry-gateway github.com/sourcegraph/sourcegraph/cmd/telemetry-gateway
+    checkBinary: .bin/telemetry-gateway
+    env:
+      PORT: '10080'
+      DIAGNOSTICS_SECRET: sekret
+      TELEMETRY_GATEWAY_EVENTS_PUBSUB_ENABLED: false
+      SRC_LOG_LEVEL: info
+      # Enables metrics in dev via debugserver
+      SRC_PROF_HTTP: '127.0.0.1:6080'
+      GRPC_WEB_UI_ENABLED: true
+    watch:
+      - lib
+      - internal
+      - cmd/telemetry-gateway
+      - internal/telemetrygateway
 
   pings:
     cmd: |
@@ -325,13 +358,32 @@ commands:
     env:
       SRC_LOG_LEVEL: info
       DIAGNOSTICS_SECRET: 'lifeisgood'
-      PINGS_PUBSUB_PROJECT_ID: ''
-      PINGS_PUBSUB_TOPIC_ID: ''
+      PINGS_PUBSUB_PROJECT_ID: 'telligentsourcegraph'
+      PINGS_PUBSUB_TOPIC_ID: 'server-update-checks-test'
       HUBSPOT_ACCESS_TOKEN: ''
+      # Enables metrics in dev via debugserver
+      SRC_PROF_HTTP: '127.0.0.1:7011'
     watch:
       - lib
       - internal
       - cmd/pings
+
+  msp-example:
+    cmd: .bin/msp-example
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/msp-example github.com/sourcegraph/sourcegraph/cmd/msp-example
+    checkBinary: .bin/msp-example
+    env:
+      PORT: '9080'
+      DIAGNOSTICS_SECRET: sekret
+      SRC_LOG_LEVEL: debug
+      STATELESS_MODE: 'true'
+    watch:
+      - cmd/msp-example
+      - lib/managedservicesplatform
 
   searcher:
     cmd: .bin/searcher
@@ -356,10 +408,11 @@ commands:
 
   web:
     description: Enterprise version of the web app
-    cmd: ./node_modules/.bin/gulp --color dev
-    install: pnpm install
+    cmd: pnpm --filter @sourcegraph/web dev
+    install: |
+      pnpm install
+      pnpm run generate
     env:
-      ENTERPRISE: 1
       ENABLE_OPEN_TELEMETRY: true
 
   web-standalone-http:
@@ -367,10 +420,10 @@ commands:
     cmd: pnpm --filter @sourcegraph/web serve:dev --color
     install: |
       pnpm install
-      pnpm generate
+      pnpm run generate
     env:
-      WEBPACK_SERVE_INDEX: true
-      SOURCEGRAPH_API_URL: https://k8s.sgdev.org
+      WEB_BUILDER_SERVE_INDEX: true
+      SOURCEGRAPH_API_URL: https://sourcegraph.sourcegraph.com
 
   web-standalone-http-prod:
     description: Standalone web frontend (production) with API proxy to a configurable URL
@@ -378,23 +431,35 @@ commands:
     install: pnpm --filter @sourcegraph/web run build
     env:
       NODE_ENV: production
-      WEBPACK_SERVE_INDEX: true
+      WEB_BUILDER_SERVE_INDEX: true
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-integration-build:
     description: Build development web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
-      ENTERPRISE: 1
       INTEGRATION_TESTS: true
 
   web-integration-build-prod:
     description: Build production web application for integration tests
     cmd: pnpm --filter @sourcegraph/web run build
     env:
-      ENTERPRISE: 1
       INTEGRATION_TESTS: true
       NODE_ENV: production
+
+  web-sveltekit-standalone:
+    description: Standalone SvelteKit web frontend (dev) with API proxy to a configurable URL
+    cmd: pnpm --filter @sourcegraph/web-sveltekit run dev
+    install: |
+      pnpm install
+      pnpm generate
+
+  web-sveltekit-prod-watch:
+    description: Builds the prod version of the SvelteKit web app and rebuilds on changes
+    cmd: pnpm --filter @sourcegraph/web-sveltekit run build --watch
+    install: |
+      pnpm install
+      pnpm generate
 
   docsite:
     description: Docsite instance serving the docs
@@ -617,8 +682,8 @@ commands:
     cmd: |
       env TMPDIR="$HOME/.sourcegraph/multiqueue-executor-temp" .bin/executor
     env:
-      EXECUTOR_QUEUE_NAME: ""
-      EXECUTOR_QUEUE_NAMES: "codeintel,batches"
+      EXECUTOR_QUEUE_NAME: ''
+      EXECUTOR_QUEUE_NAMES: 'codeintel,batches'
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
   blobstore:
@@ -690,10 +755,8 @@ commands:
         -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
         grafana:candidate >"${GRAFANA_LOG_FILE}" 2>&1
     install: |
-      echo foobar
       mkdir -p "${GRAFANA_DISK}"
       mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
-      export CACHE=true
       docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
       bazel build //docker-images/grafana:image_tarball
       docker load --input $(bazel cquery //docker-images/grafana:image_tarball --output=files)
@@ -711,8 +774,8 @@ commands:
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ""
-      ADD_HOST_FLAG: ""
+      DOCKER_USER: ''
+      ADD_HOST_FLAG: ''
       CACHE: false
 
   prometheus:
@@ -768,11 +831,11 @@ commands:
       CONTAINER: prometheus
       PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
-      DOCKER_USER: ""
-      DOCKER_NET: ""
+      DOCKER_USER: ''
+      DOCKER_NET: ''
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
-      ADD_HOST_FLAG: ""
+      ADD_HOST_FLAG: ''
       DISABLE_SOURCEGRAPH_CONFIG: false
 
   postgres_exporter:
@@ -821,8 +884,8 @@ commands:
       IMAGE: postgres-exporter:candidate
       CONTAINER: postgres_exporter
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ""
-      ADD_HOST_FLAG: ""
+      DOCKER_USER: ''
+      ADD_HOST_FLAG: ''
 
   monitoring-generator:
     cmd: echo "monitoring-generator is deprecated, please run 'sg generate go' or 'bazel run //dev:write_all_generated' instead"
@@ -841,7 +904,7 @@ commands:
       docker pull index.docker.io/grafana/loki:$LOKI_VERSION
     env:
       LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-      LOKI_VERSION: "2.3.0"
+      LOKI_VERSION: '2.3.0'
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   otel-collector:
@@ -876,7 +939,7 @@ commands:
       IMAGE: opentelemetry-collector:candidate
       # Overwrite the following in sg.config.overwrite.yaml, based on which collector
       # config you are using - see docker-images/opentelemetry-collector for more details.
-      CONFIGURATION_FILE: "configs/jaeger.yaml"
+      CONFIGURATION_FILE: 'configs/jaeger.yaml'
       # HONEYCOMB_API_KEY: ''
       # HONEYCOMB_DATASET: ''
 
@@ -894,8 +957,8 @@ commands:
     cmd: pnpm --filter @sourcegraph/browser dev
     install: pnpm install
 
-  sourcegraph:
-    description: Single program (Go static binary) distribution
+  sourcegraph: &sourcegraph_command
+    description: Single-program distribution
     cmd: |
       unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
 
@@ -909,19 +972,27 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=single-program" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
     checkBinary: .bin/sourcegraph
     env:
-      ENTERPRISE: 1
-      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
-      WEBPACK_DEV_SERVER: 1
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      WEB_BUILDER_DEV_SERVER: 1
     watch:
       - cmd
       - enterprise
       - internal
       - lib
       - schema
+
+  cody-app:
+    <<: *sourcegraph_command
+    description: Cody App
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/cmd/sourcegraph
 
   tauri:
     description: App shell (Tauri)
@@ -938,13 +1009,13 @@ bazelCommands:
     ignoreStderr: true
     env:
       # Environment copied from Dockerfile
-      WORKERS: "1"
-      ROCKET_ENV: "production"
-      ROCKET_LIMITS: "{json=10485760}"
-      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
-      ROCKET_KEEP_ALIVE: "0"
-      ROCKET_PORT: "9238"
-      QUIET: "true"
+      WORKERS: '1'
+      ROCKET_ENV: 'production'
+      ROCKET_LIMITS: '{json=10485760}'
+      ROCKET_SECRET_KEY: 'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='
+      ROCKET_KEEP_ALIVE: '0'
+      ROCKET_PORT: '9238'
+      QUIET: 'true'
   frontend:
     description: Enterprise frontend
     target: //cmd/frontend
@@ -955,29 +1026,26 @@ bazelCommands:
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
-      ENTERPRISE: 1
-      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
+      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
+      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
       # frontend processes need this to be so that the paths to the assets are rendered correctly
-      WEBPACK_DEV_SERVER: 1
+      WEB_BUILDER_DEV_SERVER: 1
   worker:
-    target: //enterprise/cmd/worker
+    target: //cmd/worker
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
   repo-updater:
     target: //cmd/repo-updater
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-    env:
-      ENTERPRISE: 1
   symbols:
-    target: //enterprise/cmd/symbols
+    target: //cmd/symbols
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
       SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
-      USE_ROCKSKIP: "false"
+      USE_ROCKSKIP: 'false'
   gitserver-template: &gitserver_bazel_template
     target: //cmd/gitserver
     env: &gitserverenv
@@ -1048,7 +1116,7 @@ commandsets:
       - syntax-highlighter
     commands:
       - web
-      - docsite
+      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1072,7 +1140,7 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      - docsite
+      # - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
@@ -1080,6 +1148,7 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
+      - telemetry-gateway
     env:
       DISABLE_CODE_INSIGHTS_HISTORICAL: false
       DISABLE_CODE_INSIGHTS: false
@@ -1089,7 +1158,7 @@ commandsets:
     env:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
-      EXTSVC_CONFIG_FILE: ""
+      EXTSVC_CONFIG_FILE: ''
 
   dotcom:
     # This is 95% the enterprise runset, with the addition of Cody Gateway.
@@ -1118,6 +1187,7 @@ commandsets:
       - blobstore
       - cody-gateway
       - embeddings
+      - telemetry-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1427,15 +1497,18 @@ commandsets:
     commands:
       - web-standalone-http
       - caddy
+
+  web-sveltekit-standalone:
+    commands:
+      - web-sveltekit-standalone
+      - caddy
     env:
-      ENTERPRISE: 1
+      SK_PORT: 3080
 
   web-standalone-prod:
     commands:
       - web-standalone-http-prod
       - caddy
-    env:
-      ENTERPRISE: 1
 
   # For testing our OpenTelemetry stack
   otel:
@@ -1445,19 +1518,33 @@ commandsets:
       - otel-collector
       - jaeger
 
-  app:
+  single-program:
     requiresDevPrivate: true
     checks:
       - git
     commands:
       - sourcegraph
+      - web
+      - caddy
+    env:
+      DISABLE_CODE_INSIGHTS: false
+      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
+      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
+      USE_EMBEDDED_POSTGRESQL: false
+
+  app:
+    requiresDevPrivate: true
+    checks:
+      - git
+    commands:
+      - cody-app
       - docsite
       - web
       - caddy
       - tauri
     env:
       DISABLE_CODE_INSIGHTS: true
-      SOURCEGRAPH_APP: 1
+      CODY_APP: 1
       EXTSVC_CONFIG_ALLOW_EDITS: true
       PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
       EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
@@ -1491,6 +1578,15 @@ commandsets:
     env:
       QDRANT_ENDPOINT: 'localhost:6334'
 
+  enterprise-bazel-sveltekit:
+    <<: *enterprise_bazel_set
+    env:
+      SVELTEKIT: true
+
+  enterprise-sveltekit:
+    <<: *enterprise_set
+    env:
+      SVELTEKIT: true
 
 tests:
   # These can be run with `sg test [name]`
@@ -1498,14 +1594,34 @@ tests:
     cmd: go test
     defaultArgs: ./...
 
+  bazel-e2e:
+    cmd: |
+      export GHE_GITHUB_TOKEN=$(gcloud secrets versions access latest --secret=GHE_GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export SOURCEGRAPH_LICENSE_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_KEY --quiet --project=sourcegraph-ci)
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(gcloud secrets versions access latest --secret=SOURCEGRAPH_LICENSE_GENERATION_KEY --quiet --project=sourcegraph-ci)
+
+      if [[ $(uname) == "Darwin" ]]; then
+        BAZEL_FLAGS="--config darwin-docker"
+      else
+        BAZEL_FLAGS=""
+      fi
+      bazel test //testing:e2e_test $BAZEL_FLAGS --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GHE_GITHUB_TOKEN=$GHE_GITHUB_TOKEN --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY
+
+  bazel-web-integration:
+    cmd: |
+      export GH_TOKEN=$(gcloud secrets versions access latest --secret=GITHUB_TOKEN --quiet --project=sourcegraph-ci)
+      export PERCY_TOKEN=$(gcloud secrets versions access latest --secret=PERCY_TOKEN --quiet --project=sourcegraph-ci)
+      bazel test //client/web/src/integration:integration-tests --define=E2E_HEADLESS=false --define=E2E_SOURCEGRAPH_BASE_URL="http://localhost:7080" --define=GH_TOKEN=$GH_TOKEN --define=DISPLAY=$DISPLAY --define=PERCY_TOKEN=$PERCY_TOKEN
+
   backend-integration:
     cmd: cd dev/gqltest && go test -long -base-url $BASE_URL -email $EMAIL -username $USERNAME -password $PASSWORD ./gqltest
     env:
       # These are defaults. They can be overwritten by setting the env vars when
       # running the command.
-      BASE_URL: "http://localhost:3080"
-      EMAIL: "joe@sourcegraph.com"
-      PASSWORD: "12345"
+      BASE_URL: 'http://localhost:3080'
+      EMAIL: 'joe@sourcegraph.com'
+      PASSWORD: '12345'
 
   bext:
     cmd: pnpm --filter @sourcegraph/browser test
@@ -1522,7 +1638,7 @@ tests:
       SOURCEGRAPH_BASE_URL: https://sourcegraph.com
 
   client:
-    cmd: pnpm jest --testPathIgnorePatterns end-to-end regression integration storybook
+    cmd: pnpm run test
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
@@ -1543,8 +1659,8 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        project: "sourcegraph-ci"
-        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
+        project: 'sourcegraph-ci'
+        name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 
   web-regression:
     preamble: |

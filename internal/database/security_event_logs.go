@@ -111,7 +111,7 @@ type securityEventLogsStore struct {
 // SecurityEventLogsWith instantiates and returns a new SecurityEventLogsStore
 // using the other store handle, and a scoped sub-logger of the passed base logger.
 func SecurityEventLogsWith(baseLogger log.Logger, other basestore.ShareableStore) SecurityEventLogsStore {
-	logger := baseLogger.Scoped("SecurityEvents", "Security events store")
+	logger := baseLogger.Scoped("SecurityEvents")
 	return &securityEventLogsStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
 }
 

@@ -36,6 +36,9 @@ type MockSyncStore struct {
 	// GetChangesetFunc is an instance of a mock function object controlling
 	// the behavior of the method GetChangeset.
 	GetChangesetFunc *SyncStoreGetChangesetFunc
+	// GetChangesetSpecByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method GetChangesetSpecByID.
+	GetChangesetSpecByIDFunc *SyncStoreGetChangesetSpecByIDFunc
 	// GetExternalServiceIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetExternalServiceIDs.
 	GetExternalServiceIDsFunc *SyncStoreGetExternalServiceIDsFunc
@@ -98,6 +101,11 @@ func NewMockSyncStore() *MockSyncStore {
 		},
 		GetChangesetFunc: &SyncStoreGetChangesetFunc{
 			defaultHook: func(context.Context, store.GetChangesetOpts) (r0 *types.Changeset, r1 error) {
+				return
+			},
+		},
+		GetChangesetSpecByIDFunc: &SyncStoreGetChangesetSpecByIDFunc{
+			defaultHook: func(context.Context, int64) (r0 *types.ChangesetSpec, r1 error) {
 				return
 			},
 		},
@@ -188,6 +196,11 @@ func NewStrictMockSyncStore() *MockSyncStore {
 				panic("unexpected invocation of MockSyncStore.GetChangeset")
 			},
 		},
+		GetChangesetSpecByIDFunc: &SyncStoreGetChangesetSpecByIDFunc{
+			defaultHook: func(context.Context, int64) (*types.ChangesetSpec, error) {
+				panic("unexpected invocation of MockSyncStore.GetChangesetSpecByID")
+			},
+		},
 		GetExternalServiceIDsFunc: &SyncStoreGetExternalServiceIDsFunc{
 			defaultHook: func(context.Context, store.GetExternalServiceIDsOpts) ([]int64, error) {
 				panic("unexpected invocation of MockSyncStore.GetExternalServiceIDs")
@@ -264,6 +277,9 @@ func NewMockSyncStoreFrom(i SyncStore) *MockSyncStore {
 		},
 		GetChangesetFunc: &SyncStoreGetChangesetFunc{
 			defaultHook: i.GetChangeset,
+		},
+		GetChangesetSpecByIDFunc: &SyncStoreGetChangesetSpecByIDFunc{
+			defaultHook: i.GetChangesetSpecByID,
 		},
 		GetExternalServiceIDsFunc: &SyncStoreGetExternalServiceIDsFunc{
 			defaultHook: i.GetExternalServiceIDs,
@@ -809,6 +825,116 @@ func (c SyncStoreGetChangesetFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SyncStoreGetChangesetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SyncStoreGetChangesetSpecByIDFunc describes the behavior when the
+// GetChangesetSpecByID method of the parent MockSyncStore instance is
+// invoked.
+type SyncStoreGetChangesetSpecByIDFunc struct {
+	defaultHook func(context.Context, int64) (*types.ChangesetSpec, error)
+	hooks       []func(context.Context, int64) (*types.ChangesetSpec, error)
+	history     []SyncStoreGetChangesetSpecByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// GetChangesetSpecByID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSyncStore) GetChangesetSpecByID(v0 context.Context, v1 int64) (*types.ChangesetSpec, error) {
+	r0, r1 := m.GetChangesetSpecByIDFunc.nextHook()(v0, v1)
+	m.GetChangesetSpecByIDFunc.appendCall(SyncStoreGetChangesetSpecByIDFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetChangesetSpecByID
+// method of the parent MockSyncStore instance is invoked and the hook queue
+// is empty.
+func (f *SyncStoreGetChangesetSpecByIDFunc) SetDefaultHook(hook func(context.Context, int64) (*types.ChangesetSpec, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetChangesetSpecByID method of the parent MockSyncStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SyncStoreGetChangesetSpecByIDFunc) PushHook(hook func(context.Context, int64) (*types.ChangesetSpec, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SyncStoreGetChangesetSpecByIDFunc) SetDefaultReturn(r0 *types.ChangesetSpec, r1 error) {
+	f.SetDefaultHook(func(context.Context, int64) (*types.ChangesetSpec, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SyncStoreGetChangesetSpecByIDFunc) PushReturn(r0 *types.ChangesetSpec, r1 error) {
+	f.PushHook(func(context.Context, int64) (*types.ChangesetSpec, error) {
+		return r0, r1
+	})
+}
+
+func (f *SyncStoreGetChangesetSpecByIDFunc) nextHook() func(context.Context, int64) (*types.ChangesetSpec, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SyncStoreGetChangesetSpecByIDFunc) appendCall(r0 SyncStoreGetChangesetSpecByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SyncStoreGetChangesetSpecByIDFuncCall
+// objects describing the invocations of this function.
+func (f *SyncStoreGetChangesetSpecByIDFunc) History() []SyncStoreGetChangesetSpecByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]SyncStoreGetChangesetSpecByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SyncStoreGetChangesetSpecByIDFuncCall is an object that describes an
+// invocation of method GetChangesetSpecByID on an instance of
+// MockSyncStore.
+type SyncStoreGetChangesetSpecByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.ChangesetSpec
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SyncStoreGetChangesetSpecByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SyncStoreGetChangesetSpecByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
 	"github.com/stretchr/testify/require"
@@ -50,6 +51,7 @@ func Test_zoektSearch(t *testing.T) {
 	// indefinitely because the reader returns early.
 	err := zoektSearch(
 		ctx,
+		logtest.Scoped(t),
 		client,
 		&search.TextPatternInfo{},
 		[]query.BranchRepos{{Branch: "test", Repos: roaring.BitmapOf(1, 2, 3)}},

@@ -25,7 +25,7 @@ import (
 func TestHandler_Handle(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	prefix := "__test__" + t.Name()
 	redisHost := "127.0.0.1:6379"

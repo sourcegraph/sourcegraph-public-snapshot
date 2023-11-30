@@ -5,7 +5,7 @@
     cursor: default;
     outline: none;
 
-    &:focus,
+    &:focus-visible,
     &:focus-within {
         box-shadow: var(--focus-box-shadow);
     }

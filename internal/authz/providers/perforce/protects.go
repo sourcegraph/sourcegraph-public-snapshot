@@ -1,10 +1,8 @@
 package perforce
 
 import (
-	"bufio"
 	"context"
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/gobwas/glob"
@@ -12,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -183,17 +182,6 @@ func matchesAgainstDepot(match globMatch, depot string) bool {
 	return false
 }
 
-// PerformDebugScan will scan protections rules from r and log detailed
-// information about how each line was parsed.
-func PerformDebugScan(logger log.Logger, r io.Reader, depot extsvc.RepoID, ignoreRulesWithHost bool) (*authz.ExternalUserPermissions, error) {
-	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
-	}
-	scanner := fullRepoPermsScanner(logger, perms, []extsvc.RepoID{depot})
-	err := scanProtects(logger, r, scanner, ignoreRulesWithHost)
-	return perms, err
-}
-
 // protectsScanner provides callbacks for scanning the output of `p4 protects`.
 type protectsScanner struct {
 	// Called on the parsed contents of each `p4 protects` line.
@@ -205,55 +193,26 @@ type protectsScanner struct {
 // scanProtects is a utility function for processing values from `p4 protects`.
 // It handles skipping comments, cleaning whitespace, parsing relevant fields, and
 // skipping entries that do not affect read access.
-func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner, ignoreRulesWithHost bool) error {
-	logger = logger.Scoped("scanProtects", "")
-	scanner := bufio.NewScanner(rc)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		// Trim whitespace
-		line = strings.TrimSpace(line)
-
-		// Skip comments and blank lines
-		if strings.HasPrefix(line, "##") || line == "" {
-			continue
-		}
-
-		// Trim trailing comments
-		if i := strings.Index(line, "##"); i > -1 {
-			line = line[:i]
-		}
-
-		logger.Debug("Scanning protects line", log.String("line", line))
-
-		// Split into fields
-		fields := strings.Fields(line)
-		if len(fields) < 5 {
-			logger.Debug("Line has less than 5 fields, discarding")
-			continue
-		}
-
+func scanProtects(logger log.Logger, protects []*perforce.Protect, s *protectsScanner, ignoreRulesWithHost bool) error {
+	logger = logger.Scoped("scanProtects")
+	for _, protect := range protects {
 		// skip any rule that relies on particular client IP addresses or hostnames
 		// this is the initial approach to address wrong behaviors
 		// that are causing clients to need to disable sub-repo permissions
 		// GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/53374
 		// Subsequent approaches will need to add more sophisticated handling of hosts
 		// perhaps even capturing the browser IP address and comparing it to the host field.
-		if ignoreRulesWithHost && fields[3] != "*" {
-			logger.Debug("Skipping host-specific rule", log.String("line", line))
+		if ignoreRulesWithHost && protect.Host != "*" {
+			logger.Debug("Skipping host-specific rule", log.String("protect", fmt.Sprintf("%#v", protect)))
 			continue
 		}
 
-		// Parse line
 		parsedLine := p4ProtectLine{
-			level:      fields[0],
-			entityType: fields[1],
-			name:       fields[2],
-			match:      fields[4],
-		}
-		if strings.HasPrefix(parsedLine.match, "-") {
-			parsedLine.isExclusion = true                                // is an exclusion
-			parsedLine.match = strings.TrimPrefix(parsedLine.match, "-") // trim leading -
+			level:       protect.Level,
+			entityType:  protect.EntityType,
+			name:        protect.EntityName,
+			match:       protect.Match,
+			isExclusion: protect.IsExclusion,
 		}
 
 		// We only care about read access. If the permission doesn't change read access,
@@ -269,12 +228,12 @@ func scanProtects(logger log.Logger, rc io.Reader, s *protectsScanner, ignoreRul
 			return err
 		}
 	}
-	var finalizeErr error
+
 	if s.finalize != nil {
-		finalizeErr = s.finalize()
+		return s.finalize()
 	}
-	scanErr := scanner.Err()
-	return errors.CombineErrors(scanErr, finalizeErr)
+
+	return nil
 }
 
 // scanRepoIncludesExcludes converts `p4 protects` to Postgres SIMILAR TO-compatible
@@ -336,7 +295,7 @@ func repoIncludesExcludesScanner(perms *authz.ExternalUserPermissions) *protects
 // fullRepoPermsScanner converts `p4 protects` to a 1:1 implementation of Sourcegraph
 // authorization, including sub-repo perms and exact depot-as-repo matches.
 func fullRepoPermsScanner(logger log.Logger, perms *authz.ExternalUserPermissions, configuredDepots []extsvc.RepoID) *protectsScanner {
-	logger = logger.Scoped("fullRepoPermsScanner", "")
+	logger = logger.Scoped("fullRepoPermsScanner")
 	// Get glob equivalents of all depots
 	var configuredDepotMatches []globMatch
 	for _, depot := range configuredDepots {
@@ -491,7 +450,7 @@ func trimDepotNameAndSlashes(s, depotName string) string {
 }
 
 func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, patternsToGlob map[string]globMatch) []string {
-	logger := log.Scoped("convertRulesForWildcardDepotMatch", "")
+	logger := log.Scoped("convertRulesForWildcardDepotMatch")
 	if !strings.Contains(match.pattern, "**") && !strings.Contains(match.pattern, "*") {
 		return []string{match.pattern}
 	}
@@ -537,7 +496,7 @@ func convertRulesForWildcardDepotMatch(match globMatch, depot extsvc.RepoID, pat
 
 // allUsersScanner converts `p4 protects` to a map of users within the protection rules.
 func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}) *protectsScanner {
-	logger := log.Scoped("allUsersScanner", "")
+	logger := log.Scoped("allUsersScanner")
 	return &protectsScanner{
 		processLine: func(line p4ProtectLine) error {
 			if line.isExclusion {

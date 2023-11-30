@@ -28,7 +28,7 @@ const hardcodedConfig = {
 
 export const windowContextConfig = {
     isSourcegraphDotCom: false,
-    isSourcegraphApp: false,
+    isCodyApp: false,
     needsRepositoryConfiguration: false,
     batchChangesWebhookLogsEnabled: true,
     batchChangesEnabled: true,

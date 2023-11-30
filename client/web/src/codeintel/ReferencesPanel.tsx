@@ -3,7 +3,7 @@ import React, { type MouseEvent, useCallback, useEffect, useLayoutEffect, useMem
 import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import type * as H from 'history'
-import { capitalize, uniqBy } from 'lodash'
+import { capitalize } from 'lodash'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { type Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -12,7 +12,6 @@ import { CodeExcerpt } from '@sourcegraph/branded'
 import type { HoveredToken } from '@sourcegraph/codeintellify'
 import { type ErrorLike, logger, pluralize } from '@sourcegraph/common'
 import { Position } from '@sourcegraph/extension-api-classes'
-import { useQuery } from '@sourcegraph/http-client'
 import type { FetchFileParameters } from '@sourcegraph/shared/src/backend/file'
 import type { LanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/language-spec'
 import { findLanguageSpec } from '@sourcegraph/shared/src/codeintel/legacy-extensions/language-specs/languages'
@@ -43,32 +42,20 @@ import {
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Code,
     H4,
     Text,
     Tooltip,
     useSessionStorage,
 } from '@sourcegraph/wildcard'
 
-import type {
-    ReferencesPanelHighlightedBlobResult,
-    ReferencesPanelHighlightedBlobVariables,
-} from '../graphql-operations'
-import { CodeMirrorBlob } from '../repo/blob/CodeMirrorBlob'
 import * as BlobAPI from '../repo/blob/use-blob-store'
 import type { HoverThresholdProps } from '../repo/RepoContainer'
 import { parseBrowserRepoURL } from '../util/url'
 
 import type { CodeIntelligenceProps } from '.'
-import {
-    type Location,
-    type LocationGroup,
-    locationGroupQuality,
-    buildRepoLocationGroups,
-    type RepoLocationGroup,
-} from './location'
-import { FETCH_HIGHLIGHTED_BLOB } from './ReferencesPanelQueries'
+import { type Location, LocationsGroup, type LocationsGroupedByRepo, type LocationsGroupedByFile } from './location'
 import { newSettingsGetter } from './settings'
+import { SideBlob, type SideBlobProps } from './SideBlob'
 import { findSearchToken } from './token'
 import { useRepoAndBlob } from './useRepoAndBlob'
 import { isDefined } from './util/helpers'
@@ -269,12 +256,8 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
             // change. This way we avoid showing stale results.
             key={shouldMixPreciseAndSearchBasedReferences.toString()}
             {...props}
-            token={props.token}
             searchToken={tokenResult?.searchToken}
             spec={spec}
-            fileContent={props.fileContent}
-            isFork={props.isFork}
-            isArchived={props.isArchived}
         />
     )
 }
@@ -350,10 +333,10 @@ const ReferencesList: React.FunctionComponent<
         // Make sure this effect only runs once
     }, [loading])
 
-    const references = useMemo(() => data?.references.nodes ?? [], [data])
-    const definitions = useMemo(() => data?.definitions.nodes ?? [], [data])
-    const implementations = useMemo(() => data?.implementations.nodes ?? [], [data])
-    const prototypes = useMemo(() => data?.prototypes.nodes ?? [], [data])
+    const references = data?.references.nodes ?? LocationsGroup.empty
+    const definitions = data?.definitions.nodes ?? LocationsGroup.empty
+    const implementations = data?.implementations.nodes ?? LocationsGroup.empty
+    const prototypes = data?.prototypes.nodes ?? LocationsGroup.empty
 
     // The "active URL" is the URL of the highlighted line number in SideBlob,
     // which also influences which item gets highlighted inside
@@ -394,10 +377,13 @@ const ReferencesList: React.FunctionComponent<
     // definitions) we select the first definition. We set it as activeLocation
     // and push it to the blobMemoryHistory so the code blob is open.
     useEffect(() => {
-        if (props.jumpToFirst && definitions.length > 0) {
-            setActiveLocation(definitions[0])
+        if (props.jumpToFirst) {
+            const firstDef = definitions.first
+            if (firstDef) {
+                setActiveLocation(firstDef)
+            }
         }
-    }, [setActiveLocation, props.jumpToFirst, definitions, setActiveURL])
+    }, [setActiveLocation, props.jumpToFirst, definitions.first, setActiveURL])
 
     const onBlobNav = (url: string): void => {
         // Store the URL that the user promoted even if no definition/reference
@@ -460,7 +446,7 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="definitions"
-                        locations={definitions}
+                        locationsGroup={definitions}
                         hasMore={false}
                         loadingMore={false}
                         filter={debouncedFilter}
@@ -474,7 +460,7 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="references"
-                        locations={references}
+                        locationsGroup={references}
                         hasMore={referencesHasNextPage}
                         fetchMore={fetchMoreReferences}
                         loadingMore={fetchMoreReferencesLoading}
@@ -489,7 +475,7 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="implementations"
-                        locations={implementations}
+                        locationsGroup={implementations}
                         hasMore={implementationsHasNextPage}
                         fetchMore={fetchMoreImplementations}
                         loadingMore={fetchMoreImplementationsLoading}
@@ -504,7 +490,7 @@ const ReferencesList: React.FunctionComponent<
                     <CollapsibleLocationList
                         {...props}
                         name="prototypes"
-                        locations={prototypes}
+                        locationsGroup={prototypes}
                         hasMore={prototypesHasNextPage}
                         fetchMore={fetchMorePrototypes}
                         loadingMore={fetchMorePrototypesLoading}
@@ -579,7 +565,7 @@ interface CollapsibleLocationListProps
         SearchTokenProps,
         HighlightedFileLineRangesProps {
     name: string
-    locations: Location[]
+    locationsGroup: LocationsGroup
     filter: string | undefined
     hasMore: boolean
     fetchMore?: () => void
@@ -592,12 +578,12 @@ const CollapsibleLocationList: React.FunctionComponent<
     React.PropsWithChildren<CollapsibleLocationListProps>
 > = props => {
     const isOpen = props.isOpen(props.name) ?? true
-    const quantityLabel = useMemo(() => {
-        const repoNumber = uniqBy(props.locations, 'repo').length
-        return `(${props.locations.length} ${pluralize('item', props.locations.length)}${
-            repoNumber > 1 ? ` from ${repoNumber} repositories` : ''
-        } displayed${props.hasMore ? ', more available' : ''})`
-    }, [props.locations, props.hasMore])
+
+    const repoCount = props.locationsGroup.repoCount
+    const locationsCount = props.locationsGroup.locationsCount
+    const quantityLabel = `(${locationsCount} ${pluralize('item', locationsCount)}${
+        repoCount > 1 ? ` from ${repoCount} repositories` : ''
+    } displayed${props.hasMore ? ', more available' : ''})`
 
     return (
         <Collapse isOpen={isOpen} onOpenChange={isOpen => props.handleOpenChange(props.name, isOpen)}>
@@ -622,19 +608,25 @@ const CollapsibleLocationList: React.FunctionComponent<
                 </CardHeader>
 
                 <CollapsePanel id={props.name} data-testid={props.name}>
-                    {props.locations.length > 0 ? (
-                        <LocationsList
-                            searchToken={props.searchToken}
-                            locations={props.locations}
-                            isActiveLocation={props.isActiveLocation}
-                            setActiveLocation={props.setActiveLocation}
-                            filter={props.filter}
-                            activeURL={props.activeURL}
-                            navigateToUrl={props.navigateToUrl}
-                            handleOpenChange={(id, isOpen) => props.handleOpenChange(props.name + id, isOpen)}
-                            isOpen={id => props.isOpen(props.name + id)}
-                            fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
-                        />
+                    {locationsCount > 0 ? (
+                        <>
+                            {props.locationsGroup.map((locations, index) => (
+                                <CollapsibleRepoLocationGroup
+                                    key={locations.repoName}
+                                    activeURL={props.activeURL}
+                                    searchToken={props.searchToken}
+                                    locations={locations}
+                                    openByDefault={index === 0}
+                                    isActiveLocation={props.isActiveLocation}
+                                    setActiveLocation={props.setActiveLocation}
+                                    filter={props.filter}
+                                    navigateToUrl={props.navigateToUrl}
+                                    handleOpenChange={(id, isOpen) => props.handleOpenChange(props.name + id, isOpen)}
+                                    isOpen={id => props.isOpen(props.name + id)}
+                                    fetchHighlightedFileLineRanges={props.fetchHighlightedFileLineRanges}
+                                />
+                            ))}
+                        </>
                     ) : (
                         <Text className="text-muted pl-4 pb-0">
                             {props.filter ? (
@@ -667,15 +659,6 @@ const CollapsibleLocationList: React.FunctionComponent<
     )
 }
 
-interface SideBlobProps extends ReferencesPanelProps {
-    activeURL: string
-    repository: string
-    commitID: string
-    file: string
-    position?: Position
-    blobNav: (url: string) => void
-}
-
 function parseSideBlobProps(
     activeURL: string | undefined
 ): Pick<SideBlobProps, 'activeURL' | 'repository' | 'commitID' | 'file' | 'position'> | undefined {
@@ -698,125 +681,7 @@ function parseSideBlobProps(
     }
 }
 
-const SideBlob: React.FunctionComponent<React.PropsWithChildren<SideBlobProps>> = props => {
-    const { data, error, loading } = useQuery<
-        ReferencesPanelHighlightedBlobResult,
-        ReferencesPanelHighlightedBlobVariables
-    >(FETCH_HIGHLIGHTED_BLOB, {
-        variables: {
-            repository: props.repository,
-            commit: props.commitID,
-            path: props.file,
-            format: HighlightResponseFormat.JSON_SCIP,
-        },
-        // Cache this data but always re-request it in the background when we revisit
-        // this page to pick up newer changes.
-        fetchPolicy: 'cache-and-network',
-        nextFetchPolicy: 'network-only',
-    })
-
-    // If we're loading and haven't received any data yet
-    if (loading && !data) {
-        return (
-            <>
-                <LoadingSpinner inline={false} className="mx-auto my-4" />
-                <Text alignment="center" className="text-muted">
-                    <i>
-                        Loading <Code>{props.file}</Code>...
-                    </i>
-                </Text>
-            </>
-        )
-    }
-
-    // If we received an error before we had received any data
-    if (error && !data) {
-        return (
-            <div>
-                <Text className="text-danger">
-                    Loading <Code>{props.file}</Code> failed:
-                </Text>
-                <pre>{error.message}</pre>
-            </div>
-        )
-    }
-
-    // If there weren't any errors and we just didn't receive any data
-    if (!data?.repository?.commit?.blob?.highlight) {
-        return <>Nothing found</>
-    }
-
-    const { lsif } = data?.repository?.commit?.blob?.highlight
-
-    // TODO: display a helpful message if syntax highlighting aborted, see https://github.com/sourcegraph/sourcegraph/issues/40841
-
-    return (
-        <CodeMirrorBlob
-            {...props}
-            nav={props.blobNav}
-            wrapCode={true}
-            className={styles.sideBlobCode}
-            navigateToLineOnAnyClick={true}
-            blobInfo={{
-                lsif: lsif ?? '',
-                content: data?.repository?.commit?.blob?.content ?? '',
-                filePath: props.file,
-                repoName: props.repository,
-                commitID: props.commitID,
-                revision: props.commitID,
-                mode: 'lspmode',
-            }}
-        />
-    )
-}
-
-interface LocationsListProps
-    extends ActiveLocationProps,
-        CollapseProps,
-        SearchTokenProps,
-        HighlightedFileLineRangesProps {
-    locations: Location[]
-    filter: string | undefined
-    navigateToUrl: (url: string) => void
-    activeURL: string
-}
-
-const LocationsList: React.FunctionComponent<React.PropsWithChildren<LocationsListProps>> = ({
-    locations,
-    isActiveLocation,
-    setActiveLocation,
-    filter,
-    navigateToUrl,
-    handleOpenChange,
-    isOpen,
-    searchToken,
-    fetchHighlightedFileLineRanges,
-    activeURL,
-}) => {
-    const repoLocationGroups = useMemo(() => buildRepoLocationGroups(locations), [locations])
-
-    return (
-        <>
-            {repoLocationGroups.map((group, index) => (
-                <CollapsibleRepoLocationGroup
-                    key={group.repoName}
-                    activeURL={activeURL}
-                    searchToken={searchToken}
-                    repoLocationGroup={group}
-                    openByDefault={index === 0}
-                    isActiveLocation={isActiveLocation}
-                    setActiveLocation={setActiveLocation}
-                    filter={filter}
-                    navigateToUrl={navigateToUrl}
-                    handleOpenChange={handleOpenChange}
-                    isOpen={isOpen}
-                    fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
-                />
-            ))}
-        </>
-    )
-}
-
+/** Component to display the Locations for a single repo */
 const CollapsibleRepoLocationGroup: React.FunctionComponent<
     React.PropsWithChildren<
         ActiveLocationProps &
@@ -825,13 +690,13 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
             HighlightedFileLineRangesProps & {
                 filter: string | undefined
                 navigateToUrl: (url: string) => void
-                repoLocationGroup: RepoLocationGroup
+                locations: LocationsGroupedByRepo
                 openByDefault: boolean
                 activeURL: string
             }
     >
 > = ({
-    repoLocationGroup,
+    locations,
     isActiveLocation,
     setActiveLocation,
     navigateToUrl,
@@ -843,38 +708,40 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
     fetchHighlightedFileLineRanges,
     activeURL,
 }) => {
-    const open = isOpen(repoLocationGroup.repoName) ?? openByDefault
+    const repoName = locations.repoName
+    const open = isOpen(repoName) ?? openByDefault
 
     return (
-        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(repoLocationGroup.repoName, isOpen)}>
+        <Collapse isOpen={open} onOpenChange={isOpen => handleOpenChange(repoName, isOpen)}>
             <div className={styles.repoLocationGroup}>
                 <CollapseHeader
                     as={Button}
                     aria-expanded={open}
-                    aria-label={`Repository ${repoLocationGroup.repoName}`}
+                    aria-label={`Repository ${repoName}`}
                     type="button"
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
                     <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
                     <small>
                         <span className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}>
-                            {displayRepoName(repoLocationGroup.repoName)}
+                            {displayRepoName(repoName)}
                         </span>
                     </small>
                 </CollapseHeader>
 
-                <CollapsePanel id={repoLocationGroup.repoName}>
-                    {repoLocationGroup.referenceGroups.map(group => (
+                <CollapsePanel id={repoName}>
+                    {locations.perFileGroups.map(group => (
                         <CollapsibleLocationGroup
-                            key={group.path + group.repoName}
+                            key={group.path + repoName}
                             activeURL={activeURL}
                             searchToken={searchToken}
+                            repoName={repoName}
                             group={group}
                             isActiveLocation={isActiveLocation}
                             setActiveLocation={setActiveLocation}
                             filter={filter}
-                            handleOpenChange={(id, isOpen) => handleOpenChange(repoLocationGroup.repoName + id, isOpen)}
-                            isOpen={id => isOpen(repoLocationGroup.repoName + id)}
+                            handleOpenChange={(id, isOpen) => handleOpenChange(repoName + id, isOpen)}
+                            isOpen={id => isOpen(repoName + id)}
                             navigateToUrl={navigateToUrl}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                         />
@@ -891,13 +758,15 @@ const CollapsibleLocationGroup: React.FunctionComponent<
             CollapseProps &
             SearchTokenProps &
             HighlightedFileLineRangesProps & {
-                group: LocationGroup
+                repoName: string
+                group: LocationsGroupedByFile
                 filter: string | undefined
                 navigateToUrl: (url: string) => void
                 activeURL: string
             }
     >
 > = ({
+    repoName,
     group,
     setActiveLocation,
     isActiveLocation,
@@ -922,7 +791,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
         highlighted = group.path.split(filter)
     }
 
-    const { repo, commitID, file } = useMemo(() => group.locations[0], [group])
+    const { repo, commitID, file } = group.locations[0]
     const ranges = useMemo(
         () =>
             group.locations.map(location => ({
@@ -1005,12 +874,12 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                             </span>
                         </span>
                         <Badge small={true} variant="secondary" className="ml-4">
-                            {locationGroupQuality(group)}
+                            {group.quality}
                         </Badge>
                     </small>
                 </CollapseHeader>
 
-                <CollapsePanel id={group.repoName + group.path} className="ml-0">
+                <CollapsePanel id={repoName + group.path} className="ml-0">
                     <div className={styles.locationContainer}>
                         <ul className="list-unstyled mb-0">
                             {group.locations.map((reference, index) => {

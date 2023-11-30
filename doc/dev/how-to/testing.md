@@ -18,17 +18,13 @@ Also see [testing Go code](../background-information/languages/testing_go_code.m
 - First run `pnpm install` in the Sourcegraph root directory if it is a fresh clone.
 - To run all unit tests, run `pnpm test` from the root directory.
 - To run unit tests in development (only running the tests related to uncommitted code), run `pnpm test --watch`.
-  - And/or use [vscode-jest](https://github.com/jest-community/vscode-jest) with `jest.autoEnable: true` (and, if you want, `jest.showCoverageOnLoad: true`)
-- To debug tests in VS Code, use [vscode-jest](https://github.com/jest-community/vscode-jest) and click the **Debug** code lens next to any `test('name ...', ...)` definition in your test file (be sure to set a breakpoint or break on uncaught exceptions by clicking in the left gutter).
 - You can also run `pnpm test` from any of the individual project dirs (`client/shared/`, `client/web/`, `client/browser/`).
 
-Usually while developing you will either have `pnpm test --watch` running in a terminal or you will use vscode-jest.
-
-Test coverage from unit tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the `unit` flag.
+Usually while developing you will either have `pnpm test --watch` running in a terminal.
 
 ### React component snapshot tests
 
-[React component snapshot tests](https://jestjs.io/docs/en/tutorial-react) are one way of testing React components. They make it easy to see when changes to a React component result in different output. Snapshots are files at `__snapshots__/MyComponent.test.tsx.snap` relative to the component's file, and they are committed (so that you can see the changes in `git diff` or when reviewing a PR).
+[React component snapshot tests](https://vitest.dev/guide/snapshot.html) are one way of testing React components. They make it easy to see when changes to a React component result in different output. Snapshots are files at `__snapshots__/MyComponent.test.tsx.snap` relative to the component's file, and they are committed (so that you can see the changes in `git diff` or when reviewing a PR).
 
 A typical snapshot test might look like this:
 
@@ -39,9 +35,9 @@ A typical snapshot test might look like this:
     })
 ```
 
-- See the [React component snapshot tests documentation](https://jestjs.io/docs/en/tutorial-react).
+- See the [React component snapshot tests documentation](https://vitest.dev/guide/snapshot.html).
 - See [existing test files that use `React Testing Library`](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+lang:typescript+testing-library/react) for usage examples.
-- Use the jest watcher's <kbd>u</kbd> keyboard shortcut (or `pnpm run test -u`) to update all snapshot files. Be sure to review the diff!
+- Use the Vitest watcher's <kbd>u</kbd> keyboard shortcut (or `pnpm run test -u`) to update all snapshot files. Be sure to review the diff!
 
 ### Behavior tests
 
@@ -119,7 +115,7 @@ In iTerm (macOS) and on Buildkite, it is also displayed inline in the terminal l
 This may trigger a prompt "Allow Terminal-initiated download?" in iTerm.
 Tick "Remember my choice" and click "Yes" if you want the inline screenshots to show up.
 
-When a browser-based test fails ([example](https://buildkite.com/sourcegraph/sourcegraph/builds/29935#1ee967cf-eb2e-4af0-8afc-0770d1779c1d)), CI displays a snapshot of the failure [inline](https://buildkite.com/docs/pipelines/links-and-images-in-log-output) in the Buildkite output and Jest prints the :
+When a browser-based test fails ([example](https://buildkite.com/sourcegraph/sourcegraph/builds/29935#1ee967cf-eb2e-4af0-8afc-0770d1779c1d)), CI displays a snapshot of the failure [inline](https://buildkite.com/docs/pipelines/links-and-images-in-log-output) in the Buildkite output and Vitest prints the :
 
 For end-to-end tests that failed in CI, a video of the session is available in the **Artifacts** tab:
 
@@ -169,7 +165,7 @@ Some common failure modes:
 - Page disconnected or browser session closed: another part of the test code might have called `page.close()` asynchronously, the browser crashed (check the video), or the build got canceled.
 - Node was detached from the DOM: components can change the DOM asynchronously, make sure to not rely on element handles.
 - Timing problems: Use `retry()` to "poll" for a condition that cannot be expressed through `waitForSelector()` (as opposed to relying on a fixed `setTimeout()`).
-- `GraphQL query X has no configured mock response` this test may need enterprise features. Run either `ENTERPRISE=1 pnpm build-web` or `ENTERPRISE=1 pnpm watch-web`
+- `GraphQL query X has no configured mock response` this test may need enterprise features. Run either `pnpm build-web` or `pnpm watch-web`
 
 Retrying the Buildkite step can help determine whether the test is flaky or broken. If it's flaky, [disable it with `it.skip()` and file an issue on the author](../background-information/testing_principles.md#flaky-tests).
 
@@ -197,13 +193,11 @@ The role of these integration tests is to provide in-browser testing of complex 
 All backend interactions are stubbed or recorded and replayed.
 The integration test suite for the webapp can be found in [`web/src/integration`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/web/src/integration).
 
-Test coverage from integration tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `integration`.
-
 #### Running integration tests
 
 To run integration tests for the web app:
 
-1. Run `INTEGRATION_TESTS=true ENTERPRISE=1 pnpm watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
+1. Run `INTEGRATION_TESTS=true pnpm watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
     - Alternatively, `sg run web-integration-build` will only build a bundle once.
     - Alternatively, `sg run web-integration-build-prod` will only build a bundle once and will also mirror our CI setup where we use the production bundle of the web application for integration tests.
 1. Run `sg test web-integration` in the repository root to run the tests.
@@ -254,8 +248,6 @@ End-to-end tests test the whole app: JavaScript, CSS styles, and backend.
 They can be found in [`web/src/end-to-end`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/client/web/src/end-to-end).
 
 The **regression test suite** is a special end-to-end test suite, which was created specifically for release testing and also contains some manual verification steps. As part of moving most of our current end-to-end tests to client & backend integration tests, the regression test suite will gradually be trimmed and phased out.
-
-Test coverage by end-to-end tests is tracked in [Codecov](https://codecov.io/gh/sourcegraph/sourcegraph) under the flag `e2e`.
 
 #### Running end-to-end tests
 
@@ -470,19 +462,6 @@ If, for whatever reason, we have to ignore some elements from an accessibility a
 
 **Tip:** Don't forget you'll need to rebuild the code if you want to see the tests pass locally after making this change.
 
-### Lighthouse tests
-
-We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
-
-#### Running the tests locally
-
-1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true pnpm --filter @sourcegraph/web build`
-2. Run the Lighthouse CI tests. `pnpm test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
-
-#### Running the tests in CI
-
-The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
-
 ### Bundlesize
 
 We measure our generated production build through [Bundlesize](https://github.com/siddharthkp/bundlesize2). This is a tool which takes a series of code bundles and measures their size against a specified baseline. It will also compare against the `main` baseline and report the difference.
@@ -495,19 +474,6 @@ If `Bundlesize` fails, it is likely because one of the generated bundles has gon
 2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an npm dependency.
 
 If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
-
-#### Analyzing the Bundlesize check failure
-
-To analyze web application bundles, we use [the Statoscope webpack-plugin](https://github.com/statoscope/statoscope/tree/master/packages/webpack-plugin) that generates HTML reports from webpack-stats. The best way to understand the bundlesize increase is to compare webpack-stats generated in the failing branch vs. the stats on the `main` branch. From the repo root, run the following commands:
-
-1. Install [the Statoscope CLI](https://github.com/statoscope/statoscope/tree/master/packages/cli) locally: `npm i @statoscope/cli -g`.
-2. Generate Webpack stats on the `main` branch: `WEBPACK_STATS_NAME=main pnpm --filter @sourcegraph/web run analyze-bundle`.
-3. Generate Webpack stats on the failing branch: `WEBPACK_STATS_NAME=my-branch pnpm --filter @sourcegraph/web run analyze-bundle`.
-4. Compare stats using Statoscope CLI: `statoscope generate -i ./ui/assets/stats-main-XXX.json -r ./ui/assets/stats-my-branch-XXX.json -o -t ./ui/assets/compare-report.html`
-5. The generated HTML report should be automatically opened in the new browser tab.
-6. Click "Diff" at the top right corner and select the `reference.json` stats.
-7. Go to "chunks" and inspect the chunk diff failing in the CI check. Clicking on the chunk should reveal the list of modules added or removed from the chunk.
-8. 🎉
 
 ### Assessing flaky client steps
 

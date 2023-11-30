@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -36,7 +35,7 @@ type Syncer struct {
 	Store   Store
 
 	// Synced is sent a collection of Repos that were synced by Sync (only if Synced is non-nil)
-	Synced chan Diff
+	Synced chan types.RepoSyncDiff
 
 	ObsvCtx *observation.Context
 
@@ -51,9 +50,9 @@ func NewSyncer(observationCtx *observation.Context, store Store, sourcer Sourcer
 	return &Syncer{
 		Sourcer: sourcer,
 		Store:   store,
-		Synced:  make(chan Diff),
+		Synced:  make(chan types.RepoSyncDiff),
 		Now:     func() time.Time { return time.Now().UTC() },
-		ObsvCtx: observation.ContextWithLogger(observationCtx.Logger.Scoped("syncer", "repo syncer"), observationCtx),
+		ObsvCtx: observation.ContextWithLogger(observationCtx.Logger.Scoped("syncer"), observationCtx),
 	}
 }
 
@@ -81,7 +80,7 @@ func (s *Syncer) Routines(ctx context.Context, store Store, opts RunOptions) []g
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter, syncerJanitor := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker", ""), s.ObsvCtx),
+	worker, resetter, syncerJanitor := NewSyncWorker(ctx, observation.ContextWithLogger(s.ObsvCtx.Logger.Scoped("syncWorker"), s.ObsvCtx),
 		store.Handle(),
 		&syncHandler{
 			syncer:          s,
@@ -204,85 +203,9 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store
 	// would be just a list of all stored repos Unmodified. This is the steady
 	// state, so is the initial diff we choose.
 	select {
-	case s.Synced <- Diff{Unmodified: stored}:
+	case s.Synced <- types.RepoSyncDiff{Unmodified: stored}:
 	case <-ctx.Done():
 	}
-}
-
-// Diff is the difference found by a sync between what is in the store and
-// what is returned from sources.
-type Diff struct {
-	Added      types.Repos
-	Deleted    types.Repos
-	Modified   ReposModified
-	Unmodified types.Repos
-}
-
-// Sort sorts all Diff elements by Repo.IDs.
-func (d *Diff) Sort() {
-	for _, ds := range []types.Repos{
-		d.Added,
-		d.Deleted,
-		d.Modified.Repos(),
-		d.Unmodified,
-	} {
-		sort.Sort(ds)
-	}
-}
-
-// Repos returns all repos in the Diff.
-func (d *Diff) Repos() types.Repos {
-	all := make(types.Repos, 0, len(d.Added)+
-		len(d.Deleted)+
-		len(d.Modified)+
-		len(d.Unmodified))
-
-	for _, rs := range []types.Repos{
-		d.Added,
-		d.Deleted,
-		d.Modified.Repos(),
-		d.Unmodified,
-	} {
-		all = append(all, rs...)
-	}
-
-	return all
-}
-
-func (d *Diff) Len() int {
-	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
-}
-
-// RepoModified tracks the modifications applied to a single repository after a
-// sync.
-type RepoModified struct {
-	Repo     *types.Repo
-	Modified types.RepoModified
-}
-
-type ReposModified []RepoModified
-
-// Repos returns all modified repositories.
-func (rm ReposModified) Repos() types.Repos {
-	repos := make(types.Repos, len(rm))
-	for i := range rm {
-		repos[i] = rm[i].Repo
-	}
-
-	return repos
-}
-
-// ReposModified returns only the repositories that had a specific field
-// modified in the sync.
-func (rm ReposModified) ReposModified(modified types.RepoModified) types.Repos {
-	repos := types.Repos{}
-	for _, pair := range rm {
-		if pair.Modified&modified == modified {
-			repos = append(repos, pair.Repo)
-		}
-	}
-
-	return repos
 }
 
 // SyncRepo syncs a single repository by name and associates it with an external service.
@@ -455,7 +378,7 @@ func isDeleteableRepoError(err error) bool {
 }
 
 func (s *Syncer) notifyDeleted(ctx context.Context, deleted ...api.RepoID) {
-	var d Diff
+	var d types.RepoSyncDiff
 	for _, id := range deleted {
 		d.Deleted = append(d.Deleted, &types.Repo{ID: id})
 	}
@@ -635,7 +558,7 @@ func (s *Syncer) SyncExternalService(
 			continue
 		}
 
-		var diff Diff
+		var diff types.RepoSyncDiff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
 			syncProgress.Errors++
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
@@ -728,10 +651,10 @@ func (s *Syncer) SyncExternalService(
 }
 
 // syncs a sourced repo of a given external service, returning a diff with a single repo.
-func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *types.Repo) (d Diff, err error) {
+func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *types.Repo) (d types.RepoSyncDiff, err error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
-		return Diff{}, errors.Wrap(err, "syncer: opening transaction")
+		return types.RepoSyncDiff{}, errors.Wrap(err, "syncer: opening transaction")
 	}
 
 	defer func() {
@@ -764,7 +687,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		UseOr:          true,
 	})
 	if err != nil {
-		return Diff{}, errors.Wrap(err, "syncer: getting repo from the database")
+		return types.RepoSyncDiff{}, errors.Wrap(err, "syncer: getting repo from the database")
 	}
 
 	switch len(stored) {
@@ -792,7 +715,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		// invariant: conflicting can't be nil due to our database constraints
 		if err = tx.RepoStore().Delete(ctx, conflicting.ID); err != nil {
-			return Diff{}, errors.Wrap(err, "syncer: failed to delete conflicting repo")
+			return types.RepoSyncDiff{}, errors.Wrap(err, "syncer: failed to delete conflicting repo")
 		}
 
 		// We fallthrough to the next case after removing the conflicting repo in order to update
@@ -801,9 +724,10 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		s.ObsvCtx.Logger.Debug("retrieved stored repo, falling through", log.String("stored", fmt.Sprintf("%v", stored)))
 		fallthrough
 	case 1: // Existing repo, update.
+		wasDeleted := !stored[0].DeletedAt.IsZero()
 		s.ObsvCtx.Logger.Debug("existing repo")
 		if err := UpdateRepoLicenseHook(ctx, tx, stored[0], sourced); err != nil {
-			return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
+			return types.RepoSyncDiff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
 		}
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
@@ -812,21 +736,26 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		}
 
 		if err = tx.UpdateExternalServiceRepo(ctx, svc, stored[0]); err != nil {
-			return Diff{}, errors.Wrap(err, "syncer: failed to update external service repo")
+			return types.RepoSyncDiff{}, errors.Wrap(err, "syncer: failed to update external service repo")
 		}
 
 		*sourced = *stored[0]
-		d.Modified = append(d.Modified, RepoModified{Repo: stored[0], Modified: modified})
-		s.ObsvCtx.Logger.Debug("appended to modified repos")
+		if wasDeleted {
+			d.Added = append(d.Added, stored[0])
+			s.ObsvCtx.Logger.Debug("revived soft-deleted repo")
+		} else {
+			d.Modified = append(d.Modified, types.RepoModified{Repo: stored[0], Modified: modified})
+			s.ObsvCtx.Logger.Debug("appended to modified repos")
+		}
 	case 0: // New repo, create.
 		s.ObsvCtx.Logger.Debug("new repo")
 
 		if err := CreateRepoLicenseHook(ctx, tx, sourced); err != nil {
-			return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
+			return types.RepoSyncDiff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
 		}
 
 		if err = tx.CreateExternalServiceRepo(ctx, svc, sourced); err != nil {
-			return Diff{}, errors.Wrapf(err, "syncer: failed to create external service repo: %s", sourced.Name)
+			return types.RepoSyncDiff{}, errors.Wrapf(err, "syncer: failed to create external service repo: %s", sourced.Name)
 		}
 
 		d.Added = append(d.Added, sourced)
@@ -911,7 +840,7 @@ func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen ma
 	return len(deleted), err
 }
 
-func observeDiff(diff Diff) {
+func observeDiff(diff types.RepoSyncDiff) {
 	for state, repos := range map[string]types.Repos{
 		"added":      diff.Added,
 		"modified":   diff.Modified.Repos(),

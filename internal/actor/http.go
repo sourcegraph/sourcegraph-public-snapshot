@@ -60,6 +60,8 @@ var (
 //
 // 🚨 SECURITY: Wherever possible, prefer to act in the context of a specific user rather
 // than as an internal actor, which can grant a lot of access in some cases.
+//
+// TODO(@bobheadxi): Migrate to httpcli.Doer and httpcli.Middleware
 type HTTPTransport struct {
 	RoundTripper http.RoundTripper
 }
@@ -71,6 +73,10 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.RoundTripper == nil {
 		t.RoundTripper = http.DefaultTransport
 	}
+
+	// RoundTripper should not modify original request. All the code paths
+	// below set a header, so we clone the request immediately.
+	req = req.Clone(req.Context())
 
 	actor := FromContext(req.Context())
 	path := getCondensedURLPath(req.URL.Path)
@@ -172,12 +178,24 @@ func AnonymousUIDMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		// Don't clobber an existing authenticated actor
 		if a := FromContext(req.Context()); !a.IsAuthenticated() && !a.IsInternal() {
-			if anonymousUID, ok := cookie.AnonymousUID(req); ok {
-				ctx := WithActor(req.Context(), FromAnonymousUser(anonymousUID))
-				next.ServeHTTP(rw, req.WithContext(ctx))
-				return
+			var anonymousUID string
+
+			// Get from cookie if available, otherwise get from header
+			if cookieAnonymousUID, ok := cookie.AnonymousUID(req); ok {
+				anonymousUID = cookieAnonymousUID
+			} else if headerAnonymousUID := req.Header.Get(headerKeyActorAnonymousUID); headerAnonymousUID != "" {
+				anonymousUID = headerAnonymousUID
 			}
+
+			// If we found an anonymous UID, use that as the actor context
+			ctx := req.Context()
+			if anonymousUID != "" {
+				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
+			}
+			next.ServeHTTP(rw, req.WithContext(ctx))
+			return
 		}
+
 		next.ServeHTTP(rw, req)
 	})
 }

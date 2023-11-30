@@ -46,6 +46,7 @@ func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss pr
 	default:
 		ss.Send(&proto.LocalCodeIntelResponse{})
 	}
+	return nil
 }
 
 // SymbolInfo is a no-op in the non-cgo variant.

@@ -2,7 +2,7 @@ import '@sourcegraph/branded'
 
 import type { Meta, StoryObj } from '@storybook/react'
 
-import 'storybook-addon-designs'
+import '@storybook/addon-designs'
 
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 

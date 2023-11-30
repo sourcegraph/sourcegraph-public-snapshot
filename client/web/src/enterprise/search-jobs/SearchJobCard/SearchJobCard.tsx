@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import type { FC } from 'react'
 
 import classNames from 'classnames'
 import { timeFormat } from 'd3-time-format'
@@ -6,7 +6,7 @@ import { timeFormat } from 'd3-time-format'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded/src'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 
-import { SearchJobNode } from '../../../graphql-operations'
+import type { SearchJobNode } from '../../../graphql-operations'
 import { SearchJobBadge } from '../SearchJobBadge/SearchJobBadge'
 
 import styles from './SearchJobCard.module.scss'
@@ -42,7 +42,7 @@ export const SearchJobCard: FC<SearchJobCardProps> = props => {
             <tr className={styles.row}>
                 <td className={styles.label}>Author</td>
                 <td className={styles.creator}>
-                    <UserAvatar user={searchJob.creator!} />
+                    <UserAvatar user={searchJob.creator!} className={styles.avatar} />
                     {searchJob.creator?.displayName ?? searchJob.creator?.username}
                 </td>
             </tr>

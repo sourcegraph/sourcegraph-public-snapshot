@@ -10,16 +10,13 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -52,38 +49,34 @@ type SearchClient interface {
 }
 
 // New will create a search client with a zoekt and searcher backed by conf.
-func New(logger log.Logger, db database.DB) SearchClient {
+func New(logger log.Logger, db database.DB, gitserverClient gitserver.Client) SearchClient {
 	return &searchClient{
-		logger:                      logger,
-		db:                          db,
-		zoekt:                       search.Indexed(),
-		searcherURLs:                search.SearcherURLs(),
-		searcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
-		settingsService:             settings.NewService(db),
-		sourcegraphDotComMode:       envvar.SourcegraphDotComMode(),
+		runtimeClients: job.RuntimeClients{
+			Logger:                      logger,
+			DB:                          db,
+			Zoekt:                       search.Indexed(),
+			SearcherURLs:                search.SearcherURLs(),
+			SearcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
+			Gitserver:                   gitserverClient,
+		},
+		settingsService:       settings.NewService(db),
+		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 }
 
-// MockedZoekt will return a search client for tests which uses the mocked
-// zoektStreamer.
-func MockedZoekt(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer) SearchClient {
+// Mocked will return a search client for tests which uses runtimeClients.
+func Mocked(runtimeClients job.RuntimeClients) SearchClient {
 	return &searchClient{
-		logger:                logger,
-		db:                    db,
-		zoekt:                 zoektStreamer,
+		runtimeClients:        runtimeClients,
 		settingsService:       settings.Mock(&schema.Settings{}),
 		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 	}
 }
 
 type searchClient struct {
-	logger                      log.Logger
-	db                          database.DB
-	zoekt                       zoekt.Streamer
-	searcherURLs                *endpoint.Map
-	searcherGRPCConnectionCache *defaults.ConnectionCache
-	settingsService             settings.Service
-	sourcegraphDotComMode       bool
+	runtimeClients        job.RuntimeClients
+	settingsService       settings.Service
+	sourcegraphDotComMode bool
 }
 
 func (s *searchClient) Plan(
@@ -115,7 +108,7 @@ func (s *searchClient) Plan(
 	// Beta: create a step to replace each context in the query with its repository query if any.
 	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
 	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
-		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, s.db, context)
+		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, s.runtimeClients.DB, context)
 		if err != nil {
 			return "", err
 		}
@@ -140,10 +133,10 @@ func (s *searchClient) Plan(
 		SearchMode:             searchMode,
 		UserSettings:           settings,
 		OnSourcegraphDotCom:    s.sourcegraphDotComMode,
-		Features:               ToFeatures(featureflag.FromContext(ctx), s.logger),
+		Features:               ToFeatures(featureflag.FromContext(ctx), s.runtimeClients.Logger),
 		PatternType:            searchType,
 		Protocol:               protocol,
-		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled
+		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.runtimeClients.DB, s.runtimeClients.Logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 
 	tr.AddEvent("parsed query", attribute.Stringer("query", inputs.Query))
@@ -168,14 +161,7 @@ func (s *searchClient) Execute(
 }
 
 func (s *searchClient) JobClients() job.RuntimeClients {
-	return job.RuntimeClients{
-		Logger:                      s.logger,
-		DB:                          s.db,
-		Zoekt:                       s.zoekt,
-		SearcherURLs:                s.searcherURLs,
-		SearcherGRPCConnectionCache: s.searcherGRPCConnectionCache,
-		Gitserver:                   gitserver.NewClient(),
-	}
+	return s.runtimeClients
 }
 
 func sanitizeSearchPatterns(ctx context.Context, db database.DB, log log.Logger) []*regexp.Regexp {
@@ -245,6 +231,8 @@ func SearchTypeFromString(patternType string) (query.SearchType, error) {
 		return query.SearchTypeLucky, nil
 	case "keyword":
 		return query.SearchTypeKeyword, nil
+	case "newStandardRC1":
+		return query.SearchTypeNewStandardRC1, nil
 	default:
 		return -1, errors.Errorf("unrecognized patternType %q", patternType)
 	}
@@ -266,8 +254,10 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 			searchType = query.SearchTypeLiteral
 		case "V3":
 			searchType = query.SearchTypeStandard
+		case "V4-rc1":
+			searchType = query.SearchTypeNewStandardRC1
 		default:
-			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", or \"V3\", got %q", version)
+			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", \"V3\", or \"V4-rc1\", got %q", version)
 		}
 	}
 	return searchType, nil
@@ -295,6 +285,8 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 			searchType = query.SearchTypeLucky
 		case "keyword":
 			searchType = query.SearchTypeKeyword
+		case "newStandardRC1":
+			searchType = query.SearchTypeNewStandardRC1
 		}
 	})
 	return searchType
@@ -307,10 +299,10 @@ func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Feature
 		logger.Warn("search feature flags are not available")
 	}
 
+	// When adding a new feature flag remember to add it to the list in
+	// client/web/src/featureFlags/featureFlags.ts to allow overriding.
 	return &search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
-		Ranking:                 flagSet.GetBoolOr("search-ranking", true),
 		Debug:                   flagSet.GetBoolOr("search-debug", false),
 	}
 }

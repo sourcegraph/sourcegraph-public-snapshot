@@ -4,7 +4,7 @@ import (
 	"io"
 	"net/http"
 
-	gh "github.com/google/go-github/v43/github"
+	gh "github.com/google/go-github/v55/github"
 
 	"github.com/sourcegraph/log"
 

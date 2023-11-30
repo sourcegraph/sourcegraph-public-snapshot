@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dghubble/gologin"
-	oauth2Login "github.com/dghubble/gologin/oauth2"
-	oauth2gologin "github.com/dghubble/gologin/oauth2"
+	"github.com/dghubble/gologin/v2"
+	oauth2Login "github.com/dghubble/gologin/v2/oauth2"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
@@ -35,7 +34,6 @@ func azureDevOpsHandler(logger log.Logger, config *oauth2.Config, success, failu
 			&auth.OAuthBearerToken{Token: token.AccessToken},
 			nil,
 		)
-
 		if err != nil {
 			logger.Error("failed to create azuredevops.Client", log.String("error", err.Error()))
 			ctx = gologin.WithError(ctx, errors.Errorf("failed to create HTTP client for azuredevops with AuthURL %q", config.Endpoint.AuthURL))
@@ -91,14 +89,14 @@ func callbackHandler(config *oauth2.Config, success http.Handler) http.Handler {
 			failure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
-		ownerState, err := oauth2gologin.StateFromContext(ctx)
+		ownerState, err := oauth2Login.StateFromContext(ctx)
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)
 			failure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
 		if state != ownerState || state == "" {
-			ctx = gologin.WithError(ctx, oauth2gologin.ErrInvalidState)
+			ctx = gologin.WithError(ctx, oauth2Login.ErrInvalidState)
 			failure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
@@ -129,7 +127,7 @@ func callbackHandler(config *oauth2.Config, success http.Handler) http.Handler {
 			failure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
-		ctx = oauth2gologin.WithToken(ctx, token)
+		ctx = oauth2Login.WithToken(ctx, token)
 		success.ServeHTTP(w, req.WithContext(ctx))
 	}
 	return http.HandlerFunc(fn)

@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -30,10 +29,6 @@ import (
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func featureFlagName(jobType IndexJobType) string {
-	return fmt.Sprintf("own-background-index-repo-%s", jobType.Name)
-}
 
 const (
 	tableName = "own_background_jobs"
@@ -165,7 +160,7 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 		Metrics:           workerutil.NewMetrics(observationCtx, "own_background_worker_processor"),
 	})
 
-	resetter := dbworker.NewResetter(log.Scoped("OwnBackgroundResetter", ""), workerStore, dbworker.ResetterOptions{
+	resetter := dbworker.NewResetter(log.Scoped("OwnBackgroundResetter"), workerStore, dbworker.ResetterOptions{
 		Name:     "own_background_worker_resetter",
 		Interval: time.Second * 20,
 		Metrics:  dbworker.NewResetterMetrics(observationCtx, "own_background_worker"),

@@ -21,7 +21,7 @@ func TestInsertDependencyRepo(t *testing.T) {
 	instant := timeutil.Now()
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	batches := [][]shared.MinimalPackageRepoRef{
@@ -102,7 +102,7 @@ func TestListPackageRepoRefs(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	batches := [][]shared.MinimalPackageRepoRef{
@@ -192,7 +192,7 @@ func TestListPackageRepoRefsFuzzy(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	pkgs := []shared.MinimalPackageRepoRef{
@@ -316,7 +316,7 @@ func TestDeletePackageRepoRefsByID(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	repos := []shared.MinimalPackageRepoRef{

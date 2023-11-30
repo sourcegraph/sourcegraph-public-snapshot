@@ -11,7 +11,6 @@ go_library(
         "main.go",
         "os.go",
         "release.go",
-        "sg_adr.go",
         "sg_analytics.go",
         "sg_app.go",
         "sg_audit.go",
@@ -19,7 +18,6 @@ go_library(
         "sg_db.go",
         "sg_deploy.go",
         "sg_embeddings_qa.go",
-        "sg_feedback.go",
         "sg_generate.go",
         "sg_help.go",
         "sg_insights.go",
@@ -48,7 +46,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg",
     visibility = ["//visibility:private"],
     deps = [
-        "//dev/sg/adr",
+        "//cmd/embeddings/qa",
         "//dev/sg/buf",
         "//dev/sg/ci",
         "//dev/sg/dependencies",
@@ -58,7 +56,6 @@ go_library(
         "//dev/sg/internal/category",
         "//dev/sg/internal/check",
         "//dev/sg/internal/db",
-        "//dev/sg/internal/docker",
         "//dev/sg/internal/generate",
         "//dev/sg/internal/generate/golang",
         "//dev/sg/internal/generate/proto",
@@ -79,7 +76,6 @@ go_library(
         "//dev/sg/msp",
         "//dev/sg/root",
         "//dev/team",
-        "//enterprise/cmd/embeddings/qa",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/connections/live",
@@ -106,10 +102,8 @@ go_library(
         "//monitoring/monitoring",
         "@com_github_agext_levenshtein//:levenshtein",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
-        "@com_github_docker_docker_credential_helpers//credentials",
         "@com_github_gomodule_redigo//redis",
-        "@com_github_google_go_github//github",
-        "@com_github_google_go_github_v41//github",
+        "@com_github_google_go_github_v55//github",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_jackc_pgx_v4//:pgx",
         "@com_github_keegancsmith_sqlf//:sqlf",
@@ -133,6 +127,11 @@ go_library(
 go_binary(
     name = "sg",
     embed = [":sg_lib"],
+    # keep
+    gotags = select({
+        "//:sg_msp_flag": ["msp"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
@@ -164,26 +163,4 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_urfave_cli_v2//:cli",
     ],
-)
-
-# Refer to /doc/dev/background-information/sg/BUILD.bazel to see how this target is used to copy the
-# reference.md to the correct directory.
-#
-# Alternatively, if you just want to generate the doc:
-# bazel run //doc/dev/background-information/sg:write_cli_reference_doc
-genrule(
-    name = "generate_reference_doc",
-    srcs = ["//:sg.config.yaml"],
-    outs = ["reference.md"],
-    cmd = """
-    SG_FORCE_REPO_ROOT="$$(pwd)" $(location :sg) \
-            --no-dev-private \
-            --disable-overwrite \
-            --disable-analytics \
-            --skip-auto-update \
-            --config sg.config.yaml \
-            help --full --output $@
-    """,
-    tools = [":sg"],
-    visibility = ["//visibility:public"],
 )

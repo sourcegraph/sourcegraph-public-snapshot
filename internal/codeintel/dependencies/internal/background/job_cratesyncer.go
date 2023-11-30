@@ -119,7 +119,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 		return errors.Newf("failed to update repo %s, error %s", repoName, update.Error)
 	}
 
-	allFilesStr, err := j.gitClient.LsFiles(ctx, nil, repoName, "HEAD")
+	allFilesStr, err := j.gitClient.LsFiles(ctx, repoName, "HEAD")
 	if err != nil {
 		return err
 	}
@@ -229,7 +229,7 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 					Scheme:  pkg.Scheme,
 					Name:    pkg.Name,
 					Version: version.Version,
-				}, true); err != nil {
+				}); err != nil {
 					queueErrs = errors.Append(queueErrs, err)
 				}
 			}
@@ -244,7 +244,6 @@ func (j *crateSyncerJob) handleCrateSyncer(ctx context.Context, interval time.Du
 func (j *crateSyncerJob) readIndexArchiveBatch(ctx context.Context, repoName api.RepoName, batch []gitdomain.Pathspec) (io.Reader, error) {
 	reader, err := j.gitClient.ArchiveReader(
 		ctx,
-		nil,
 		repoName,
 		gitserver.ArchiveOptions{
 			Treeish:   "HEAD",

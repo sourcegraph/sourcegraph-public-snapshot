@@ -94,7 +94,7 @@ func (db *qdrantDB) Search(ctx context.Context, params SearchParams) ([]ChunkRes
 }
 
 func (db *qdrantDB) PrepareUpdate(ctx context.Context, modelID string, modelDims uint64) error {
-	return ensureModelCollectionWithDefaultConfig(ctx, db, modelID, modelDims)
+	return ensureModelCollection(ctx, db, modelID, modelDims)
 }
 
 func (db *qdrantDB) HasIndex(ctx context.Context, modelID string, repoID api.RepoID, revision api.CommitID) (bool, error) {

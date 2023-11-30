@@ -129,21 +129,26 @@ export class SettingsArea extends React.Component<Props, State> {
 
         let term: string
         switch (this.props.subject.__typename) {
-            case 'User':
+            case 'User': {
                 term = 'User'
                 break
-            case 'Org':
+            }
+            case 'Org': {
                 term = 'Organization'
                 break
-            case 'Site':
+            }
+            case 'Site': {
                 term = 'Global'
                 break
-            case 'DefaultSettings':
+            }
+            case 'DefaultSettings': {
                 term = 'Default settings'
                 break
-            default:
+            }
+            default: {
                 term = 'Unknown'
                 break
+            }
         }
 
         const transferProps: SettingsAreaPageProps = {

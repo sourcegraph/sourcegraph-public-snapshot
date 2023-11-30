@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "licensetest",
+    srcs = ["licensetest.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/license/licensetest",
+    visibility = ["//:__subpackages__"],
+    deps = ["@org_golang_x_crypto//ssh"],
+)

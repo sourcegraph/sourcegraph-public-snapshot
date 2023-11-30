@@ -82,7 +82,7 @@ To deploy a High Availability (HA) configured Sourcegraph instance to an RBAC-en
     - ../../components/monitoring/cadvisor
     # Run Sourcegraph main stack with privilege and root
     # NOTE: This adds RBAC resources to the monitoring stack
-    - ../../components/privileged 
+    - ../../components/privileged
     # Run monitoring services with privilege and root
     # It also allows Prometheus to talk to the Kubernetes API for service discovery
     - ../../components/monitoring/privileged
@@ -106,7 +106,7 @@ RBAC must be enabled in your cluster for the frontend to communicate with other 
 This will allow the frontend service to discover endpoints for each service replica and communicate with them through the Kubernetes API. Note that this component should only be added if RBAC is enabled in your cluster.
 
 ### Embeddings Service
-By default the Embeddings service which is used to handle embeddings searches is disabled. To enable it the following must be commented out. By default the Embeddings service stores indexes in `blobstore`. Use the [embeddings-backend](./configure.md#external-embeddings-object-storage) patch to configure an external object store.
+By default, the Embeddings service which is used to handle embeddings searches is disabled. To enable it the following must be commented out. By default, the Embeddings service stores indexes in `blobstore`. Use the [embeddings-backend](./configure.md#external-embeddings-object-storage) patch to configure an external object store.
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
 components:
@@ -117,7 +117,7 @@ components:
 
 ## Monitoring stack
 
-The monitoring stack for Sourcegraph, similar to the main stack, does not include RBAC (Role-Based Access Control) resources by default. As a result, some dashboards may not display any data unless cAdvisor is deployed seperately with privileged access.
+The monitoring stack for Sourcegraph, similar to the main stack, does not include RBAC (Role-Based Access Control) resources by default. As a result, some dashboards may not display any data unless cAdvisor is deployed separately with privileged access.
 
 To deploy the monitoring stack, add the monitoring resources to the resources-list:
 
@@ -142,7 +142,7 @@ To deploy cAdvisor with privileged access, include the following:
 - [monitoring/privileged component](#monitoring-stack)
 - [privileged component](#privileged)
 - [cadvisor component](#deploy-cadvisor)
-  
+
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
   resources:
@@ -154,7 +154,7 @@ To deploy cAdvisor with privileged access, include the following:
     - ../../components/monitoring/cadvisor
     # Run Sourcegraph main stack with privilege and root
     # NOTE: This adds RBAC resources to the monitoring stack
-    - ../../components/privileged 
+    - ../../components/privileged
     # Run monitoring services with privilege and root
     # It also allows Prometheus to talk to the Kubernetes API for service discovery
     - ../../components/monitoring/privileged
@@ -167,7 +167,7 @@ To deploy cAdvisor with privileged access, include the following:
 
 Skip this configuration if you are running Prometheus with RBAC permissions.
 
-Because Sourcegraph is running without RBAC permissions in Kubernetes, it cannot auto-discover metrics endpoints to scrape metrics. As a result, Prometheus (the metrics scraper) requires a static target list (list of endpoints to scrape) provided in a ConfigMap. 
+Because Sourcegraph is running without RBAC permissions in Kubernetes, it cannot auto-discover metrics endpoints to scrape metrics. As a result, Prometheus (the metrics scraper) requires a static target list (list of endpoints to scrape) provided in a ConfigMap.
 
 The default target list ConfigMap only contains endpoints for the `default` and `ns-sourcegraph` namespaces, where Sourcegraph may be installed. If you have installed Sourcegraph in a different namespace, the provided target list will be missing those endpoints.
 
@@ -192,7 +192,7 @@ envsubst < base/monitoring/prometheus/prometheus.ConfigMap.yaml > instances/$INS
 ```
 
 **Step 4**: Add the new patch file to your overlay under `patches`:
-   
+
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
   patches:
@@ -205,7 +205,7 @@ Following these steps will allow Prometheus to successfully scrape metrics from 
 
 ## Tracing
 
-Sourcegraph exports traces in OpenTelemetry format. The OpenTelemetry collector, which must be configured as part of the deployment using the [otel component](#deploy-opentelemetry-collector), [collects and exports traces](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml). 
+Sourcegraph exports traces in OpenTelemetry format. The OpenTelemetry collector, which must be configured as part of the deployment using the [otel component](#deploy-opentelemetry-collector), [collects and exports traces](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/docker-images/opentelemetry-collector/configs/logging.yaml).
 
 By default, Sourcegraph supports exporting traces to multiple backends including Jaeger.
 
@@ -290,7 +290,7 @@ Some resources and components (e.g. [Prometheus](#prometheus-targets)) are pre-c
 
 ### Set namespace
 
-To set a namespace for all your Sourcegraph resources, update the `namespace` field to an exisiting namespace in your cluster:
+To set a namespace for all your Sourcegraph resources, update the `namespace` field to an existing namespace in your cluster:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -377,7 +377,7 @@ Here is an example on how to adjust the storage sizes for different services:
 
 > WARNING: Only available in version 4.5.0 or above
 
-In cases where adjusting resource allocation (e.g. replica count, resource limits, etc) is necessary, it is important to follow the instructions provided below.
+In cases where adjusting resource allocation (e.g. replica count, resource limits, etc.) is necessary, it is important to follow the instructions provided below.
 
 > NOTE: The built-in [replica transformer](https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/replicas/) is currently not supported unless being used as a component.
 
@@ -399,7 +399,7 @@ For example, the following patches update the resources for:
 
 - gitserver
   - increase replica count to 2
-  - adjust resources limits and requests 
+  - adjust resources limits and requests
 - pgsql
   - increase storage size to 500Gi
 
@@ -503,7 +503,7 @@ The component takes care of creating a new storage class named `sourcegraph` wit
 - Provisioner: pd.csi.storage.gke.io
 - SSD: types: pd-ssd
 
-It also update the storage class name for all resources to `sourcegraph`.
+It also updates the storage class name for all resources to `sourcegraph`.
 
 [Additional documentation](https://cloud.google.com/kubernetes-engine/docs/how-to/persistent-volumes/gce-pd-csi-driver) for more information.
 
@@ -530,7 +530,7 @@ It also update the storage class name for all resources to `sourcegraph`.
 
 ### Azure
 
-> WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers)). This **can not** be enabled after the fact
+> WARNING: If you are deploying on Azure, you **must** ensure that your cluster is created with support for CSI storage drivers [(link)](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers). This **can not** be enabled after the fact
 
 **Step 1**: Follow the [official instructions](https://docs.microsoft.com/en-us/azure/aks/csi-storage-drivers) to deploy the [Container Storage Interface (CSI) drivers](https://learn.microsoft.com/en-us/azure/aks/csi-storage-drivers).
 
@@ -658,7 +658,7 @@ Update the following variables in your [buildConfig.yaml](kustomize/index.md#bui
 
 ## Network access
 
-To allow external users to access the main web server, you need to configure it to be reachable over the network. 
+To allow external users to access the main web server, you need to configure it to be reachable over the network.
 
 We recommend using the [ingress-nginx](https://kubernetes.github.io/ingress-nginx/) [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) controller for production environments.
 
@@ -788,7 +788,7 @@ Configuration options for ingress installed for sourcegraph-frontend.
 
 ### AWS ALB
 
-Component to configure Ingress to use [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) to expose Sourcegraph publicly by updating annotation to `kubernetes.io/ingress.class: alb` in frontend ingress. 
+Component to configure Ingress to use [AWS Load Balancer Controller](https://docs.aws.amazon.com/eks/latest/userguide/aws-load-balancer-controller.html) to expose Sourcegraph publicly by updating annotation to `kubernetes.io/ingress.class: alb` in frontend ingress.
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -881,10 +881,10 @@ $ mkdir -p instances/$INSTANCE_NAME/patches
 $ cp components/patches/frontend-ingress-annotations.yaml instances/$INSTANCE_NAME/patches/frontend-ingress-annotations.yaml
 ```
 
-**Step 3**: Add the additional annotations at the end of the new patch file 
+**Step 3**: Add the additional annotations at the end of the new patch file
 
 **Step 4**: Include the patch file in your overlay under `patches`:
-   
+
   ```yaml
   # instances/$INSTANCE_NAME/kustomization.yaml
   components:
@@ -894,7 +894,7 @@ $ cp components/patches/frontend-ingress-annotations.yaml instances/$INSTANCE_NA
     - patch: patches/frontend-ingress.annotations.yaml
   ```
 
-This will add the annotations specified in your copy of the [frontend-ingress-annotations.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/frontend/sourcegraph-frontend.Ingress.yaml) file to the sourcegraph-frontend ingress resource. For more information on [ingress-nginx annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/), refer to the [NGINX Configuration documentation](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/).
+This will add the annotations specified in your copy of the [frontend-ingress-annotations.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/sourcegraph/frontend/sourcegraph-frontend.Ingress.yaml) file to the sourcegraph-frontend ingress resource. For more information on [ingress-nginx annotations](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/annotations/), refer to the [NGINX Configuration documentation](https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/).
 
 ### NetworkPolicy
 
@@ -1010,7 +1010,7 @@ configMapGenerator:
 
 These values will be automatically merged with the environment variables currently listed in the ConfigMap for frontend.
 
-> WARNING: You must restart frontend for the updated values to be activiated
+> WARNING: You must restart frontend for the updated values to be activated
 
 ### Gitserver
 
@@ -1059,7 +1059,7 @@ For example, to update the value for `SEARCHER_CACHE_SIZE_MB`:
 
 ### Symbols
 
-You can update environment variables for **searcher** with `patches`. 
+You can update environment variables for **searcher** with `patches`.
 
 For example, to update the value for `SYMBOLS_CACHE_SIZE_MB`:
 
@@ -1102,14 +1102,14 @@ To connect Sourcegraph to an existing PostgreSQL instance, add the relevant envi
         - PGPORT=NEW_PGPORT
 ```
 
-> WARNING: You must restart frontend for the updated values to be activiated
+> WARNING: You must restart frontend for the updated values to be activated
 
 ### External Redis
 
 Sourcegraph supports specifying an external Redis server with these environment variables:
 
 - **REDIS_CACHE_ENDPOINT**=[redis-cache:6379](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) for caching information.
-- **REDIS_STORE_ENDPOINT**=[redis-store:6379](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) for storing information (session data and job queues). 
+- **REDIS_STORE_ENDPOINT**=[redis-store:6379](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) for storing information (session data and job queues).
 
 When using an external Redis server, the corresponding environment variable must also be added to the following services:
 
@@ -1142,7 +1142,7 @@ This adds the new environment variables for redis to the services listed above.
     REDIS_STORE_ENDPOINT: REDIS_STORE_DSN
 ```
 
-> WARNING: You must restart frontend for the updated values to be activiated
+> WARNING: You must restart frontend for the updated values to be activated
 
 ### External Embeddings Object Storage
 
@@ -1160,10 +1160,10 @@ $ mkdir instances/$INSTANCE_NAME/patches
 $ cp components/patches/embeddings-backend.yaml instances/$INSTANCE_NAME/patches/embeddings-backend.yaml
 ```
 
-**Step 3**: Configure the external object store [backend](../../../cody/explanations/code_graph_context.md#storing-embedding-indexes)
+**Step 3**: Configure the external object store [backend](../../../cody/core-concepts/embeddings/manage-embeddings.md#store-embedding-indexes)
 
 **Step 4**: Include the patch file in your overlay under `patches`:
-   
+
   ```yaml
   # instances/$INSTANCE_NAME/kustomization.yaml
   components:
@@ -1176,7 +1176,7 @@ $ cp components/patches/embeddings-backend.yaml instances/$INSTANCE_NAME/patches
 
 ## SSH for cloning
 
-Sourcegraph will clone repositories using SSH credentials when the `id_rsa` and `known_hosts` files are mounted at `/home/sourcegraph/.ssh` (or `/root/.ssh` when the cluster is run by root users) in the `gitserver` deployment. 
+Sourcegraph will clone repositories using SSH credentials when the `id_rsa` and `known_hosts` files are mounted at `/home/sourcegraph/.ssh` (or `/root/.ssh` when the cluster is run by root users) in the `gitserver` deployment.
 
 **WARNING:** Do not commit the actual `id_rsa` and `known_hosts` files to any public repository.
 
@@ -1195,14 +1195,14 @@ To mount the files through Kustomize:
     - configs/known_hosts
   ```
 
-**Step 3:** Include the following component to mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod) in [gitserver.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/gitserver/gitserver.StatefulSet.yaml).
+**Step 3:** Include the following component to mount the [secret as a volume](https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-files-from-a-pod) in [gitserver.StatefulSet.yaml](https://github.com/sourcegraph/deploy-sourcegraph-k8s/blob/master/base/sourcegraph/gitserver/gitserver.StatefulSet.yaml).
 
   ```yaml
   # instances/$INSTANCE_NAME/kustomization.yaml
   components:
-    # Enable SSH to clon repositories as non-root user (default)
+    # Enable SSH to clone repositories as non-root user (default)
     - ../../components/enable/ssh/non-root
-    # Enable SSH to clon repositories as root user
+    # Enable SSH to clone repositories as root user
     - ../../components/enable/ssh/root
   ```
 
@@ -1218,7 +1218,7 @@ Update your [code host configuration file](../../external_service/index.md#full-
 
 ### Arbitrary users
 
-Our Postgres databases can only be run with the UIDs defined by the upstream images, for example, [UID 70 and GID 70](https://sourcegraph.com/github.com/docker-library/postgres@master/-/blob/12/alpine/Dockerfile?L9-15#L4)--this could cause permission issues for clusters that run pods with arbitrary users. This can be resolved with the `utils/uid` component created based on one of the solutions suggested by Postgres on their [official docker page](https://hub.docker.com/_/postgres). 
+Our Postgres databases can only be run with the UIDs defined by the upstream images, for example, [UID 70 and GID 70](https://sourcegraph.com/github.com/docker-library/postgres@master/-/blob/12/alpine/Dockerfile?L9-15#L4)--this could cause permission issues for clusters that run pods with arbitrary users. This can be resolved with the `utils/uid` component created based on one of the solutions suggested by Postgres on their [official docker page](https://hub.docker.com/_/postgres).
 
 The `utils/uid` component bind-mount `/etc/passwd` as read-only through hostpath so that you can run the containers with valid users on your host.
 
@@ -1281,7 +1281,7 @@ This will cause Prometheus to drop all metrics *from cAdvisor* that are not serv
 
 ## Private registry
 
-**Step 1:** To update all image names with your private registry, eg. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
+**Step 1:** To update all image names with your private registry, e.g. `index.docker.io/sourcegraph/service_name` to `your.private.registry.com/sourcegraph/service_name`, include the `private-registry` component:
 
 ```yaml
 # instances/$INSTANCE_NAME/kustomization.yaml
@@ -1309,7 +1309,7 @@ To add `imagePullSecrets` to all resources:
     - ../../components/resources/imagepullsecrets
 ```
 
-**Step 2:** Set the `IMAGE_PULL_SECRET_NAME` variable in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file. 
+**Step 2:** Set the `IMAGE_PULL_SECRET_NAME` variable in your [buildConfig.yaml](kustomize/index.md#buildconfig-yaml) file.
 
 For example:
 
@@ -1367,7 +1367,7 @@ After transferring ownerships, you can redeploy the instance with non-privileged
 
 ## Outbound Traffic
 
-When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or VPC it may be necessary to expose ports for outbound network traffic. Sourcegraph must open port 443 for outbound traffic to codehosts, and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with Sourcegraph.com. Port 22 must also be opened to enable git SSH cloning by Sourcegraph. In addition, please make sure to apply other required changes to secure your cluster in a manner that meets your organization's security requirements.
+When working with an [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or VPC it may be necessary to expose ports for outbound network traffic. Sourcegraph must open port 443 for outbound traffic to code hosts, and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with Sourcegraph.com. Port 22 must also be opened to enable git SSH cloning by Sourcegraph. In addition, please make sure to apply other required changes to secure your cluster in a manner that meets your organization's security requirements.
 
 ---
 

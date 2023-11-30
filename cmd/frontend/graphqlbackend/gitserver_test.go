@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
 
 func TestGitserverResolver(t *testing.T) {
@@ -23,7 +24,7 @@ func TestGitserverResolver(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	user := createTestUser(t, db, false)
 	admin := createTestUser(t, db, true)
@@ -31,7 +32,7 @@ func TestGitserverResolver(t *testing.T) {
 	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
 	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
 
-	gitserverInstances := []gitserver.SystemInfo{
+	gitserverInstances := []protocol.SystemInfo{
 		{
 			Address:    "127.0.0.1:3501",
 			FreeSpace:  10240,

@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { type FC, useState } from 'react'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -14,7 +14,7 @@ import {
     useDebounce,
 } from '@sourcegraph/wildcard'
 
-import { GetUsersListResult, GetUsersListVariables } from '../../graphql-operations'
+import type { GetUsersListResult, GetUsersListVariables } from '../../graphql-operations'
 
 import styles from './UsersPicker.module.scss'
 

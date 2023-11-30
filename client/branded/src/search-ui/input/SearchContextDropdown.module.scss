@@ -18,18 +18,18 @@
 
     &:hover,
     &:active,
-    &:focus {
+    &:focus-visible {
         text-decoration: none;
         color: var(--search-query-text-color);
     }
 
     &:hover,
-    &:focus {
+    &:focus-visible {
         background-color: var(--color-bg-2);
         border-color: var(--color-bg-2);
     }
 
-    &:focus {
+    &:focus-visible {
         border-color: var(--border-active-color);
         box-shadow: none;
     }

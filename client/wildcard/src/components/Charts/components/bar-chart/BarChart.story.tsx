@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { ParentSize } from '@visx/responsive'
 import { ResizableBox } from 'react-resizable'
 
@@ -59,7 +59,7 @@ const getLink = (datum: LanguageUsageDatum) => datum.linkURL
 const getName = (datum: LanguageUsageDatum) => datum.name
 const getGroup = (datum: LanguageUsageDatum) => datum.group
 
-export const BarChartDemo: Story = () => (
+export const BarChartDemo: StoryFn = () => (
     <main
         style={{
             display: 'flex',

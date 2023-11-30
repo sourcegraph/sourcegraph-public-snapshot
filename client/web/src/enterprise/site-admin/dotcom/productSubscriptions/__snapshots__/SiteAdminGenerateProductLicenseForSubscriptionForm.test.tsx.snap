@@ -1,6 +1,6 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
+exports[`SiteAdminGenerateProductLicenseForSubscriptionForm > renders 1`] = `
 <body>
   <div
     aria-hidden="true"
@@ -248,7 +248,7 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
                       max="2011-06-25"
                       min="2006-01-03"
                       type="date"
-                      value="2007-01-03"
+                      value="2006-01-02"
                     />
                   </div>
                   <small
@@ -256,8 +256,8 @@ exports[`SiteAdminGenerateProductLicenseForSubscriptionForm renders 1`] = `
                   >
                     <span>
                       Valid until 
-                      Jan 3, 2007, 11:59:59 PM
-                       (1 year remaining)
+                      Jan 2, 2006, 11:59:59 PM
+                       (2 hours remaining)
                     </span>
                     <p
                       class=""

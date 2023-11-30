@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type RepoUpdateSchedulerInfoArgs struct {
@@ -93,21 +92,16 @@ type RepoQueueState struct {
 type RepoLookupArgs struct {
 	// Repo is the repository name to look up.
 	Repo api.RepoName `json:",omitempty"`
-
-	// Update will enqueue a high priority git update for this repo if it exists and this
-	// field is true.
-	Update bool
 }
 
 func (r *RepoLookupArgs) ToProto() *proto.RepoLookupRequest {
 	return &proto.RepoLookupRequest{
-		Repo:   string(r.Repo),
-		Update: r.Update,
+		Repo: string(r.Repo),
 	}
 }
 
 func (r *RepoLookupArgs) String() string {
-	return fmt.Sprintf("RepoLookupArgs{Repo: %s, Update: %t}", r.Repo, r.Update)
+	return fmt.Sprintf("RepoLookupArgs{Repo: %s}", r.Repo)
 }
 
 // RepoLookupResult is the response to a repository information request (RepoLookupArgs).
@@ -400,123 +394,4 @@ type ChangesetSyncRequest struct {
 // ChangesetSyncResponse is a response to sync a number of changesets
 type ChangesetSyncResponse struct {
 	Error string
-}
-
-// PermsSyncRequest is a request to sync permissions. The provided options are used to
-// sync all provided users and repos - to use different options, make a separate request.
-type PermsSyncRequest struct {
-	UserIDs           []int32                           `json:"user_ids"`
-	RepoIDs           []api.RepoID                      `json:"repo_ids"`
-	Options           authz.FetchPermsOptions           `json:"options"`
-	Reason            database.PermissionsSyncJobReason `json:"reason"`
-	TriggeredByUserID int32                             `json:"triggered_by_user_id"`
-	ProcessAfter      time.Time                         `json:"process_after"`
-}
-
-// PermsSyncResponse is a response to sync permissions.
-type PermsSyncResponse struct {
-	Error string
-}
-
-// ExternalServiceSyncRequest is a request to sync a specific external service eagerly.
-//
-// The FrontendAPI is one of the issuers of this request. It does so when creating or
-// updating an external service so that admins don't have to wait until the next sync
-// run to see their repos being synced.
-type ExternalServiceSyncRequest struct {
-	ExternalServiceID int64
-}
-
-// ExternalServiceSyncResult is a result type of an external service's sync request.
-type ExternalServiceSyncResult struct {
-	Error string
-}
-
-type ExternalServiceNamespacesArgs struct {
-	ExternalServiceID *int64
-	Kind              string
-	Config            string
-}
-
-func (e *ExternalServiceNamespacesArgs) ToProto() *proto.ExternalServiceNamespacesRequest {
-	return &proto.ExternalServiceNamespacesRequest{
-		ExternalServiceId: e.ExternalServiceID,
-		Kind:              e.Kind,
-		Config:            e.Config,
-	}
-}
-
-func ExternalServiceNamespacesArgsFromProto(p *proto.ExternalServiceNamespacesRequest) *ExternalServiceNamespacesArgs {
-	return &ExternalServiceNamespacesArgs{
-		ExternalServiceID: p.ExternalServiceId,
-		Kind:              p.GetKind(),
-		Config:            p.GetConfig(),
-	}
-}
-
-type ExternalServiceNamespacesResult struct {
-	Namespaces []*types.ExternalServiceNamespace
-	Error      string
-}
-
-func ExternalServiceNamespacesResultFromProto(p *proto.ExternalServiceNamespacesResponse) *ExternalServiceNamespacesResult {
-	namespaces := make([]*types.ExternalServiceNamespace, 0, len(p.GetNamespaces()))
-	for _, ns := range p.GetNamespaces() {
-		namespaces = append(namespaces, &types.ExternalServiceNamespace{
-			ID:         int(ns.GetId()),
-			Name:       ns.GetName(),
-			ExternalID: ns.GetExternalId(),
-		})
-	}
-	return &ExternalServiceNamespacesResult{
-		Namespaces: namespaces,
-	}
-}
-
-type ExternalServiceRepositoriesArgs struct {
-	ExternalServiceID *int64
-	Kind              string
-	Query             string
-	Config            string
-	First             int32
-	ExcludeRepos      []string
-}
-
-func (a *ExternalServiceRepositoriesArgs) ToProto() *proto.ExternalServiceRepositoriesRequest {
-	return &proto.ExternalServiceRepositoriesRequest{
-		ExternalServiceId: a.ExternalServiceID,
-		Kind:              a.Kind,
-		Query:             a.Query,
-		Config:            a.Config,
-		First:             a.First,
-		ExcludeRepos:      a.ExcludeRepos,
-	}
-}
-
-func ExternalServiceRepositoriesArgsFromProto(p *proto.ExternalServiceRepositoriesRequest) *ExternalServiceRepositoriesArgs {
-	return &ExternalServiceRepositoriesArgs{
-		ExternalServiceID: p.ExternalServiceId,
-		Kind:              p.Kind,
-		Query:             p.Query,
-		Config:            p.Config,
-		First:             p.First,
-		ExcludeRepos:      p.ExcludeRepos,
-	}
-}
-
-type ExternalServiceRepositoriesResult struct {
-	Repos []*types.ExternalServiceRepository
-	Error string
-}
-
-func ExternalServiceRepositoriesResultFromProto(p *proto.ExternalServiceRepositoriesResponse) *ExternalServiceRepositoriesResult {
-	repos := make([]*types.ExternalServiceRepository, 0, len(p.GetRepos()))
-	for _, repo := range p.GetRepos() {
-		repos = append(repos, &types.ExternalServiceRepository{
-			ID:         api.RepoID(repo.GetId()),
-			Name:       api.RepoName(repo.GetName()),
-			ExternalID: repo.GetExternalId(),
-		})
-	}
-	return &ExternalServiceRepositoriesResult{Repos: repos}
 }

@@ -12,7 +12,6 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 	"golang.org/x/time/rate"
@@ -21,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -99,6 +99,11 @@ type ExternalServiceStore interface {
 	// CancelSyncJob cancels a given sync job. It returns an error when the job was not
 	// found or not in processing or queued state.
 	CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error
+
+	// CleanupSyncJobs removes sync jobs that have finished before the given threshold.
+	// Additionally, only up to LimitPerService records are kept, deleting records
+	// to only keep the newest N.
+	CleanupSyncJobs(ctx context.Context, opts ExternalServicesCleanupSyncJobsOptions) error
 
 	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
@@ -693,6 +698,11 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			return err
 		}
 		s.CodeHostID = &chID
+
+		// Ensure CreatedAt is set.
+		if s.CreatedAt.IsZero() {
+			s.CreatedAt = timeutil.Now()
+		}
 	}
 
 	// Get the list services that are marked as deleted. We don't know at this point
@@ -1376,6 +1386,54 @@ func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalS
 	return nil
 }
 
+type ExternalServicesCleanupSyncJobsOptions struct {
+	// Remove jobs that are older than the given duration from NOW().
+	OlderThan time.Duration
+	// Removes the oldest jobs until only MaxPerExternalService jobs remain for
+	// each service.
+	MaxPerExternalService int
+}
+
+func (e *externalServiceStore) CleanupSyncJobs(ctx context.Context, opts ExternalServicesCleanupSyncJobsOptions) error {
+	if opts.MaxPerExternalService < 1 {
+		return errors.New("MaxPerExternalService must be greater than 0")
+	}
+
+	q := buildCleanupSyncJobsQuery(opts)
+	return e.Exec(ctx, q)
+}
+
+const cleanupSyncJobsQueryFmtstr = `
+WITH ranked_jobs AS (
+    SELECT
+        id,
+        external_service_id,
+        state,
+        finished_at,
+        ROW_NUMBER() OVER (PARTITION BY external_service_id ORDER BY finished_at DESC) as rn
+    FROM
+        external_service_sync_jobs
+    WHERE
+        state IN ('completed', 'failed', 'canceled')
+		AND
+		finished_at IS NOT NULL
+)
+DELETE FROM
+    external_service_sync_jobs
+WHERE
+    id IN (
+        SELECT id FROM ranked_jobs
+        WHERE
+			rn > %s
+			OR
+			finished_at < %s
+    )
+`
+
+func buildCleanupSyncJobsQuery(opts ExternalServicesCleanupSyncJobsOptions) *sqlf.Query {
+	return sqlf.Sprintf(cleanupSyncJobsQueryFmtstr, opts.MaxPerExternalService, time.Now().Add(-opts.OlderThan))
+}
+
 func (e *externalServiceStore) hasRunningSyncJobs(ctx context.Context, id int64) (bool, error) {
 	q := sqlf.Sprintf(`
 SELECT 1
@@ -1534,8 +1592,6 @@ SELECT
 	external_service_id,
 	repo_id,
 	clone_url,
-	user_id,
-	org_id,
 	created_at
 FROM external_service_repos
 WHERE %s
@@ -1551,27 +1607,16 @@ var scanExternalServiceRepos = basestore.NewSliceScanner(scanExternalServiceRepo
 
 func scanExternalServiceRepo(s dbutil.Scanner) (*types.ExternalServiceRepo, error) {
 	var (
-		repo   types.ExternalServiceRepo
-		userID sql.NullInt32
-		orgID  sql.NullInt32
+		repo types.ExternalServiceRepo
 	)
 
 	if err := s.Scan(
 		&repo.ExternalServiceID,
 		&repo.RepoID,
 		&repo.CloneURL,
-		&userID,
-		&orgID,
 		&repo.CreatedAt,
 	); err != nil {
 		return nil, err
-	}
-
-	if userID.Valid {
-		repo.UserID = userID.Int32
-	}
-	if orgID.Valid {
-		repo.OrgID = orgID.Int32
 	}
 
 	return &repo, nil

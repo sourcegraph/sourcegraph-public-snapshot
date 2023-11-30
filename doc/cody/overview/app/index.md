@@ -132,14 +132,14 @@ After a successful installation, follow these steps to complete the app setup:
 
 - Sign in and connect the app with your Sourcegraph.com account, or create a new account if you haven't got one
 - Next, select up to 10 local repositories to add to your code graph
-- This code is sent to OpenAI to create [embeddings](./../../explanations/code_graph_context.md#embeddings), which helps Cody build the code graph and generate more accurate answers about your code
+- This code is sent to OpenAI to create [embeddings](./../../core-concepts/embeddings.md), which helps Cody build the code graph and generate more accurate answers about your code
 - If you use [VS Code](./../install-vscode.md) or [JetBrains IntelliJ](./../install-jetbrains.md) IDEs, it's recommended to install their extensions and Ask Cody questions right within your editor
 
 > NOTE: The [JetBrains IntelliJ](./../install-jetbrains.md) extension is in the `Experimental` stage.
 
 ## Rate limiting
 
-Several forms of rate limiting help us manage costs for free versions of Cody. We're working actively to relax these limits and facilitate users with [Cody Gateway](./../../explanations/cody_gateway.md).
+Several forms of rate limiting help us manage costs for free versions of Cody. We're working actively to relax these limits and facilitate users with [Cody Gateway](./../../core-concepts/cody-gateway.md).
 
 If you hit these limits, you can request an increased limit by visiting our [Discord](https://discord.com/servers/sourcegraph-969688426372825169) channel for both chats and completions. If you'd like to use your third-party LLM provider instead of Cody Gateway, create your key with Anthropic or OpenAI and [update your app configuration](app_configuration.md).
 

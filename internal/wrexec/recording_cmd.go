@@ -139,6 +139,11 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 		commandArgs = redactedArgs
 	}
 
+	isSuccess := false
+	if cmd.ProcessState != nil {
+		isSuccess = cmd.ProcessState.Success()
+	}
+
 	// record this command in redis
 	val := RecordedCommand{
 		Start:    rc.start,
@@ -147,7 +152,7 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 		Dir:      cmd.Dir,
 		Path:     cmd.Path,
 
-		IsSuccess: cmd.ProcessState.Success(),
+		IsSuccess: isSuccess,
 		Output:    commandOutput,
 	}
 

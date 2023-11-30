@@ -30,8 +30,6 @@ var (
 
 	indexedDialerOnce sync.Once
 	indexedDialer     backend.ZoektDialer
-
-	IndexedMock zoekt.Streamer
 )
 
 func SearcherURLs() *endpoint.Map {
@@ -45,7 +43,7 @@ func SearcherURLs() *endpoint.Map {
 
 func SearcherGRPCConnectionCache() *defaults.ConnectionCache {
 	searcherGRPCConnectionCacheOnce.Do(func() {
-		logger := log.Scoped("searcherGRPCConnectionCache", "gRPC connection cache for searcher endpoints")
+		logger := log.Scoped("searcherGRPCConnectionCache")
 		searcherGRPCConnectionCache = defaults.NewConnectionCache(logger)
 	})
 
@@ -53,9 +51,6 @@ func SearcherGRPCConnectionCache() *defaults.ConnectionCache {
 }
 
 func Indexed() zoekt.Streamer {
-	if IndexedMock != nil {
-		return IndexedMock
-	}
 	indexedSearchOnce.Do(func() {
 		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
 			"", // no hostname means its the aggregator
@@ -79,11 +74,11 @@ type ZoektAllIndexed struct {
 }
 
 // ListAllIndexed lists all indexed repositories.
-func ListAllIndexed(ctx context.Context) (*ZoektAllIndexed, error) {
+func ListAllIndexed(ctx context.Context, zs zoekt.Searcher) (*ZoektAllIndexed, error) {
 	q := &query.Const{Value: true}
 	opts := &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap}
 
-	repos, err := Indexed().List(ctx, q, opts)
+	repos, err := zs.List(ctx, q, opts)
 	if err != nil {
 		return nil, err
 	}

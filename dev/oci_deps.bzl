@@ -1,3 +1,7 @@
+"""
+Load external dependencies for base images
+"""
+
 load("@rules_oci//oci:pull.bzl", "oci_pull")
 
 # Quick script to get the latest tags for each of the base images from GCR:
@@ -32,171 +36,214 @@ load("@rules_oci//oci:pull.bzl", "oci_pull")
 # done
 
 def oci_deps():
+    """
+    The image definitions and their digests
+    """
     oci_pull(
         name = "wolfi_base",
-        digest = "sha256:b3dee409328ca79c1f6ad8742461e8b910ee132894eb7baefea787df517a2943",
+        digest = "sha256:04fe3ffb3ccee7a6b5a958e9b68696d1df65402597473edd86e32eb9c1482178",
         image = "index.docker.io/sourcegraph/wolfi-sourcegraph-base",
     )
 
     oci_pull(
         name = "wolfi_cadvisor_base",
-        digest = "sha256:3c4a0611419e8fbbf13f6fd971068064b20fd535d280c411ee04de83d31e96ac",
+        digest = "sha256:97c40d7556aa59709d5b6fbfc1055271dbdd6a05b7c3dce052edf8959696602e",
         image = "index.docker.io/sourcegraph/wolfi-cadvisor-base",
     )
 
     oci_pull(
         name = "wolfi_symbols_base",
-        digest = "sha256:747ab7f58d125a512be6d36a5bb85a7dc2f4da21183904257f85e40b95618141",
+        digest = "sha256:ff850ff119266997b8a1be28c212b68d5d3049f0576e39777b05f11c49df06e6",
         image = "index.docker.io/sourcegraph/wolfi-symbols-base",
     )
 
     oci_pull(
         name = "wolfi_server_base",
-        digest = "sha256:21071210e80868f891570d657c3915d25eb40da9fabad46f4d71e2fe028b6ba9",
+        digest = "sha256:a03f800177465bf309918aed5e9ceac9ee5ee351a626947eabf9958c2ac1e307",
         image = "index.docker.io/sourcegraph/wolfi-server-base",
     )
 
     oci_pull(
         name = "wolfi_gitserver_base",
-        digest = "sha256:5a567927a3a4723c2b5a4eb3bc3dd31fe09761ef3fd2fab72467a5938fc805e2",
+        digest = "sha256:207fd4e9d228091c656da0cb3871137565efbb01d85086619ac095eab57716a2",
         image = "index.docker.io/sourcegraph/wolfi-gitserver-base",
     )
 
     oci_pull(
         name = "wolfi_grafana_base",
-        digest = "sha256:6f90153789f26885fd708ce695a8f83959216496f55ed9bf9dfe26288a7f1f41",
+        digest = "sha256:461ef0c0233c20716398a0ad1a38dc2df955e26ec091400f64a18fa7de9d2621",
         image = "us.gcr.io/sourcegraph-dev/wolfi-grafana",
     )
 
     oci_pull(
         name = "wolfi_postgres_exporter_base",
-        digest = "sha256:87130076b52c42e50ea916213817ce186d623f224a6545f833bbe38e0079525a",
+        digest = "sha256:d87b630de2a16291f6644c501a25376513eddb778416a201e40945b18d91a96a",
         image = "index.docker.io/sourcegraph/wolfi-postgres-exporter-base",
     )
 
     oci_pull(
         name = "wolfi_jaeger_all_in_one_base",
-        digest = "sha256:15252573824c854e0a43ae5f680c3593c4fe1fc3c8c7115a6cbd5a8f1baf61ec",
+        digest = "sha256:6ef2ca500d978d37dd20d0010a020935534b681f19ebde3843c4c75935cb0af0",
         image = "index.docker.io/sourcegraph/wolfi-jaeger-all-in-one-base",
     )
 
     oci_pull(
         name = "wolfi_jaeger_agent_base",
-        digest = "sha256:f4558bf1ec2523f219d33e77fd56ef47a99b92fbed26ca18c3a3fec07181f5cf",
+        digest = "sha256:87d0549c5f3365688644b5dbbb44abc82eb683ae31fb089dd17b413a0df3c3bb",
         image = "index.docker.io/sourcegraph/wolfi-jaeger-agent-base",
     )
 
     oci_pull(
         name = "wolfi_redis_base",
-        digest = "sha256:09217f91aa350eba6731d9923b2eb3f24bb53f935ee240963523ef5a05f1dc58",
+        digest = "sha256:dabedab967e27330d474ed4eb0f47d7954a07b8a86f7fcdb3b7830865c16c9b4",
         image = "index.docker.io/sourcegraph/wolfi-redis-base",
     )
 
     oci_pull(
         name = "wolfi_redis_exporter_base",
-        digest = "sha256:34d502280157e91de9f247b37a391875a2a6c42652a6605ce3c0d26ebcd16aee",
+        digest = "sha256:0ed382bc737790879b643b67ab48bf183418aee290605189925340e8dbd9c8a1",
         image = "index.docker.io/sourcegraph/wolfi-redis-exporter-base",
     )
 
     oci_pull(
         name = "wolfi_syntax_highlighter_base",
-        digest = "sha256:11f38cf70a61e949cda1cffead24b2a64f8bc8977cd4ac7acad4c15d5a4568b8",
+        digest = "sha256:9e0bbaeed967ef87e3e9499962d0fae997f0d4446f68df00c4a60063f4e8e0c9",
         image = "index.docker.io/sourcegraph/wolfi-syntax-highlighter-base",
     )
 
     oci_pull(
         name = "wolfi_search_indexer_base",
-        digest = "sha256:64c23ec428ab445c9a505792b794294c053266807563e09d6bae7eb397c9dee5",
+        digest = "sha256:036b552907944acd986f6140b7165facdd15a99a630fba852fb7907b762f2f23",
         image = "index.docker.io/sourcegraph/wolfi-search-indexer-base",
     )
 
     oci_pull(
         name = "wolfi_repo_updater_base",
-        digest = "sha256:b777629cf2a83019dddd6d0def0bbc383ab87850b401c92dcc74e1dcb0fa5c38",
+        digest = "sha256:288f60d65ad281516c030bdc03beb6d437ce0a7bead37a10a039e606a72b3708",
         image = "index.docker.io/sourcegraph/wolfi-repo-updater-base",
     )
 
     oci_pull(
         name = "wolfi_searcher_base",
-        digest = "sha256:7afdbbcf70db906e68359162e28658f03165db203fd86f7c7b1582620b2e25d0",
+        digest = "sha256:9529888fa1cb0abe5806ce3b466523ae53518d12178640953e9a7d039bbe26f9",
         image = "index.docker.io/sourcegraph/wolfi-searcher-base",
     )
 
     oci_pull(
         name = "wolfi_executor_base",
-        digest = "sha256:64672cefaf885e1c890a403865fdddb9fb4aaaecfb284052b9a961d20880466c",
+        digest = "sha256:17adec2e52fd5dc9a89d86b5224684c66b76380b2db9db10f6426bf83be26923",
         image = "index.docker.io/sourcegraph/wolfi-executor-base",
     )
 
     # ???
     oci_pull(
         name = "wolfi_bundled_executor_base",
-        digest = "sha256:30c53c672e98942d1d8e7fa600d9c41d341695b1542d3b6f71f9c4507caf775d",
+        digest = "sha256:2ec4c35a901a919b50722d82f1d0eb19cfc341cacec85acac3b059eb4b864e87",
         image = "index.docker.io/sourcegraph/wolfi-bundled-executor-base",
     )
 
     oci_pull(
         name = "wolfi_executor_kubernetes_base",
-        digest = "sha256:2ecc525f015e44f8a4ce3c6ec349d627ee1ad9bbb468c750261cca52515a11b1",
+        digest = "sha256:94921f555efcd91ff75e22fdb5f24de035a1688b2e05a5f0506f7c13f12e4ef0",
         image = "index.docker.io/sourcegraph/wolfi-executor-kubernetes-base",
     )
 
     oci_pull(
         name = "wolfi_batcheshelper_base",
-        digest = "sha256:65aa30378b45fc999477577af4cdf856c96f6aaf53d72f08a092ee3782ceb3f5",
+        digest = "sha256:e6c96b4d0ac78d6982fa903b2c4936d65def1a5da144f3c2fd3d1513318e1550",
         image = "index.docker.io/sourcegraph/wolfi-batcheshelper-base",
     )
 
     oci_pull(
         name = "wolfi_prometheus_base",
-        digest = "sha256:babb794eab89b652a204bfe468f3a0baf72f2db1381ddee0a54a3dfc6496d5c6",
+        digest = "sha256:e0abf1763ac6967451ff1239744b320ff08c09bcc50bb1cc67b43eb3419bd5c0",
         image = "index.docker.io/sourcegraph/wolfi-prometheus-base",
     )
 
     oci_pull(
         name = "wolfi_prometheus_gcp_base",
-        digest = "sha256:621c8da9dae5e78eab77b94a3b4c0df536238eb1231957e7ffca4110701445c0",
+        digest = "sha256:b7318f12e19caea342a5d2e9c4fae5d46eb50e804fc48bded6b11c7e642ddae1",
         image = "index.docker.io/sourcegraph/wolfi-prometheus-gcp-base",
     )
 
     oci_pull(
         name = "wolfi_postgresql-12_base",
-        digest = "sha256:d809dd3ab4fd2a0d23dc1fede4e424050b2b090d860be855094058c18977a196",
+        digest = "sha256:8857309f8e3234782119d67880b1418943eaa8ca22b287c9ef71a6b982363844",
         image = "index.docker.io/sourcegraph/wolfi-postgresql-12-base",
     )
 
     oci_pull(
         name = "wolfi_postgresql-12-codeinsights_base",
-        digest = "sha256:9f26754c990a9bc0814c8b15807478b3c22051bb50dfae24521467bb62a96d3b",
+        digest = "sha256:6954a84e772195968e7ef053db811052af20a0f107783c6c494a53272629ab91",
         image = "index.docker.io/sourcegraph/wolfi-postgresql-12-codeinsights-base",
     )
 
     oci_pull(
         name = "wolfi_node_exporter_base",
-        digest = "sha256:0cc07f7624ca77a236970a99dd3eabb45c9c8256f42dff5b4a427bed84215b7d",
+        digest = "sha256:e9ea035b2446e75fb0d55c1372883b97dd8407c26fbad0485e5dc6e04cfcfbe9",
         image = "index.docker.io/sourcegraph/wolfi-node-exporter-base",
     )
 
     oci_pull(
         name = "wolfi_opentelemetry_collector_base",
-        digest = "sha256:60717f967c2f44115589f54a36a5d0bf2dbd2f42bcde69778912c72a674bff06",
+        digest = "sha256:58bdd2fe8bed1ba35f1e9e7522ea1c4aa35e654ced9e89f515236afa3e564bfc",
         image = "index.docker.io/sourcegraph/wolfi-opentelemetry-collector-base",
     )
 
     oci_pull(
         name = "wolfi_searcher_base",
-        digest = "sha256:7afdbbcf70db906e68359162e28658f03165db203fd86f7c7b1582620b2e25d0",
+        digest = "sha256:9529888fa1cb0abe5806ce3b466523ae53518d12178640953e9a7d039bbe26f9",
         image = "index.docker.io/sourcegraph/wolfi-searcher-base",
     )
 
     oci_pull(
         name = "wolfi_s3proxy_base",
-        digest = "sha256:c46af5725437e745edc1ca138a126fa0d98351eef61f952d63ffc241b5df1bd5",
+        digest = "sha256:ad0c8791d1a9a3a2a2f7e30933da0aa031c55c3b5bc3263802fcee4d9d955031",
         image = "index.docker.io/sourcegraph/wolfi-blobstore-base",
     )
 
     oci_pull(
         name = "wolfi_qdrant_base",
-        digest = "sha256:bad099febc367d12ce16955469be3f2c207cf6c86cc73c1cf853e4518e2c4591",
+        digest = "sha256:dcc08b0228a5abd8a542efc7ee86ec58299591a737cafe19e92af6c1e1301c26",
         image = "index.docker.io/sourcegraph/wolfi-qdrant-base",
+    )
+
+    # The following image digests are from tag 252535_2023-11-28_5.2-82b5f4f5d73f
+    # To rebuild these legacy images using docker and outside of bazel you can either push a branch to:
+    # - docker-images-candidates-notest/<your banch name here>
+    # or you can run `sg ci build docker-images-candidates-notest`
+    oci_pull(
+        name = "legacy_alpine-3.14_base",
+        digest = "sha256:581afabd476b4918b14295ae6dd184f4a3783c64bab8bde9ad7b11ea984498a8",
+        image = "index.docker.io/sourcegraph/alpine-3.14",
+    )
+
+    oci_pull(
+        name = "legacy_dind_base",
+        digest = "sha256:0893c2e6103cde39b609efea0ebd6423c7af8dafdf19d613debbc12b05fefd54",
+        image = "index.docker.io/sourcegraph/dind",
+    )
+
+    oci_pull(
+        name = "legacy_executor-vm_base",
+        digest = "sha256:4b23a8bbfa9e1f5c80b167e59c7f0d07e40b4af52494c22da088a1c97925a3e2",
+        image = "index.docker.io/sourcegraph/executor-vm",
+    )
+
+    oci_pull(
+        name = "legacy_codeinsights-db_base",
+        digest = "sha256:c2384743265457f816d83358d8fb4810b9aac9f049fd462d1f630174076e0d94",
+        image = "index.docker.io/sourcegraph/codeinsights-db",
+    )
+
+    oci_pull(
+        name = "legacy_codeintel-db_base",
+        digest = "sha256:dcc32a6d845356288186f2ced62346cf7e0120977ff1a0d6758f4e11120401f7",
+        image = "index.docker.io/sourcegraph/codeintel-db",
+    )
+
+    oci_pull(
+        name = "legacy_postgres-12-alpine_base",
+        digest = "sha256:dcc32a6d845356288186f2ced62346cf7e0120977ff1a0d6758f4e11120401f7",
+        image = "index.docker.io/sourcegraph/postgres-12-alpine",
     )

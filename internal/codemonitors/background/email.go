@@ -5,11 +5,9 @@ import (
 	_ "embed"
 	"fmt"
 	"net/url"
-	"sync"
 
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -152,24 +150,6 @@ func getCodeMonitorURL(externalURL *url.URL, monitorID int64, utmSource string) 
 
 func getCommitURL(externalURL *url.URL, repoName, oid, utmSource string) string {
 	return sourcegraphURL(externalURL, fmt.Sprintf("%s/-/commit/%s", repoName, oid), "", utmSource)
-}
-
-var (
-	externalURLOnce  sync.Once
-	externalURLValue *url.URL
-	externalURLError error
-)
-
-func getExternalURL() (*url.URL, error) {
-	if MockExternalURL != nil {
-		return MockExternalURL(), nil
-	}
-
-	externalURLOnce.Do(func() {
-		externalURLStr := conf.Get().ExternalURL
-		externalURLValue, externalURLError = url.Parse(externalURLStr)
-	})
-	return externalURLValue, externalURLError
 }
 
 func sourcegraphURL(externalURL *url.URL, path, query, utmSource string) string {

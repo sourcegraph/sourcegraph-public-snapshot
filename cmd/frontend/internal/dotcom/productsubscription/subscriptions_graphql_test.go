@@ -39,7 +39,7 @@ func TestProductSubscription_Account(t *testing.T) {
 // better cover more scenarios.
 func TestProductSubscriptionActiveLicense(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(logtest.Scoped(t), t))
+	db := database.NewDB(logtest.Scoped(t), dbtest.NewDB(t))
 	subscriptionsDB := dbSubscriptions{db: db}
 	licensesDB := dbLicenses{db: db}
 

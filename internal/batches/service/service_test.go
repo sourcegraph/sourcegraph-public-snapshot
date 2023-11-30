@@ -44,7 +44,7 @@ func TestServicePermissionLevels(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	s := store.New(db, &observation.TestContext, nil)
 	svc := New(s)
@@ -292,7 +292,7 @@ func TestService(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)
@@ -2837,7 +2837,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"REENQUEUE", "PUBLISH", "CLOSE"}
+			expectedBulkOperations := []string{"REENQUEUE", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2864,7 +2864,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"DETACH"}
+			expectedBulkOperations := []string{"DETACH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2888,7 +2888,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"PUBLISH"}
+			expectedBulkOperations := []string{"PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2913,7 +2913,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"CLOSE", "COMMENT", "PUBLISH"}
+			expectedBulkOperations := []string{"CLOSE", "COMMENT", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2938,7 +2938,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"CLOSE", "COMMENT", "MERGE", "PUBLISH"}
+			expectedBulkOperations := []string{"CLOSE", "COMMENT", "MERGE", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2963,7 +2963,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
+			expectedBulkOperations := []string{"COMMENT", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -2988,7 +2988,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
+			expectedBulkOperations := []string{"COMMENT", "PUBLISH", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -3011,7 +3011,10 @@ changesetTemplate:
 			})
 
 			assert.NoError(t, err)
-			assert.Empty(t, bulkOperations)
+			expectedBulkOperations := []string{"EXPORT"}
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
 		})
 
 		t.Run("imported changesets", func(t *testing.T) {
@@ -3030,7 +3033,7 @@ changesetTemplate:
 			})
 
 			assert.NoError(t, err)
-			expectedBulkOperations := []string{"COMMENT", "CLOSE", "MERGE"}
+			expectedBulkOperations := []string{"COMMENT", "CLOSE", "MERGE", "EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -3075,7 +3078,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{}
+			expectedBulkOperations := []string{"EXPORT"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -3118,7 +3121,7 @@ changesetTemplate:
 				t.Fatal(err)
 			}
 
-			expectedBulkOperations := []string{"COMMENT", "PUBLISH"}
+			expectedBulkOperations := []string{"EXPORT", "COMMENT", "PUBLISH"}
 			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
 				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
 			}
@@ -3195,6 +3198,36 @@ changesetTemplate:
 				t.Fatal("expected different spec ID for batch change")
 			}
 		})
+	})
+
+	t.Run("GetChangesetsByIDs", func(t *testing.T) {
+		spec := testBatchSpec(admin.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		batchChange := testBatchChange(admin.ID, spec)
+		if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+			t.Fatal(err)
+		}
+
+		changeset := testChangeset(rs[0].ID, batchChange.ID, btypes.ChangesetExternalStateOpen)
+		if err := s.CreateChangeset(ctx, changeset); err != nil {
+			t.Fatal(err)
+		}
+
+		changesets, err := svc.GetChangesetsByIDs(ctx, batchChange.ID, []int64{changeset.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(changesets) != 1 {
+			t.Fatalf("expected 1 changeset but got %d", len(changesets))
+		}
+
+		if changesets[0].ID != changeset.ID {
+			t.Fatalf("expected changeset ID %d but got %d", changeset.ID, changesets[0].ID)
+		}
 	})
 }
 
@@ -3393,14 +3426,6 @@ func assertOrgOrAuthError(t *testing.T, err error) {
 
 	if !errors.HasType(err, auth.ErrNotAnOrgMember) && !errors.HasType(err, &auth.InsufficientAuthorizationError{}) {
 		t.Fatalf("expected authorization error, got %s", err.Error())
-	}
-}
-
-func assertNoOrgAuthError(t *testing.T, err error) {
-	t.Helper()
-
-	if errors.HasType(err, auth.ErrNotAnOrgMember) {
-		t.Fatal("got org authorization error")
 	}
 }
 

@@ -1,4 +1,4 @@
-import { BehaviorSubject, merge, Observable, of } from 'rxjs'
+import { BehaviorSubject, merge, type Observable, of } from 'rxjs'
 import { shareReplay } from 'rxjs/operators'
 import { get } from 'svelte/store'
 
@@ -83,7 +83,11 @@ export const load: PageLoad = ({ url, depends }) => {
             },
         }
     }
-    return {}
+    return {
+        queryOptions: {
+            query: '',
+        },
+    }
 }
 
 function createCacheKey(options: StreamSearchOptions, query: string): string {

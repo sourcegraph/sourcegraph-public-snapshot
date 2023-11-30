@@ -8,9 +8,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type NewSearcher interface {
@@ -19,6 +21,10 @@ type NewSearcher interface {
 	// that calling this again in the future should return the same Searcher. IE
 	// it can speak to the DB, but maybe not gitserver.
 	//
+	// userID is explicitly passed in and must match the actor for ctx. This
+	// is done to prevent accidental bugs where we do a search on behalf of a
+	// user as an internal user/etc.
+	//
 	// I expect this to be roughly equivalent to creation of a search plan in
 	// our search codes job creator.
 	//
@@ -26,7 +32,7 @@ type NewSearcher interface {
 	// affect what is returned. Alternatively as we release new versions of
 	// Sourcegraph what is returned could change. This means we are not exactly
 	// safe across repeated calls.
-	NewSearch(ctx context.Context, q string) (SearchQuery, error)
+	NewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error)
 }
 
 // SearchQuery represents a search in a way we can break up the work. The flow is
@@ -62,9 +68,9 @@ type NewSearcher interface {
 // a SearchQuery, but this makes it harder to make changes to search going
 // forward for what should be rare errors.
 type SearchQuery interface {
-	RepositoryRevSpecs(context.Context) ([]types.RepositoryRevSpec, error)
+	RepositoryRevSpecs(context.Context) *iterator.Iterator[types.RepositoryRevSpecs]
 
-	ResolveRepositoryRevSpec(context.Context, types.RepositoryRevSpec) ([]types.RepositoryRevision, error)
+	ResolveRepositoryRevSpec(context.Context, types.RepositoryRevSpecs) ([]types.RepositoryRevision, error)
 
 	Search(context.Context, types.RepositoryRevision, CSVWriter) error
 }
@@ -187,6 +193,10 @@ func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
 
 	closeFn := func() error {
 		csvWriter.Flush()
+		// Don't upload empty files.
+		if c.buf.Len() == 0 {
+			return nil
+		}
 		_, err := c.store.Upload(ctx, key, &c.buf)
 		return err
 	}
@@ -231,55 +241,95 @@ func (c *BlobstoreCSVWriter) Close() error {
 //	- ResolveRepositoryRevSpec returns the repoRevs for that repository.
 //	- Search will write one result which is just the repo and revision.
 func NewSearcherFake() NewSearcher {
-	return backendFake{}
+	return newSearcherFunc(fakeNewSearch)
 }
 
-type backendFake struct{}
+type newSearcherFunc func(context.Context, int32, string) (SearchQuery, error)
 
-func (backendFake) NewSearch(ctx context.Context, q string) (SearchQuery, error) {
+func (f newSearcherFunc) NewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error) {
+	return f(ctx, userID, q)
+}
+
+func fakeNewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error) {
+	if err := isSameUser(ctx, userID); err != nil {
+		return nil, err
+	}
+
 	var repoRevs []types.RepositoryRevision
 	for _, part := range strings.Fields(q) {
 		var r types.RepositoryRevision
 		if n, err := fmt.Sscanf(part, "%d@%s", &r.Repository, &r.Revision); n != 2 || err != nil {
-			return nil, errors.Errorf("failed to parse repository revision %q", part)
+			continue
 		}
-		r.RepositoryRevSpec.Repository = r.Repository
-		r.RepositoryRevSpec.RevisionSpecifier = "spec"
+		r.RepositoryRevSpecs.Repository = r.Repository
+		r.RepositoryRevSpecs.RevisionSpecifiers = types.RevisionSpecifiers("spec")
 		repoRevs = append(repoRevs, r)
 	}
-	return searcherFake{repoRevs: repoRevs}, nil
+	if len(repoRevs) == 0 {
+		return nil, errors.Errorf("no repository revisions found in %q", q)
+	}
+	return searcherFake{
+		userID:   userID,
+		repoRevs: repoRevs,
+	}, nil
 }
 
 type searcherFake struct {
+	userID   int32
 	repoRevs []types.RepositoryRevision
 }
 
-func (s searcherFake) RepositoryRevSpecs(context.Context) ([]types.RepositoryRevSpec, error) {
-	seen := map[types.RepositoryRevSpec]bool{}
-	var repoRevSpecs []types.RepositoryRevSpec
+func (s searcherFake) RepositoryRevSpecs(ctx context.Context) *iterator.Iterator[types.RepositoryRevSpecs] {
+	if err := isSameUser(ctx, s.userID); err != nil {
+		iterator.New(func() ([]types.RepositoryRevSpecs, error) {
+			return nil, err
+		})
+	}
+
+	seen := map[types.RepositoryRevSpecs]bool{}
+	var repoRevSpecs []types.RepositoryRevSpecs
 	for _, r := range s.repoRevs {
-		if seen[r.RepositoryRevSpec] {
+		if seen[r.RepositoryRevSpecs] {
 			continue
 		}
-		seen[r.RepositoryRevSpec] = true
-		repoRevSpecs = append(repoRevSpecs, r.RepositoryRevSpec)
+		seen[r.RepositoryRevSpecs] = true
+		repoRevSpecs = append(repoRevSpecs, r.RepositoryRevSpecs)
 	}
-	return repoRevSpecs, nil
+	return iterator.From(repoRevSpecs)
 }
 
-func (s searcherFake) ResolveRepositoryRevSpec(_ context.Context, repoRevSpec types.RepositoryRevSpec) ([]types.RepositoryRevision, error) {
+func (s searcherFake) ResolveRepositoryRevSpec(ctx context.Context, repoRevSpec types.RepositoryRevSpecs) ([]types.RepositoryRevision, error) {
+	if err := isSameUser(ctx, s.userID); err != nil {
+		return nil, err
+	}
+
 	var repoRevs []types.RepositoryRevision
 	for _, r := range s.repoRevs {
-		if r.RepositoryRevSpec == repoRevSpec {
+		if r.RepositoryRevSpecs == repoRevSpec {
 			repoRevs = append(repoRevs, r)
 		}
 	}
 	return repoRevs, nil
 }
 
-func (s searcherFake) Search(_ context.Context, r types.RepositoryRevision, w CSVWriter) error {
+func (s searcherFake) Search(ctx context.Context, r types.RepositoryRevision, w CSVWriter) error {
+	if err := isSameUser(ctx, s.userID); err != nil {
+		return err
+	}
+
 	if err := w.WriteHeader("repo", "revspec", "revision"); err != nil {
 		return err
 	}
-	return w.WriteRow(strconv.Itoa(int(r.Repository)), r.RevisionSpecifier, string(r.Revision))
+	return w.WriteRow(strconv.Itoa(int(r.Repository)), string(r.RevisionSpecifiers), string(r.Revision))
+}
+
+func isSameUser(ctx context.Context, userID int32) error {
+	if userID == 0 {
+		return errors.New("exhaustive search must be done on behalf of an authenticated user")
+	}
+	a := actor.FromContext(ctx)
+	if a == nil || a.UID != userID {
+		return errors.Errorf("exhaustive search must be run as user %d", userID)
+	}
+	return nil
 }

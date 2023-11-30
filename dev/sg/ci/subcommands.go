@@ -6,13 +6,13 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/uuid"
+	"github.com/grafana/regexp"
 	sgrun "github.com/sourcegraph/run"
 	"github.com/urfave/cli/v2"
 
@@ -68,7 +68,7 @@ var previewCommand = &cli.Command{
 		}
 		switch cmd.String("format") {
 		case "markdown":
-			previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
+			previewCmd = usershell.Command(cmd.Context, "go run ./dev/ci/gen-pipeline.go -preview").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
@@ -76,7 +76,7 @@ var previewCommand = &cli.Command{
 			}
 			return std.Out.WriteMarkdown(out)
 		case "json":
-			previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go").
+			previewCmd = usershell.Command(cmd.Context, "go run ./dev/ci/gen-pipeline.go").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
@@ -84,7 +84,7 @@ var previewCommand = &cli.Command{
 			}
 			return std.Out.WriteCode("json", out)
 		case "yaml":
-			previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -yaml").
+			previewCmd = usershell.Command(cmd.Context, "go run ./dev/ci/gen-pipeline.go -yaml").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
@@ -291,8 +291,6 @@ var buildCommand = &cli.Command{
 	ArgsUsage: "[runtype] <argument>",
 	Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
 	Description: fmt.Sprintf(`
-Reference to all pipeline run types can be found at: https://docs.sourcegraph.com/dev/background-information/ci/reference
-
 Optionally provide a run type to build with.
 
 This command is useful when:
@@ -320,7 +318,7 @@ sg ci build docker-images-patch-notest prometheus
 # Publish all images without testing
 sg ci build docker-images-candidates-notest
 `,
-	BashComplete: completions.CompleteOptions(getAllowedBuildTypeArgs),
+	BashComplete: completions.CompleteArgs(getAllowedBuildTypeArgs),
 	Flags: []cli.Flag{
 		&ciPipelineFlag,
 		&cli.StringFlag{
@@ -611,11 +609,10 @@ From there, you can start exploring logs with the Grafana explore panel.
 }
 
 var docsCommand = &cli.Command{
-	Name:        "docs",
-	Usage:       "Render reference documentation for build pipeline types",
-	Description: "An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
+	Name:  "docs",
+	Usage: "Render reference documentation for build pipeline types",
 	Action: func(ctx *cli.Context) error {
-		cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
+		cmd := exec.Command("go", "run", "./dev/ci/gen-pipeline.go", "-docs")
 		out, err := run.InRoot(cmd)
 		if err != nil {
 			return err

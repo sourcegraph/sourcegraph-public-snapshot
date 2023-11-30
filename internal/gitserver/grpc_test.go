@@ -81,7 +81,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 		},
 	})
 
-	client := NewClient()
+	client := NewClient("test")
 	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD", ResolveRevisionOptions{})
 
 	if !(m1.called && !m2.called) {
@@ -97,16 +97,14 @@ func TestClient_GRPCRouting(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	client := NewClient()
+	client := NewClient("test")
 
 	cfg := newConfig(
 		[]string{"gitserver1", "gitserver2"},
 		map[string]string{"repo1": "gitserver2"},
 	)
 
-	atomicConns := getAtomicGitserverConns()
-
-	atomicConns.update(cfg)
+	conns.update(cfg)
 
 	ctx := context.Background()
 	addr := client.AddrForRepo(ctx, "repo1")
@@ -117,7 +115,7 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 		[]string{"gitserver1", "gitserver2"},
 		map[string]string{"repo1": "gitserver1"},
 	)
-	atomicConns.update(cfg)
+	conns.update(cfg)
 
 	require.Equal(t, "gitserver1", client.AddrForRepo(ctx, "repo1"))
 }

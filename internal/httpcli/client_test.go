@@ -13,7 +13,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -406,9 +405,8 @@ func TestErrorResilience(t *testing.T) {
 				// hardcode what go returns for DNS not found to avoid
 				// flakiness across machines. However, CI correctly respects
 				// this so we continue to run against a real DNS server on CI.
-				if os.Getenv("CI") == "" {
-					cli.Transport = notFoundTransport{}
-				}
+				// TODO(burmudar): Fix DNS infrastructure in Aspect Workflows Infra
+				cli.Transport = notFoundTransport{}
 				return nil
 			},
 			NewErrorResilientTransportOpt(
@@ -479,8 +477,8 @@ func TestLoggingMiddleware(t *testing.T) {
 
 		// Check log entries for logged fields about retries
 		logEntries := exportLogs()
-		require.Len(t, logEntries, 2) // should have a scope debug log, and the entry we want
-		entry := logEntries[1]
+		require.Len(t, logEntries, 1)
+		entry := logEntries[0]
 		assert.Contains(t, entry.Scope, "httpcli")
 		assert.NotEmpty(t, entry.Fields["error"])
 	})

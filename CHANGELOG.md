@@ -13,11 +13,115 @@ All notable changes to Sourcegraph are documented in this file.
 
 <!-- START CHANGELOG -->
 
-## Unreleased 5.2.0 (planned release date: October 4, 2023)
+## Unreleased 5.3.0 (planned release date: February, 2024)
+
+### Added
+
+- The `has.topic` filter now supports filtering by Gitlab topics. [#57649](https://github.com/sourcegraph/sourcegraph/pull/57649)
+- Batch Changes now allows changesets to be exported in CSV and JSON format. [#56721](https://github.com/sourcegraph/sourcegraph/pull/56721)
+- Supports custom ChatCompletion models in Cody clients for dotcom users. [#58158](https://github.com/sourcegraph/sourcegraph/pull/58158)
+
+### Changed
+
+- The setting `experimentalFeatures.searchQueryInput` now refers to the new query input as `v2` (not `experimental`). <!-- NOTE: If v2 becomes the default before this release is cut, then update this entry to mention that instead of adding a separate entry. -->
+- Search-based code intel doesn't include the currently selected search context anymore. It was possible to get into a situation where search-based code intel wouldn't find any information due to being restricted by the current search context. [#58010](https://github.com/sourcegraph/sourcegraph/pull/58010)
+- The last commit which changed a file/directory is now shown in the files panel on the repo and file pages. To avoid duplicating information and confusion, the commits panel was removed. [58328](https://github.com/sourcegraph/sourcegraph/pull/58328)
+- Clicking on a search result now opens the blob view at the same commit as the search result. Before, blob views were opened at the tip of the default branch, which sometimes caused inconsistencies in line numbers if the index was out of date. [#58381](https://github.com/sourcegraph/sourcegraph/pull/58381)
+- The `exclude` configuration for code host configuration has been updated to allow chaining multiple conditions together and filtering GitHub repositories based on their size or number of GitHub stars. [#58377](https://github.com/sourcegraph/sourcegraph/pull/58377) and [#58405](https://github.com/sourcegraph/sourcegraph/pull/58405)
+  - Multiple attributes on _a single_ `exclude` entry now have to be all true for a repository to be excluded. Example: `{"exclude": [{"name": "github.com/example/example"}, {"id": "my-id"}]}` will _only_ exclude repositories that have the name _and_ the id mentioned.
+  - GitHub code host connections can exclude by size and stars now: `{"exclude": [{"name": "github.com/example/example"}, {"stars": "< 100", "size": ">= 1GB"}]}`
+  - For `size` and `stars` the supported operators are `<`, `>`, `<=`, `>=`.
+  - For `size` the supported units are `B`, `b`, `kB`, `KB`, `kiB`, `KiB`, `MiB`, `MB`, `GiB`, `GB`. No decimals points are supported.
+
+### Fixed
+
+- Site configuration edit history no longer breaks when the user that made the edit is deleted. [#57656](https://github.com/sourcegraph/sourcegraph/pull/57656)
+- Drilling down into an insights query no longer mangles `content:` fields in your query. [#57679](https://github.com/sourcegraph/sourcegraph/pull/57679)
+- The blame column now shows correct blame information when a hunk starts in a folded code section. [#58042](https://github.com/sourcegraph/sourcegraph/pull/58042)
+- Fixed a bug where typing in the GraphQL editor in the Site Admin API console could cause the cursor to jump to the start of the editor. [#57862](https://github.com/sourcegraph/sourcegraph/pull/57862)
+- The blame column no longer ignores whitespace-only changes by default. [#58134](https://github.com/sourcegraph/sourcegraph/pull/58134)
+- Long lines now wrap correctly in the diff view. [#58138](https://github.com/sourcegraph/sourcegraph/pull/58138)
+- Fixed an issue in the search input where pressing Enter after selecting a suggestion would sometimes insert another suggestions instead of submitting the query. [#58186](https://github.com/sourcegraph/sourcegraph/pull/58186)
+
+### Removed
+
+- The experimental GraphQL query `User.invitableCollaborators`.
+- The following experimental settings in site-configuration are now deprecated and will not be read anymore: `maxReorderQueueSize`, `maxQueueMatchCount`, `maxReorderDurationMS`. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
+- The feature-flag `search-ranking`, which allowed to disable the improved ranking introduced in 5.1, is now deprecated and will not be read anymore. [#57468](https://github.com/sourcegraph/sourcegraph/pull/57468)
+- The GitHub Proxy service is no longer required and has been removed from deployment options. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
+- The VSCode search extension "Sourcegraph for VS Code" has been sunset and removed from Sourcegraph
+  repository. [#58023](https://github.com/sourcegraph/sourcegraph/pull/58023)
+- The `rateLimit` configuration for Perforce code host connections has been removed to avoid confusion, it was unused. [#58188](https://github.com/sourcegraph/sourcegraph/pull/58188)
+- The feature flag `search-ranking` is now completely removed. [#58156](https://github.com/sourcegraph/sourcegraph/pull/58156)
+- The notepad UI, notebook creation feature. [#58217](https://github.com/sourcegraph/sourcegraph/pull/58217)
+
+## Unreleased 5.2.4
+
+### Added
+
+- Added the ability to use Workload Identity, Managed Identity and Environmental credentials when using the Azure OpenAI completions and embeddings providers [#58289](https://github.com/sourcegraph/sourcegraph/pull/58289)
+- Added support for cloning via SSH from Azure DevOps. [#58655](https://github.com/sourcegraph/sourcegraph/pull/58655)
+
+### Fixed
+
+- Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
+
+### Changed
+
+### Removed
+
+## 5.2.3
+
+### Added
+
+- Added configurable GraphQL query cost limitations to prevent unintended resource exhaustion. Default values are now provided and enforced, replacing the previously unlimited behaviour. For more information, please refer to: [GraphQL Cost Limits Documentation](https://docs.sourcegraph.com/api/graphql#cost-limits). See details at [#58346](https://github.com/sourcegraph/sourcegraph/pull/58346).
+- Sourcegraph now supports connecting to Bitbucket Cloud using Workspace Access Tokens. [#58465](https://github.com/sourcegraph/sourcegraph/pull/58465).
+
+### Fixed
+
+- Defining file filters for embeddings jobs no longer causes all files to be skipped if `MaxFileSizeBytes` isn't defined. [#58262](https://github.com/sourcegraph/sourcegraph/pull/58262)
+
+## 5.2.2
+
+### Added
+
+- Added a new authorization configuration options to GitLab code host connections: "markInternalReposAsPublic". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Additionally, when configuring a GitLab auth provider, you can specify "syncInternalRepoPermissions": false, which will remove the need to sync permissions for these internal repositories. [#57858](https://github.com/sourcegraph/sourcegraph/pull/57858)
+- Experimental support for OpenAI powered autocomplete has been added. [#57872](https://github.com/sourcegraph/sourcegraph/pull/57872)
+
+### Fixed
+
+- Updated the endpoint used by the AWS Bedrock Claude provider. [#58028](https://github.com/sourcegraph/sourcegraph/pull/58028)
+
+## 5.2.1
+
+### Added
+
+- Added two new authorization configuration options to GitHub code host connections: "markInternalReposAsPublic" and "syncInternalRepoPermissions". Setting "markInternalReposAsPublic" to true is useful for organizations that have a large amount of internal repositories that everyone on the instance should be able to access, removing the need to have permissions to access these repositories. Setting "syncInternalRepoPermissions" to true adds an additional step to user permission syncs that explicitly checks for internal repositories. However, this could lead to longer user permission sync times. [#56677](https://github.com/sourcegraph/sourcegraph/pull/56677)
+- Fixed an issue with Code Monitors that could cause users to be notified multiple times for the same commit [#57546](https://github.com/sourcegraph/sourcegraph/pull/57546)
+- Fixed an issue with Code Monitors that could prevent a new code monitor from being created if it targeted multiple repos [#57546](https://github.com/sourcegraph/sourcegraph/pull/57546)
+- Sourcegraph instances will now emit a limited set of [telemetry events](https://docs.sourcegraph.com/admin/telemetry) in the background by default ([#57605](https://github.com/sourcegraph/sourcegraph/pull/57605)). Enablement will be based on the following conditions:
+  - Customers with a license key created after October 3, 2023, or do not have a valid license key configured, will export all telemetry events recorded in the new system.
+  - Customers with a license key created before October 3, 2023 will export only Cody-related events recorded in the new system, as covered by the [Cody Usage and Privacy Notice](https://about.sourcegraph.com/terms/cody-notice).
+  - If you have a previous agreement regarding telemetry sharing, you account representative will reach out with more details.
+
+### Fixed
+
+- Fixed a user's Permissions page being inaccessible if the user has had no permission syncs with an external account connected. [#57372](https://github.com/sourcegraph/sourcegraph/pull/57372)
+- Fixed a bug where site admins could not view a user's permissions if they didn't have access to all of the repositories the user has. Admins still won't be able to see repositories they don't have access to, but they will now be able to view the rest of the user's repository permissions. [#57375](https://github.com/sourcegraph/sourcegraph/pull/57375)
+- Fixed a bug where gitserver statistics would not be properly decoded / reported when using REST (i.e. `experimentalFeatures.enableGRPC = false` in site configuration). [#57318](https://github.com/sourcegraph/sourcegraph/pull/57318)
+- Updated the `curl` and `libcurl` dependencies to `8.4.0-r0` to fix [CVE-2023-38545](https://curl.se/docs/CVE-2023-38545.html). [#57533](https://github.com/sourcegraph/sourcegraph/pull/57533)
+- Fixed a bug where commit signing failed when creating a changeset if `batchChanges.enforceFork` is set to true. [#57520](https://github.com/sourcegraph/sourcegraph/pull/57520)
+- Fixed a regression in ranking of Go struct and interface in search results. [zoekt#655](https://github.com/sourcegraph/zoekt/pull/655)
+
+## 5.2.0
 
 ### Added
 
 - Experimental support for AWS Bedrock Claude for the completions provider has been added. [#56321](https://github.com/sourcegraph/sourcegraph/pull/56321)
+- Recorded command logs can now be viewed for Git operations performed by Sourcegraph. This provides auditing and debugging capabilities. [#54997](https://github.com/sourcegraph/sourcegraph/issues/54997)
+- Disk usage metrics for gitservers are now displayed on the site admin Git Servers page, showing free/total disk space. This helps site admins monitor storage capacity on GitServers. [#55958](https://github.com/sourcegraph/sourcegraph/issues/55958)
+- Overhauled Admin Onboarding UI for enhanced user experience, introducing a license key modal with validation, automated navigation to Site Configuration Page, an interactive onboarding checklist button, and direct documentation links for SMTP and user authentication setup. [56366](https://github.com/sourcegraph/sourcegraph/pull/56366)
+- New experimental feature "Search Jobs". Search Jobs allows you to run search queries across your organization's codebase (all repositories, branches, and revisions) at scale. It enhances the existing Sourcegraph's search capabilities, enabling you to run searches without query timeouts or incomplete results. Please refer to the [documentation](https://docs.sourcegraph.com/code_search/how-to/search-jobs) for more information.
 
 ### Changed
 
@@ -25,17 +129,25 @@ All notable changes to Sourcegraph are documented in this file.
 - Bitbucket Cloud code host connections no longer automatically syncs the repository of the username used. The appropriate workspace name will have to be added to the `teams` list if repositories for that account need to be synced. [#55095](https://github.com/sourcegraph/sourcegraph/pull/55095)
 - Newly created access tokens are now hidden by default in the Sourcegraph UI. To view a token, click "show" button next to the token. [#56481](https://github.com/sourcegraph/sourcegraph/pull/56481)
 - The GitHub proxy service has been removed and is no longer required. You can safely remove it from your deployment. [#55290](https://github.com/sourcegraph/sourcegraph/issues/55290)
+- On startup, Zoekt indexserver will now delete the `<DATA_DIR>/.indexserver.tmp` directory to remove leftover repository clones, possibly causing a brief delay. Due to a bug, this directory wasn't previously cleaned up and could cause unnecessary disk usage. [zoekt#646](https://github.com/sourcegraph/zoekt/pull/646).
+- gRPC is now used by default for all internal (service to service) communication. This change should be invisible to most customers. However, if you're running in an environment that places restrictions on Sourcegraph's internal traffic, some prior configuration might be required. See the ["Sourcegraph 5.2 gRPC Configuration Guide"](https://docs.sourcegraph.com/admin/updates/grpc) for more information. [#56738](https://github.com/sourcegraph/sourcegraph/pull/56738)
 
 ### Fixed
+
+- Language detection for code highlighting now uses `go-enry` for all files by default, which fixes highlighting for MATLAB files. [#56559](https://github.com/sourcegraph/sourcegraph/pull/56559)
 
 ### Removed
 
 - indexed-search has removed the deprecated environment variable ZOEKT_ENABLE_LAZY_DOC_SECTIONS [zoekt#620](https://github.com/sourcegraph/zoekt/pull/620)
 - The federation feature that could redirect users from their own Sourcegraph instance to public repositories on Sourcegraph.com has been removed. It allowed users to open a repository URL on their own Sourcegraph instance and, if the repository wasn't found on that instance, the user would be redirect to the repository on Sourcegraph.com, where it was possibly found. The feature has been broken for over a year though and we don't know that it was used. If you want to use it, please open a feature-request issue and tag the `@sourcegraph/source` team. [#55161](https://github.com/sourcegraph/sourcegraph/pull/55161)
+- The `applySearchQuerySuggestionOnEnter` experimental feature flag in user settings was removed, and this behavior is now always enabled. Previously, this behavior was on by default, but it was possible to disable it.
+- The feature-flag `search-hybrid`, which allowed to disable the performance improvements for unindexed search in 4.3, is now deprecated and will not be read anymore. [#56470](https://github.com/sourcegraph/sourcegraph/pull/56470)
 
-## Unreleased 5.1.9 (planned release date: September 20, 2023)
+## 5.1.9
 
 ### Added
+
+- Enable "Test connection" for Perforce code hosts. The "Test connection" button in the code host page UI now works for Perforce code hosts. [#56697](https://github.com/sourcegraph/sourcegraph/pull/56697)
 
 ### Changed
 

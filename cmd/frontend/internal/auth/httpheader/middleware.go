@@ -91,7 +91,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 					return
 				}
 			}
-			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), db, auth.GetAndSaveUserOp{
+			newUserCreated, userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), db, auth.GetAndSaveUserOp{
 				UserProps: database.NewUser{
 					Username: username,
 					Email:    rawEmail,
@@ -119,6 +119,7 @@ func middleware(db database.DB) func(next http.Handler) http.Handler {
 				return
 			}
 
+			auth.AddPostAuthRedirectParametersToURL(r.URL, newUserCreated, "http-header")
 			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
 			next.ServeHTTP(w, r)
 		})

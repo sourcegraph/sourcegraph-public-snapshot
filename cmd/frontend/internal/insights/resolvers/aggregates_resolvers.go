@@ -62,7 +62,7 @@ type searchAggregateResolver struct {
 
 func (r *searchAggregateResolver) getLogger() log.Logger {
 	if r.logger == nil {
-		r.logger = log.Scoped("searchAggregations", "")
+		r.logger = log.Scoped("searchAggregations")
 	}
 	return r.logger
 }
@@ -194,12 +194,6 @@ func getProactiveResultLimit() int {
 
 }
 
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}
 func getExtendedTimeout(ctx context.Context, db database.DB) int {
 	searchLimit := limits.SearchLimits(conf.Get()).MaxTimeoutSeconds
 

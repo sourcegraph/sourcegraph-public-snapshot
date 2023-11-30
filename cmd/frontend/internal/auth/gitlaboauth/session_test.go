@@ -272,7 +272,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				var gotAuthUserOp *auth.GetAndSaveUserOp
 				getAndSaveUserError := errors.New("auth.GetAndSaveUser error")
 
-				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 					if gotAuthUserOp != nil {
 						t.Fatal("GetAndSaveUser called more than once")
 					}
@@ -281,10 +281,10 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					gotAuthUserOp = &op
 
 					if uid, ok := authSaveableUsers[op.UserProps.Username]; ok {
-						return uid, "", nil
+						return false, uid, "", nil
 					}
 
-					return 0, "safeErr", getAndSaveUserError
+					return false, 0, "safeErr", getAndSaveUserError
 				}
 
 				defer func() {
@@ -301,7 +301,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+				_, actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 
 				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
 					t.Errorf("expected actor %v, got %v", exp, got)

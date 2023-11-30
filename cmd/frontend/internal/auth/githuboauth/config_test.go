@@ -5,6 +5,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log/logtest"
@@ -19,7 +20,7 @@ import (
 
 func TestParseConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 
 	spew.Config.DisablePointerAddresses = true
 	spew.Config.SortKeys = true
@@ -274,7 +275,7 @@ func TestParseConfig(t *testing.T) {
 			if diff := cmp.Diff(tt.wantProblems, gotProblems.Messages()); diff != "" {
 				t.Errorf("problems: %s", diff)
 			}
-			if diff := cmp.Diff(wantConfigs, gotConfigs); diff != "" {
+			if diff := cmp.Diff(wantConfigs, gotConfigs, cmpopts.IgnoreUnexported(oauth2.Config{})); diff != "" {
 				t.Errorf("problems: %s", diff)
 			}
 		})

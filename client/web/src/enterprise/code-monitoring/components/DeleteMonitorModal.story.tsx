@@ -1,4 +1,4 @@
-import type { Meta, Story } from '@storybook/react'
+import type { Meta, StoryFn } from '@storybook/react'
 import { NEVER } from 'rxjs'
 import sinon from 'sinon'
 
@@ -17,7 +17,7 @@ const config: Meta = {
 
 export default config
 
-export const DeleteMonitorModalStory: Story = () => (
+export const DeleteMonitorModalStory: StoryFn = () => (
     <WebStory>
         {props => (
             <DeleteMonitorModal

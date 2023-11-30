@@ -13,9 +13,12 @@ on:
       - 'lib/errors/**'
       - 'lib/group/**'
       # Important things sg imports
-      - 'enterprise/dev/ci/images/**'    # sg ops
+      - 'dev/ci/images/**'               # sg ops
       - 'internal/database/migration/**' # sg migration
       - 'monitoring/**'                  # sg monitoring
+      - 'dev/managedservicesplatform/**' # sg msp
+  # manual release
+  workflow_dispatch: {}
 
 env:
   GOFLAGS: -trimpath
@@ -97,25 +100,28 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.19
+          go-version: 1.21.4
 
       - name: Build and upload macOS
         if: startsWith(matrix.os, 'macos-') == true
         run: |
           cd dev/sg
           GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+          GOARCH=${{ matrix.arch }} go build -o "sg-msp_$(go env GOOS)_${{ matrix.arch }}" -tags=msp -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Build and upload Linux
         if: startsWith(matrix.os, 'ubuntu-') == true
         run: |
           cd dev/sg
           GOARCH=${{ matrix.arch }} go build -o "sg_$(go env GOOS)_${{ matrix.arch }}" -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
+          GOARCH=${{ matrix.arch }} go build -o "sg-msp_$(go env GOOS)_${{ matrix.arch }}" -tags=msp -trimpath -ldflags "-s -w -X main.BuildCommit=$(git rev-list -1 HEAD .)" .
 
       - name: Upload release asset
         run: |
           cd dev/sg
           release_name="${{ needs.create_release.outputs.release_name }}"
           gh release upload -R="${repo}" ${release_name} "sg_$(go env GOOS)_${{ matrix.arch }}"
+          gh release upload -R="${repo}" ${release_name} "sg-msp_$(go env GOOS)_${{ matrix.arch }}"
         env:
           repo: sourcegraph/sg
           GITHUB_TOKEN: ${{ secrets.SG_RELEASE_TOKEN }}

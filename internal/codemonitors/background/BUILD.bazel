@@ -64,10 +64,13 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/httpcli",
         "//internal/search/result",
         "//internal/txemail",
+        "//schema",
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_sourcegraph_log//logtest",

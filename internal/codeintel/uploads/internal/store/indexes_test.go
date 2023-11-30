@@ -24,7 +24,7 @@ import (
 func TestGetIndexes(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -156,7 +156,7 @@ func TestGetIndexes(t *testing.T) {
 func TestGetIndexByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	// Index does not exist initially
@@ -229,7 +229,7 @@ func TestGetIndexByID(t *testing.T) {
 
 func TestGetQueuedIndexRank(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
@@ -280,7 +280,7 @@ func TestGetQueuedIndexRank(t *testing.T) {
 func TestGetIndexesByIDs(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplication
@@ -342,7 +342,7 @@ func TestGetIndexesByIDs(t *testing.T) {
 
 func TestDeleteIndexByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1})
@@ -363,7 +363,7 @@ func TestDeleteIndexByID(t *testing.T) {
 
 func TestDeleteIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
@@ -387,7 +387,7 @@ func TestDeleteIndexes(t *testing.T) {
 
 func TestDeleteIndexesWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
@@ -422,7 +422,7 @@ func TestDeleteIndexesWithIndexerKey(t *testing.T) {
 
 func TestReindexIndexByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
@@ -444,7 +444,7 @@ func TestReindexIndexByID(t *testing.T) {
 
 func TestReindexIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
@@ -470,7 +470,7 @@ func TestReindexIndexes(t *testing.T) {
 
 func TestReindexIndexesWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
@@ -503,7 +503,7 @@ func TestReindexIndexesWithIndexerKey(t *testing.T) {
 
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {

@@ -14,7 +14,7 @@ import (
 // The purpose of KeyValue is to provide a more ergonomic way to interact with
 // a key value store. Additionally it makes it possible to replace the store
 // with something which is note redis. For example this will be used in
-// Sourcegraph App to use in-memory or postgres as a backing store to avoid
+// Cody App to use in-memory or postgres as a backing store to avoid
 // shipping redis.
 //
 // To understand the behaviour of a method in this interface view the
@@ -48,7 +48,7 @@ type KeyValue interface {
 	WithContext(ctx context.Context) KeyValue
 
 	// Pool returns the underlying redis pool if set. If ok is false redis is
-	// disabled and you are in the Sourcegraph App. The intention of this API
+	// disabled and you are in the Cody App. The intention of this API
 	// is Pool is only for advanced use cases and the caller should provide an
 	// alternative if redis is not available.
 	Pool() (pool *redis.Pool, ok bool)

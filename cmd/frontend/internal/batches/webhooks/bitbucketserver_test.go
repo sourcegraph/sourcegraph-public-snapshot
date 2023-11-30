@@ -167,7 +167,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			if err := s.CreateChangeset(ctx, ch); err != nil {
 				t.Fatal(err)
 			}
-			src, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential)
+			src, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential, bitbucketRepo)
 			if err != nil {
 				t.Fatal(err)
 			}

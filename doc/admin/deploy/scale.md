@@ -305,9 +305,10 @@ A Jaeger instance for end-to-end distributed tracing
 ### blobstore
 
 ```
-A blobstore instance that serves as local S3-compatible object storage.
-It holds index uploads for precise code navigation before they can be processed.
-The data is for temporary storage and content will be automatically deleted once processed.
+A blobstore instance that serves as local S3-compatible object storage. It
+holds files such as search jobs results and index uploads for precise code
+navigation.
+
 ```
 
 | Replica     |                                                         |

@@ -11,7 +11,7 @@ import { PageTitle } from '../../../components/PageTitle'
 interface Props {
     telemetryService: TelemetryService
     authenticatedUser: Pick<AuthenticatedUser, 'emails'>
-    isSourcegraphApp: boolean
+    isCodyApp: boolean
 }
 
 const SIGN_UP_FORM_URL = 'https://info.sourcegraph.com/product-research'
@@ -19,7 +19,7 @@ const SIGN_UP_FORM_URL = 'https://info.sourcegraph.com/product-research'
 export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     authenticatedUser,
-    isSourcegraphApp,
+    isCodyApp,
 }) => {
     useEffect(() => {
         telemetryService.logViewEvent('UserSettingsProductResearch')
@@ -35,7 +35,7 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
         <>
             <PageTitle title="Product research" />
             <PageHeader headingElement="h2" path={[{ text: 'Product research and feedback' }]} className="mb-3" />
-            {isSourcegraphApp && (
+            {isCodyApp && (
                 <Container className="mb-2">
                     <Text>Do you have feedback or need help with Cody App?</Text>
                     {[

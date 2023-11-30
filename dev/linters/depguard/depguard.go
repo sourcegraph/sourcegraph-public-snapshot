@@ -19,11 +19,16 @@ var Deny map[string]string = map[string]string{
 	"errors$":                             "Use github.com/sourcegraph/sourcegraph/lib/errors instead",
 	"github.com/cockroachdb/errors$":      "Use github.com/sourcegraph/sourcegraph/lib/errors instead",
 	"github.com/hashicorp/go-multierror$": "Use github.com/sourcegraph/sourcegraph/lib/errors instead",
-	"rexexp$":                             "Use github.com/grafana/regexp instead",
+	"regexp$":                             "Use github.com/grafana/regexp instead",
 	"github.com/hexops/autogold$":         "Use github.com/hexops/autogold/v2 instead",
+	"github.com/google/go-github/github$": "Use github.com/google/go-github/v55/github instead. To convert between v48 and v55, use the internal/extsvc/github/githubconvert package",
 }
 
 func createAnalyzer() *analysis.Analyzer {
+	for i := 1; i < 55; i++ {
+		Deny[fmt.Sprintf("github.com/google/go-github/v%d/github$", i)] = "Use github.com/google/go-github/v55/github instead. To convert between v48 and v55, use the internal/extsvc/github/githubconvert package"
+	}
+
 	// We don't provide anything for the Files attribute, which means the "Main" list will apply
 	// to all files. If we wanted to restrict our Deny list to a subset of files, we would add
 	// Files: []string{"dev/**"}, which would mean it will only deny the import of some packages

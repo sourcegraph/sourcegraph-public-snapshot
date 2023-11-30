@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -38,10 +37,10 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	t.Run("has github account", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := database.NewDB(logger, dbtest.NewDB(t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db, gitserver.NewClient())
+		sr := newSchemaResolver(db, gitserver.NewTestClient(t))
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -50,7 +49,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 			AccountID:   "xd",
 		}
 
-		_, err := db.UserExternalAccounts().CreateUserAndSave(ctx, database.NewUser{Username: "u"}, spec, extsvc.AccountData{})
+		_, err := db.Users().CreateWithExternalAccount(ctx, database.NewUser{Username: "u"}, &extsvc.Account{AccountSpec: spec})
 		require.NoError(t, err)
 
 		graphqlArgs := struct {
@@ -58,7 +57,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		}{
 			ExternalAccount: graphql.ID(base64.URLEncoding.EncodeToString([]byte("ExternalAccount:1"))),
 		}
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 			if req.Reason != database.ReasonExternalAccountDeleted {
 				t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountDeleted)
 			}
@@ -142,20 +141,20 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				},
 			}, nil)
 
-			userextaccts.InsertFunc.SetDefaultHook(func(ctx context.Context, uID int32, acctSpec extsvc.AccountSpec, acctData extsvc.AccountData) error {
-				if uID != tc.user.ID {
-					t.Errorf("got userID %d, want %d", uID, tc.user.ID)
+			userextaccts.InsertFunc.SetDefaultHook(func(ctx context.Context, acct *extsvc.Account) (*extsvc.Account, error) {
+				if acct.UserID != tc.user.ID {
+					t.Errorf("got userID %d, want %d", acct.UserID, tc.user.ID)
 				}
-				if acctSpec.ServiceType != extsvc.TypeGerrit {
-					t.Errorf("got service type %q, want %q", acctSpec.ServiceType, extsvc.TypeGerrit)
+				if acct.AccountSpec.ServiceType != extsvc.TypeGerrit {
+					t.Errorf("got service type %q, want %q", acct.AccountSpec.ServiceType, extsvc.TypeGerrit)
 				}
-				if acctSpec.ServiceID != gerritURL {
-					t.Errorf("got service ID %q, want %q", acctSpec.ServiceID, "https://gerrit.example.com/")
+				if acct.AccountSpec.ServiceID != gerritURL {
+					t.Errorf("got service ID %q, want %q", acct.AccountSpec.ServiceID, "https://gerrit.example.com/")
 				}
-				if acctSpec.AccountID != "1234" {
-					t.Errorf("got account ID %q, want %q", acctSpec.AccountID, "alice")
+				if acct.AccountSpec.AccountID != "1234" {
+					t.Errorf("got account ID %q, want %q", acct.AccountSpec.AccountID, "alice")
 				}
-				return nil
+				return nil, nil
 			})
 			confGet := func() *conf.Unified {
 				return &conf.Unified{}
@@ -172,7 +171,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				ctx = actor.WithActor(ctx, &act)
 			}
 
-			sr := newSchemaResolver(db, gitserver.NewClient())
+			sr := newSchemaResolver(db, gitserver.NewTestClient(t))
 
 			args := struct {
 				ServiceType    string
@@ -184,7 +183,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				AccountDetails: tc.accountDetails,
 			}
 
-			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req permssync.ScheduleSyncOpts) {
 				if req.UserIDs[0] != tc.user.ID {
 					t.Errorf("got userID %d, want %d", req.UserIDs[0], tc.user.ID)
 				}

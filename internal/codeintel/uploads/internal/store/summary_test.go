@@ -17,7 +17,7 @@ import (
 
 func TestGetIndexers(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 	ctx := context.Background()
 
@@ -63,7 +63,7 @@ func TestGetIndexers(t *testing.T) {
 func TestRecentUploadsSummary(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	t0 := time.Unix(1587396557, 0).UTC()
@@ -122,7 +122,7 @@ func TestRecentUploadsSummary(t *testing.T) {
 func TestRecentIndexesSummary(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(t))
 	store := New(&observation.TestContext, db)
 
 	t0 := time.Unix(1587396557, 0).UTC()
@@ -182,7 +182,7 @@ func TestRecentIndexesSummary(t *testing.T) {
 func TestRepositoryIDsWithErrors(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 
@@ -262,7 +262,7 @@ func TestRepositoryIDsWithErrors(t *testing.T) {
 func TestNumRepositoriesWithCodeIntelligence(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	sqlDB := dbtest.NewDB(logger, t)
+	sqlDB := dbtest.NewDB(t)
 	db := database.NewDB(logger, sqlDB)
 	store := New(&observation.TestContext, db)
 

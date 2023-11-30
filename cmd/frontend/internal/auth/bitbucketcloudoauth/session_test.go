@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	bitbucketlogin "github.com/dghubble/gologin/bitbucket"
+	bitbucketlogin "github.com/dghubble/gologin/v2/bitbucket"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/oauth2"
 
@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -170,7 +171,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				returnEmails.Values = ci.bbUserEmails
 
 				var gotAuthUserOp *auth.GetAndSaveUserOp
-				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 					if gotAuthUserOp != nil {
 						t.Fatal("GetAndSaveUser called more than once")
 					}
@@ -178,9 +179,9 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					gotAuthUserOp = &op
 
 					if uid, ok := authSaveableUsers[op.UserProps.Username]; ok {
-						return uid, "", nil
+						return false, uid, "", nil
 					}
-					return 0, "safeErr", errors.New("auth.GetAndSaveUser error")
+					return false, 0, "safeErr", errors.New("auth.GetAndSaveUser error")
 				}
 				defer func() {
 					auth.MockGetAndSaveUser = nil
@@ -191,7 +192,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 					Url:    server.URL,
 					ApiURL: server.URL,
 				}
-				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
+				bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -203,7 +204,7 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 				}
 
 				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+				_, actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
 				if c.expErr && err == nil {
 					t.Errorf("expected err %v, but was nil", c.expErr)
 				} else if !c.expErr && err != nil {
@@ -242,7 +243,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 	}}
 
 	// We just want to make sure that we end up getting to the secondary email
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (newUserCreated bool, userID int32, safeErrMsg string, err error) {
 		if op.CreateIfNotExist {
 			// We should not get here as we should hit the second email address
 			// before trying again with creation enabled.
@@ -250,9 +251,9 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		}
 		// Mock the second email address matching
 		if op.UserProps.Email == "secondary@example.com" {
-			return 1, "", nil
+			return false, 1, "", nil
 		}
-		return 0, "no match", errors.New("no match")
+		return false, 0, "no match", errors.New("no match")
 	}
 	defer func() {
 		auth.MockGetAndSaveUser = nil
@@ -272,7 +273,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		Url:    server.URL,
 		ApiURL: server.URL,
 	}
-	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, nil)
+	bbClient, err := bitbucketcloud.NewClient(server.URL, conf, httpcli.TestExternalDoer)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +284,7 @@ func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
 		client:      bbClient,
 	}
 	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err = s.GetOrCreateUser(ctx, tok, "", "", "")
+	_, _, _, err = s.GetOrCreateUser(ctx, tok, "", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}

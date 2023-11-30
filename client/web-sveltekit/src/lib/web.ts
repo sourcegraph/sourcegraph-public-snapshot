@@ -1,10 +1,8 @@
 // We want to limit the number of imported modules as much as possible
 /* eslint-disable no-restricted-imports */
 
-import { gql, mutation } from './graphql'
-import type { CheckMirrorRepositoryConnectionResult, Scalars } from './graphql-operations'
-
 export { parseSearchURL } from '@sourcegraph/web/src/search/index'
+export { createSuggestionsSource } from '@sourcegraph/web/src/search/input/suggestions'
 export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
 
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'

@@ -35,7 +35,7 @@ func toComputeResult(ctx context.Context, gitserverClient gitserver.Client, cmd 
 }
 
 func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, searchQuery string, computeCommand compute.Command) (<-chan Event, func() (*search.Alert, error)) {
-	gitserverClient := gitserver.NewClient()
+	gitserverClient := gitserver.NewClient("http.computestream")
 
 	eventsC := make(chan Event, 8)
 	errorC := make(chan error, 1)
@@ -68,7 +68,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, se
 	})
 
 	patternType := "regexp"
-	searchClient := client.New(logger, db)
+	searchClient := client.New(logger, db, gitserver.NewClient("http.compute.search"))
 	inputs, err := searchClient.Plan(
 		ctx,
 		"",

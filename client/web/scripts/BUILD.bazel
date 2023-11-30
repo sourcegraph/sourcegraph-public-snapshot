@@ -6,7 +6,6 @@ ts_project(
     srcs = [
         "report-bundle-diff.ts",
     ],
-    module = "commonjs",
     tsconfig = "//client/web:tsconfig",
     deps = [
         "//:node_modules/@types/shelljs",
@@ -22,7 +21,7 @@ js_test(
         "//:node_modules/@statoscope/cli",
         "//:node_modules/octokit",
         "//:node_modules/shelljs",
-        "//client/web:bundle-enterprise",
+        "//client/web:bundle",
     ],
     entry_point = "report-bundle-diff.js",
     env = {
@@ -31,7 +30,7 @@ js_test(
         "BUILDKITE_PULL_REQUEST_REPO": "$$BUILDKITE_PULL_REQUEST_REPO",
         "BUILDKITE_PULL_REQUEST": "$$BUILDKITE_PULL_REQUEST",
         "GH_TOKEN": "$(GH_TOKEN)",
-        "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
+        "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle)",
     },
     tags = ["manual"],
 )

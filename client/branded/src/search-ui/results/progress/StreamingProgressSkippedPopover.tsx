@@ -1,4 +1,4 @@
-import React, { useCallback, useState, FC, useMemo } from 'react'
+import React, { useCallback, useState, type FC, useMemo, useEffect } from 'react'
 
 import { mdiAlertCircle, mdiChevronDown, mdiChevronLeft, mdiInformationOutline, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
@@ -6,8 +6,8 @@ import { useNavigate } from 'react-router-dom'
 
 import { pluralize, renderMarkdown } from '@sourcegraph/common'
 import { useMutation, gql } from '@sourcegraph/http-client'
-import type { Skipped } from '@sourcegraph/shared/src/search/stream'
-import { Progress } from '@sourcegraph/shared/src/search/stream'
+import type { Skipped, Progress } from '@sourcegraph/shared/src/search/stream'
+import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Collapse,
@@ -99,7 +99,7 @@ const SkippedMessage: React.FunctionComponent<React.PropsWithChildren<{ skipped:
     )
 }
 
-interface StreamingProgressSkippedPopoverProps {
+interface StreamingProgressSkippedPopoverProps extends TelemetryProps {
     query: string
     progress: Progress
     isSearchJobsEnabled?: boolean
@@ -107,7 +107,7 @@ interface StreamingProgressSkippedPopoverProps {
 }
 
 export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopoverProps> = props => {
-    const { query, progress, isSearchJobsEnabled, onSearchAgain } = props
+    const { query, progress, isSearchJobsEnabled, onSearchAgain, telemetryService } = props
 
     const [selectedSuggestedSearches, setSelectedSuggestedSearches] = useState(new Set<string>())
 
@@ -168,7 +168,7 @@ export const StreamingProgressSkippedPopover: FC<StreamingProgressSkippedPopover
             {isSearchJobsEnabled && (
                 <>
                     <hr className="mx-3 mt-3" />
-                    <ExhaustiveSearchMessage query={query} />
+                    <ExhaustiveSearchMessage query={query} telemetryService={telemetryService} />
                 </>
             )}
         </>
@@ -327,18 +327,33 @@ const CREATE_SEARCH_JOB = gql`
     }
 `
 
-interface ExhaustiveSearchMessageProps {
+interface ExhaustiveSearchMessageProps extends TelemetryProps {
     query: string
 }
 
 export const ExhaustiveSearchMessage: FC<ExhaustiveSearchMessageProps> = props => {
-    const { query } = props
+    const { query, telemetryService } = props
     const navigate = useNavigate()
     const [createSearchJob, { loading, error }] = useMutation(CREATE_SEARCH_JOB)
 
     const validationErrors = useMemo(() => validateQueryForExhaustiveSearch(query), [query])
+
+    useEffect(() => {
+        const validState = validationErrors.length > 0 ? 'invalid' : 'valid'
+
+        telemetryService.log('SearchJobsSearchFormShown', { validState }, { validState })
+
+        if (validationErrors.length > 0) {
+            const errorTypes = validationErrors.map(error => error.type)
+
+            telemetryService.log('SearchJobsValidationErrors', { errors: errorTypes }, { errors: errorTypes })
+        }
+    }, [telemetryService, validationErrors])
+
     const handleCreateSearchJobClick = async (): Promise<void> => {
         await createSearchJob({ variables: { query } })
+
+        telemetryService.log('SearchJobsCreateClick', {}, {})
         navigate('/search-jobs')
     }
 

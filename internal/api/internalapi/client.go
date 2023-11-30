@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -24,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -38,7 +38,7 @@ var frontendInternal = func() *url.URL {
 var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
 
 func defaultFrontendInternal() string {
-	if deploy.IsApp() {
+	if deploy.IsSingleBinary() {
 		return "localhost:3090"
 	}
 	return "sourcegraph-frontend-internal"
@@ -53,8 +53,8 @@ type internalClient struct {
 
 var Client = &internalClient{
 	URL: frontendInternal.String(),
-	getConfClient: syncx.OnceValues(func() (proto.ConfigServiceClient, error) {
-		logger := log.Scoped("internalapi", "")
+	getConfClient: sync.OnceValues(func() (proto.ConfigServiceClient, error) {
+		logger := log.Scoped("internalapi")
 		conn, err := defaults.Dial(frontendInternal.Host, logger)
 		if err != nil {
 			return nil, err

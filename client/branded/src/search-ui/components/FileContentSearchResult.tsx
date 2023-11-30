@@ -25,6 +25,7 @@ import { CopyPathAction } from './CopyPathAction'
 import { FileMatchChildren } from './FileMatchChildren'
 import { RepoFileLink } from './RepoFileLink'
 import { ResultContainer } from './ResultContainer'
+import { SearchResultPreviewButton } from './SearchResultPreviewButton'
 
 import resultContainerStyles from './ResultContainer.module.scss'
 import styles from './SearchResult.module.scss'
@@ -105,14 +106,20 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
         return new ZoektRanking(3)
     }, [settingsCascade])
 
+    const newSearchUIEnabled = useMemo(() => {
+        const settings = settingsCascade.final
+        if (!isErrorLike(settings)) {
+            return settings?.experimentalFeatures?.newSearchNavigationUI
+        }
+        return false
+    }, [settingsCascade])
+
     // The number of lines of context to show before and after each match.
     const context = useMemo(() => {
         if (location?.pathname === '/search') {
             // Check if search.contextLines is configured in settings.
             const contextLinesSetting =
-                isSettingsValid(settingsCascade) &&
-                settingsCascade.final &&
-                settingsCascade.final['search.contextLines']
+                isSettingsValid(settingsCascade) && settingsCascade.final?.['search.contextLines']
 
             if (typeof contextLinesSetting === 'number' && contextLinesSetting >= 0) {
                 return contextLinesSetting
@@ -133,7 +140,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                       })),
                       content: match.content,
                       startLine: match.contentStart.line,
-                      endLine: match.ranges[match.ranges.length - 1].end.line,
+                      endLine: match.ranges.at(-1)!.end.line,
                       aggregableBadges: match.aggregableBadges,
                   })) ||
                   result.lineMatches?.map(match => ({
@@ -252,6 +259,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
 
     return (
         <ResultContainer
+            ref={rootRef}
             index={index}
             title={title}
             resultType={result.type}
@@ -261,8 +269,8 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             className={classNames(styles.copyButtonContainer, containerClassName)}
             resultClassName={resultContainerStyles.highlightResult}
             rankingDebug={result.debug}
-            ref={rootRef}
             repoLastFetched={result.repoLastFetched}
+            actions={newSearchUIEnabled && <SearchResultPreviewButton result={result} />}
         >
             <div data-testid="file-search-result" data-expanded={expanded}>
                 <FileMatchChildren

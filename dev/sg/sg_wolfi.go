@@ -16,6 +16,7 @@ var (
 		UsageText: `
 # Update base image hashes
 sg wolfi update-hashes
+sg wolfi update-hashes jaeger-agent
 
 # Build a specific package using a manifest from wolfi-packages/
 sg wolfi package jaeger
@@ -109,16 +110,39 @@ It can also be used for local development by updating its path and hash in the '
 					return nil
 
 				},
-			},
-			{
-				Name:  "update-hashes",
-				Usage: "Update Wolfi base images hashes to the latest versions",
+			}, {
+				Name:      "scan-images",
+				ArgsUsage: "<base-image-name>",
+				Usage:     "Scan Wolfi base images for vulnerabilities",
 				UsageText: `
-Update the hash references for all Wolfi base images in the 'dev/oci_deps.bzl' file.
+Scans the Wolfi base images in the 'dev/oci_deps.bzl' file.`,
+				Action: func(ctx *cli.Context) error {
+					wolfi.ScanImages()
 
-This is done by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
+					return nil
+				},
+			}, {
+				Name:      "update-hashes",
+				ArgsUsage: "<base-image-name>",
+				Usage:     "Update Wolfi base images hashes to the latest versions",
+				UsageText: `
+Update the hash references for Wolfi base images in the 'dev/oci_deps.bzl' file.
+By default all hashes will be updated; pass in a base image name to update a specific image.
+
+Hash references are updated by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
 `,
-				Action: wolfi.UpdateHashes,
-			}},
+				Action: func(ctx *cli.Context) error {
+					args := ctx.Args().Slice()
+					var imageName string
+					if len(args) == 1 {
+						imageName = args[0]
+					}
+
+					wolfi.UpdateHashes(ctx, imageName)
+
+					return nil
+				},
+			},
+		},
 	}
 )

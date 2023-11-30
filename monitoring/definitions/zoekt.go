@@ -18,7 +18,7 @@ func Zoekt() *monitoring.Dashboard {
 		grpcServiceName          = "zoekt.webserver.v1.WebserverService"
 	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
+	grpcMethodVariable := shared.GRPCMethodVariable("zoekt_webserver", grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:                     "zoekt",
@@ -1075,15 +1075,16 @@ func Zoekt() *monitoring.Dashboard {
 					HumanServiceName:   "zoekt-webserver",
 					RawGRPCServiceName: grpcServiceName,
 
-					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex: `${webserver_instance:regex}`,
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					InstanceFilterRegex:  `${webserver_instance:regex}`,
+					MessageSizeNamespace: "",
 				}, monitoring.ObservableOwnerSearchCore),
 
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "zoekt-webserver",
 					RawGRPCServiceName: grpcServiceName,
-					Namespace:          "", // deliberately empty
+					Namespace:          "src",
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),

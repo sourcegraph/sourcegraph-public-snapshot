@@ -8,15 +8,19 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var ImagePattern = regexp.MustCompile(`image\s=\s"(.*?)"`)
+var DigestPattern = regexp.MustCompile(`digest\s=\s"(.*?)"`)
+var NamePattern = regexp.MustCompile(`name\s=\s"(.*?)"`)
 
 type TokenResponse struct {
 	Token     string `json:"token"`
@@ -97,7 +101,11 @@ func getImageManifest(image string, tag string) (string, error) {
 	return digest, nil
 }
 
-func UpdateHashes(ctx *cli.Context) error {
+func UpdateHashes(ctx *cli.Context, updateImageName string) error {
+	if updateImageName != "" {
+		updateImageName = strings.ReplaceAll(updateImageName, "-", "_")
+		updateImageName = fmt.Sprintf("wolfi_%s_base", updateImageName)
+	}
 
 	root, err := root.RepositoryRoot()
 
@@ -105,7 +113,8 @@ func UpdateHashes(ctx *cli.Context) error {
 		return err
 	}
 
-	bzl_deps := filepath.Join(root, "dev/oci_deps.bzl")
+	bzl_deps_file := "dev/oci_deps.bzl"
+	bzl_deps := filepath.Join(root, bzl_deps_file)
 
 	file, err := os.Open(bzl_deps)
 	if err != nil {
@@ -113,34 +122,41 @@ func UpdateHashes(ctx *cli.Context) error {
 	}
 	defer file.Close()
 
-	imagePattern := regexp.MustCompile(`image\s=\s"(.*?)"`)
-	digestPattern := regexp.MustCompile(`digest\s=\s"(.*?)"`)
-	namePattern := regexp.MustCompile(`name\s=\s"(.*?)"`)
-
 	scanner := bufio.NewScanner(file)
 	lines := []string{}
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
-	std.Out.Write("Checking for image updates...")
 
-	var updated bool
+	if updateImageName == "" {
+		std.Out.Write("Checking for hash updates to all images...")
+	} else {
+		std.Out.Writef("Checking for hash updates to '%s'...", updateImageName)
+	}
+
+	var updated, updateImageNameMatch bool
 
 	var currentImage *ImageInfo
 	for i, line := range lines {
 		switch {
-		case namePattern.MatchString(line):
-			match := namePattern.FindStringSubmatch(line)
+		case NamePattern.MatchString(line):
+			match := NamePattern.FindStringSubmatch(line)
 			if len(match) > 1 {
-				currentImage = &ImageInfo{Name: strings.Trim(match[1], `"`)}
+				imageName := strings.Trim(match[1], `"`)
+
+				// Only update an image if updateImageName matches the name, or if it's empty (in which case update all images)
+				if updateImageName == imageName || updateImageName == "" {
+					updateImageNameMatch = true
+					currentImage = &ImageInfo{Name: imageName}
+				}
 			}
-		case digestPattern.MatchString(line):
-			match := digestPattern.FindStringSubmatch(line)
+		case DigestPattern.MatchString(line):
+			match := DigestPattern.FindStringSubmatch(line)
 			if len(match) > 1 && currentImage != nil {
 				currentImage.Digest = strings.Trim(match[1], `"`)
 			}
-		case imagePattern.MatchString(line):
-			match := imagePattern.FindStringSubmatch(line)
+		case ImagePattern.MatchString(line):
+			match := ImagePattern.FindStringSubmatch(line)
 			if len(match) > 1 && currentImage != nil {
 				currentImage.Image = strings.Trim(match[1], `"`)
 
@@ -155,7 +171,7 @@ func UpdateHashes(ctx *cli.Context) error {
 					if currentImage.Digest != newDigest {
 						updated = true
 						// replace old digest with new digest in the previous line
-						lines[i-1] = digestPattern.ReplaceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
+						lines[i-1] = DigestPattern.ReplaceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
 						std.Out.WriteSuccessf("Found new digest for %s", currentImage.Image)
 					}
 				}
@@ -177,7 +193,19 @@ func UpdateHashes(ctx *cli.Context) error {
 			fmt.Fprintln(writer, line)
 		}
 		writer.Flush()
-		std.Out.WriteSuccessf("Succesfully updated digests in %s", "oci_deps.bzl")
+		std.Out.WriteSuccessf("Succesfully updated digests in %s", bzl_deps_file)
+
+	} else {
+		// No digests were updated - determine why and print status message
+		if updateImageName == "" {
+			std.Out.WriteSuccessf("No digests needed to be updated in %s", bzl_deps_file)
+		} else {
+			if updateImageNameMatch {
+				std.Out.WriteSuccessf("No digests needed to be updated in %s", bzl_deps_file)
+			} else {
+				std.Out.WriteFailuref("Did not find any images matching '%s' in %s", updateImageName, bzl_deps_file)
+			}
+		}
 	}
 
 	return nil

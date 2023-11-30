@@ -28,7 +28,7 @@ fi
 # We run this check afterwards so we can read the values exported by the
 # start-*.sh scripts. We need to smuggle in these envvars for tests on both
 # linux and darwin.
-cat <<EOF > .bazelrc-nix
+cat <<EOF >> .bazelrc-nix
 build --action_env=PATH=$BAZEL_ACTION_PATH
 build --action_env=REDIS_ENDPOINT
 build --action_env=PGHOST
