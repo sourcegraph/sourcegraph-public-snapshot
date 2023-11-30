@@ -250,7 +250,7 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 }
 
 // Keep: allows building an array of images on one agent. Useful for streamlining and rules_oci in the future.
-func bazelBuildCandidateDockerImages(apps []string, version string, tag string, rt runtype.RunType) operations.Operation {
+func legacyBuildCandidateDockerImages(apps []string, version string, tag string, rt runtype.RunType) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
 

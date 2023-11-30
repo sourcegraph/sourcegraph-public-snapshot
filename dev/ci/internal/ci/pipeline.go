@@ -205,7 +205,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		// TODO(burmudar): This should use the bazel target
 		// Also this doesn't use bazel
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		imageBuildOps.Append(legacyBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 		ops.Merge(imageBuildOps)
 
 		ops.Append(wait)
