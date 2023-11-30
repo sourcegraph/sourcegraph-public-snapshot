@@ -105,7 +105,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                             {codyProEnabled ? (
                                 <ProTierIcon />
                             ) : (
-                                <Text className={classNames(styles.planName, 'mb-0')}>Community</Text>
+                                <Text className={classNames(styles.planName, 'mb-0')}>Free</Text>
                             )}
                             <Text className="text-muted mb-0" size="small">
                                 tier
