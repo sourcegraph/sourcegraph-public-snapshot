@@ -282,7 +282,7 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		return input, errors.Wrap(err, `unredact "auth.providers"`)
 	}
 
-	var oldObservabilitySecrets []string
+	var observabilitySecretsReplaceList []string
 	for _, oa := range oldCfg.ObservabilityAlerts {
 		if oa.Notifier.Opsgenie != nil && oa.Notifier.Opsgenie.ApiKey != "" {
 			oldObservabilitySecrets = append(oldObservabilitySecrets, redactHashString(oa.Notifier.Opsgenie.ApiKey), oa.Notifier.Opsgenie.ApiKey)
