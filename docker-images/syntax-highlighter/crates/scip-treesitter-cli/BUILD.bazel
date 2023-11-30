@@ -107,12 +107,12 @@ oci_tarball(
 genrule(
     name = "scip_java_groundtruth_scip",
     srcs = [
-        "stuff.sh",
+        "testdata/stuff.sh",
         ":scip_java_image_tarball",
     ],
     outs = ["index.scip"],
     cmd = """\
-    $(location stuff.sh) $(location :scip_java_image_tarball) $@
+    $(location testdata/stuff.sh) $(location :scip_java_image_tarball) $@
     """,
     tags = ["requires-network"],
 )
