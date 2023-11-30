@@ -150,7 +150,10 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 			// New event
 			events.Record(ctx, "search.latencies", telemetry.Action(types[0]), &telemetry.EventParameters{
 				Metadata: telemetry.EventMetadata{
-					"durationMs": float64(duration.Milliseconds()),
+					"durationMs": telemetry.Number(duration.Milliseconds()),
+					// TODO: Maybe make FromSessionCookie a first-class data
+					// point in (telemetrygateway.proto).EventUser
+					"actor.fromSessionCookie": telemetry.Bool(a.FromSessionCookie),
 				},
 			})
 			// Legacy event
