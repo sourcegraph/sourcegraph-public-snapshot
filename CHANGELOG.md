@@ -60,6 +60,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added the ability to use Workload Identity, Managed Identity and Environmental credentials when using the Azure OpenAI completions and embeddings providers [#58289](https://github.com/sourcegraph/sourcegraph/pull/58289)
+- Added support for cloning via SSH from Azure DevOps. [#58655](https://github.com/sourcegraph/sourcegraph/pull/58655)
 
 ### Fixed
 
