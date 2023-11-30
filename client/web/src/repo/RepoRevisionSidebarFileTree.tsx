@@ -171,7 +171,6 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         })
     }, [initialFilePath, updateTreeData])
 
-
     const fetchEntries = useCallback(
         async (variables: FileTreeEntriesVariables) => {
             const result = await client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
