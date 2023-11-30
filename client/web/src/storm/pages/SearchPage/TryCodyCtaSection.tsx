@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Badge, Button, ButtonLink, H2, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { isCodyEnabled } from '../../../cody/isCodyEnabled'
 import { MarketingBlock } from '../../../components/MarketingBlock'
@@ -137,7 +137,12 @@ export const TryCodyCtaSection: React.FC<TryCodyCtaSectionProps> = ({
             {isSourcegraphDotCom ? (
                 <>
                     <div className="d-flex flex-column justify-content-center p-4">
-                        <H3>Cody for Sourcegraph.com</H3>
+                        <H3>
+                            Cody for Sourcegraph.com{' '}
+                            <Badge className="d-inline" variant="info">
+                                Experimental
+                            </Badge>
+                        </H3>
                         <Text>
                             A free, helpful AI assistant, that explains, generates, and transpiles code, in the
                             Sourcegraph web interface.
