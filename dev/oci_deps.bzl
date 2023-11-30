@@ -207,3 +207,43 @@ def oci_deps():
         digest = "sha256:dcc08b0228a5abd8a542efc7ee86ec58299591a737cafe19e92af6c1e1301c26",
         image = "index.docker.io/sourcegraph/wolfi-qdrant-base",
     )
+
+    # The following image digests are from tag 252535_2023-11-28_5.2-82b5f4f5d73f
+    # To rebuild these legacy images using docker and outside of bazel you can either push a branch to:
+    # - docker-images-candidates-notest/<your banch name here>
+    # or you can run `sg ci build docker-images-candidates-notest`
+    oci_pull(
+        name = "legacy_alpine-3.14_base",
+        digest = "sha256:581afabd476b4918b14295ae6dd184f4a3783c64bab8bde9ad7b11ea984498a8",
+        image = "index.docker.io/sourcegraph/alpine-3.14",
+    )
+
+    oci_pull(
+        name = "legacy_dind_base",
+        digest = "sha256:0893c2e6103cde39b609efea0ebd6423c7af8dafdf19d613debbc12b05fefd54",
+        image = "index.docker.io/sourcegraph/dind",
+    )
+
+    oci_pull(
+        name = "legacy_executor-vm_base",
+        digest = "sha256:4b23a8bbfa9e1f5c80b167e59c7f0d07e40b4af52494c22da088a1c97925a3e2",
+        image = "index.docker.io/sourcegraph/executor-vm",
+    )
+
+    oci_pull(
+        name = "legacy_codeinsights-db_base",
+        digest = "sha256:c2384743265457f816d83358d8fb4810b9aac9f049fd462d1f630174076e0d94",
+        image = "index.docker.io/sourcegraph/codeinsights-db",
+    )
+
+    oci_pull(
+        name = "legacy_codeintel-db_base",
+        digest = "sha256:dcc32a6d845356288186f2ced62346cf7e0120977ff1a0d6758f4e11120401f7",
+        image = "index.docker.io/sourcegraph/codeintel-db",
+    )
+
+    oci_pull(
+        name = "legacy_postgres-12-alpine_base",
+        digest = "sha256:dcc32a6d845356288186f2ced62346cf7e0120977ff1a0d6758f4e11120401f7",
+        image = "index.docker.io/sourcegraph/postgres-12-alpine",
+    )
