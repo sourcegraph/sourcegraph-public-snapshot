@@ -205,7 +205,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Use CandidateNoTest if you want to build legacy Docker Images
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
-		// Also this doesn't use bazel
 		imageBuildOps.Append(legacyBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 		ops.Merge(imageBuildOps)
 
