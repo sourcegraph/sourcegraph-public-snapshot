@@ -82,7 +82,7 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
                         <div>
                             <H2>My Subscription</H2>
                             <Text className="text-muted mb-0">
-                                You are on a {codyProEnabled ? 'pro' : 'community'} tier.
+                                You are on the Cody {codyProEnabled ? 'Pro' : 'Free'} tier.
                             </Text>
                         </div>
                         {codyProEnabled ? (
