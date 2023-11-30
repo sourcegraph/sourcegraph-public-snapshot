@@ -5,4 +5,3 @@
 .metals
 .scala-build
 semanticdb-targetroot
-!index.scip

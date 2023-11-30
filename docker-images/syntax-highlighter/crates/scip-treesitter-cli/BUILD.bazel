@@ -108,11 +108,12 @@ genrule(
     name = "scip_java_groundtruth_scip",
     srcs = [
         "testdata/stuff.sh",
+        "testdata/java",
         ":scip_java_image_tarball",
     ],
     outs = ["index.scip"],
     cmd = """\
-    $(location testdata/stuff.sh) $(location :scip_java_image_tarball) $@
+    $(location testdata/stuff.sh) $(location :scip_java_image_tarball) scip-java:tmp $(location testdata/java) $@
     """,
     tags = ["requires-network"],
 )

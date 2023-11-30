@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 
-image="$1"
-out="$2"
+echo $@
 
-echo here!
-docker load --input="$1"
+tarball="$1"
+image_name="$2"
+project_root="$3"
+docker_command="$4"
+out="$5"
 
-# commented just to allow completing the whole process as the -h
-# will lead to exit code 1
-# ---
-# docker run --rm scip-java-tmp:tmp -- -h
-echo here
+/usr/local/bin/docker load --input="$tarball"
 
-echo "it works" > "$out"
+/usr/local/bin/docker run -v $(realpath $project_root):/sources $image_name -- scip-java index
+
+ls -la $(realpath $project_root)
+
+echo "hello" > $(realpath $project_root)/index.scip
+
+mv $(realpath project_root)/index.scip $out
