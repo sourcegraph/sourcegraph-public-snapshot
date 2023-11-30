@@ -75,7 +75,7 @@ export class ToggleLineWrap extends React.PureComponent<
 
     public render(): JSX.Element | null {
         return (
-            <RepoHeaderActionMenuItem file={true} onSelect={this.onClick} as={Button}>
+            <RepoHeaderActionMenuItem file={true} onSelect={this.onClick} as={Button} className="py-2">
                 <Icon
                     as={this.state.value ? WrapDisabledIcon : undefined}
                     svgPath={!this.state.value ? mdiWrap : undefined}

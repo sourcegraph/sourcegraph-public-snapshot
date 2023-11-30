@@ -10,7 +10,7 @@ interface RepoHeaderContextMenuProps {
 
 export const RepoHeaderContextMenu: FC<RepoHeaderContextMenuProps> = ({ actions }) => (
     <Menu>
-        <MenuButton variant="secondary" outline={true} className="pt-0 pb-0">
+        <MenuButton variant="secondary" outline={true} className="py-0">
             ...
         </MenuButton>
 
