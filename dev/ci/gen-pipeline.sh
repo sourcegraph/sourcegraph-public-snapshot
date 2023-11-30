@@ -7,7 +7,7 @@ buildkite-agent annotate --style info <./dev/ci/glossary.md
 
 bazelrc=(--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc)
 
-if [ ${BUILDKITE_AGENT_META_DATA_QUEUE:-""} == "aspect-default" ]; then
+if [ ${ASPECT_WORKFLOWS_BUILD:-""} == "1" ]; then
   aspectBazelRcFile=$(mktemp)
   rosetta bazelrc > ${aspectBazelRcFile}
   bazelrc=(--bazelrc=${aspectBazelRcFile})
