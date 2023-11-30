@@ -207,3 +207,9 @@ def oci_deps():
         digest = "sha256:dcc08b0228a5abd8a542efc7ee86ec58299591a737cafe19e92af6c1e1301c26",
         image = "index.docker.io/sourcegraph/wolfi-qdrant-base",
     )
+
+    oci_pull(
+        name = "scip-java",
+        digest = "sha256:aa63f38a0dacfa1371ea701937f519347d4c0bca7628389aeb7173c042483ebb",
+        image = "index.docker.io/sourcegraph/scip-java",
+    )

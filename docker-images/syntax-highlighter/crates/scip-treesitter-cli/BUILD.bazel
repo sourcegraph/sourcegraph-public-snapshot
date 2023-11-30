@@ -1,9 +1,10 @@
 load("@crate_index//:defs.bzl", "aliases", "all_crate_deps")
 load("@rules_rust//rust:defs.bzl", "rust_binary", "rust_library", "rust_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 
 rust_binary(
     name = "scip-treesitter-cli",
-    srcs = glob(["src/*.rs"]),
+    srcs = ["src/main.rs"],
     aliases = aliases(),
     proc_macro_deps = all_crate_deps(
         proc_macro = True,
@@ -90,4 +91,28 @@ rust_test(
         ":scip-treesitter-cli",
         ":scip-treesitter-cli-lib",
     ] + WORKSPACE_DEPS,
+)
+
+oci_image(
+    name = "scip_java_image",
+    base = "@scip-java",
+)
+
+oci_tarball(
+    name = "scip_java_image_tarball",
+    image = ":scip_java_image",
+    repo_tags = ["scip-java:tmp"],
+)
+
+genrule(
+    name = "scip_java_groundtruth_scip",
+    srcs = [
+        "stuff.sh",
+        ":scip_java_image_tarball",
+    ],
+    outs = ["index.scip"],
+    cmd = """\
+    $(location stuff.sh) $(location :scip_java_image_tarball) $@
+    """,
+    tags = ["requires-network"],
 )
