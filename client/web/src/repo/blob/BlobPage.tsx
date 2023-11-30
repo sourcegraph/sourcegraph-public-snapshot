@@ -57,6 +57,8 @@ import type { SourcegraphContext } from '../../jscontext'
 import type { NotebookProps } from '../../notebooks'
 import { copyNotebook, type CopyNotebookProps } from '../../notebooks/notebook'
 import { OpenInEditorActionItem } from '../../open-in-editor/OpenInEditorActionItem'
+import { ToggleOpenCodeGraphVisibilityAction } from '../../opencodegraph/global/ToggleOpenCodeGraphVisibility'
+import { useOpenCodeGraphVisibility } from '../../opencodegraph/global/useOpenCodeGraphVisibility'
 import type { OwnConfigProps } from '../../own/OwnConfigProps'
 import type { SearchStreamingProps } from '../../search'
 import { parseBrowserRepoURL, toTreeURL } from '../../util/url'
@@ -302,6 +304,10 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
     const [isBlameVisible] = useBlameVisibility(isPackage)
     const blameHunks = useBlameHunks({ isPackage, repoName, revision, filePath }, props.platformContext.sourcegraphURL)
 
+    // OpenCodeGraph
+    const [enableOpenCodeGraph] = useFeatureFlag('opencodegraph', false)
+    const [ocgVisibility] = useOpenCodeGraphVisibility()
+
     const isSearchNotebook = Boolean(
         blobInfoOrError &&
             !isErrorLike(blobInfoOrError) &&
@@ -386,6 +392,22 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                     />
                 )}
             </RepoHeaderContributionPortal>
+            {enableOpenCodeGraph && (
+                <RepoHeaderContributionPortal
+                    position="right"
+                    priority={4}
+                    id="toggle-opencodegraph"
+                    repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+                >
+                    {({ actionType }) => (
+                        <ToggleOpenCodeGraphVisibilityAction
+                            actionType={actionType}
+                            source="repoHeader"
+                            renderMode={renderMode}
+                        />
+                    )}
+                </RepoHeaderContributionPortal>
+            )}
             <RepoHeaderContributionPortal
                 position="right"
                 priority={20}
@@ -582,6 +604,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
                         ariaLabel="File blob"
                         isBlameVisible={isBlameVisible}
                         blameHunks={blameHunks}
+                        ocgVisibility={ocgVisibility}
                         overrideBrowserSearchKeybinding={true}
                     />
                 </TraceSpanProvider>

@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "opencodegraph",
+    srcs = [
+        "amplitude_provider.go",
+        "chromatic_util.go",
+        "doc.go",
+        "docs_provider.go",
+        "googledocs_provider.go",
+        "grafana_provider.go",
+        "multi.go",
+        "protocol.go",
+        "providers.go",
+        "storybook_provider.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/opencodegraph",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "//schema",
+        "@com_github_grafana_regexp//:regexp",
+        "@org_golang_x_net//context/ctxhttp",
+        "@org_golang_x_sync//errgroup",
+    ],
+)
+
+go_test(
+    name = "opencodegraph_test",
+    srcs = ["protocol_test.go"],
+    embed = [":opencodegraph"],
+    deps = ["//schema"],
+)

@@ -265,6 +265,7 @@ const selectedLineNumberTheme = EditorView.theme({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'flex-end',
+            justifyContent: 'flex-end',
         },
 
         '& .cm-gutterElement:hover': {
