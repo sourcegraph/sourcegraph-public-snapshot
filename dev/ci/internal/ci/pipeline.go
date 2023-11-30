@@ -304,7 +304,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
-		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
+		publishOpsDev.Append(bazelPushImagesCandidates(c.Version, isAspectWorkflowBuild))
 		ops.Merge(publishOpsDev)
 
 		// End-to-end tests
@@ -340,7 +340,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 		// Final Bazel images
-		publishOps.Append(bazelPushImagesFinal(c.Version))
+		publishOps.Append(bazelPushImagesFinal(c.Version, isAspectWorkflowBuild))
 		ops.Merge(publishOps)
 	}
 
