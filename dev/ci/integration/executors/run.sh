@@ -24,8 +24,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# registry="us.gcr.io/sourcegraph-dev/"
-registry="us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
+registry="us.gcr.io/sourcegraph-dev/"
+# registry="us-central1-docker.pkg.dev/sourcegraph-ci/rfc795-internal"
 export POSTGRES_IMAGE="$registry/postgres-12-alpine:${CANDIDATE_VERSION}"
 export SERVER_IMAGE="$registry/server:${CANDIDATE_VERSION}"
 export EXECUTOR_IMAGE="$registry/executor:${CANDIDATE_VERSION}"
