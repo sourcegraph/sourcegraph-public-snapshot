@@ -149,24 +149,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         treeDataRef.current = nextTreeData
     }, [])
 
-    const client = useApolloClient()
-    const fetchEntries = useCallback(
-        async (variables: FileTreeEntriesVariables) => {
-            const result = await client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
-                query: APOLLO_QUERY,
-                variables,
-            })
-
-            if (!treeDataRef.current) {
-                return
-            }
-
-            updateTreeData(treeDataRef.current, result.data)
-        },
-        [client, updateTreeData]
-    )
-
     // Initialize the treeData from the initial query
+    const client = useApolloClient()
     useEffect(() => {
         const result = client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
             query: APOLLO_QUERY,
@@ -186,6 +170,23 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             updateTreeData(createTreeData(initialFilePath), res.data)
         })
     }, [initialFilePath, updateTreeData])
+
+
+    const fetchEntries = useCallback(
+        async (variables: FileTreeEntriesVariables) => {
+            const result = await client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
+                query: APOLLO_QUERY,
+                variables,
+            })
+
+            if (!treeDataRef.current) {
+                return
+            }
+
+            updateTreeData(treeDataRef.current, result.data)
+        },
+        [client, updateTreeData]
+    )
 
     const onLoadData = useCallback(
         async ({ element }: { element: TreeNode }) => {
