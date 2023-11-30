@@ -60,6 +60,7 @@ func main() {
 // i.e. an upgrade test between the last minor version and the current release candidate
 func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion *semver.Version) error {
 	fmt.Println("--- 🕵️  standard upgrade test")
+	fmt.Printf("Upgrading from latest minor version (%s) to release candidate\n", latestMinorVersion)
 	//start test env
 	initHash, networkName, dbs, cleanup, err := setupTestEnv(ctx, latestMinorVersion)
 	if err != nil {
@@ -70,7 +71,7 @@ func standardUpgradeTest(ctx context.Context, latestMinorVersion, latestVersion 
 	defer cleanup()
 
 	// ensure env correctly initialized
-	if err := validateDBs(ctx, latestMinorVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestMinorVersion.String()), networkName, dbs, false); err != nil {
+	if err := validateDBs(ctx, latestMinorVersion.String(), fmt.Sprintf("sourcegraph/migrator:%s", latestVersion.String()), networkName, dbs, false); err != nil {
 		fmt.Println("🚨 Upgrade failed: ", err)
 		return err
 	}
@@ -138,6 +139,7 @@ func multiversionUpgradeTest(ctx context.Context, randomVersion, latestVersion *
 
 	// Run multiversion upgrade using candidate image
 	// TODO: target the schema of the candidate version rather than latest released tag on branch
+	fmt.Printf("-- ⚙️  performing multiversion upgrade (--from %s --to %s)\n", randomVersion.String(), latestVersion.String())
 	if err := run.Cmd(ctx,
 		dockerMigratorBaseString(fmt.Sprintf("upgrade --from %s --to %s", randomVersion.String(), latestVersion.String()), "migrator:candidate", networkName, initHash, dbs)...).
 		Run().Stream(os.Stdout); err != nil {
@@ -353,6 +355,8 @@ func setupTestEnv(ctx context.Context, initVersion *semver.Version) (hash []byte
 	return hash, networkName, dbs, cleanup, err
 }
 
+// validateDBs runs a few tests to assess the readiness of the database and wether or not drift exists on the schema.
+// It is used in initializing a new db as well as "validating" the db after an version change. This behavior is controlledg by the upgrade parameter.
 func validateDBs(ctx context.Context, version, migratorImage, networkName string, dbs []testDB, upgrade bool) error {
 	fmt.Println("-- ⚙️  validating dbs")
 
@@ -402,14 +406,6 @@ func validateDBs(ctx context.Context, version, migratorImage, networkName string
 		fmt.Println("✅ no failed migrations found")
 	}
 
-	// Get the last commit in the release branch
-	var candidateGitHead bytes.Buffer
-	if err := run.Cmd(ctx, "git", "rev-parse", "HEAD").Run().Stream(&candidateGitHead); err != nil {
-		fmt.Printf("🚨 failed to get latest commit on candidate branch: %s\n", err)
-		return err
-	}
-	fmt.Println("Latest commit on candidate branch: ", candidateGitHead.String())
-
 	// Check DBs for drift
 	fmt.Println("🔎 Checking DBs for drift")
 	for _, db := range dbs {
@@ -419,6 +415,14 @@ func validateDBs(ctx context.Context, version, migratorImage, networkName string
 			return err
 		}
 		if upgrade {
+			// Get the last commit in the release branch, if validating an upgrade the upgrade boolean is true,
+			// in this case the drift target is the latest commit on the release candidate branch.
+			var candidateGitHead bytes.Buffer
+			if err := run.Cmd(ctx, "git", "rev-parse", "HEAD").Run().Stream(&candidateGitHead); err != nil {
+				fmt.Printf("🚨 failed to get latest commit on candidate branch: %s\n", err)
+				return err
+			}
+			fmt.Println("Latest commit on candidate branch: ", candidateGitHead.String())
 			if err = run.Cmd(ctx, dockerMigratorBaseString(fmt.Sprintf("drift --db %s --version %s --ignore-migrator-update --skip-version-check", db.Name, candidateGitHead.String()),
 				migratorImage, networkName, hash, dbs)...).Run().Stream(os.Stdout); err != nil {
 				fmt.Printf("🚨 failed to check drift on %s: %s\n", db.Name, err)
@@ -571,6 +575,9 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 		if err != nil {
 			continue // skip non-matching tags
 		}
+		if v.Prerelease() != "" {
+			continue // skip prereleases
+		}
 		// Track latest full version
 		if latestFullVer == nil || v.GreaterThan(latestFullVer) {
 			latestFullVer = v
@@ -593,11 +600,11 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 			continue
 		}
 		// versions at least two behind the current latest version
-		if v.Major() == latestFullVer.Major() && v.Minor() >= latestFullVer.Minor()-2 {
+		if v.Major() == latestFullVer.Major() && v.Minor() >= latestFullVer.Minor()-1 {
 			continue
 		}
 		// skip version v4.3 which is affected by a known bug. See https://docs.sourcegraph.com/admin/updates/docker_compose#v4-3-v4-4-1
-		if v == semver.MustParse("v4.3") || v == semver.MustParse("v4.4.1") {
+		if v.GreaterThan(semver.MustParse("v4.0.1")) && v.LessThan(semver.MustParse("v4.5.0")) {
 			continue
 		}
 
@@ -607,7 +614,7 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 		// - our image for codeintel-db and pgsql was normalized to postgres-12-alpine
 		// - the migration_logs table exists, this was renamed from schema_migrations in v3.36.0
 		// - migrator is introduced in v3.38.0
-		if v.GreaterThan(semver.MustParse("v3.38")) {
+		if v.GreaterThan(semver.MustParse("v3.38.1")) { // theres was only one patch in v3.38
 			randomVersions = append(randomVersions, v)
 		}
 	}
@@ -615,6 +622,8 @@ func getVersions(ctx context.Context) (latestMinor, latestFull, randomVersion *s
 	if len(randomVersions) == 0 {
 		return nil, nil, nil, errors.New("No valid random semver tags found")
 	}
+
+	fmt.Println(randomVersions)
 
 	// Select random index
 	randIndex := rand.Intn(len(randomVersions))
