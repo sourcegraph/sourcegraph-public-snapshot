@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import classNames from 'classnames'
 
-import { H2, Text, Button } from '@sourcegraph/wildcard'
+import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
 
@@ -40,7 +40,7 @@ export function VSCodeInstructions({
                             </div>
                         </div>
                         <div className="d-flex flex-column justify-content-center align-items-center mt-4">
-                            <Button variant="primary">Open Marketplace</Button>
+                            <ButtonLink variant="primary" to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">Open Marketplace</ButtonLink>
                             <img
                                 alt="VS Code Marketplace"
                                 className="mt-4"
@@ -57,10 +57,7 @@ export function VSCodeInstructions({
                                 <Text className="mb-1" weight="bold">
                                     Open Cody from the Sidebar on the Left
                                 </Text>
-                                <Text className="text-muted mb-0" size="small">
-                                    Alternatively, you can reach this page by clicking{' '}
-                                    <strong>View {'>'} Extensions</strong> and searching for <strong>Cody AI</strong>
-                                </Text>
+
                             </div>
                         </div>
                         <div className="d-flex flex-column justify-content-center align-items-center mt-4">
