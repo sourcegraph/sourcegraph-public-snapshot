@@ -41,8 +41,9 @@ type Actor struct {
 	SourcegraphOperator bool `json:",omitempty"`
 
 	// FromSessionCookie is whether a session cookie was used to authenticate the actor. It is used
-	// to selectively display a logout link. (If the actor wasn't authenticated with a session
-	// cookie, logout would be ineffective.)
+	// to selectively display a logout link (if the actor wasn't authenticated with a session
+	// cookie, logout would be ineffective), and for use in telemetry to indicate if a user
+	// might have come from a web browser (likely cookie) or directly via the API.
 	FromSessionCookie bool `json:"-"`
 
 	// user is populated lazily by (*Actor).User()

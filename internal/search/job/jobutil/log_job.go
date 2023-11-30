@@ -152,7 +152,8 @@ func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durat
 				Metadata: telemetry.EventMetadata{
 					"durationMs": telemetry.Number(duration.Milliseconds()),
 					// TODO: Maybe make FromSessionCookie a first-class data
-					// point in (telemetrygateway.proto).EventUser
+					// point in (telemetrygateway.proto).EventUser if more use
+					// cases surface.
 					"actor.fromSessionCookie": telemetry.Bool(a.FromSessionCookie),
 				},
 			})
