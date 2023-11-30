@@ -108,7 +108,7 @@ export const CopyPermalinkAction: React.FunctionComponent<CopyPermalinkActionPro
         setTimeout(() => setCopiedLink(false), 1000)
     }
 
-    const copyLinkLabel = copiedLink ? 'Copied!' : 'Copy Link'
+    const copyLinkLabel = copiedLink ? 'Copied!' : 'Links'
     const copyLinkIcon = copiedLink ? mdiCheckBold : mdiContentCopy
     const isRevisionTheSameAsCommitID = revision === commitID
 
