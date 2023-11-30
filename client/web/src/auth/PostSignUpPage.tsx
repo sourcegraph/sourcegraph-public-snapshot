@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
@@ -25,7 +25,7 @@ const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticate
 
     const containsExperimentFlagParam = searchParameters.has('experiment_flag')
     const shouldRedirect = !containsExperimentFlagParam && authenticatedUser.completedPostSignup
-    const [showQualificationSurvey, status] = useFeatureFlag('signup-survey-enabled', false)
+    const [showQualificationSurvey, status] = useFeatureFlag('signup-survey-enabled')
 
     // Redirects if the experiment flag is not provided and if the user has completed the post-signup flow.
     if (shouldRedirect) {
