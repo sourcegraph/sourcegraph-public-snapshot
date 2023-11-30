@@ -19,9 +19,6 @@ const (
 	// GPTLLMAccessTag is the license tag that indicates that the licensed instance
 	// should be allowed by default to use GPT models in Cody Gateway.
 	GPTLLMAccessTag = "gpt"
-	// AllowAnonymousUsageTag denotes licenses that allow anonymous usage, a.k.a public access to the instance
-	// Warning: This should be used with care and only at special, probably trial/poc stages with customers
-	AllowAnonymousUsageTag = "allow-anonymous-usage"
 
 	// TelemetryEventsExportDisabledTag disables telemery events export EXCEPT
 	// for Cody-related events, which we are always allowed to export as part of
@@ -95,7 +92,6 @@ var MiscTags = []string{
 	TrueUpUserCountTag,
 	InternalTag,
 	DevTag,
-	AllowAnonymousUsageTag,
 	"starter",
 	"mau",
 	GPTLLMAccessTag,

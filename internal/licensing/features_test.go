@@ -88,45 +88,6 @@ func TestCheckFeature(t *testing.T) {
 		check(t, FeatureACLs, licenseInfo(plan(PlanEnterprise1)), true)
 	})
 
-	t.Run(string(FeatureExtensionRegistry), func(t *testing.T) {
-		check(t, FeatureExtensionRegistry, nil, false)
-
-		check(t, FeatureExtensionRegistry, licenseInfo("starter"), false)
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureExtensionRegistry, licenseInfo(), true)
-
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanEnterprise0), string(FeatureExtensionRegistry)), true)
-	})
-
-	t.Run(string(FeatureRemoteExtensionsAllowDisallow), func(t *testing.T) {
-		check(t, FeatureRemoteExtensionsAllowDisallow, nil, false)
-
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo("starter"), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(), true)
-
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanEnterprise0), string(FeatureRemoteExtensionsAllowDisallow)), true)
-	})
-
-	t.Run(string(FeatureBranding), func(t *testing.T) {
-		check(t, FeatureBranding, nil, false)
-
-		check(t, FeatureBranding, licenseInfo("starter"), false)
-		check(t, FeatureBranding, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureBranding, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureBranding, licenseInfo(), true)
-
-		check(t, FeatureBranding, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureBranding, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureBranding, licenseInfo(plan(PlanEnterprise0), string(FeatureBranding)), true)
-	})
-
 	t.Run((&FeatureBatchChanges{}).FeatureName(), func(t *testing.T) {
 		check(t, &FeatureBatchChanges{}, nil, false)
 
@@ -141,9 +102,6 @@ func TestCheckFeature(t *testing.T) {
 
 		checkAs(t, &FeatureBatchChanges{}, licenseInfo(plan(PlanBusiness0)), true, &FeatureBatchChanges{Unrestricted: true})
 		checkAs(t, &FeatureBatchChanges{}, licenseInfo(plan(PlanEnterprise1)), true, &FeatureBatchChanges{Unrestricted: true})
-
-		// Batch changes should be unrestricted if Campaigns is set.
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo("starter", string(FeatureCampaigns)), true, &FeatureBatchChanges{Unrestricted: true})
 	})
 
 	testCodeInsights := func(feature Feature) func(*testing.T) {
@@ -165,32 +123,6 @@ func TestCheckFeature(t *testing.T) {
 	}
 	// Code Insights
 	t.Run(string(FeatureCodeInsights), testCodeInsights(FeatureCodeInsights))
-
-	t.Run(string(FeatureMonitoring), func(t *testing.T) {
-		check(t, FeatureMonitoring, nil, false)
-
-		check(t, FeatureMonitoring, licenseInfo("starter"), false)
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureMonitoring, licenseInfo(), true)
-
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanEnterprise0), string(FeatureMonitoring)), true)
-	})
-
-	t.Run(string(FeatureBackupAndRestore), func(t *testing.T) {
-		check(t, FeatureBackupAndRestore, nil, false)
-
-		check(t, FeatureBackupAndRestore, licenseInfo("starter"), false)
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureBackupAndRestore, licenseInfo(), true)
-
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanEnterprise0), string(FeatureBackupAndRestore)), true)
-	})
 
 	t.Run(string(FeatureAllowAirGapped), func(t *testing.T) {
 		check(t, FeatureAllowAirGapped, nil, false)
