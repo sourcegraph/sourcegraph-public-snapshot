@@ -8,10 +8,10 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
@@ -725,11 +725,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 			return nil
 		}
 
-		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
-		if completionsConfig.AccessToken == "" {
-			return nil
-		}
-
 		// If not chat model is set, we cannot talk to Azure OpenAI. Bail.
 		if completionsConfig.ChatModel == "" {
 			return nil
@@ -959,11 +954,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 			return nil
 		}
 
-		// If not access token is set, we cannot talk to OpenAI. Bail.
-		if embeddingsConfig.AccessToken == "" {
-			return nil
-		}
-
 		// If no model is set, we cannot do anything here.
 		if embeddingsConfig.Model == "" {
 			return nil
@@ -1089,7 +1079,11 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 		if config.App.DotcomAuthToken == "" {
 			return ""
 		}
-		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		authToken, err := accesstoken.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		if err != nil {
+			return ""
+		}
+		return authToken
 	}
 	// Otherwise, use the current license key to compute an access token.
 	if config.LicenseKey == "" {

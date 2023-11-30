@@ -118,6 +118,9 @@ func (s *Server) RecordEvents(stream telemetrygatewayv1.TelemeteryGatewayService
 				return status.Error(codes.InvalidArgument, "got events when metadata not yet received")
 			}
 
+			// Handle legacy exporters
+			migrateEvents(events)
+
 			// Publish events
 			resp := handlePublishEvents(
 				stream.Context(),

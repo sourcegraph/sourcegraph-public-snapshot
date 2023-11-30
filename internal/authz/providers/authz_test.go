@@ -1102,6 +1102,16 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
+			desc: "valid with url, accessToken",
+			config: `
+			{
+				"url": "https://bitbucket.org/",
+				"accessToken": "access-token"
+			}`,
+			assert: equals("<nil>"),
+		},
+		{
+			kind: extsvc.KindBitbucketCloud,
 			desc: "valid with url, username, appPassword, teams",
 			config: `
 			{
@@ -1114,12 +1124,10 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "without url, username nor appPassword",
+			desc:   "without url",
 			config: `{}`,
 			assert: includes(
 				"url is required",
-				"username is required",
-				"appPassword is required",
 			),
 		},
 		{
