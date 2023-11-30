@@ -36,7 +36,7 @@ pipeline:
   - uses: fetch
     with:
       uri: https://github.com/sourcegraph/p4-fusion/archive/60a9f5a9d48ba0218ff3114b94fed98cf9813de5.tar.gz
-      expected-sha256: 16cc228293590c294c08d8bd53d228393ca72f4d998b6f38d78dc108969f5003
+      expected-sha256: a6c2ced6ad4d73ee50fc77c74962d6e0488da04c48882a47012c817477c709ba
       extract: false
   - runs: |
       mkdir p4-fusion-src
@@ -46,7 +46,7 @@ pipeline:
   - uses: fetch
     with:
       uri: https://www.openssl.org/source/openssl-1.1.1w.tar.gz
-      expected-sha256: 14cb464efe7ac6b54799b34456bd69558a749a4931ecfd9cf9f71d7881cac7bc
+      expected-sha256: cf3098950cb4d853ad95c0841f1f9c6d3dc102dccfcacd521d93925208b76ac8
       extract: false
   - runs: |
       mkdir openssl-src
