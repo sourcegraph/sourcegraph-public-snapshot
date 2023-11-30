@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 
 import { Navigate, useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { CodySurveyToast } from '../marketing/toast/CodySurveyToast'
 import { eventLogger } from '../tracking/eventLogger'
 
@@ -24,11 +25,16 @@ const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticate
 
     const containsExperimentFlagParam = searchParameters.has('experiment_flag')
     const shouldRedirect = !containsExperimentFlagParam && authenticatedUser.completedPostSignup
+    const [showQualificationSurvey, status] = useFeatureFlag('signup-survey-enabled', false)
 
     // Redirects if the experiment flag is not provided and if the user has completed the post-signup flow.
     if (shouldRedirect) {
         const returnTo = getReturnTo(location)
         return <Navigate to={returnTo} replace={true} />
+    }
+
+    if (status !== 'loaded') {
+        return null
     }
 
     return (
@@ -40,7 +46,7 @@ const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticate
                 <CodySurveyToast
                     telemetryService={eventLogger}
                     authenticatedUser={authenticatedUser}
-                    isExperimentEnabled={isExperimentEnabled}
+                    showQualificationSurvey={isExperimentEnabled || showQualificationSurvey}
                 />
             </Page>
         </div>
