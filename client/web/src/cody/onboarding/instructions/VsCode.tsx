@@ -40,7 +40,12 @@ export function VSCodeInstructions({
                             </div>
                         </div>
                         <div className="d-flex flex-column justify-content-center align-items-center mt-4">
-                            <ButtonLink variant="primary" to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">Open Marketplace</ButtonLink>
+                            <ButtonLink
+                                variant="primary"
+                                to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
+                            >
+                                Open Marketplace
+                            </ButtonLink>
                             <img
                                 alt="VS Code Marketplace"
                                 className="mt-4"
@@ -57,7 +62,6 @@ export function VSCodeInstructions({
                                 <Text className="mb-1" weight="bold">
                                     Open Cody from the Sidebar on the Left
                                 </Text>
-
                             </div>
                         </div>
                         <div className="d-flex flex-column justify-content-center align-items-center mt-4">
