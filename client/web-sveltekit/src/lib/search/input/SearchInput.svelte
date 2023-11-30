@@ -223,9 +223,13 @@
 
 <style lang="scss">
     @use '$lib/breakpoints';
+
     form {
         width: 100%;
         position: relative;
+        // Necessary to ensure that the search input (especially the suggestions) are rendered above sticky headers
+        // in the search results page ("position: sticky" creates a new stacking context).
+        z-index: 1;
         padding: 0.75rem;
 
         &:focus-within {

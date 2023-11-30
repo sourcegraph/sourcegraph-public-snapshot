@@ -159,7 +159,7 @@ func constructStartCmdLongHelp() string {
 	}
 
 	fmt.Fprintf(&out, "\n\n")
-	fmt.Fprintf(&out, "Available comamndsets in `%s`:\n", configFile)
+	fmt.Fprintf(&out, "Available commandsets in `%s`:\n", configFile)
 
 	var names []string
 	for name := range config.Commandsets {

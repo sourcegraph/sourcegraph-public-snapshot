@@ -224,6 +224,12 @@ type AzureDevOpsConnection struct {
 	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Azure DevOps Services.
 	Exclude []*ExcludedAzureDevOpsServerRepo `json:"exclude,omitempty"`
+	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories.
+	//
+	// If "http", Sourcegraph will access repositories using Git URLs of the form http(s)://dev.azure.com/myrepo.git.
+	//
+	// If "ssh", Sourcegraph will access repositories using Git URLs of the form git@ssh.dev.azure.com:v3/myrepo. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
+	GitURLType string `json:"gitURLType,omitempty"`
 	// Orgs description: An array of organization names identifying Azure DevOps organizations whose repositories should be mirrored on Sourcegraph.
 	Orgs []string `json:"orgs,omitempty"`
 	// Projects description: An array of projects "org/project" strings specifying which Azure DevOps projects' repositories should be mirrored on Sourcegraph.

@@ -391,7 +391,7 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const fileInfo = getFileInfo(name)
+    const fileInfo = getFileInfo(name, isBranch)
     const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
@@ -474,23 +474,29 @@ function renderNode({
                 }
             }}
         >
-            <div className={styles.iconContainer}>
-                {fileInfo.extension !== FileExtension.DEFAULT ? (
-                    <Icon
-                        as={fileIcon?.icon}
-                        className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
-                        aria-hidden={true}
-                    />
-                ) : (
-                    <Icon
-                        svgPath={
-                            isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline
-                        }
-                        className={classNames('mr-1', styles.icon)}
-                        aria-hidden={true}
-                    />
-                )}
-                {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
+            <div className={styles.fileContainer}>
+                <div className={styles.iconContainer}>
+                    {fileInfo.extension !== FileExtension.DEFAULT ? (
+                        <Icon
+                            as={fileIcon?.icon}
+                            className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
+                            aria-hidden={true}
+                        />
+                    ) : (
+                        <Icon
+                            svgPath={
+                                isBranch
+                                    ? isExpanded
+                                        ? mdiFolderOpenOutline
+                                        : mdiFolderOutline
+                                    : mdiFileDocumentOutline
+                            }
+                            className={classNames('mr-1', styles.icon)}
+                            aria-hidden={true}
+                        />
+                    )}
+                    {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
+                </div>
                 {name}
             </div>
         </Link>
