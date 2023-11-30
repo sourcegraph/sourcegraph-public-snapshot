@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// If you want to build these images use CandidateNoTest / CandidatesNoTest
 var legacyDockerImages = []string{
 	"dind",
 	"executor-vm",
@@ -201,6 +202,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(wolfiGenerateBaseImagePR())
 		}
 
+	// Use CandidateNoTest if you want to build legacy Docker Images
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		// TODO(burmudar): This should use the bazel target
