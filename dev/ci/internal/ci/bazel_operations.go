@@ -42,13 +42,21 @@ func bazelCmd(args ...string) string {
 }
 
 // Used in default run type
-func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, true, "bazel-tests")
+func bazelPushImagesCandidates(version string, isAspectBuild bool) func(*bk.Pipeline) {
+	depKey := "bazel-tests"
+	if isAspectBuild {
+		depKey = "__main__::test"
+	}
+	return bazelPushImagesCmd(version, true, depKey)
 }
 
 // Used in default run type
-func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false, "bazel-tests")
+func bazelPushImagesFinal(version string, isAspectBuild bool) func(*bk.Pipeline) {
+	depKey := "bazel-tests"
+	if isAspectBuild {
+		depKey = "__main__::test"
+	}
+	return bazelPushImagesCmd(version, false, depKey)
 }
 
 // Used in CandidateNoTest run type
