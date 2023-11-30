@@ -221,7 +221,6 @@ var siteConfigSecrets = []struct {
 	{readPath: `embeddings.accessToken`, editPaths: []string{"embeddings", "accessToken"}},
 	{readPath: `completions.accessToken`, editPaths: []string{"completions", "accessToken"}},
 	{readPath: `app.dotcomAuthToken`, editPaths: []string{"app", "dotcomAuthToken"}},
-	{readPath: `observability.alerts\.notifier\.apiKey`, editPaths: []string{"observability.alerts", "notifier.apiKey"}},
 }
 
 // UnredactSecrets unredacts unchanged secrets back to their original value for
@@ -301,8 +300,6 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 		}
 	}
 	unredactedSite = strings.NewReplacer(oldObservabilitySecrets...).Replace(unredactedSite)
-
-	//************************
 
 	for _, secret := range siteConfigSecrets {
 		v, err := jsonc.ReadProperty(unredactedSite, secret.editPaths...)
