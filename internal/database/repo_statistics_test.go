@@ -419,6 +419,15 @@ func TestRepoStatistics_Compaction(t *testing.T) {
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
+	// Empty table, should work, even though we should always have a row in
+	// there with 0 values.
+	if err := s.Exec(ctx, sqlf.Sprintf("DELETE FROM repo_statistics")); err != nil {
+		t.Fatalf("failed to query repo name: %s", err)
+	}
+	if err := s.CompactRepoStatistics(ctx); err != nil {
+		t.Fatalf("CompactRepoStatistics failed: %s", err)
+	}
+
 	shards := []string{
 		"shard-1",
 		"shard-2",
@@ -496,6 +505,15 @@ func TestGitserverReposStatistics_Compaction(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+
+	// Empty table, should work, even though we should always have a row in
+	// there with 0 values.
+	if err := s.Exec(ctx, sqlf.Sprintf("DELETE FROM gitserver_repos_statistics")); err != nil {
+		t.Fatalf("failed to query repo name: %s", err)
+	}
+	if err := s.CompactGitserverReposStatistics(ctx); err != nil {
+		t.Fatalf("CompactGitserverReposStatistics failed: %s", err)
+	}
 
 	shards := []string{
 		"shard-1",

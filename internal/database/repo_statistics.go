@@ -108,13 +108,13 @@ WITH deleted AS (
 )
 INSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted)
 SELECT
-	SUM(total),
-	SUM(soft_deleted),
-	SUM(not_cloned),
-	SUM(cloning),
-	SUM(cloned),
-	SUM(failed_fetch),
-	SUM(corrupted)
+	COALESCE(SUM(total), 0),
+	COALESCE(SUM(soft_deleted), 0),
+	COALESCE(SUM(not_cloned), 0),
+	COALESCE(SUM(cloning), 0),
+	COALESCE(SUM(cloned), 0),
+	COALESCE(SUM(failed_fetch), 0),
+	COALESCE(SUM(corrupted), 0)
 FROM deleted;
 `
 
