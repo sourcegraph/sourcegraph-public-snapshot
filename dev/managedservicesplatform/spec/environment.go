@@ -276,20 +276,16 @@ type EnvironmentResourcesSpec struct {
 	// To connect to the database, use
 	// (lib/managedservicesplatform/service.Contract).GetPostgreSQLDB().
 	PostgreSQL *EnvironmentResourcePostgreSQLSpec `json:"postgreSQL,omitempty"`
-	// BigQueryTable, if provided, provisions a table for the service to write
-	// to. Details for writing to the table are automatically provided in
+	// BigQueryDataset, if provided, provisions a dataset for the service to write
+	// to. Details for writing to the dataset are automatically provided in
 	// environment variables:
 	//
-	//  - ${serviceEnvVarPrefix}_BIGQUERY_PROJECT
-	//  - ${serviceEnvVarPrefix}_BIGQUERY_DATASET
-	//  - ${serviceEnvVarPrefix}_BIGQUERY_TABLE
+	//  - BIGQUERY_PROJECT
+	//  - BIGQUERY_DATASET
 	//
-	// Where ${serviceEnvVarPrefix} is an all-upper-case, underscore-delimited
-	// version of the service ID. The dataset is always named after the service
-	// ID.
-	//
-	// Only one table is allowed per MSP service.
-	BigQueryTable *EnvironmentResourceBigQueryTableSpec `json:"bigQueryTable,omitempty"`
+	// Only one dataset can be provisioned using MSP per MSP service, but the
+	// dataset may contain more than one table.
+	BigQueryDataset *EnvironmentResourceBigQueryDatasetSpec `json:"bigQueryDataset,omitempty"`
 }
 
 func (s *EnvironmentResourcesSpec) Validate() []error {
@@ -298,6 +294,7 @@ func (s *EnvironmentResourcesSpec) Validate() []error {
 	}
 	var errs []error
 	errs = append(errs, s.PostgreSQL.Validate()...)
+	errs = append(errs, s.BigQueryDataset.Validate()...)
 	return errs
 }
 
@@ -349,49 +346,73 @@ func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
 	return errs
 }
 
-type EnvironmentResourceBigQueryTableSpec struct {
-	// TableID is the ID of table to create within the service's BigQuery
+type EnvironmentResourceBigQueryDatasetSpec struct {
+	// Tables are the IDs of tables to create within the service's BigQuery
 	// dataset. Required.
 	//
-	// If provisioning a table, a BigQuery JSON schema MUST be provided
-	// alongside the service specification file, in `bigquery.schema.json`.
-	TableID string `json:"tableID"`
-	// DatasetID, if provided, uses a custom dataset ID. By default, we use
-	// the service ID as the dataset ID.
+	// For EACH table, a BigQuery JSON schema MUST be provided alongside the
+	// service specification file, in `${tableID}.bigquerytable.json`. Learn
+	// more about BigQuery table schemas here:
+	// https://cloud.google.com/bigquery/docs/schemas#specifying_a_json_schema_file
+	Tables []string `json:"tables"`
+	// rawSchemaFiles are the `${tableID}.bigquerytable.json` files adjacent
+	// to the service specification.
+	// Loaded by (EnvironmentResourceBigQueryTableSpec).LoadSchemas().
+	rawSchemaFiles map[string][]byte
+
+	// DatasetID, if provided, configures a custom dataset ID to place all tables
+	// into. By default, we use the service ID as the dataset ID.
 	DatasetID *string `json:"datasetID,omitempty"`
 	// ProjectID can be used to specify a separate project ID from the service's
 	// project for BigQuery resources. If not provided, resources are created
 	// within the service's project.
 	ProjectID *string `json:"projectID,omitempty"`
 	// Location defaults to "US". Do not configure unless you know what you are
-	// doing.
+	// doing, as BigQuery locations are not the same as standard GCP regions.
 	Location *string `json:"region,omitempty"`
-
-	// rawSchemaFile is the `bigquery.schema.json` file adjacent to the service
-	// specification. Loaded by (EnvironmentResourceBigQueryTableSpec).LoadSchema.
-	rawSchemaFile []byte
 }
 
-// LoadSchema populates rawSchemaFile.
-func (s *EnvironmentResourceBigQueryTableSpec) LoadSchema(dir string) error {
-	// Open by convention
-	schema, err := os.ReadFile(filepath.Join(dir, "bigquery.schema.json"))
-	if err != nil {
-		return err
+func (s *EnvironmentResourceBigQueryDatasetSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	if len(s.Tables) == 0 {
+		errs = append(errs, errors.New("bigQueryDataset.tables must be non-empty"))
+	}
+	return errs
+}
+
+// LoadSchemas populates rawSchemaFiles by convention, looking for
+// `bigquery.${tableID}.schema.json` files in dir.
+func (s *EnvironmentResourceBigQueryDatasetSpec) LoadSchemas(dir string) error {
+	s.rawSchemaFiles = make(map[string][]byte, len(s.Tables))
+
+	// Make sure all tables have a schema file
+	for _, table := range s.Tables {
+		// Open by convention
+		schema, err := os.ReadFile(filepath.Join(dir, fmt.Sprintf("%s.bigquerytable.json", table)))
+		if err != nil {
+			return errors.Wrapf(err, "read schema for BigQuery table %s", table)
+		}
+
+		// Parse and marshal for consistent formatting. Note that the table
+		// must be a JSON array.
+		var schemaData []any
+		if err := json.Unmarshal(schema, &schemaData); err != nil {
+			return errors.Wrapf(err, "parse schema for BigQuery table %s", table)
+		}
+		s.rawSchemaFiles[table], err = json.MarshalIndent(schemaData, "", "  ")
+		if err != nil {
+			return errors.Wrapf(err, "marshal schema for BigQuery table %s", table)
+		}
 	}
 
-	// Parse and marshal for consistent formatting
-	var schemaData any
-	if err := json.Unmarshal(schema, &schemaData); err != nil {
-		return err
-	}
-	s.rawSchemaFile, err = json.MarshalIndent(schemaData, "", "  ")
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
-func (s *EnvironmentResourceBigQueryTableSpec) GetSchema() []byte {
-	return s.rawSchemaFile
+// GetSchema returns the schema for the given tableID as loaded by LoadSchemas().
+// LoadSchemas will ensure that each table has a corresponding schema file.
+func (s *EnvironmentResourceBigQueryDatasetSpec) GetSchema(tableID string) []byte {
+	return s.rawSchemaFiles[tableID]
 }

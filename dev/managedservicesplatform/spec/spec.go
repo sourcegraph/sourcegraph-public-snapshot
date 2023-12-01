@@ -42,8 +42,8 @@ func Open(specPath string) (*Spec, error) {
 	// Load extraneous resources
 	configDir := filepath.Dir(specPath)
 	for _, e := range spec.Environments {
-		if e.Resources != nil && e.Resources.BigQueryTable != nil {
-			if err := e.Resources.BigQueryTable.LoadSchema(configDir); err != nil {
+		if e.Resources != nil && e.Resources.BigQueryDataset != nil {
+			if err := e.Resources.BigQueryDataset.LoadSchemas(configDir); err != nil {
 				return spec, errors.Wrap(err, "BigQueryTable.LoadSchema")
 			}
 		}

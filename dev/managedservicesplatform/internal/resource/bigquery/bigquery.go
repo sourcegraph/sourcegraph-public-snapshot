@@ -20,8 +20,9 @@ type Output struct {
 	ProjectID string
 	// DatasetID is the BigQuery dataset the service should target.
 	DatasetID string
-	// TableID is the BigQuery table the service should target.
-	TableID string
+	// Tables are the tables that must be created before services can connect
+	// to one of their configured tables.
+	Tables []cdktf.ITerraformDependable
 }
 
 type Config struct {
@@ -30,9 +31,10 @@ type Config struct {
 
 	WorkloadServiceAccount *serviceaccount.Output
 
-	Spec spec.EnvironmentResourceBigQueryTableSpec
+	Spec spec.EnvironmentResourceBigQueryDatasetSpec
 }
 
+// New creates a BigQuery dataset and all configured tables.
 func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, error) {
 	var (
 		datasetID = pointers.Deref(config.Spec.DatasetID, config.ServiceID)
@@ -51,6 +53,7 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		Labels:    &labels,
 	})
 
+	// Grant the workload SA editor access to the entire dataset.
 	editorRole := bigquerydatasetiammember.NewBigqueryDatasetIamMember(scope, id.TerraformID("workload_dataset_editor"), &bigquerydatasetiammember.BigqueryDatasetIamMemberConfig{
 		Project:   &projectID,
 		DatasetId: dataset.DatasetId(),
@@ -59,22 +62,28 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) (*Output, 
 		Member: &config.WorkloadServiceAccount.Member,
 	})
 
-	table := bigquerytable.NewBigqueryTable(scope, id.TerraformID("table"), &bigquerytable.BigqueryTableConfig{
-		Project:   &projectID,
-		DatasetId: dataset.DatasetId(),
+	// Provision each requested table.
+	var tables []cdktf.ITerraformDependable
+	for _, tableID := range config.Spec.Tables {
+		tables = append(tables,
+			bigquerytable.NewBigqueryTable(scope, id.Group(tableID).TerraformID("table"),
+				&bigquerytable.BigqueryTableConfig{
+					Project:   &projectID,
+					DatasetId: dataset.DatasetId(),
 
-		TableId: &config.Spec.TableID,
-		Schema:  pointers.Ptr(string(config.Spec.GetSchema())),
-		Labels:  &labels,
+					TableId: &tableID,
+					Schema:  pointers.Ptr(string(config.Spec.GetSchema(tableID))),
+					Labels:  &labels,
 
-		// In order to write to the table, the workload SA must have editor
-		// access, so we make table depend on the role grant.
-		DependsOn: &[]cdktf.ITerraformDependable{editorRole},
-	})
+					// In order to write to the table, the workload SA must have editor
+					// access, so we make table depend on the role grant.
+					DependsOn: &[]cdktf.ITerraformDependable{editorRole},
+				}))
+	}
 
 	return &Output{
 		ProjectID: projectID,
 		DatasetID: *dataset.DatasetId(),
-		TableID:   *table.TableId(),
+		Tables:    tables,
 	}, nil
 }
