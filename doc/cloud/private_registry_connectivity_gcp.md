@@ -73,5 +73,5 @@ All traffic between the producer and consumer is encrypted in transit. You may l
 ### What are the next steps when connectivity is working?
 
 Only if private artifact registry is protected by authentication, the customer will need to:
-- provide executor secrets containing credentials for Sourcegraph to access the private artifact registry - [how to configure executor secrets](../admin/executors/executor_secrets#executor-secrets)
-- update auto-indexing inference configuration to create additional files from executor secrets for given programing language - [how to configure auto-indexing](../code_navigation/references/inference_configuration)
+- create executor secrets containing credentials for Sourcegraph to access the private artifact registry - [how to configure executor secrets](../admin/executors/executor_secrets.md#executor-secrets)
+- update auto-indexing inference configuration to create additional files from executor secrets for given programing language - [how to configure auto-indexing](../code_navigation/references/inference_configuration.md)

@@ -10,7 +10,6 @@ As part of the [Enterprise tier](https://about.sourcegraph.com/pricing), Sourceg
 Sourcegraph Cloud is a managed service hosted on GCP. Sourcegraph creates a secure connection between customer [AWS Virtual Private Cloud] (AWS VPC) and a Sourcegraph-managed AWS account using [AWS Private Link]. Then, Sourcegraph maintains a secure connection between the Sourcegraph-managed AWS VPC and GCP Project via a managed highly available [site-to-site VPN] solution.
 > Note: if customer is already using AWS Private Link for code host, they will reuse the existing site to site VPN connection with Sourcergaph Cloud VPC.
 
-TODO
 [link](https://link.excalidraw.com/readonly/WvySMq7S2O4mVgIEvdFu)
 
 <iframe src="https://link.excalidraw.com/readonly/WvySMq7S2O4mVgIEvdFu" width="100%" height="100%" style="border: none;"></iframe>
@@ -65,10 +64,10 @@ The customer has full control over the exposed service and they can may terminat
 ### Can I use my internal dns name for artifact registry?
 
 Yes, customer can expose their private registry with internal DNS name via AWS Private Link. Sourcegraph will provision dns-proxy, which translates customer private domain to AWS Private Link domain.
-No chnages in customer configuration is required.
+No changes in customer configuration are required.
 
 ### What are the next steps when connectivity is working?
 
 Only if private artifact registry is protected by authentication, the customer will need to:
-- provide executor secrets containing credentials for Sourcegraph to access the private artifact registry - [how to configure executor secrets](../admin/executors/executor_secrets#executor-secrets)
-- update auto-indexing inference configuration to create additional files from executor secrets for given programing language - [how to configure auto-indexing](../code_navigation/references/inference_configuration)
+- create executor secrets containing credentials for Sourcegraph to access the private artifact registry - [how to configure executor secrets](../admin/executors/executor_secrets.md#executor-secrets)
+- update auto-indexing inference configuration to create additional files from executor secrets for given programing language - [how to configure auto-indexing](../code_navigation/references/inference_configuration.md)

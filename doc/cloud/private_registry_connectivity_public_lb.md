@@ -9,7 +9,7 @@ As part of the [Enterprise tier](https://about.sourcegraph.com/pricing), Sourceg
 ## How it works
 
 Sourcegraph Cloud is a managed service hosted on GCP. Customer will expose private artifact registry via load balancer with IP allowlist for 2 static IPs provided by Sourcegraph. Sourcegraph will then be able to access the private registry over HTTPS through the load balancer from the GCP project hosting Sourcegraph Cloud. Sourcegraph recommends to setup pass-through TCP load balancer to avoid adding private registry domain certificate to exposed load balancer.
-TODO
+
 [link](https://link.excalidraw.com/readonly/gc6P8SDOEMCcrIl9cl64)
 
 <iframe src="https://link.excalidraw.com/readonly/gc6P8SDOEMCcrIl9cl64" width="100%" height="100%" style="border: none;"></iframe>
@@ -34,10 +34,10 @@ With pass-through TCP load balancer, the load balancer acts as a simple TCP prox
 ### Can I use my internal dns name for artifact registry?
 
 Yes, customer can expose their private registry with internal DNS name. Sourcegraph will provision dns-proxy, which translates customer private domain to public customer load balancer domain.
-No chnages in customer configuration is required.
+No changes in customer configuration are required.
 
 ### What are the next steps when connectivity is working?
 
 Only if private artifact registry is protected by authentication, the customer will need to:
-- provide executor secrets containing credentials for Sourcegraph to access the private artifact registry - [how to configure executor secrets](../admin/executors/executor_secrets#executor-secrets)
-- update auto-indexing inference configuration to create additional files from executor secrets for given programing language - [how to configure auto-indexing](../code_navigation/references/inference_configuration)
+- create executor secrets containing credentials for Sourcegraph to access the private artifact registry - [how to configure executor secrets](../admin/executors/executor_secrets.md#executor-secrets)
+- update auto-indexing inference configuration to create additional files from executor secrets for given programing language - [how to configure auto-indexing](../code_navigation/references/inference_configuration.md)
