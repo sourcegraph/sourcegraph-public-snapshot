@@ -38,7 +38,7 @@ export async function fetchRepositoriesByNames(
         })
 
         if (result.error) {
-            throw new Error('failed to add repositories to paginated result')
+            throw new Error(result.error.message)
         }
 
         repos = repos.concat(result.data.repositories.nodes)

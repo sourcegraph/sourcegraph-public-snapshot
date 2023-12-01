@@ -30,7 +30,7 @@ describe('Search contexts', () => {
     })
     after(() => driver?.close())
     let testContext: WebIntegrationTestContext
-    beforeEach(async function () {
+    beforeEach(async function() {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -142,9 +142,23 @@ describe('Search contexts', () => {
     test('Create static search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoriesByNames: ({ names }) => ({
-                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
-            }),
+            // TODO: fix this test
+            RepositoriesByNames: ({ names, first, after }) => {
+                return {
+                    repositories: {
+                        nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
+                        pageInfo: {
+                            endCursor: null,
+                            hasNextPage: true
+                        }
+                    },
+                    variables: {
+                        names,
+                        first,
+                        after
+                    }
+                }
+            },
             CreateSearchContext: ({ searchContext, repositories }) => ({
                 createSearchContext: {
                     __typename: 'SearchContext',
@@ -291,9 +305,22 @@ describe('Search contexts', () => {
     test('Edit search context', async () => {
         testContext.overrideGraphQL({
             ...testContextForSearchContexts,
-            RepositoriesByNames: ({ names }) => ({
-                repositories: { nodes: names.map((name, index) => ({ id: `index-${index}`, name })) },
-            }),
+            RepositoriesByNames: ({ names, first, after }) => {
+                return {
+                    repositories: {
+                        nodes: names.map((name, index) => ({ id: `index-${index}`, name })),
+                            pageInfo: {
+                            endCursor: null,
+                            hasNextPage: true
+                        }
+                    },
+                    variables: {
+                        names,
+                        first,
+                        after
+                    }
+                }
+            },
             UpdateSearchContext: ({ id, searchContext, repositories }) => ({
                 updateSearchContext: {
                     __typename: 'SearchContext',
