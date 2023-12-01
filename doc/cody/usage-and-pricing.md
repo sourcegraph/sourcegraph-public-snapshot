@@ -55,7 +55,7 @@ The following table shows a high-level comparison of the three plans available o
 | **Embeddings (private code)**              | 200 MB                             | 1 GB                       | Greater than 1 GB and scalable                                  |
 | **Keyword Context (local code)**                     | Supported                             | Supported                        | Supported                                  |
 | **Developer Limitations**             | 1 developer                     | Up to 50 devs                    | Scalable, consumption-based pricing      |
-| **LLM Support**                       | Anthropic + Starcoder for Chat, Commands, and Autocomplete | Choice of LLMs for Chat, Anthropic + Starcoder for Commands and Autocomplete  | Bring Your Own LLM Key (experimental)                |
+| **LLM Support**                       | Anthropic + Starcoder for Chat, Commands, and Autocomplete | Choice of LLMs for Chat (VS Code only), Anthropic + Starcoder for Commands and Autocomplete  | Bring Your Own LLM Key (experimental)                |
 | **Code Editor Support**                       | VS Code, JetBrains IDEs, and Neovim | VS Code, JetBrains IDEs, and Neovim  | VS Code, JetBrains IDEs, and Neovim                |
 | **Single-Tenant and Self Hosted**     | N/A                             | N/A                              | Yes                                        |
 | **SAML/SSO**                          | N/A                             | N/A                              | Yes                                        |
