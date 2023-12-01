@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -86,10 +87,10 @@ func main() {
 }
 
 type Test struct {
-	Version  string   `json:"version"`
-	Type     string   `json:"type"`
-	LogLines []string `json:"log"`
-	Errors   []error  `json:"error"`
+	Version  string
+	Type     string
+	LogLines []string
+	Errors   []error
 }
 
 func (t *Test) AddLog(log string) {
@@ -114,24 +115,33 @@ func (t *Test) DisplayLog() {
 }
 
 type TestResults struct {
-	StandardUpgradeTests []Test `json:"standardUpgradeTests"`
-	MVUUpgradeTests      []Test `json:"mvuUpgradeTests"`
-	AutoupgradeTests     []Test `json:"mvuDowngradeTests"`
+	StandardUpgradeTests []Test
+	MVUUpgradeTests      []Test
+	AutoupgradeTests     []Test
+	Mutex                sync.Mutex
 }
 
 func (r *TestResults) AddStdTest(test Test) {
+	r.Mutex.Lock()
+	defer r.Mutex.Unlock()
 	r.StandardUpgradeTests = append(r.StandardUpgradeTests, test)
 }
 
 func (r *TestResults) AddMVUTest(test Test) {
+	r.Mutex.Lock()
+	defer r.Mutex.Unlock()
 	r.MVUUpgradeTests = append(r.MVUUpgradeTests, test)
 }
 
 func (r *TestResults) AddAutoTest(test Test) {
+	r.Mutex.Lock()
+	defer r.Mutex.Unlock()
 	r.AutoupgradeTests = append(r.AutoupgradeTests, test)
 }
 
 func (r *TestResults) DisplayErrors() {
+	r.Mutex.Lock()
+	defer r.Mutex.Unlock()
 	for _, test := range r.StandardUpgradeTests {
 		if 0 < len(test.Errors) {
 			fmt.Printf("--- 🚨 Standard Upgrade Test %s Failed:\n", test.Version)
@@ -281,7 +291,7 @@ type testDB struct {
 // Create a docker network for testing as well as instances of our three databases. Returning a cleanup function.
 // An instance of Sourcegraph-Frontend is also started to initialize the versions table of the database.
 // TODO: setupTestEnv should seed some initial data at the target initVersion. This will be usefull for testing OOB migrations
-func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Version) (test Test, networkName string, dbs []testDB, cleanup func(), err error) {
+func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Version) (test Test, networkName string, dbs []*testDB, cleanup func(), err error) {
 	test = Test{
 		Version:  initVersion.String(),
 		Type:     testType,
@@ -298,20 +308,6 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	test.AddLog(fmt.Sprintf("Upgrading from version (%s) to release candidate.", initVersion))
 	test.AddLog("-- 🏗️  setting up test environment")
 
-	// Note that we changed postgres versions in very early versions of Sourcegraph,
-	// In v3.38+ we use image postgres-12-alpine,
-	// in v3.37-v3.30 we use postgres-12.6-alpine,
-	// in v3.29-v3.27 we use postgres-12.6
-	// in v3.26 and earliar we use postgres:11.4
-	//
-	// This isn't relevant since this test will only ever initialize instances v3.38+
-	// worth noting in case this changes in the future.
-	dbs = []testDB{
-		{"pgsql", fmt.Sprintf("wg_pgsql_%s", initVersion), "postgres-12-alpine", "5433"},
-		{"codeintel-db", fmt.Sprintf("wg_codeintel-db_%s", initVersion), "codeintel-db", "5434"},
-		{"codeinsights-db", fmt.Sprintf("wg_codeinsights-db_%s", initVersion), "codeinsights-db", "5435"},
-	}
-
 	// Create a docker network for testing
 	networkName = fmt.Sprintf("wg_test_%s", initVersion)
 	test.AddLog(fmt.Sprintf("🐋 creating network %s", networkName))
@@ -323,25 +319,39 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	}
 	test.AddLog(out)
 
+	// Note that we changed postgres versions in very early versions of Sourcegraph,
+	// In v3.38+ we use image postgres-12-alpine,
+	// in v3.37-v3.30 we use postgres-12.6-alpine,
+	// in v3.29-v3.27 we use postgres-12.6
+	// in v3.26 and earliar we use postgres:11.4
+	//
+	// This isn't relevant since this test will only ever initialize instances v3.38+
+	// worth noting in case this changes in the future.
+	dbs = []*testDB{
+		{"pgsql", fmt.Sprintf("wg_pgsql_%s", initVersion), "postgres-12-alpine", ""},
+		{"codeintel-db", fmt.Sprintf("wg_codeintel-db_%s", initVersion), "codeintel-db", ""},
+		{"codeinsights-db", fmt.Sprintf("wg_codeinsights-db_%s", initVersion), "codeinsights-db", ""},
+	}
+
 	// Here we create the three databases using docker run.
-	wgInit := pool.New().WithErrors()
 	for _, db := range dbs {
 		test.AddLog(fmt.Sprintf("🐋 creating %s, with db image %s:%s", db.ContainerName, db.Image, initVersion))
-		wgInit.Go(func() error {
-			db := db
-			cmd := run.Cmd(ctx, "docker", "run", "--rm",
-				"--detach",
-				"--platform", "linux/amd64",
-				"--name", db.ContainerName,
-				"--network", networkName,
-				"-p", fmt.Sprintf("%s:5432", db.ContainerHostPort),
-				fmt.Sprintf("sourcegraph/%s:%s", db.Image, initVersion),
-			)
-			return cmd.Run().Wait()
-		})
-	}
-	if err := wgInit.Wait(); err != nil {
-		test.AddError(fmt.Errorf("🚨 failed to create test databases: %s", err))
+		err := run.Cmd(ctx, "docker", "run", "--rm",
+			"--detach",
+			"--platform", "linux/amd64",
+			"--name", db.ContainerName,
+			"--network", networkName,
+			"-p", "5432",
+			fmt.Sprintf("sourcegraph/%s:%s", db.Image, initVersion),
+		).Run().Wait()
+		if err != nil {
+			test.AddError(fmt.Errorf("🚨 failed to create test databases: %s", err))
+		}
+		port, err := run.Cmd(ctx, "docker", "port", db.ContainerName, "5432").Run().String()
+		if err != nil {
+			test.AddError(fmt.Errorf("🚨 failed to get port for %s: %s", db.ContainerName, err))
+		}
+		db.ContainerHostPort = port
 	}
 
 	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*20)
@@ -353,7 +363,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		db := db // this closure locks the index for the inner for loop
 		wgDbPing.Go(func(ctx context.Context) error {
 			// TODO only ping codeinsights after timescaleDB is deprecated in v3.39
-			dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", db.ContainerHostPort))
+			dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@%s/sg?sslmode=disable", db.ContainerHostPort))
 			if err != nil {
 				test.AddError(fmt.Errorf("🚨 failed to connect to %s: %s", db.DbName, err))
 			}
@@ -395,7 +405,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	// Verify that the databases are initialized.
 	test.AddLog("🔎 checking db schemas initialized")
 	for _, db := range dbs {
-		dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", db.ContainerHostPort))
+		dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@%s/sg?sslmode=disable", db.ContainerHostPort))
 		if err != nil {
 			test.AddError(fmt.Errorf("🚨 failed to connect to %s: %s", db.DbName, err))
 			continue
@@ -452,13 +462,13 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 
 // validateDBs runs a few tests to assess the readiness of the database and wether or not drift exists on the schema.
 // It is used in initializing a new db as well as "validating" the db after an version change. This behavior is controlledg by the upgrade parameter.
-func validateDBs(ctx context.Context, test *Test, version, migratorImage, networkName string, dbs []testDB, upgrade bool) error {
+func validateDBs(ctx context.Context, test *Test, version, migratorImage, networkName string, dbs []*testDB, upgrade bool) error {
 	test.AddLog("-- ⚙️  validating dbs")
 
 	// Get DB clients
 	clients := make(map[string]*sql.DB)
 	for _, db := range dbs {
-		client, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", db.ContainerHostPort))
+		client, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@%s/sg?sslmode=disable", db.ContainerHostPort))
 		if err != nil {
 			test.AddError(fmt.Errorf("🚨 failed to connect to %s: %w", db.DbName, err))
 			return err
@@ -532,7 +542,7 @@ func validateDBs(ctx context.Context, test *Test, version, migratorImage, networ
 }
 
 // startFrontend starts the frontend container in the CI test env.
-func startFrontend(ctx context.Context, test Test, image, version, networkName string, dbs []testDB) (cleanup func(), err error) {
+func startFrontend(ctx context.Context, test Test, image, version, networkName string, dbs []*testDB) (cleanup func(), err error) {
 	hash, err := newContainerHash()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to get container hash: %w", err))
@@ -572,7 +582,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 	defer cancel()
 	test.AddLog("🔎 checking pgsql versions.version set")
 
-	dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@localhost:%s/sg?sslmode=disable", dbs[0].ContainerHostPort))
+	dbClient, err := sql.Open("postgres", fmt.Sprintf("postgres://sg@%s/sg?sslmode=disable", dbs[0].ContainerHostPort))
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to connect to %s: %w", dbs[0].DbName, err))
 	}
@@ -610,7 +620,7 @@ func startFrontend(ctx context.Context, test Test, image, version, networkName s
 }
 
 // dockerMigratorBaseString a slice of strings constituting the necessary arguments to run the migrator via docker container the CI test env.
-func dockerMigratorBaseString(test Test, cmd, migratorImage, networkName string, dbs []testDB) []string {
+func dockerMigratorBaseString(test Test, cmd, migratorImage, networkName string, dbs []*testDB) []string {
 	hash, err := newContainerHash()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to get container hash: %w", err))
