@@ -66,10 +66,10 @@ pipeline:
   # Build OpenSSL
   - runs: |
       cd openssl-src
-      ./config
+      ./config -no-shared
   - runs: |
       cd openssl-src
-      make build_libs
+      make --jobs="$(($(nproc) + 1))"
   - runs: |
       cd openssl-src
       make install
