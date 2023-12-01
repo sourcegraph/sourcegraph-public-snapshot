@@ -10,8 +10,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 )
+
+var forceExportAll = env.MustGetBool("SRC_TELEMETRY_EVENTS_EXPORT_ALL", false, "Set to true to forcibly enable all events export.")
 
 // telemetryExportEnablementCutOffDate is Oct 4, 2023 UTC, and all licenses
 // created after this date will have telemetry export enabled by default.
@@ -28,6 +31,10 @@ var telemetryEventsExportMode = atomic.NewPointer((*evaluatedTelemetryEventsExpo
 // GetTelemetryEventsExportMode returns the degree of telemetry events export
 // enabled. See TelemetryEventsExportMode for more details.
 func GetTelemetryEventsExportMode(c conftypes.SiteConfigQuerier) TelemetryEventsExportMode {
+	if forceExportAll {
+		return TelemetryEventsExportAll
+	}
+
 	evaluatedMode := telemetryEventsExportMode.Load()
 
 	// Update if changed license key has changed
@@ -58,12 +65,10 @@ const (
 	TelemetryEventsExportCodyOnly
 )
 
-var (
-	// legacyExportUsageDataEnabled is the legacy 'EXPORT_USAGE_DATA_ENABLED'
-	// env var is set. Typically used in Cloud, if the legacy export is enabled,
-	// we can assume exports are enabled as well.
-	legacyExportUsageDataEnabled = os.Getenv("EXPORT_USAGE_DATA_ENABLED") == "true"
-)
+// legacyExportUsageDataEnabled is the legacy 'EXPORT_USAGE_DATA_ENABLED'
+// env var is set. Typically used in Cloud, if the legacy export is enabled,
+// we can assume exports are enabled as well.
+var legacyExportUsageDataEnabled = os.Getenv("EXPORT_USAGE_DATA_ENABLED") == "true"
 
 func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) TelemetryEventsExportMode {
 	if licenseKey == "" {
@@ -80,7 +85,7 @@ func newTelemetryEventsExportMode(licenseKey string, pk ssh.PublicKey) Telemetry
 		return TelemetryEventsExportAll // without a valid license key
 	}
 
-	if p := (&Info{Info: *key}).Plan(); p.isKnown() && p.HasFeature(FeatureAllowAirGapped, false) {
+	if p := (&Info{Info: *key}).Plan(); p.isKnown() && p.HasFeature(FeatureAllowAirGapped) {
 		return TelemetryEventsExportDisabled // this is the only way to disable export entirely
 	}
 

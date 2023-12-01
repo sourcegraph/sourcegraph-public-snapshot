@@ -569,6 +569,8 @@ func RepoUpdater() *monitoring.Dashboard {
 				},
 			},
 
+			shared.GitServer.NewClientGroup(containerName),
+
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
 
@@ -600,7 +602,7 @@ func RepoUpdater() *monitoring.Dashboard {
 			}, monitoring.ObservableOwnerDevOps),
 			shared.HTTP.NewHandlersGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerSource),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSource, containerMonitoringOptions),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSource, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSource, nil),

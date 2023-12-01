@@ -224,7 +224,7 @@ func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *da
 	opt := s.opt
 	opt.PaginationArgs = args
 
-	client := gitserver.NewClient()
+	client := gitserver.NewClient("graphql.repos")
 	repos, err := backend.NewRepos(s.logger, s.db, client).List(ctx, opt)
 	if err != nil {
 		return nil, err

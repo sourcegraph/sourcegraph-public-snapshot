@@ -58,9 +58,9 @@ type GitserverRepoStore interface {
 	// ListReposWithLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
 	// note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
 	ListReposWithLastError(ctx context.Context) ([]api.RepoName, error)
-	// IteratePurgeableRepos iterates over all purgeable repos. These are repos that
+	// ListPurgeableRepos returns all purgeable repos. These are repos that
 	// are cloned on disk but have been deleted or blocked.
-	IteratePurgeableRepos(ctx context.Context, options IteratePurgableReposOptions, repoFn func(repo api.RepoName) error) error
+	ListPurgeableRepos(ctx context.Context, options ListPurgableReposOptions) ([]api.RepoName, error)
 	// TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
 	// counting repos with an associated cloud_default external service.
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
@@ -122,22 +122,33 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 }
 
 const updateGitserverReposQueryFmtstr = `
+WITH update_data AS (
+	SELECT * FROM (
+		VALUES
+		-- (<repo_id>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <corrupted_at>, <repo_size_bytes>),
+			%s
+	) AS tmp(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, corrupted_at, repo_size_bytes)
+),
+locked_data AS (
+	SELECT update_data.*
+	FROM update_data
+	JOIN gitserver_repos gr ON gr.repo_id = update_data.repo_id
+	ORDER BY update_data.repo_id ASC
+	FOR UPDATE OF gr
+)
 UPDATE gitserver_repos AS gr
 SET
-	clone_status = tmp.clone_status,
-	shard_id = tmp.shard_id,
-	last_error = tmp.last_error,
-	last_fetched = tmp.last_fetched,
-	last_changed = tmp.last_changed,
-	corrupted_at = tmp.corrupted_at,
-	repo_size_bytes = tmp.repo_size_bytes,
+	clone_status = locked_data.clone_status,
+	shard_id = locked_data.shard_id,
+	last_error = locked_data.last_error,
+	last_fetched = locked_data.last_fetched,
+	last_changed = locked_data.last_changed,
+	corrupted_at = locked_data.corrupted_at,
+	repo_size_bytes = locked_data.repo_size_bytes,
 	updated_at = NOW()
-FROM (VALUES
-	-- (<repo_id>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <corrupted_at>, <repo_size_bytes>),
-		%s
-	) AS tmp(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, corrupted_at, repo_size_bytes)
-	WHERE
-		tmp.repo_id = gr.repo_id
+FROM locked_data
+WHERE
+	locked_data.repo_id = gr.repo_id
 `
 
 func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
@@ -183,7 +194,7 @@ func scanLastErroredRepoRow(scanner dbutil.Scanner) (name api.RepoName, err erro
 
 var scanLastErroredRepos = basestore.NewSliceScanner(scanLastErroredRepoRow)
 
-type IteratePurgableReposOptions struct {
+type ListPurgableReposOptions struct {
 	// DeletedBefore will filter the deleted repos to only those that were deleted
 	// before the given time. The zero value will not apply filtering.
 	DeletedBefore time.Time
@@ -195,7 +206,9 @@ type IteratePurgableReposOptions struct {
 	Limiter *ratelimit.InstrumentedLimiter
 }
 
-func (s *gitserverRepoStore) IteratePurgeableRepos(ctx context.Context, options IteratePurgableReposOptions, repoFn func(repo api.RepoName) error) (err error) {
+var scanRepoNames = basestore.NewSliceScanner(basestore.ScanAny[api.RepoName])
+
+func (s *gitserverRepoStore) ListPurgeableRepos(ctx context.Context, options ListPurgableReposOptions) (repos []api.RepoName, err error) {
 	deletedAtClause := sqlf.Sprintf("deleted_at IS NOT NULL")
 	if !options.DeletedBefore.IsZero() {
 		deletedAtClause = sqlf.Sprintf("(deleted_at IS NOT NULL AND deleted_at < %s)", options.DeletedBefore)
@@ -204,27 +217,7 @@ func (s *gitserverRepoStore) IteratePurgeableRepos(ctx context.Context, options 
 	if options.Limit > 0 {
 		query = query + fmt.Sprintf(" LIMIT %d", options.Limit)
 	}
-	rows, err := s.Query(ctx, sqlf.Sprintf(query, deletedAtClause, types.CloneStatusCloned))
-	if err != nil {
-		return errors.Wrap(err, "fetching repos with nonempty last_error")
-	}
-	defer func() {
-		err = basestore.CloseRows(rows, err)
-	}()
-
-	for rows.Next() {
-		var name api.RepoName
-		if err := rows.Scan(&name); err != nil {
-			return errors.Wrap(err, "scanning row")
-		}
-		err := repoFn(name)
-		if err != nil {
-			// Abort
-			return errors.Wrap(err, "calling repoFn")
-		}
-	}
-
-	return nil
+	return scanRepoNames(s.Query(ctx, sqlf.Sprintf(query, deletedAtClause, types.CloneStatusCloned)))
 }
 
 const purgableReposQuery = `
@@ -702,19 +695,29 @@ func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, r
 }
 
 const updateRepoSizesQueryFmtstr = `
+WITH update_data AS (
+	SELECT * FROM (VALUES
+		-- (<repo_name>, <repo_size_bytes>),
+		%s
+	) AS tmp(repo_name, repo_size_bytes)
+),
+locked_data AS (
+	SELECT update_data.*, gr.repo_id
+	FROM update_data
+	JOIN gitserver_repos gr ON gr.repo_id = (SELECT r.id FROM repo r WHERE r.name = update_data.repo_name)
+	WHERE
+		update_data.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes
+	ORDER BY gr.repo_id ASC
+	FOR UPDATE OF gr
+)
+
 UPDATE gitserver_repos AS gr
 SET
-    repo_size_bytes = tmp.repo_size_bytes,
+    repo_size_bytes = locked_data.repo_size_bytes,
 	updated_at = NOW()
-FROM (VALUES
--- (<repo_name>, <repo_size_bytes>),
-    %s
-) AS tmp(repo_name, repo_size_bytes)
-JOIN repo ON repo.name = tmp.repo_name
+FROM locked_data
 WHERE
-	repo.id = gr.repo_id
-AND
-	tmp.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes
+	locked_data.repo_id = gr.repo_id
 `
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be

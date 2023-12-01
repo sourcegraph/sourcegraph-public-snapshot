@@ -628,8 +628,8 @@ type ExternalService struct {
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 	CodeHostID     *int32
-	CreatorID      int32
-	LastUpdaterID  int32
+	CreatorID      *int32
+	LastUpdaterID  *int32
 }
 
 type ExternalServiceRepo struct {
@@ -857,6 +857,7 @@ type User struct {
 	TosAccepted           bool
 	CompletedPostSignup   bool
 	SCIMControlled        bool
+	CodyProEnabledAt      *time.Time
 }
 
 // UserForSCIM extends user with email addresses and SCIM external ID.

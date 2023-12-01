@@ -10,7 +10,15 @@ import type { SearchContextProps } from '@sourcegraph/shared/src/search'
 import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, LoadingSpinner, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Flipping,
+    LoadingSpinner,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+} from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../auth'
 import type { BatchChangesProps } from '../batches'
@@ -139,6 +147,7 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
             </PopoverTrigger>
             <PopoverContent
                 position={Position.bottomStart}
+                flipping={Flipping.opposite}
                 className="pt-0 pb-0"
                 aria-labelledby="repo-revision-popover"
             >
@@ -210,9 +219,9 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
             </Routes>
             {resolvedRevision && !isPackage && (
                 <RepoHeaderContributionPortal
-                    position="right"
-                    priority={3}
                     id="go-to-permalink"
+                    priority={3}
+                    position="right"
                     repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
                 >
                     {context => (

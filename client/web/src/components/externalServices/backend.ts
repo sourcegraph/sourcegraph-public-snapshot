@@ -69,6 +69,7 @@ export const externalServiceFragment = gql`
         createdAt
         webhookURL
         hasConnectionCheck
+        unrestricted
         creator {
             username
             url
@@ -239,6 +240,7 @@ export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
         syncJobs(first: 1) {
             ...ExternalServiceSyncJobConnectionFields
         }
+        unrestricted
     }
 `
 

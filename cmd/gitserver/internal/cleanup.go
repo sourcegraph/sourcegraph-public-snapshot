@@ -52,10 +52,7 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
-			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
-			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
-
+			logger.Info("Starting janitor run")
 			// On Sourcegraph.com, we clone repos lazily, meaning whatever github.com
 			// repo is visited will be cloned eventually. So over time, we would always
 			// accumulate terabytes of repos, of which many are probably not visited
@@ -68,13 +65,21 @@ func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wre
 			if envvar.SourcegraphDotComMode() {
 				diskSizer := &StatDiskSizer{}
 				logger := logger.Scoped("dotcom-repo-cleaner")
+				start := time.Now()
+				logger.Info("Starting dotcom repo cleaner")
 				toFree, err := howManyBytesToFree(logger, cfg.ReposDir, diskSizer, cfg.DesiredPercentFree)
 				if err != nil {
 					logger.Error("ensuring free disk space", log.Error(err))
 				} else if err := freeUpSpace(ctx, logger, db, cfg.ShardID, cfg.ReposDir, diskSizer, cfg.DesiredPercentFree, toFree); err != nil {
 					logger.Error("error freeing up space", log.Error(err))
 				}
+				logger.Info("dotcom repo cleaner finished", log.Int64("toFree", toFree), log.Bool("failed", err != nil), log.String("duration", time.Since(start).String()))
 			}
+
+			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
+			// TODO: Should this return an error?
+			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
+
 			return nil
 		}),
 		goroutine.WithName("gitserver.janitor"),
@@ -246,6 +251,8 @@ func cleanupRepos(
 	gitServerAddrs gitserver.GitserverAddresses,
 ) {
 	logger = logger.Scoped("cleanup")
+
+	start := time.Now()
 
 	janitorRunning.Set(1)
 	defer janitorRunning.Set(0)
@@ -561,6 +568,8 @@ func cleanupRepos(
 		})
 	}
 
+	reposCleaned := 0
+
 	err := iterateGitDirs(reposDir, func(gitDir common.GitDir) (done bool) {
 		for _, cfn := range cleanups {
 			// Check if context has been canceled, if so skip the rest of the repos.
@@ -585,6 +594,13 @@ func cleanupRepos(
 			}
 		}
 
+		reposCleaned++
+
+		// Every 1000 repos, log a progress message.
+		if reposCleaned%1000 == 0 {
+			logger.Info("Janitor progress", log.Int("repos_cleaned", reposCleaned))
+		}
+
 		return false
 	})
 	if err != nil {
@@ -597,6 +613,8 @@ func cleanupRepos(
 			logger.Error("setting repo sizes", log.Error(err))
 		}
 	}
+
+	logger.Info("Janitor run finished", log.String("duration", time.Since(start).String()))
 }
 
 func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) (bool, string, error) {

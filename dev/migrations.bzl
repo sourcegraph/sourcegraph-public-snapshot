@@ -92,7 +92,7 @@ def _generate_schemas_impl(ctx):
             out_codeintel_schema_md = ctx.outputs.out_codeintel_schema_md.path,
             out_codeinsights_schema_md = ctx.outputs.out_codeinsights_schema_md.path,
         ),
-        tools = ctx.attr._sg[DefaultInfo].default_runfiles.files
+        tools = ctx.attr._sg[DefaultInfo].default_runfiles.files,
     )
 
     return [
@@ -107,40 +107,36 @@ def _generate_schemas_impl(ctx):
                 ctx.outputs.out_frontend_schema_md,
                 ctx.outputs.out_codeintel_schema_md,
                 ctx.outputs.out_codeinsights_schema_md,
-            ])
+            ]),
         ),
         OutputGroupInfo(
-                frontend_squash = depset([ctx.outputs.out_frontend_squash]),
-                codeintel_squash = depset([ctx.outputs.out_codeintel_squash]),
-                codeinsights_squash = depset([ctx.outputs.out_codeinsights_squash]),
-                schemas = depset([
-                  ctx.outputs.out_frontend_schema,
-                  ctx.outputs.out_codeintel_schema,
-                  ctx.outputs.out_codeinsights_schema,
-                  ctx.outputs.out_frontend_schema_md,
-                  ctx.outputs.out_codeintel_schema_md,
-                  ctx.outputs.out_codeinsights_schema_md,
-                ])
+            frontend_squash = depset([ctx.outputs.out_frontend_squash]),
+            codeintel_squash = depset([ctx.outputs.out_codeintel_squash]),
+            codeinsights_squash = depset([ctx.outputs.out_codeinsights_squash]),
+            schemas = depset([
+                ctx.outputs.out_frontend_schema,
+                ctx.outputs.out_codeintel_schema,
+                ctx.outputs.out_codeinsights_schema,
+                ctx.outputs.out_frontend_schema_md,
+                ctx.outputs.out_codeintel_schema_md,
+                ctx.outputs.out_codeinsights_schema_md,
+            ]),
         ),
     ]
 
 generate_schemas = rule(
     implementation = _generate_schemas_impl,
     attrs = {
-        "srcs": attr.label_list(allow_files= True, mandatory= True),
-
+        "srcs": attr.label_list(allow_files = True, mandatory = True),
         "out_frontend_squash": attr.output(mandatory = True),
         "out_codeintel_squash": attr.output(mandatory = True),
         "out_codeinsights_squash": attr.output(mandatory = True),
-
         "out_frontend_schema": attr.output(mandatory = True),
         "out_codeintel_schema": attr.output(mandatory = True),
         "out_codeinsights_schema": attr.output(mandatory = True),
-
         "out_frontend_schema_md": attr.output(mandatory = True),
         "out_codeintel_schema_md": attr.output(mandatory = True),
         "out_codeinsights_schema_md": attr.output(mandatory = True),
-
         "_sg": attr.label(executable = True, default = "//dev/sg:sg", cfg = "exec"),
     },
 )

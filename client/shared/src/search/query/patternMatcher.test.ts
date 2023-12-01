@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals'
+import { describe, expect, it } from 'vitest'
 
 // Note: This tests the pattern matcher implementation but also acts as a
 // verifier that patterns are properly typed against their input value.
@@ -6,14 +6,17 @@ import { describe, expect, it } from '@jest/globals'
 
 import { every, matchesValue, some, oneOf, allOf, not, type PatternOfNoInfer } from './patternMatcher'
 
-declare module '@jest/expect' {
-    export interface Matchers<R, T> {
-        toBeMatchedBy<Data>(pattern: PatternOfNoInfer<T, Data>, expectedData?: Data, initialData?: Data): R
-    }
+interface CustomMatchers<R = unknown> {
+    toBeMatchedBy<Data>(pattern: PatternOfNoInfer<R, Data>, expectedData?: Data, initialData?: Data): R
+}
+
+declare module 'vitest' {
+    interface Assertion<T = any> extends CustomMatchers<T> {}
+    interface AsymmetricMatchersContaining extends CustomMatchers {}
 }
 
 expect.extend({
-    toBeMatchedBy(actual, pattern, expectedData, initialData) {
+    toBeMatchedBy(this: any, actual: any, pattern: any, expectedData: any, initialData: any) {
         const options = {
             comment: 'Pattern matching',
             isNot: this.isNot,
@@ -41,7 +44,7 @@ expect.extend({
             pass: result.success && (!expectedData || dataComparisonResult),
         }
     },
-})
+} as any)
 
 describe('matchValue', () => {
     describe('base patterns', () => {

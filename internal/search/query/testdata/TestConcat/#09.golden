@@ -1,0 +1,74 @@
+[
+  {
+    "and": [
+      {
+        "value": "alsace",
+        "negated": false,
+        "labels": [
+          "Regexp"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 0
+          },
+          "end": {
+            "line": 0,
+            "column": 8
+          }
+        }
+      },
+      {
+        "value": "bourgogne",
+        "negated": false,
+        "labels": [
+          "Literal"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 9
+          },
+          "end": {
+            "line": 0,
+            "column": 18
+          }
+        }
+      },
+      {
+        "value": "bordeaux",
+        "negated": false,
+        "labels": [
+          "Literal"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 19
+          },
+          "end": {
+            "line": 0,
+            "column": 27
+          }
+        }
+      },
+      {
+        "value": "champagne",
+        "negated": false,
+        "labels": [
+          "Regexp"
+        ],
+        "range": {
+          "start": {
+            "line": 0,
+            "column": 28
+          },
+          "end": {
+            "line": 0,
+            "column": 39
+          }
+        }
+      }
+    ]
+  }
+]

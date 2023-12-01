@@ -2,9 +2,7 @@ load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("@aspect_rules_js//js:defs.bzl", "js_run_binary", "js_run_devserver")
 load("@npm//:vite/package_json.bzl", vite_bin = "bin")
-load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 # gazelle:ignore
 
@@ -42,7 +40,6 @@ SRCS = [
     ".prettierignore",
     ".env",
     ".env.dotcom",
-    ".env.oss",
     "//client/wildcard:sass-breakpoints",
     "//client/wildcard:global-style-sources",
     "//client/web/dist/img:copy",
@@ -123,7 +120,6 @@ npm_link_all_packages(name = "node_modules")
 vite_bin.vite(
     name = "web-sveltekit",
     srcs = SRCS + BUILD_DEPS + CONFIGS,
-    out_dirs= ["build"],
     args = [
         "build",
         "--force",
@@ -133,6 +129,7 @@ vite_bin.vite(
     env = {
         "BAZEL": "1",
     },
+    out_dirs = ["build"],
     visibility = ["//client/web/dist:__pkg__"],
     # silent_on_success = False,
 )

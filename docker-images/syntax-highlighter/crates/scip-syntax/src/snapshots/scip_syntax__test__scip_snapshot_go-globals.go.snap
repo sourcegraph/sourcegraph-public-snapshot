@@ -26,16 +26,16 @@ expression: dumped
    innerface interface {
 // ^^^^^^^^^ definition(Interface) scip-ctags multierror/Group#innerface#
     Another() bool
-//  ^^^^^^^ definition(Method) scip-ctags multierror/Group#innerface#Another().
+//  ^^^^^^^ definition(MethodSpecification) scip-ctags multierror/Group#innerface#Another().
    }
   }
   
   type SomeInterface interface {
 //     ^^^^^^^^^^^^^ definition(Interface) scip-ctags multierror/SomeInterface#
    Something() bool
-// ^^^^^^^^^ definition(Method) scip-ctags multierror/SomeInterface#Something().
+// ^^^^^^^^^ definition(MethodSpecification) scip-ctags multierror/SomeInterface#Something().
    Incredible() int
-// ^^^^^^^^^^ definition(Method) scip-ctags multierror/SomeInterface#Incredible().
+// ^^^^^^^^^^ definition(MethodSpecification) scip-ctags multierror/SomeInterface#Incredible().
   }
   
   type TypeDef uint8
@@ -74,9 +74,9 @@ expression: dumped
   
   var (
    diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
-// ^^^^^^^^ definition scip-ctags multierror/diffPath.
+// ^^^^^^^^ definition(Variable) scip-ctags multierror/diffPath.
    fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
-// ^^^^^^^ definition scip-ctags multierror/fileIdx.
+// ^^^^^^^ definition(Variable) scip-ctags multierror/fileIdx.
   )
   
   func RegularFunc() {}

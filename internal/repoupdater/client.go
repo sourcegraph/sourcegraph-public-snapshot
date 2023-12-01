@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -66,7 +66,7 @@ func NewClient(serverURL string) *Client {
 	return &Client{
 		URL:        serverURL,
 		HTTPClient: defaultDoer,
-		grpcClient: syncx.OnceValues(func() (proto.RepoUpdaterServiceClient, error) {
+		grpcClient: sync.OnceValues(func() (proto.RepoUpdaterServiceClient, error) {
 			u, err := url.Parse(serverURL)
 			if err != nil {
 				return nil, err

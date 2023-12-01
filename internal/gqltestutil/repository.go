@@ -14,7 +14,7 @@ import (
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) WaitForReposToBeCloned(repos ...string) error {
-	timeout := 120 * time.Second
+	timeout := 130 * time.Second
 	return c.WaitForReposToBeClonedWithin(timeout, repos...)
 }
 
@@ -114,6 +114,35 @@ query Repositories {
 			return errors.Wrap(err, "wait for repos to be indexed")
 		}
 		if missing.IsEmpty() {
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
+	return nil
+}
+
+// WaitForRepoToBeIndexed performs a regexp search for `.` with index:only,
+// repo:repoName, and type:file set until a result is returned.
+func (c *Client) WaitForRepoToBeIndexed(repoName string) error {
+	timeout := 180 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	var results *SearchFileResults
+	var err error
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("wait for repo to be indexed timed out in %s", timeout)
+		default:
+		}
+
+		results, err = c.SearchFiles(fmt.Sprintf("repo:%s . type:file index:only patterntype:regexp", repoName))
+		if err != nil {
+			return err
+		}
+		if len(results.Results) > 0 {
 			break
 		}
 

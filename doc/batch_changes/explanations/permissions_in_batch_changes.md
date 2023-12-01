@@ -17,7 +17,14 @@ Users have admin permissions on the batch changes they created and read access t
 
 ### Namespaces
 
-Batch changes can be created either under the user's or an organization's namespace. If placed under an organization namespace, all users of the organization have admin access on the batch change.
+A batch change can be created under either a user or organization namespace:
+
+- User namespace: Only the user who created the batch change has admin access. Other users have read access.
+
+- Organization namespace:
+  - By default, all members of the organization have read access.
+  - If the `orgs.allMembersBatchChangesAdmin` setting is enabled, all organization members also have admin access.
+  - If that setting is disabled, only the user who created the batch change has admin access. Other organization members have read access.
 
 ### Batch Change access for each permission level
 
@@ -28,7 +35,7 @@ View burndown chart (aggregate changeset statuses over time) | ⬤ | ⬤
 View list of patches and changesets | ⬤ | ⬤
 View diffstat (aggregate count of added/changed/deleted lines) | ⬤ | ⬤
 View error messages (related to creating or syncing changesets) |  | ⬤
-Edit batch change name, description, and branch name |  | ⬤
+Edit batch spec |  | ⬤
 Update batch change patches (and changesets on code hosts) |  | ⬤
 Publish changesets to code host |  | ⬤
 Add/remove existing changesets to/from batch change |  | ⬤

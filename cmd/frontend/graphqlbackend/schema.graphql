@@ -90,6 +90,12 @@ type Mutation {
     """
     updateUser(user: ID!, username: String, displayName: String, avatarURL: String): User!
     """
+    Updates the user's Cody plan to Pro or Community.
+
+    Only the user may perform this mutation.
+    """
+    changeCodyPlan(user: ID!, pro: Boolean!): User!
+    """
     Creates an organization. The caller is added as a member of the newly created organization.
 
     Only authenticated users may perform this mutation.
@@ -2670,6 +2676,7 @@ enum SearchPatternType {
     structural
     lucky
     keyword
+    newStandardRC1
 }
 
 """
@@ -3391,6 +3398,11 @@ type ExternalService implements Node {
     True if this external service configuration supports `exclude` parameter.
     """
     supportsRepoExclusion: Boolean!
+
+    """
+    True if this external service is unrestricted and marks all repositories added by it as publicly accessible.
+    """
+    unrestricted: Boolean!
 }
 
 """
@@ -5530,6 +5542,34 @@ interface TreeEntry {
     Whether this tree entry is a single child
     """
     isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): TreeEntryConnection!
+    """
+    The Git commit containing this tree entry was reached through.
+    Note that a tree entry can exist in multiple commits.
+    """
+    commit: GitCommit!
+}
+
+"""
+A list of TreeEntry
+"""
+type TreeEntryConnection {
+    """
+    A list of TreeEntry.
+    """
+    nodes: [TreeEntry!]!
+    """
+    The total count of TreeEntry in the connection. This total count may be larger
+    than the number of nodes in this object when the result is paginated.
+    """
+    totalCount: Int
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
@@ -5616,15 +5656,9 @@ type GitTree implements TreeEntry {
         """
         first: Int
         """
-        Recurse into sub-trees. If true, implies recursiveSingleChild.
+        Recurse into sub-trees.
         """
         recursive: Boolean = false
-        """
-        Recurse into sub-trees of single-child directories. If true, we return a flat list of
-        every directory that is a single child, and any directories or files that are
-        nested in a single child.
-        """
-        recursiveSingleChild: Boolean = false
         """
         Includes all parent directories and their entries. For example, if the path is
         `/client/web/something`, it will return the following entries in this order:
@@ -5655,6 +5689,10 @@ type GitTree implements TreeEntry {
     Whether this tree entry is a single child
     """
     isSingleChild: Boolean!
+    """
+    The revision history for this file or directory.
+    """
+    history(first: Int, after: String): TreeEntryConnection!
 }
 
 """
@@ -5998,7 +6036,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Blame the blob.
     """
-    blame(startLine: Int!, endLine: Int!): [Hunk!]!
+    blame(startLine: Int!, endLine: Int!, ignoreWhitespace: Boolean = false): [Hunk!]!
     """
     Highlight the blob contents.
     """
@@ -6066,6 +6104,10 @@ type GitBlob implements TreeEntry & File2 {
     LFS is set if the GitBlob is a pointer to a file stored in LFS.
     """
     lfs: LFS
+    """
+    The revision history for this file
+    """
+    history(first: Int, after: String): TreeEntryConnection!
 }
 
 """
@@ -6499,6 +6541,38 @@ type User implements Node & SettingsSubject & Namespace {
     Null, if not overwritten.
     """
     codeCompletionsQuotaOverride: Int
+    """
+    Whether the user has enrolled for Cody Pro.
+    """
+    codyProEnabled: Boolean!
+    """
+    The date when the user enrolled for Cody Pro.
+    """
+    codyProEnabledAt: DateTime
+    """
+    The start date of current billing period of Cody.
+    """
+    codyCurrentPeriodStartDate: DateTime
+    """
+    The end date of current billing period of Cody.
+    """
+    codyCurrentPeriodEndDate: DateTime
+    """
+    The count of Cody chats in the current billing period.
+    """
+    codyCurrentPeriodChatUsage: Int
+    """
+    The count of Cody code completions in the current billing period.
+    """
+    codyCurrentPeriodCodeUsage: Int
+    """
+    The limit of Cody chats for the current billing period.
+    """
+    codyCurrentPeriodChatLimit: Int
+    """
+    The limit of Cody code completions for the current billing period.
+    """
+    codyCurrentPeriodCodeLimit: Int
 }
 
 """

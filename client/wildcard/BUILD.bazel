@@ -1,7 +1,7 @@
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
+load("//dev:defs.bzl", "npm_package", "sass", "ts_project", "vitest_test")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
 
@@ -26,7 +26,6 @@ eslint_test_with_types(
     ]),
     config = ":eslint_config",
     deps = [
-        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
         "//:node_modules/@types/node",
     ],
 )
@@ -119,7 +118,6 @@ copy_to_bin(
 ts_project(
     name = "wildcard_lib",
     srcs = [
-        "globals.d.ts",
         "src/components/Alert/Alert.tsx",
         "src/components/Alert/AlertLink.tsx",
         "src/components/Alert/constants.ts",
@@ -377,6 +375,7 @@ ts_project(
         "src/global-styles/GlobalStylesStory/TextVariants/index.ts",
         "src/global-styles/GlobalStylesStory/constants.ts",
         "src/global-styles/GlobalStylesStory/utils.ts",
+        "src/globals.d.ts",
         "src/hooks/index.ts",
         "src/hooks/useAccordion.ts",
         "src/hooks/useAutoFocus.ts",
@@ -397,6 +396,9 @@ ts_project(
         "src/hooks/useOffsetPagination.ts",
         "src/hooks/useOnClickOutside.ts",
         "src/hooks/usePrompt.tsx",
+        "src/hooks/useScrollManager/index.ts",
+        "src/hooks/useScrollManager/mutationObserverWithTimeout.ts",
+        "src/hooks/useScrollManager/useScrollManager.ts",
         "src/hooks/useSearchParameters.ts",
         "src/hooks/useSessionStorage.ts",
         "src/hooks/useStopwatch.ts",
@@ -525,8 +527,8 @@ ts_project(
         "src/components/PageSelector/PageSelector.test.tsx",
         "src/components/PageSwitcher/PageSwitcher.test.tsx",
         "src/components/Panel/Panel.test.tsx",
-        "src/components/Popover/tether/models/geometry/rectangle.spec.ts",
-        "src/components/Popover/tether/services/geometry/actions/get-constrained-element.spec.ts",
+        "src/components/Popover/tether/models/geometry/rectangle.test.ts",
+        "src/components/Popover/tether/services/geometry/actions/get-constrained-element.test.ts",
         "src/components/Tabs/Tabs.test.tsx",
         "src/components/Tooltip/Tooltip.test.tsx",
         "src/components/Tree/Tree.test.tsx",
@@ -541,15 +543,15 @@ ts_project(
         "src/components/Typography/Text/Text.test.tsx",
         "src/hooks/useCookieStorage.test.ts",
         "src/hooks/useObservable.test.ts",
+        "src/hooks/useScrollManager/useScrollManager.test.tsx",
         "src/hooks/useTimeoutManager.test.ts",
-        "src/testing/globals.d.ts",  #keep
+        "src/testing/testSetup.test.ts",
         "src/utils/linkClickHandler.test.tsx",
     ],
     tsconfig = ":tsconfig",
     deps = [
         ":node_modules/@sourcegraph/testing",
         ":wildcard_lib",
-        "//:node_modules/@jest/globals",
         "//:node_modules/@mdi/js",
         "//:node_modules/@storybook/react",  #keep
         "//:node_modules/@testing-library/jest-dom",  #keep
@@ -564,8 +566,10 @@ ts_project(
         "//:node_modules/js-cookie",
         "//:node_modules/mdi-react",
         "//:node_modules/react",
+        "//:node_modules/react-router-dom",
         "//:node_modules/rxjs",
         "//:node_modules/sinon",
+        "//:node_modules/vitest",
     ],
 )
 
@@ -578,13 +582,16 @@ npm_package(
     ],
 )
 
-jest_test(
+filegroup(
+    name = "snapshots",
+    srcs = glob(["src/**/__snapshots__/*"]),
+)
+
+vitest_test(
     name = "test",
-    timeout = "moderate",
     data = [
+        ":module_styles",
+        ":snapshots",
         ":wildcard_tests",
     ],
-    patch_node_fs = False,
-    shard_count = 6,
-    tags = ["no-sandbox"],
 )

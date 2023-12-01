@@ -8,7 +8,7 @@ Sourcegraph is a code intelligence platform that helps devs answer questions in 
 
 ## Who should use Sourcegraph?
 
-In addition to the [companies listed on about.sourcegraph.com](https://about.sourcegraph.com), companies with a few hundred developers all the way up to those with more than 40,000 use Sourcegraph daily.
+In addition to the [companies listed on sourcegraph.com](https://sourcegraph.com), companies with a few hundred developers all the way up to those with more than 40,000 use Sourcegraph daily.
 
 More specifically, Sourcegraph is great for all developers, except:
 
@@ -57,14 +57,13 @@ You can also try [Sourcegraph.com](https://sourcegraph.com/search), which is a p
 
 Sourcegraph Enterprise is Sourcegraph’s primary offering and includes all code intelligence platform features. Sourcegraph Enterprise is the best solution for enterprises who want to use Sourcegraph with their organization’s code.
 
-[Cody](https://docs.sourcegraph.com/cody), Sourcegraph's AI-enabled editor assistant, is free and [open source](https://about.sourcegraph.com/blog/open-sourcing-cody) and is licensed under the Apache 2.0 license.
-
 Sourcegraph extensions are also OSS licensed (Apache 2), such as:
-1. [Sourcegraph browser extension](https://github.com/sourcegraph/sourcegraph/tree/master/client/browser)
-2. [Sourcegraph VS Code extension](https://github.com/sourcegraph/sourcegraph/tree/main/client/vscode)
-3. [Sourcegraph Jetbrains extension](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
+
+- [Sourcegraph browser extension](https://github.com/sourcegraph/sourcegraph/tree/master/client/browser)
+- [Sourcegraph Jetbrains extension](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
 
 ## How is Sourcegraph different than GitHub code search?
+
 - [See how GitHub code search compares to Sourcegraph](./github-vs-sourcegraph.md)
 
 ## Code search
@@ -114,6 +113,7 @@ Cody is an AI code assistant that uses Sourcegraph code search, the code graph, 
 [Learn more about about Cody](../cody/overview/index.md).
 
 ## Notebooks
+
 _Note: GA in version 3.39 or later_
 
 Increase dev collaboration and self-service through live documentation covering best practice, shared code and processes.
@@ -121,6 +121,7 @@ Increase dev collaboration and self-service through live documentation covering 
 Read the [Notebooks documentation](../notebooks/index.md) to learn more, and check out these [publicly available notebooks](https://sourcegraph.com/notebooks?_ga=2.9922293.1906238367.1667257632-528424761.1615652680&_gl=1*1xalma3*_ga*NTI4NDI0NzYxLjE2MTU2NTI2ODA.*_ga_E82CCDYYS1*MTY2NzI1NzYzMi41NS4xLjE2NjcyNjA3NjIuMC4wLjA.).
 
 ## Batch Changes
+
 _Note: Enterprise Feature_
 
 Automate changes to your codebase. Reduce effort, reduce errors and enable developers to focus on high value work.
@@ -128,6 +129,7 @@ Automate changes to your codebase. Reduce effort, reduce errors and enable devel
 Read the [batch changes documentation](../batch_changes/index.md) to learn more, including useful how-to guides. Want a video tutorial? Check out this [batch change tutorial](https://www.youtube.com/watch?v=eOmiyXIWTCw)
 
 ## Code Insights
+
 _Note: Enterprise Feature_
 
 Sourcegraph lets you understand and analyze code trends by visualizing how the codebase is changing over time. Measure and act on engineering goals such as migration and component deprecation.
@@ -139,7 +141,9 @@ Read the [code insights documentation](../code_insights/index.md) to learn more,
 Sourcegraph allows you to get code navigation and code search on code files and code review diffs in your code host and review tool or from your IDE.
 
 ### IDE integration
+
 Sourcegraph’s editor integrations allow you search and navigate across all of your repositories without ever leaving your IDE or checking them out locally. Learn more about how to set them up [here](../integration/editor.md).
 
 ### Browser extension
+
 Our browser extension add code navigation within your code hosts (GitHub, GitLab, Bitbucket, and Phabricator) directly via Chrome, Safari, and Firefox browsers. Learn more about how to set up the browser extension [here](../integration/browser_extension/index.md).

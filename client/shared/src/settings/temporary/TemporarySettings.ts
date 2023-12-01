@@ -32,8 +32,6 @@ export interface TemporarySettingsSchema {
     'search.hiddenNoResultsSections': NoResultsSectionID[]
     'search.sidebar.revisions.tab': number
     'search.sidebar.collapsed': boolean // Used only on non-mobile sizes and when coreWorkflowImprovements.enabled is set
-    'search.notepad.enabled': boolean
-    'search.notepad.ctaSeen': boolean
     'search.notebooks.gettingStartedTabSeen': boolean
     'insights.freeGaAccepted': boolean
     'insights.freeGaExpiredAccepted': boolean
@@ -87,6 +85,8 @@ export interface TemporarySettingsSchema {
     'admin.hasDismissedCodeHostPrivacyWarning': boolean
     'admin.hasCompletedLicenseCheck': boolean
     'simple.search.toggle': boolean
+    'cody.onboarding.completed': boolean
+    'cody.onboarding.step': number
 }
 
 /**
@@ -102,8 +102,6 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'search.hiddenNoResultsSections': null,
     'search.sidebar.revisions.tab': null,
     'search.sidebar.collapsed': null,
-    'search.notepad.enabled': null,
-    'search.notepad.ctaSeen': null,
     'search.notebooks.gettingStartedTabSeen': null,
     'insights.freeGaAccepted': null,
     'insights.freeGaExpiredAccepted': null,
@@ -150,6 +148,8 @@ const TEMPORARY_SETTINGS: Record<keyof TemporarySettings, null> = {
     'admin.hasDismissedCodeHostPrivacyWarning': null,
     'admin.hasCompletedLicenseCheck': null,
     'simple.search.toggle': null,
+    'cody.onboarding.completed': null,
+    'cody.onboarding.step': null,
 }
 
 export const TEMPORARY_SETTINGS_KEYS = Object.keys(TEMPORARY_SETTINGS) as readonly (keyof TemporarySettings)[]

@@ -111,7 +111,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	sourceMetrics.MustRegister(prometheus.DefaultRegisterer)
 	src := repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, sourceMetrics))
 	syncer := repos.NewSyncer(observationCtx, store, src)
-	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient())
+	updateScheduler := scheduler.NewUpdateScheduler(logger, db, gitserver.NewClient("repos.updatescheduler"))
 	server := &repoupdater.Server{
 		Logger:                logger,
 		ObservationCtx:        observationCtx,
@@ -166,7 +166,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	)
 
 	if envvar.SourcegraphDotComMode() {
-		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
+		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(1, 1))
 		routines = append(routines, syncer.NewSyncReposWithLastErrorsWorker(ctx, rateLimiter))
 	}
 

@@ -17,15 +17,19 @@ const config = {
     '**/vendor/*.js',
     'svelte.config.js',
     'vite.config.ts',
+    'vitest.config.ts',
+    'postcss.config.js',
     'playwright.config.ts',
+    'bundlesize.config.js',
+    'prettier.config.js',
+    'svgo.config.js',
     '.vscode-test',
     '**/*.json',
     '**/*.d.ts',
     'eslint-relative-formatter.js',
-    'jest.config.js',
-    'gulpfile.js',
     'typedoc.js',
-    'bundlesize.config.js',
+    'client/web/dev/**/*',
+    'graphql-schema-linter.config.js',
   ],
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
@@ -39,8 +43,8 @@ const config = {
     ecmaFeatures: {
       jsx: true,
     },
-    EXPERIMENTAL_projectService: true,
-    project: __dirname + '/tsconfig.all.json',
+    EXPERIMENTAL_useProjectService: true,
+    project: true,
   },
   settings: {
     react: {
@@ -68,6 +72,7 @@ const config = {
     // import/no-duplicates enabled as well, which does understand type imports
     'no-duplicate-imports': 'off',
     'id-length': 'off',
+    'no-void': 'off',
     '@typescript-eslint/consistent-type-exports': 'warn',
     '@typescript-eslint/consistent-type-imports': [
       'warn',
@@ -111,12 +116,6 @@ const config = {
         ],
         patterns: [
           {
-            group: ['**/enterprise/*'],
-            message: `The OSS product may not pull in any code from the enterprise codebase, to stay a 100% open-source program.
-
-See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-source for more information.`,
-          },
-          {
             group: ['@sourcegraph/branded/src/search-ui/experimental'],
             message:
               'The experimental search input is not available for general use. If you have questions about it reach out to the search product team.',
@@ -136,6 +135,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
               '!@sourcegraph/*/src/stories',
               '!@sourcegraph/build-config/src/esbuild/*',
               '!@sourcegraph/build-config/src/*',
+              '!@sourcegraph/testing/src/jestDomMatchers',
             ],
             message:
               'Imports from package internals are banned. Add relevant export to the entry point of the package to import it from the outside world.',
@@ -320,21 +320,14 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       },
     },
     {
-      files: [
-        '**/dev/**/*.ts',
-        '**/gulpfile.js',
-        '**/story/**.tsx',
-        '**/story/**.ts',
-        '*.story.tsx',
-        'client/build-config/**',
-      ],
+      files: ['**/dev/**/*.ts', '**/story/**.tsx', '**/story/**.ts', '*.story.tsx', 'client/build-config/**'],
       rules: {
         'no-console': 'off',
         'no-sync': 'off',
       },
     },
     {
-      files: ['client/vscode/**', 'client/browser/**', 'client/jetbrains/**'],
+      files: ['client/browser/**', 'client/jetbrains/**'],
       rules: {
         'no-console': 'off',
       },

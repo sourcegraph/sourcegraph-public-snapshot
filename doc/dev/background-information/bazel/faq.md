@@ -2,6 +2,18 @@
 
 ## General
 
+### `bazel configure` prints out a warning about TSConfig 
+
+Everytime you run `bazel configure`, you'll see a warning: 
+
+```
+$ bazel configure
+Updating BUILD files for protobuf, go, javascript
+2023/11/16 12:32:52 Failed to load base tsconfig file @sourcegraph/tsconfig: open /Users/thorstenball/work/sourcegraph/@sourcegraph/tsconfig: no such file or directory
+```
+
+The warning can be ignored, and [is a known bug](https://github.com/aspect-build/aspect-cli/issues/524).
+
 ### The analysis cache is being busted because of `--action_env`
 
 Typically you'll see this (in CI or locally):

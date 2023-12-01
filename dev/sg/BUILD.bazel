@@ -18,7 +18,6 @@ go_library(
         "sg_db.go",
         "sg_deploy.go",
         "sg_embeddings_qa.go",
-        "sg_feedback.go",
         "sg_generate.go",
         "sg_help.go",
         "sg_insights.go",
@@ -42,7 +41,6 @@ go_library(
         "sg_update.go",
         "sg_version.go",
         "sg_wolfi.go",
-        "suggest.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg",
     visibility = ["//visibility:private"],
@@ -101,7 +99,6 @@ go_library(
         "//monitoring/command",
         "//monitoring/definitions",
         "//monitoring/monitoring",
-        "@com_github_agext_levenshtein//:levenshtein",
         "@com_github_buildkite_go_buildkite_v3//buildkite",
         "@com_github_gomodule_redigo//redis",
         "@com_github_google_go_github_v55//github",
@@ -128,6 +125,11 @@ go_library(
 go_binary(
     name = "sg",
     embed = [":sg_lib"],
+    # keep
+    gotags = select({
+        "//:sg_msp_flag": ["msp"],
+        "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
@@ -142,7 +144,6 @@ go_test(
         "main_test.go",
         "release_test.go",
         "sg_start_test.go",
-        "suggest_test.go",
     ],
     # Required by func findRoot() to check if sg is running in sourcegraph/sourcegraph
     data = ["//:go.mod"],
@@ -159,26 +160,4 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_urfave_cli_v2//:cli",
     ],
-)
-
-# Refer to /doc/dev/background-information/sg/BUILD.bazel to see how this target is used to copy the
-# reference.md to the correct directory.
-#
-# Alternatively, if you just want to generate the doc:
-# bazel run //doc/dev/background-information/sg:write_cli_reference_doc
-genrule(
-    name = "generate_reference_doc",
-    srcs = ["//:sg.config.yaml"],
-    outs = ["_reference.md"],
-    cmd = """
-    SG_FORCE_REPO_ROOT="$$(pwd)" $(location :sg) \
-            --no-dev-private \
-            --disable-overwrite \
-            --disable-analytics \
-            --skip-auto-update \
-            --config sg.config.yaml \
-            help --full --output $@
-    """,
-    tools = [":sg"],
-    visibility = ["//visibility:public"],
 )

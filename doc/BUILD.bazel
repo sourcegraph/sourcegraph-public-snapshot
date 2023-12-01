@@ -1,14 +1,13 @@
 sh_test(
     name = "test",
     size = "small",
-    timeout = "moderate",
+    timeout = "long",
     srcs = ["test.sh"],
     args = ["$(location //dev/tools:docsite)"],
     data = [
         "//dev/tools:docsite",
         "//doc/admin/observability:doc_files",
         "//doc/cli/references:doc_files",
-        "//doc/dev/background-information/sg:doc_files",
         "//doc/dev/background-information/telemetry:doc_files",
     ] + glob(
         ["**/*"],

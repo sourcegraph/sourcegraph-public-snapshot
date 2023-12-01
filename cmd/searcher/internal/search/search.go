@@ -238,16 +238,12 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 
 		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
 		if err != nil {
-			logger.Error("hybrid search failed",
-				log.String("repo", string(p.Repo)),
-				log.String("commit", string(p.Commit)),
-				log.Error(err))
+			// error logging is done inside of s.hybrid so we just return
+			// error here.
 			return errors.Wrap(err, "hybrid search failed")
 		}
 		if !ok {
-			logger.Debug("hybrid search is falling back to normal unindexed search",
-				log.String("repo", string(p.Repo)),
-				log.String("commit", string(p.Commit)))
+			logger.Debug("hybrid search is falling back to normal unindexed search")
 		} else {
 			// now we only need to search unsearched
 			if len(unsearched) == 0 {

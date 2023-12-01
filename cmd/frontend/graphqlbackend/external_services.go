@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -38,8 +37,6 @@ func externalServicesWritable() error {
 	}
 	return nil
 }
-
-const syncExternalServiceTimeout = 15 * time.Second
 
 type addExternalServiceArgs struct {
 	Input addExternalServiceInput
@@ -73,8 +70,8 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		Kind:          args.Input.Kind,
 		DisplayName:   args.Input.DisplayName,
 		Config:        extsvc.NewUnencryptedConfig(args.Input.Config),
-		CreatorID:     userID,
-		LastUpdaterID: userID,
+		CreatorID:     &userID,
+		LastUpdaterID: &userID,
 	}
 
 	// Create the external service in the database.
@@ -150,7 +147,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	update := &database.ExternalServiceUpdate{
 		DisplayName:   args.Input.DisplayName,
 		Config:        args.Input.Config,
-		LastUpdaterID: pointers.Ptr(userID),
+		LastUpdaterID: &userID,
 	}
 
 	// Update the external service in the database.

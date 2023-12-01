@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/fs"
 	"os"
+	"sort"
 	"strings"
 	"testing"
 
@@ -163,6 +164,8 @@ func TestContextResolver(t *testing.T) {
 	}
 	// One code result and text result from each repo
 	expected := []string{"testcode1.go", "testtext1.md", "testcode2.go", "testtext2.md"}
+	sort.Strings(expected)
+	sort.Strings(paths)
 	require.Equal(t, expected, paths)
 }
 

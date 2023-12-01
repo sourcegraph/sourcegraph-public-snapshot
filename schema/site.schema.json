@@ -16,6 +16,12 @@
       "group": "Search",
       "examples": [true]
     },
+    "search.index.shardConcurrency": {
+      "description": "The number of threads each indexserver should use to index shards. If not set, indexserver will use the number of available CPUs. This is exposed as a safeguard and should usually not require being set.",
+      "type": "integer",
+      "group": "Search",
+      "examples": ["10"]
+    },
     "search.largeFiles": {
       "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.",
       "type": "array",
@@ -29,7 +35,7 @@
       "description": "(debug) controls the amount of symbol search parallelism. Defaults to 20. It is not recommended to change this outside of debugging scenarios. This option will be removed in a future version.",
       "type": "integer",
       "group": "Debug",
-      "examples": [["20"]]
+      "examples": ["20"]
     },
     "cloneProgress.log": {
       "description": "Whether clone progress should be logged to a file. If enabled, logs are written to files in the OS default path for temporary files.",
@@ -48,6 +54,27 @@
       "description": "Prompts user to install new browser for non es5",
       "type": "boolean",
       "default": false
+    },
+    "rateLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "graphQLMaxDepth": {
+          "description": "Maximum depth of nested objects allowed for GraphQL queries. Changes to this setting require a restart.",
+          "type": "integer",
+          "default": 30
+        },
+        "graphQLMaxAliases": {
+          "description": "Maximum number of aliases allowed in a GraphQL query",
+          "type": "integer",
+          "default": 500
+        },
+        "graphQLMaxFieldCount": {
+          "description": "Maximum number of estimated fields allowed in a GraphQL response",
+          "type": "integer",
+          "default": 500000
+        }
+      }
     },
     "exportUsageTelemetry": {
       "type": "object",
@@ -965,8 +992,8 @@
             },
             "patterns": [
               {
-                "match": "^package main$",
-                "language": "go"
+                "match": "cobol_.*\\.txt",
+                "language": "cobol"
               }
             ]
           }
@@ -1941,6 +1968,14 @@
         }
       ]
     },
+    "batchChanges.rejectUnverifiedCommit": {
+      "description": "Reject unverified commits when creating a Batch Change",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      }
+    },
     "gitserver.diskUsageWarningThreshold": {
       "description": "Disk usage threshold at which to display warning notification. Value is a percentage.",
       "type": "integer",
@@ -2473,6 +2508,16 @@
           "type": "string",
           "format": "uri"
         },
+        "perCommunityUserEmbeddingsMonthlyLimit": {
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserEmbeddingsMonthlyLimit": {
+          "description": "If > 0, limits the number of tokens allowed to be embedded by a Pro user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
         "fileFilters": {
           "description": "Filters that allow you to specify which files in a repository should get embedded.",
           "type": "object",
@@ -2742,19 +2787,59 @@
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "sourcegraph",
-          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock"]
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai", "aws-bedrock", "fireworks"]
         },
         "endpoint": {
           "type": "string",
           "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
-          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "description": "If > 0, limits the number of completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
           "type": "integer",
           "default": 0
         },
         "perUserCodeCompletionsDailyLimit": {
-          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "description": "If > 0, limits the number of code completions requests allowed for a user in a day. On instances that allow anonymous requests, we enforce the rate limit by IP.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserChatMonthlyLLMRequestLimit": {
+          "description": "If > 0, limits the number of completions requests allowed for a Community user in a month. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserCodeCompletionsMonthlyLLMRequestLimit": {
+          "description": "If > 0, limits the number of code completions requests allowed for a Community user in a month.  This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserChatDailyLLMRequestLimit": {
+          "description": "If > 0, limits the number of completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserCodeCompletionsDailyLLMRequestLimit": {
+          "description": "If > 0, limits the number of code completions requests allowed for a Pro user in a day. This is for Self-serve Cody and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserChatMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Community user in a month. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perCommunityUserCodeCompletionsMonthlyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Community user in a month.  This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserChatDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
+          "type": "integer",
+          "default": 0
+        },
+        "perProUserCodeCompletionsDailyInteractionLimit": {
+          "description": "If > 0, enables the maximum number of code completions interactions allowed to be made by a single Pro user in a day. This is for Cody PLG and applies to Dotcom only.",
           "type": "integer",
           "default": 0
         }
@@ -3152,6 +3237,14 @@
           "description": "Time in minutes before token expiry when we should attempt to refresh it",
           "default": 10,
           "type": "integer"
+        },
+        "syncInternalRepoPermissions": {
+          "description": "Whether to sync permissions for internal repositories on GitLab. Setting this to false can be useful when internal repositories are configured to be public on Sourcegraph.",
+          "default": true,
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          }
         }
       }
     },

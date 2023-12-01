@@ -28,6 +28,7 @@ import {
 
 import type { AuthenticatedUser } from '../auth'
 import { useV2QueryInput } from '../search/useV2QueryInput'
+import { enableDevSettings, isSourcegraphDev, useDeveloperSettings } from '../stores'
 
 import { AppUserConnectDotComAccount } from './AppUserConnectDotComAccount'
 
@@ -37,7 +38,7 @@ const MAX_VISIBLE_ORGS = 5
 
 type MinimalAuthenticatedUser = Pick<
     AuthenticatedUser,
-    'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
+    'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName' | 'emails'
 >
 
 export interface UserNavItemProps extends TelemetryProps {
@@ -47,6 +48,7 @@ export interface UserNavItemProps extends TelemetryProps {
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
+    className?: string
 }
 
 /**
@@ -62,6 +64,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         showFeedbackModal,
         showKeyboardShortcutsHelp,
         telemetryService,
+        className,
     } = props
 
     const { themeSetting, setThemeSetting } = useTheme()
@@ -86,6 +89,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const organizations = authenticatedUser.organizations.nodes
     const searchQueryInputFeature = useExperimentalFeatures(features => features.searchQueryInput)
     const [v2QueryInputEnabled, setV2QueryInputEnabled] = useV2QueryInput()
+    const developerMode = useDeveloperSettings(settings => settings.enabled)
 
     const onV2QueryInputChange = useCallback(
         (enabled: boolean) => {
@@ -109,7 +113,11 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             ref={menuButtonRef}
                             variant="link"
                             data-testid="user-nav-item-toggle"
-                            className={classNames('d-flex align-items-center text-decoration-none', styles.menuButton)}
+                            className={classNames(
+                                'd-flex align-items-center text-decoration-none',
+                                styles.menuButton,
+                                className
+                            )}
                             aria-label={`${isExpanded ? 'Close' : 'Open'} user profile menu`}
                         >
                             <div className="position-relative">
@@ -196,6 +204,15 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 </div>
                             )}
 
+                            {process.env.NODE_ENV !== 'development' && isSourcegraphDev(authenticatedUser) && (
+                                <div className="px-2 py-1">
+                                    <div className="d-flex align-items-center justify-content-between">
+                                        <div className="mr-2">Developer mode</div>
+                                        <Toggle value={developerMode} onToggle={enableDevSettings} />
+                                    </div>
+                                </div>
+                            )}
+
                             {organizations.length > 0 && (
                                 <>
                                     <MenuDivider className={styles.dropdownDivider} />
@@ -235,12 +252,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
 
                             {isSourcegraphDotCom && <MenuDivider className={styles.dropdownDivider} />}
                             {isSourcegraphDotCom && (
-                                <MenuLink
-                                    as={AnchorLink}
-                                    to="https://about.sourcegraph.com"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
+                                <MenuLink as={AnchorLink} to="https://sourcegraph.com" target="_blank" rel="noopener">
                                     About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}

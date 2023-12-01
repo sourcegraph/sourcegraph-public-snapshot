@@ -197,18 +197,27 @@ type ZoektParameters struct {
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
 
-	// EXPERIMENTAL: If true, use keyword-style scoring instead of Zoekt's default scoring formula.
-	KeywordScoring bool
+	PatternType query.SearchType
 }
 
 // ToSearchOptions converts the parameters to options for the Zoekt search API.
-func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOptions {
+func (o *ZoektParameters) ToSearchOptions(ctx context.Context) (searchOpts *zoekt.SearchOptions) {
+	if o.Features.ZoektSearchOptionsOverride != "" {
+		defer func() {
+			old := *searchOpts
+			err := json.Unmarshal([]byte(o.Features.ZoektSearchOptionsOverride), searchOpts)
+			if err != nil {
+				searchOpts = &old
+			}
+		}()
+	}
+
 	defaultTimeout := 20 * time.Second
-	searchOpts := &zoekt.SearchOptions{
+	searchOpts = &zoekt.SearchOptions{
 		Trace:             policy.ShouldTrace(ctx),
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
-		UseKeywordScoring: o.KeywordScoring,
+		UseKeywordScoring: o.PatternType == query.SearchTypeKeyword,
 	}
 
 	// These are reasonable default amounts of work to do per shard and
@@ -219,7 +228,7 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOpti
 	// are evaluating to deliver a better keyword-based search experience. For now
 	// these are separate, but we might combine them in the future. Both profit from
 	// higher defaults.
-	if o.KeywordScoring || o.Features.UseZoektParser {
+	if searchOpts.UseKeywordScoring || o.PatternType == query.SearchTypeNewStandardRC1 {
 		// Keyword searches tends to match much more broadly than code searches, so we need to
 		// consider more candidates to ensure we don't miss highly-ranked documents
 		searchOpts.ShardMaxMatchCount *= 10
@@ -251,10 +260,11 @@ func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOpti
 
 	// This enables our stream based ranking, where we wait a certain amount
 	// of time to collect results before ranking.
-	searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
+	searchOpts.FlushWallTime = conf.SearchFlushWallTime(searchOpts.UseKeywordScoring)
 
-	// This enables the use of document ranks in scoring, if they are available.
-	searchOpts.UseDocumentRanks = true
+	// Only use document ranks if the jobs to calculate the ranks are enabled. This
+	// is to make sure we don't use outdated ranks for scoring in Zoekt.
+	searchOpts.UseDocumentRanks = conf.CodeIntelRankingDocumentReferenceCountsEnabled()
 	searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
 
 	return searchOpts
@@ -420,13 +430,14 @@ type Features struct {
 	// currently just supported by Zoekt.
 	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
 
-	// UseZoektParser when true will use a new way to interpret queries optimized for
-	// keyword search. This is currently just supported by Zoekt.
-	UseZoektParser bool `json:"search-new-keyword"`
-
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
+
+	// ZoektSearchOptionsOverride is a JSON string that overrides the Zoekt search
+	// options. This should be used for quick interactive experiments only. An
+	// invalid JSON string or unknown fields will be ignored.
+	ZoektSearchOptionsOverride string
 }
 
 func (f *Features) String() string {

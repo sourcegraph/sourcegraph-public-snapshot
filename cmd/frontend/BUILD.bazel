@@ -56,7 +56,6 @@ oci_image(
         "CODEINTEL_PGPORT": "5432",
         "CODEINTEL_PGSSLMODE": "disable",
         "CODEINTEL_PGUSER": "sg",
-        "PUBLIC_REPO_REDIRECTS": "true",
     },
     tars = [":tar_frontend"],
     user = "sourcegraph",

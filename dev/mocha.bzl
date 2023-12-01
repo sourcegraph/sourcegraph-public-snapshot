@@ -18,9 +18,6 @@ NON_BUNDLED = [
     # UMD modules
     "jsonc-parser",
 
-    # Dependencies with bundling issues
-    "@sourcegraph/build-config",
-
     # Used by require.resolve
     "axe-core",
 ]
@@ -31,7 +28,6 @@ NON_BUNDLED_DEPS = [
     "//:node_modules/puppeteer",
     "//:node_modules/@axe-core/puppeteer",
     "//:node_modules/axe-core",
-    "//client/web:node_modules/@sourcegraph/build-config",
 ]
 
 def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_enabled = False, **kwargs):
@@ -118,11 +114,6 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             srcs = data,
             out_dirs = ["out"],
             silent_on_success = True,
-
-            # Used to provide BUILDKITE_BRANCH and BUILDKITE_COMMIT to Percy via
-            # dev/bazel_buildkite_stamp_vars.sh. See the tool implementation for more details.
-            stamp = 1,
-
             # Executed mocha tests with Percy enabled via `percy exec -- mocha ...`
             # Prepends volatile env variables to the command to make Percy aware of the
             # current git branch and commit.

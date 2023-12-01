@@ -100,6 +100,11 @@ type ExternalServiceStore interface {
 	// found or not in processing or queued state.
 	CancelSyncJob(ctx context.Context, opts ExternalServicesCancelSyncJobOptions) error
 
+	// CleanupSyncJobs removes sync jobs that have finished before the given threshold.
+	// Additionally, only up to LimitPerService records are kept, deleting records
+	// to only keep the newest N.
+	CleanupSyncJobs(ctx context.Context, opts ExternalServicesCleanupSyncJobsOptions) error
+
 	// UpdateSyncJobCounters persists only the sync job counters for the supplied job.
 	UpdateSyncJobCounters(ctx context.Context, job *types.ExternalServiceSyncJob) error
 
@@ -1394,6 +1399,54 @@ func (e *externalServiceStore) CancelSyncJob(ctx context.Context, opts ExternalS
 	// shouldn't fail if there are no users with that prefix in the name.
 
 	return nil
+}
+
+type ExternalServicesCleanupSyncJobsOptions struct {
+	// Remove jobs that are older than the given duration from NOW().
+	OlderThan time.Duration
+	// Removes the oldest jobs until only MaxPerExternalService jobs remain for
+	// each service.
+	MaxPerExternalService int
+}
+
+func (e *externalServiceStore) CleanupSyncJobs(ctx context.Context, opts ExternalServicesCleanupSyncJobsOptions) error {
+	if opts.MaxPerExternalService < 1 {
+		return errors.New("MaxPerExternalService must be greater than 0")
+	}
+
+	q := buildCleanupSyncJobsQuery(opts)
+	return e.Exec(ctx, q)
+}
+
+const cleanupSyncJobsQueryFmtstr = `
+WITH ranked_jobs AS (
+    SELECT
+        id,
+        external_service_id,
+        state,
+        finished_at,
+        ROW_NUMBER() OVER (PARTITION BY external_service_id ORDER BY finished_at DESC) as rn
+    FROM
+        external_service_sync_jobs
+    WHERE
+        state IN ('completed', 'failed', 'canceled')
+		AND
+		finished_at IS NOT NULL
+)
+DELETE FROM
+    external_service_sync_jobs
+WHERE
+    id IN (
+        SELECT id FROM ranked_jobs
+        WHERE
+			rn > %s
+			OR
+			finished_at < %s
+    )
+`
+
+func buildCleanupSyncJobsQuery(opts ExternalServicesCleanupSyncJobsOptions) *sqlf.Query {
+	return sqlf.Sprintf(cleanupSyncJobsQueryFmtstr, opts.MaxPerExternalService, time.Now().Add(-opts.OlderThan))
 }
 
 func (e *externalServiceStore) hasRunningSyncJobs(ctx context.Context, id int64) (bool, error) {

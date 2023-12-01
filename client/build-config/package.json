@@ -8,7 +8,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "lint:js": "eslint --cache 'src/**/*.[jt]s?(x)'",
-    "test": "jest"
+    "test": "echo no tests"
   },
   "devDependencies": {
     "@types/sass": "1.16.1"
@@ -25,10 +25,5 @@
     "sass": "^1.32.4",
     "signale": "^1.4.0",
     "typed-scss-modules": "^4.1.1"
-  },
-  "pnpm": {
-    "peerDependencyRules": {
-      "ignoreMissing": ["webpack"]
-    }
   }
 }

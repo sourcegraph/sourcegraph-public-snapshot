@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -31,6 +32,12 @@ type RecordedCommandsArgs struct {
 }
 
 func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *RecordedCommandsArgs) (graphqlutil.SliceConnectionResolver[RecordedCommandResolver], error) {
+	// 🚨 SECURITY: Only site admins are allowed to view recorded commands
+	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+
 	offset := int(args.Offset)
 	limit := int(args.Limit)
 	maxLimit := GetRecordedCommandMaxLimit()

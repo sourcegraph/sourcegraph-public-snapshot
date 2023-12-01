@@ -103,6 +103,8 @@ message Event {
   // 🚨 SECURITY: This metadata is NEVER exported from an instance, and is only
   // exported for events tracked in the public Sourcegraph.com instance.
   optional EventMarketingTracking marketing_tracking = 9;
+  // Optional metadata identifying the interaction that generated the event.
+  optional EventInteraction interaction = 10;
 }
 
 message EventSource {
@@ -128,9 +130,18 @@ message EventParameters {
   // event's metadata, beginning at 0. Useful for denoting if the shape of
   // metadata has changed in any way.
   int32 version = 1;
+
+  // Legacy metadata format that only accepted int64 - use the new metadata
+  // field instead, which accepts float values. Values sent through this proto
+  // field will be merged into the new metadata attributes.
+  //
+  // We don't use a [deprecated = true] tag because we use this field to handle
+  // accepting exporters sending metadata in this format.
+  map<string, int64> legacy_metadata = 2;
   // Strictly typed metadata, restricted to integer values to avoid accidentally
   // exporting sensitive or private data.
-  map<string, int64> metadata = 2;
+  map<string, double> metadata = 5;
+
   // Additional potentially sensitive metadata - i.e. not restricted to integer
   // values.
   //
@@ -197,4 +208,19 @@ message EventMarketingTracking {
   optional string session_referrer = 7;
   // First URL the user visited in their current session.
   optional string session_first_url = 8;
+}
+
+message EventInteraction {
+  // OpenTelemetry trace ID representing the interaction associated with the event.
+  optional string trace_id = 1;
+  // Custom interaction ID representing the interaction associated with the event.
+  optional string interaction_id = 2;
+
+  message Geolocation {
+    // Inferred ISO 3166-1 alpha-2 or alpha-3 country code
+    string country_code = 1;
+  }
+  // Geolocation associated with the interaction, typically inferred from the
+  // originating client's IP address (which we do not collect).
+  optional Geolocation geolocation = 3;
 }

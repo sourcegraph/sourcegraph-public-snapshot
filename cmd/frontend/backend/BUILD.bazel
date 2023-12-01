@@ -91,6 +91,7 @@ go_test(
         "//internal/api",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/basestore",
         "//internal/database/dbmocks",
         "//internal/database/dbtest",
         "//internal/encryption",

@@ -592,47 +592,49 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 	defer cancel1()
 	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
+
 	if !repoCloned(dir) && !s.skipCloneForTests {
 		_, err := s.CloneRepo(ctx, req.Repo, CloneOptions{Block: true})
 		if err != nil {
 			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 			resp.Error = err.Error()
 		}
+		return resp
+	}
+
+	var statusErr, updateErr error
+
+	if debounce(req.Repo, req.Since) {
+		updateErr = s.doRepoUpdate(ctx, req.Repo, "")
+	}
+
+	// attempts to acquire these values are not contingent on the success of
+	// the update.
+	lastFetched, err := repoLastFetched(dir)
+	if err != nil {
+		statusErr = err
 	} else {
-		var statusErr, updateErr error
-
-		if debounce(req.Repo, req.Since) {
-			updateErr = s.doRepoUpdate(ctx, req.Repo, "")
-		}
-
-		// attempts to acquire these values are not contingent on the success of
-		// the update.
-		lastFetched, err := repoLastFetched(dir)
-		if err != nil {
-			statusErr = err
-		} else {
-			resp.LastFetched = &lastFetched
-		}
-		lastChanged, err := repoLastChanged(dir)
-		if err != nil {
-			statusErr = err
-		} else {
-			resp.LastChanged = &lastChanged
-		}
-		if statusErr != nil {
-			logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
-			// report this error in-band, but still produce a valid response with the
-			// other information.
-			resp.Error = statusErr.Error()
-		}
-		// If an error occurred during update, report it but don't actually make
-		// it into an http error; we want the client to get the information cleanly.
-		// An update error "wins" over a status error.
-		if updateErr != nil {
-			resp.Error = updateErr.Error()
-		} else {
-			s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
-		}
+		resp.LastFetched = &lastFetched
+	}
+	lastChanged, err := repoLastChanged(dir)
+	if err != nil {
+		statusErr = err
+	} else {
+		resp.LastChanged = &lastChanged
+	}
+	if statusErr != nil {
+		logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
+		// report this error in-band, but still produce a valid response with the
+		// other information.
+		resp.Error = statusErr.Error()
+	}
+	// If an error occurred during update, report it but don't actually make
+	// it into an http error; we want the client to get the information cleanly.
+	// An update error "wins" over a status error.
+	if updateErr != nil {
+		resp.Error = updateErr.Error()
+	} else {
+		s.Perforce.EnqueueChangelistMappingJob(perforce.NewChangelistMappingJob(req.Repo, dir))
 	}
 
 	return resp
@@ -1454,68 +1456,66 @@ func (s *Server) doClone(
 	// We clone to a temporary location first to avoid having incomplete
 	// clones in the repo tree. This also avoids leaving behind corrupt clones
 	// if the clone is interrupted.
-	tmpPath, err := gitserverfs.TempDir(s.ReposDir, "clone-")
+	tmpDir, err := gitserverfs.TempDir(s.ReposDir, "clone-")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tmpPath)
-	tmpPath = filepath.Join(tmpPath, ".git")
-	tmp := common.GitDir(tmpPath)
+	defer os.RemoveAll(tmpDir)
+	tmpPath := filepath.Join(tmpDir, ".git")
 
 	// It may already be cloned
 	if !repoCloned(dir) {
 		if err := s.DB.GitserverRepos().SetCloneStatus(ctx, repo, types.CloneStatusCloning, s.Hostname); err != nil {
-			s.Logger.Warn("Setting clone status in DB", log.Error(err))
+			s.Logger.Error("Setting clone status in DB", log.Error(err))
 		}
 	}
 	defer func() {
 		// Use a background context to ensure we still update the DB even if we time out
 		if err := s.DB.GitserverRepos().SetCloneStatus(context.Background(), repo, cloneStatus(repoCloned(dir), false), s.Hostname); err != nil {
-			s.Logger.Warn("Setting clone status in DB", log.Error(err))
+			s.Logger.Error("Setting clone status in DB", log.Error(err))
 		}
 	}()
 
-	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
-	if err != nil {
-		return errors.Wrap(err, "get clone command")
+	logger.Info("cloning repo", log.String("tmp", tmpDir), log.String("dst", dstPath))
+
+	progressReader, progressWriter := io.Pipe()
+	// We also capture the entire output in memory for the call to SetLastOutput
+	// further down.
+	// TODO: This might require a lot of memory depending on the amount of logs
+	// produced, the ideal solution would be that readCloneProgress stores it in
+	// chunks.
+	output := &linebasedBufferedWriter{}
+	eg := readCloneProgress(s.DB, logger, lock, io.TeeReader(progressReader, output), repo)
+
+	cloneErr := syncer.Clone(ctx, repo, remoteURL, dir, tmpPath, progressWriter)
+	progressWriter.Close()
+
+	if err := eg.Wait(); err != nil {
+		s.Logger.Error("reading clone progress", log.Error(err))
 	}
-	if cmd.Env == nil {
-		cmd.Env = os.Environ()
-	}
 
-	// see issue #7322: skip LFS content in repositories with Git LFS configured
-	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
-	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
-
-	pr, pw := io.Pipe()
-	defer pw.Close()
-
-	redactor := urlredactor.New(remoteURL)
-
-	go readCloneProgress(s.DB, logger, redactor, lock, pr, repo)
-
-	output, err := executil.RunRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd).WithRedactorFunc(redactor.Redact), true, pw)
-	redactedOutput := redactor.Redact(string(output))
 	// best-effort update the output of the clone
-	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
-		s.Logger.Warn("Setting last output in DB", log.Error(err))
+	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, output.String()); err != nil {
+		s.Logger.Error("Setting last output in DB", log.Error(err))
 	}
 
-	if err != nil {
-		return errors.Wrapf(err, "clone failed. Output: %s", redactedOutput)
+	if cloneErr != nil {
+		// TODO: Should we really return the entire output here in an error?
+		// It could be a super big error string.
+		return errors.Wrapf(cloneErr, "clone failed. Output: %s", output.String())
 	}
 
 	if testRepoCorrupter != nil {
-		testRepoCorrupter(ctx, tmp)
+		testRepoCorrupter(ctx, common.GitDir(tmpPath))
 	}
 
-	if err := postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, s.ReposDir, repo, tmp, remoteURL, syncer); err != nil {
+	if err := postRepoFetchActions(ctx, logger, s.DB, s.Hostname, s.RecordingCommandFactory, s.ReposDir, repo, common.GitDir(tmpPath), remoteURL, syncer); err != nil {
 		return err
 	}
 
 	if opts.Overwrite {
-		// remove the current repo by putting it into our temporary directory
-		err := fileutil.RenameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
+		// remove the current repo by putting it into our temporary directory, outside of the git repo.
+		err := fileutil.RenameAndSync(dstPath, filepath.Join(tmpDir, "old"))
 		if err != nil && !os.IsNotExist(err) {
 			return errors.Wrapf(err, "failed to remove old clone")
 		}
@@ -1536,6 +1536,65 @@ func (s *Server) doClone(
 	return nil
 }
 
+// linebasedBufferedWriter is an io.Writer that writes to a buffer.
+// '\r' resets the write offset to the index after last '\n' in the buffer,
+// or the beginning of the buffer if a '\n' has not been written yet.
+//
+// This exists to remove intermediate progress reports from "git clone
+// --progress".
+type linebasedBufferedWriter struct {
+	// writeOffset is the offset in buf where the next write should begin.
+	writeOffset int
+
+	// afterLastNewline is the index after the last '\n' in buf
+	// or 0 if there is no '\n' in buf.
+	afterLastNewline int
+
+	buf []byte
+}
+
+func (w *linebasedBufferedWriter) Write(p []byte) (n int, err error) {
+	l := len(p)
+	for {
+		if len(p) == 0 {
+			// If p ends in a '\r' we still want to include that in the buffer until it is overwritten.
+			break
+		}
+		idx := bytes.IndexAny(p, "\r\n")
+		if idx == -1 {
+			w.buf = append(w.buf[:w.writeOffset], p...)
+			w.writeOffset = len(w.buf)
+			break
+		}
+		w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
+		switch p[idx] {
+		case '\n':
+			w.writeOffset = len(w.buf)
+			w.afterLastNewline = len(w.buf)
+			p = p[idx+1:]
+		case '\r':
+			// Record that our next write should overwrite the data after the most recent newline.
+			// Don't slice it off immediately here, because we want to be able to return that output
+			// until it is overwritten.
+			w.writeOffset = w.afterLastNewline
+			p = p[idx+1:]
+		default:
+			panic(fmt.Sprintf("unexpected char %q", p[idx]))
+		}
+	}
+	return l, nil
+}
+
+// String returns the contents of the buffer as a string.
+func (w *linebasedBufferedWriter) String() string {
+	return string(w.buf)
+}
+
+// Bytes returns the contents of the buffer.
+func (w *linebasedBufferedWriter) Bytes() []byte {
+	return w.buf
+}
+
 func postRepoFetchActions(
 	ctx context.Context,
 	logger log.Logger,
@@ -1547,58 +1606,66 @@ func postRepoFetchActions(
 	dir common.GitDir,
 	remoteURL *vcs.URL,
 	syncer vcssyncer.VCSSyncer,
-) error {
-	if err := git.RemoveBadRefs(ctx, dir); err != nil {
-		logger.Warn("failed to remove bad refs", log.String("repo", string(repo)), log.Error(err))
+) (errs error) {
+	// Note: We use a multi error in this function to try to make as many of the
+	// post repo fetch actions succeed.
+
+	// We run setHEAD first, because other commands further down can fail when no
+	// head exists.
+	if err := setHEAD(ctx, logger, rcf, repo, dir, syncer, remoteURL); err != nil {
+		errs = errors.Append(errs, errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo))
 	}
 
-	if err := setHEAD(ctx, logger, rcf, repo, dir, syncer, remoteURL); err != nil {
-		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
+	if err := git.RemoveBadRefs(ctx, dir); err != nil {
+		errs = errors.Append(errs, errors.Wrapf(err, "failed to remove bad refs for repo %q", repo))
 	}
 
 	if err := git.SetRepositoryType(rcf, reposDir, dir, syncer.Type()); err != nil {
-		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
+		errs = errors.Append(errs, errors.Wrapf(err, "failed to set repository type for repo %q", repo))
 	}
 
 	if err := git.SetGitAttributes(dir); err != nil {
-		return errors.Wrap(err, "setting git attributes")
+		errs = errors.Append(errs, errors.Wrap(err, "setting git attributes"))
 	}
 
 	if err := gitSetAutoGC(rcf, reposDir, dir); err != nil {
-		return errors.Wrap(err, "setting git gc mode")
+		errs = errors.Append(errs, errors.Wrap(err, "setting git gc mode"))
 	}
 
 	// Update the last-changed stamp on disk.
 	if err := setLastChanged(logger, dir); err != nil {
-		return errors.Wrap(err, "failed to update last changed time")
+		errs = errors.Append(errs, errors.Wrap(err, "failed to update last changed time"))
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
 	// disk state.
 	if err := setLastFetched(ctx, db, shardID, dir, repo); err != nil {
-		logger.Warn("failed setting last fetch in DB", log.Error(err))
+		errs = errors.Append(errs, errors.Wrap(err, "failed setting last fetch in DB"))
 	}
 
 	// Successfully updated, best-effort calculation of the repo size.
 	repoSizeBytes := gitserverfs.DirSize(dir.Path("."))
 	if err := db.GitserverRepos().SetRepoSize(ctx, repo, repoSizeBytes, shardID); err != nil {
-		logger.Warn("failed to set repo size", log.Error(err))
+		errs = errors.Append(errs, errors.Wrap(err, "failed to set repo size"))
 	}
 
-	return nil
+	return errs
 }
 
 // readCloneProgress scans the reader and saves the most recent line of output
-// as the lock status.
-func readCloneProgress(db database.DB, logger log.Logger, redactor *urlredactor.URLRedactor, lock RepositoryLock, pr io.Reader, repo api.RepoName) {
+// as the lock status, writes to a log file if siteConfig.cloneProgressLog is
+// enabled, and optionally to the database when the feature flag `clone-progress-logging`
+// is enabled.
+func readCloneProgress(db database.DB, logger log.Logger, lock RepositoryLock, pr io.Reader, repo api.RepoName) *errgroup.Group {
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
+	enableExperimentalDBCloneProgress := featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false)
 
 	var logFile *os.File
-	var err error
 
 	if conf.Get().CloneProgressLog {
+		var err error
 		logFile, err = os.CreateTemp("", "")
 		if err != nil {
 			logger.Warn("failed to create temporary clone log file", log.Error(err), log.String("repo", string(repo)))
@@ -1612,38 +1679,37 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlredactor.
 	scan := bufio.NewScanner(pr)
 	scan.Split(scanCRLF)
 	store := db.GitserverRepos()
-	for scan.Scan() {
-		progress := scan.Text()
-		// 🚨 SECURITY: The output could include the clone url with may contain a sensitive token.
-		// Redact the full url and any found HTTP credentials to be safe.
-		//
-		// e.g.
-		// $ git clone http://token@github.com/foo/bar
-		// Cloning into 'nick'...
-		// fatal: repository 'http://token@github.com/foo/bar/' not found
-		redactedProgress := redactor.Redact(progress)
 
-		lock.SetStatus(redactedProgress)
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		for scan.Scan() {
+			progress := scan.Text()
+			lock.SetStatus(progress)
 
-		if logFile != nil {
-			// Failing to write here is non-fatal and we don't want to spam our logs if there
-			// are issues
-			_, _ = fmt.Fprintln(logFile, progress)
-		}
-		// Only write to the database persisted status if line indicates progress
-		// which is recognized by presence of a '%'. We filter these writes not to waste
-		// rate-limit tokens on log lines that would not be relevant to the user.
-		if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) &&
-			strings.Contains(redactedProgress, "%") &&
-			dbWritesLimiter.Allow() {
-			if err := store.SetCloningProgress(ctx, repo, redactedProgress); err != nil {
-				logger.Error("error updating cloning progress in the db", log.Error(err))
+			if logFile != nil {
+				// Failing to write here is non-fatal and we don't want to spam our logs if there
+				// are issues
+				_, _ = fmt.Fprintln(logFile, progress)
+			}
+			// Only write to the database persisted status if line indicates progress
+			// which is recognized by presence of a '%'. We filter these writes not to waste
+			// rate-limit tokens on log lines that would not be relevant to the user.
+			if enableExperimentalDBCloneProgress {
+				if strings.Contains(progress, "%") && dbWritesLimiter.Allow() {
+					if err := store.SetCloningProgress(ctx, repo, progress); err != nil {
+						logger.Error("error updating cloning progress in the db", log.Error(err))
+					}
+				}
 			}
 		}
-	}
-	if err := scan.Err(); err != nil {
-		logger.Error("error reporting progress", log.Error(err))
-	}
+		if err := scan.Err(); err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return eg
 }
 
 // scanCRLF is similar to bufio.ScanLines except it splits on both '\r' and '\n'
@@ -1822,9 +1888,12 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// return until this fetch has completed or definitely-failed,
 	// either way they can't still be in use. we don't care exactly
 	// when the cleanup happens, just that it does.
+	// TODO: Should be done in janitor.
 	defer git.CleanTmpPackFiles(s.Logger, dir)
 
 	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
+	// TODO: Move the redaction also into the VCSSyncer layer here, to be in line
+	// with what clone does.
 	redactedOutput := urlredactor.New(remoteURL).Redact(string(output))
 	// best-effort update the output of the fetch
 	if err := s.DB.GitserverRepos().SetLastOutput(context.Background(), repo, redactedOutput); err != nil {
@@ -1861,7 +1930,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rcf *wrexec.RecordingComman
 	}
 	dir.Set(cmd)
 	r := urlredactor.New(remoteURL)
-	output, err := executil.RunRemoteGitCommand(ctx, rcf.WrapWithRepoName(ctx, logger, repoName, cmd).WithRedactorFunc(r.Redact), true, nil)
+	output, err := executil.RunRemoteGitCommand(ctx, rcf.WrapWithRepoName(ctx, logger, repoName, cmd).WithRedactorFunc(r.Redact), true)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")
@@ -1957,36 +2026,6 @@ func setLastChanged(logger log.Logger, dir common.GitDir) error {
 	}
 
 	return nil
-}
-
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir common.GitDir) (didUpdate bool) {
-	if rev == "" || rev == "HEAD" {
-		return false
-	}
-	if conf.Get().DisableAutoGitUpdates {
-		// ensureRevision may kick off a git fetch operation which we don't want if we've
-		// configured DisableAutoGitUpdates.
-		return false
-	}
-
-	// rev-parse on an OID does not check if the commit actually exists, so it always
-	// works. So we append ^0 to force the check
-	if gitdomain.IsAbsoluteRevision(rev) {
-		rev = rev + "^0"
-	}
-	cmd := exec.Command("git", "rev-parse", rev, "--")
-	repoDir.Set(cmd)
-	// TODO: Check here that it's actually been a rev-parse error, and not something else.
-	if err := cmd.Run(); err == nil {
-		return false
-	}
-	// Revision not found, update before returning.
-	err := s.doRepoUpdate(ctx, repo, rev)
-	if err != nil {
-		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
-		// TODO: Shouldn't we return false here?
-	}
-	return true
 }
 
 // errorString returns the error string. If err is nil it returns the empty

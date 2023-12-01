@@ -1,4 +1,4 @@
-import { describe, expect, test } from '@jest/globals'
+import { describe, expect, test } from 'vitest'
 
 import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 

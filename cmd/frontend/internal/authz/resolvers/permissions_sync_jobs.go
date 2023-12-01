@@ -85,7 +85,7 @@ func (s *permissionsSyncJobConnectionStore) resolveSubject(ctx context.Context, 
 		if err != nil {
 			return nil, err
 		}
-		repoResolver = graphqlbackend.NewRepositoryResolver(s.db, gitserver.NewClient(), repo)
+		repoResolver = graphqlbackend.NewRepositoryResolver(s.db, gitserver.NewClient("graphql.authz.syncjobs"), repo)
 	}
 
 	return &subject{

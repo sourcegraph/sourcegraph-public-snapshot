@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/executil"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -82,24 +83,30 @@ func (s *vcsPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vc
 	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
 }
 
-func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
-	err := os.MkdirAll(bareGitDirectory, 0o755)
-	if err != nil {
-		return nil, err
+// Clone writes a package and all requested versions of it into a synthetic git
+// repo at tmpPath by creating one head per version.
+// It reports redacted progress logs via the progressWriter.
+func (s *vcsPackagesSyncer) Clone(ctx context.Context, repo api.RepoName, remoteURL *vcs.URL, targetDir common.GitDir, tmpPath string, progressWriter io.Writer) (err error) {
+	// First, make sure the tmpPath exists.
+	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "clone failed to create tmp dir")
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, s.placeholder); err != nil {
-		return nil, err
+	// Next, initialize a bare repo in that tmp path.
+	tryWrite(s.logger, progressWriter, "Creating bare repo\n")
+	if err := git.MakeBareRepo(ctx, tmpPath); err != nil {
+		return &common.GitCommandError{Err: err}
 	}
+	tryWrite(s.logger, progressWriter, "Created bare repo at %s\n", tmpPath)
 
 	// The Fetch method is responsible for cleaning up temporary directories.
-	if _, err := s.Fetch(ctx, remoteURL, "", common.GitDir(bareGitDirectory), ""); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch repo for %s", remoteURL)
+	// TODO: We should have more fine-grained progress reporting here.
+	tryWrite(s.logger, progressWriter, "Fetching package revisions\n")
+	if _, err := s.Fetch(ctx, remoteURL, "", common.GitDir(tmpPath), ""); err != nil {
+		return errors.Wrapf(err, "failed to fetch repo for %s", repo)
 	}
 
-	// no-op command to satisfy VCSSyncer interface, see docstring for more details.
-	return exec.CommandContext(ctx, "git", "--version"), nil
+	return nil
 }
 
 func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ api.RepoName, dir common.GitDir, revspec string) ([]byte, error) {

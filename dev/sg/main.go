@@ -82,9 +82,6 @@ var (
 const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/new?template=sg_bug.md"
 
 // sg is the main sg CLI application.
-//
-// To generate the reference.md (previously done with go generate) do:
-// bazel run //doc/dev/background-information/sg:write_cli_reference_doc
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
@@ -151,11 +148,6 @@ var sg = &cli.App{
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
-		// Add feedback flag to all commands and subcommands - we add this here, before
-		// we exit in bashCompletionsMode, so that '--feedback' is available via
-		// autocompletions.
-		addFeedbackFlags(cmd.App.Commands)
-
 		// All other setup pertains to running commands - to keep completions fast,
 		// we skip all other setup when in bashCompletions mode.
 		if bashCompletionsMode {
@@ -211,9 +203,6 @@ var sg = &cli.App{
 		}
 		liblog := log.Init(log.Resource{Name: "sg", Version: BuildCommit})
 		interrupt.Register(liblog.Sync)
-
-		// Add autosuggestion hooks to commands with subcommands but no action
-		addSuggestionHooks(cmd.App.Commands)
 
 		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
 		if configFile == "" {
@@ -305,7 +294,6 @@ var sg = &cli.App{
 
 		// Util
 		helpCommand,
-		feedbackCommand,
 		versionCommand,
 		updateCommand,
 		installCommand,
@@ -337,7 +325,7 @@ var sg = &cli.App{
 		os.Exit(1)
 	},
 
-	CommandNotFound: suggestCommands,
+	Suggest: true,
 
 	EnableBashCompletion:   true,
 	UseShortOptionHandling: true,

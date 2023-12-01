@@ -194,5 +194,5 @@ new schemas to the bucket to ensure that the next release from `main`, i.e 5.3.X
 
 > How do I see which schemas where used to build the _migrator_ container.
 
-`tar tf $(bazel cquery //cmd/migrator:tar_schema_descriptions --output=files)` will show the content the container layer used
+`bazel build //cmd/migrator:tar_schema_descriptions && tar tf $(bazel cquery //cmd/migrator:tar_schema_descriptions --output=files)` will show the content the container layer used
 to inject the schemas in the final _migrator_ container image.

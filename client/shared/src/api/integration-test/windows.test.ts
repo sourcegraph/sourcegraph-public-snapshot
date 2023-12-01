@@ -1,8 +1,8 @@
-import { describe, expect, test } from '@jest/globals'
 import { pick } from 'lodash'
 import { from, of } from 'rxjs'
 import { switchMap, take, toArray } from 'rxjs/operators'
 import type { ViewComponent, Window } from 'sourcegraph'
+import { describe, expect, test } from 'vitest'
 
 import { assertToJSON, integrationTestContext } from '../../testing/testHelpers'
 import type { TextDocumentData } from '../viewerTypes'

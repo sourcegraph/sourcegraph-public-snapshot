@@ -1,6 +1,12 @@
 package spec
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import (
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/imageupdater"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
+)
 
 type EnvironmentSpec struct {
 	// ID is an all-lowercase alphanumeric identifier for the deployment
@@ -10,25 +16,37 @@ type EnvironmentSpec struct {
 	// Category is either "test", "internal", or "external".
 	Category *EnvironmentCategory `json:"category,omitempty"`
 
-	Deploy    EnvironmentDeploySpec    `json:"deploy"`
-	Domain    EnvironmentDomainSpec    `json:"domain"`
+	// Deploy specifies how to deploy revisions.
+	Deploy EnvironmentDeploySpec `json:"deploy"`
+
+	// EnvironmentServiceSpec carries service-specific configuration.
+	*EnvironmentServiceSpec `json:",inline"`
+	// EnvironmentJobSpec carries job-specific configuration.
+	*EnvironmentJobSpec `json:",inline"`
+
+	// Instances describes how machines running the service are deployed.
 	Instances EnvironmentInstancesSpec `json:"instances"`
 
-	Resources *EnvironmentResourcesSpec `json:"resources,omitempty"`
+	// Env are key-value pairs of environment variables to set on the service.
+	//
+	// Values can be subsituted with supported runtime values with gotemplate, e.g., "{{ .ProjectID }}"
+	// 	- ProjectID: The project ID of the service.
+	//	- ServiceDnsName: The DNS name of the service.
+	Env map[string]string `json:"env,omitempty"`
 
-	// StatupProbe is provisioned by default. It can be disabled with the
-	// 'disabled' field.
-	StatupProbe *EnvironmentStartupProbeSpec `json:"startupProbe,omitempty"`
-	// LivenessProbe is only provisioned if this field is set.
-	LivenessProbe *EnvironmentLivenessProbeSpec `json:"livenessProbe,omitempty"`
-
-	Env       map[string]string `json:"env,omitempty"`
+	// SecretEnv are key-value pairs of environment variables sourced from
+	// secrets set on the service, where the value is the name of the secret
+	// to populate in the environment.
 	SecretEnv map[string]string `json:"secretEnv,omitempty"`
+
+	// Resources configures additional resources that a service may depend on.
+	Resources *EnvironmentResourcesSpec `json:"resources,omitempty"`
 }
 
 func (s EnvironmentSpec) Validate() []error {
 	var errs []error
-	// TODO: Add validation
+	errs = append(errs, s.Deploy.Validate()...)
+	errs = append(errs, s.Resources.Validate()...)
 	return errs
 }
 
@@ -45,40 +63,100 @@ const (
 )
 
 type EnvironmentDeploySpec struct {
-	Type   EnvironmentDeployType        `json:"type"`
-	Manual *EnvironmentDeployManualSpec `json:"manual,omitempty"`
+	Type         EnvironmentDeployType                  `json:"type"`
+	Manual       *EnvironmentDeployManualSpec           `json:"manual,omitempty"`
+	Subscription *EnvironmentDeployTypeSubscriptionSpec `json:"subscription,omitempty"`
+}
+
+func (s EnvironmentDeploySpec) Validate() []error {
+	var errs []error
+	if s.Type == EnvironmentDeployTypeSubscription {
+		if s.Subscription == nil {
+			errs = append(errs, errors.New("no subscription specified when deploy type is subscription"))
+		}
+		if s.Subscription.Tag == "" {
+			errs = append(errs, errors.New("no tag in image subscription specified"))
+		}
+	}
+	return errs
 }
 
 type EnvironmentDeployType string
 
 const (
-	EnvironmentDeployTypeManual = "manual"
+	EnvironmentDeployTypeManual       = "manual"
+	EnvironmentDeployTypeSubscription = "subscription"
 )
 
 // ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
 //
 // TODO: Implement ability to resolve latest concrete tag from a source
-func (d EnvironmentDeploySpec) ResolveTag() (string, error) {
+func (d EnvironmentDeploySpec) ResolveTag(repo string) (string, error) {
 	switch d.Type {
 	case EnvironmentDeployTypeManual:
 		if d.Manual == nil {
 			return "insiders", nil
 		}
 		return d.Manual.Tag, nil
-
+	case EnvironmentDeployTypeSubscription:
+		// we already validated in Validate(), hence it's fine to assume this won't panic
+		updater, err := imageupdater.New()
+		if err != nil {
+			return "", errors.Wrapf(err, "create image updater")
+		}
+		tagAndDigest, err := updater.ResolveTagAndDigest(repo, d.Subscription.Tag)
+		if err != nil {
+			return "", errors.Wrapf(err, "resolve digest for tag %q", "insiders")
+		}
+		return tagAndDigest, nil
 	default:
 		return "", errors.New("unable to resolve tag")
 	}
 }
 
 type EnvironmentDeployManualSpec struct {
+	// Tag is the tag to deploy. If empty, defaults to "insiders".
 	Tag string `json:"tag,omitempty"`
 }
 
-type EnvironmentDomainSpec struct {
+type EnvironmentDeployTypeSubscriptionSpec struct {
+	// Tag is the tag to subscribe to.
+	Tag string `json:"tag,omitempty"`
+	// TODO: In the future, we may support subscribing by semver constraints.
+}
+
+type EnvironmentServiceSpec struct {
+	// Domain configures where the resource is externally accessible.
+	//
+	// Only supported for services of 'kind: service'.
+	Domain *EnvironmentServiceDomainSpec `json:"domain,omitempty"`
+	// StatupProbe is provisioned by default. It can be disabled with the
+	// 'disabled' field.
+	//
+	// Only supported for services of 'kind: service'.
+	StatupProbe *EnvironmentServiceStartupProbeSpec `json:"startupProbe,omitempty"`
+	// LivenessProbe is only provisioned if this field is set.
+	//
+	// Only supported for services of 'kind: service'.
+	LivenessProbe *EnvironmentServiceLivenessProbeSpec `json:"livenessProbe,omitempty"`
+}
+
+type EnvironmentServiceDomainSpec struct {
 	// Type is one of 'none' or 'cloudflare'. If empty, defaults to 'none'.
 	Type       EnvironmentDomainType            `json:"type"`
 	Cloudflare *EnvironmentDomainCloudflareSpec `json:"cloudflare,omitempty"`
+}
+
+// GetDNSName generates the DNS name for the environment. If nil or not configured,
+// am empty string is returned.
+func (s *EnvironmentServiceDomainSpec) GetDNSName() string {
+	if s == nil {
+		return ""
+	}
+	if s.Cloudflare != nil {
+		return fmt.Sprintf("%s.%s", s.Cloudflare.Subdomain, s.Cloudflare.Zone)
+	}
+	return ""
 }
 
 type EnvironmentDomainType string
@@ -103,7 +181,10 @@ type EnvironmentDomainCloudflareSpec struct {
 
 type EnvironmentInstancesSpec struct {
 	Resources EnvironmentInstancesResourcesSpec `json:"resources"`
-	Scaling   EnvironmentInstancesScalingSpec   `json:"scaling"`
+	// Scaling specifies the scaling behavior of the service.
+	//
+	// Currently only used for services of 'kind: service'.
+	Scaling *EnvironmentInstancesScalingSpec `json:"scaling,omitempty"`
 }
 
 type EnvironmentInstancesResourcesSpec struct {
@@ -128,7 +209,7 @@ type EnvironmentInstancesScalingSpec struct {
 	MaxCount *int `json:"maxCount,omitempty"`
 }
 
-type EnvironmentLivenessProbeSpec struct {
+type EnvironmentServiceLivenessProbeSpec struct {
 	// Timeout configures the period of time after which the probe times out,
 	// in seconds.
 	//
@@ -141,7 +222,7 @@ type EnvironmentLivenessProbeSpec struct {
 	Interval *int `json:"interval,omitempty"`
 }
 
-type EnvironmentStartupProbeSpec struct {
+type EnvironmentServiceStartupProbeSpec struct {
 	// Disabled configures whether the startup probe should be disabled.
 	// We recommend disabling it when creating a service, and re-enabling it
 	// once the service is healthy.
@@ -162,15 +243,36 @@ type EnvironmentStartupProbeSpec struct {
 	Interval *int `json:"interval,omitempty"`
 }
 
+type EnvironmentJobSpec struct {
+	// Schedule configures a cron schedule for the service.
+	//
+	// Only supported for services of 'kind: job'.
+	Schedule *EnvironmentJobScheduleSpec `json:"schedule,omitempty"`
+}
+
+type EnvironmentJobScheduleSpec struct {
+	// Cron is a cron schedule in the form of "* * * * *".
+	Cron string `json:"cron"`
+	// Deadline of each attempt, in seconds.
+	Deadline *int `json:"deadline,omitempty"`
+}
+
 type EnvironmentResourcesSpec struct {
-	// Redis, if provided, provisions a Redis instance. Details for using this
-	// Redis instance is automatically provided in environment variables:
+	// Redis, if provided, provisions a Redis instance backed by Cloud Memorystore.
+	// Details for using this Redis instance is automatically provided in
+	// environment variables:
 	//
 	//  - REDIS_ENDPOINT
 	//
 	// Sourcegraph Redis libraries (i.e. internal/redispool) will automatically
 	// use the given configuration.
 	Redis *EnvironmentResourceRedisSpec `json:"redis,omitempty"`
+	// PostgreSQL, if provided, provisions a PostgreSQL database instance backed
+	// by Cloud SQL.
+	//
+	// To connect to the database, use
+	// (lib/managedservicesplatform/service.Contract).GetPostgreSQLDB().
+	PostgreSQL *EnvironmentResourcePostgreSQLSpec `json:"postgreSQL,omitempty"`
 	// BigQueryTable, if provided, provisions a table for the service to write
 	// to. Details for writing to the table are automatically provided in
 	// environment variables:
@@ -187,16 +289,13 @@ type EnvironmentResourcesSpec struct {
 	BigQueryTable *EnvironmentResourceBigQueryTableSpec `json:"bigQueryTable,omitempty"`
 }
 
-// NeedsCloudRunConnector indicates if there are any resources that require a
-// connector network for Cloud Run to talk to provisioned resources.
-func (s *EnvironmentResourcesSpec) NeedsCloudRunConnector() bool {
+func (s *EnvironmentResourcesSpec) Validate() []error {
 	if s == nil {
-		return false
+		return nil
 	}
-	if s.Redis != nil {
-		return true
-	}
-	return false
+	var errs []error
+	errs = append(errs, s.PostgreSQL.Validate()...)
+	return errs
 }
 
 type EnvironmentResourceRedisSpec struct {
@@ -204,6 +303,47 @@ type EnvironmentResourceRedisSpec struct {
 	Tier *string `json:"tier,omitempty"`
 	// Defaults to 1.
 	MemoryGB *int `json:"memoryGB,omitempty"`
+}
+
+type EnvironmentResourcePostgreSQLSpec struct {
+	// Databases to provision - required.
+	Databases []string `json:"databases"`
+	// Defaults to 1. Must be 1, or an even number between 2 and 96.
+	CPU *int `json:"cpu,omitempty"`
+	// Defaults to 4 (to meet CloudSQL minimum). You must request 0.9 to 6.5 GB
+	// per vCPU.
+	MemoryGB *int `json:"memoryGB,omitempty"`
+}
+
+func (s *EnvironmentResourcePostgreSQLSpec) Validate() []error {
+	if s == nil {
+		return nil
+	}
+	var errs []error
+	if s.CPU != nil {
+		if *s.CPU < 1 {
+			errs = append(errs, errors.New("postgreSQL.cpu must be >= 1"))
+		}
+		if *s.CPU > 1 && *s.CPU%2 != 0 {
+			errs = append(errs, errors.New("postgreSQL.cpu must be 1 or a multiple of 2"))
+		}
+		if *s.CPU > 96 {
+			errs = append(errs, errors.New("postgreSQL.cpu must be <= 96"))
+		}
+	}
+	if s.MemoryGB != nil {
+		cpu := pointers.Deref(s.CPU, 1)
+		if *s.MemoryGB < 4 {
+			errs = append(errs, errors.New("postgreSQL.memoryGB must be >= 4"))
+		}
+		if *s.MemoryGB < cpu {
+			errs = append(errs, errors.New("postgreSQL.memoryGB must be >= postgreSQL.cpu"))
+		}
+		if *s.MemoryGB > 6*cpu {
+			errs = append(errs, errors.New("postgreSQL.memoryGB must be <= 6*postgreSQL.cpu"))
+		}
+	}
+	return errs
 }
 
 type EnvironmentResourceBigQueryTableSpec struct {

@@ -1,5 +1,4 @@
 use anyhow::Result;
-use bitvec::prelude::*;
 use protobuf::Enum;
 use scip::types::{symbol_information, Descriptor, Document, Occurrence, SymbolInformation};
 use scip_treesitter::types::PackedRange;
@@ -349,7 +348,7 @@ mod test {
 
     #[test]
     fn generates_some_go_symbols() -> Result<()> {
-        let config = crate::languages::get_tag_configuration(&BundledParser::Go).unwrap();
+        let config = crate::languages::get_tag_configuration(BundledParser::Go).unwrap();
         let source_code = include_str!("../testdata/symbols.go");
         let document = parse_file_for_lang(config, source_code)?;
         let dumped = dump_document(&document, source_code)?;

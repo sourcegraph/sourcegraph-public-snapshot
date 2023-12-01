@@ -173,55 +173,6 @@ func Prometheus() *monitoring.Dashboard {
 					},
 				},
 			},
-			{
-				// Google Managed Prometheus must be in the name here - Cloud attaches
-				// additional rows here for Centralized Observability:
-				//
-				// https://handbook.sourcegraph.com/departments/cloud/technical-docs/observability/
-				Title:  "Google Managed Prometheus (only available for `sourcegraph/prometheus-gcp`)",
-				Hidden: true,
-				Rows: []monitoring.Row{
-					{
-						{
-							Name:          "samples_exported",
-							Description:   "samples exported to GMP every 5m",
-							Query:         `rate(gcm_export_samples_sent_total[5m])`,
-							Panel:         monitoring.Panel().LegendFormat("samples"),
-							MultiInstance: true,
-							NoAlert:       true,
-							Owner:         monitoring.ObservableOwnerCloud,
-							Interpretation: `
-								A high value indicates that large numbers of samples are being exported, potentially impacting costs.
-								In [Sourcegraph Cloud centralized observability](https://handbook.sourcegraph.com/departments/cloud/technical-docs/observability/), high values can be investigated by:
-
-								- going to per-instance self-hosted dashboards for Prometheus in (Internals -> Metrics cardinality).
-								- querying for 'monitoring_googleapis_com:billing_samples_ingested', for example:
-
-								'''
-								topk(10, sum by(metric_type, project_id) (rate(monitoring_googleapis_com:billing_samples_ingested[1h])))
-								'''
-
-								This is required because GMP does not allow queries aggregating on '__name__'
-
-								See [Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about 'gcm_export_samples_sent_total'.
-							`,
-						},
-						{
-							Name:        "pending_exports",
-							Description: "samples pending export to GMP per minute",
-							Query:       `sum_over_time(gcm_export_pending_requests[1m])`,
-							Panel:       monitoring.Panel().LegendFormat("pending exports"),
-							NoAlert:     true,
-							Owner:       monitoring.ObservableOwnerCloud,
-							Interpretation: `
-								A high value indicates exports are taking a long time.
-
-								See ['gmc_*' Anthos metrics](https://cloud.google.com/monitoring/api/metrics_anthos) for more details about 'gcm_export_pending_requests'.
-							`,
-						},
-					},
-				},
-			},
 
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),

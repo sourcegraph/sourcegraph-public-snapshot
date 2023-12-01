@@ -161,6 +161,8 @@ func Worker() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
 			shared.CodeIntelligence.NewDependencyReposStoreGroup(containerName),
 
+			shared.GitServer.NewClientGroup(containerName),
+
 			shared.Batches.NewDBStoreGroup(containerName),
 			shared.Batches.NewServiceGroup(containerName),
 			shared.Batches.NewBatchSpecResolutionDBWorkerStoreGroup(containerName),
@@ -252,7 +254,7 @@ func Worker() *monitoring.Dashboard {
 
 			// Resource monitoring
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
+			shared.NewDatabaseConnectionsMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps),
 			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),

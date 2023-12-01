@@ -129,13 +129,6 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 	return symbolOrErrors, nil
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func (p *parser) handleParseRequest(
 	ctx context.Context,
 	symbolOrErrors chan<- SymbolOrError,

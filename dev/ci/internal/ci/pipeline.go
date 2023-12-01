@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// If you want to build these images use CandidateNoTest / CandidatesNoTest
 var legacyDockerImages = []string{
 	"dind",
 	"executor-vm",
@@ -87,6 +89,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		Env:     env,
 	}
 
+	// We generate the pipeline slightly differently when running as part of the Aspect Workflows pipeline.
+	// Primarily, we don't run any `bazel test` since Aspect has got that covered
+	isAspectWorkflowBuild := os.Getenv("ASPECT_WORKFLOWS_BUILD") == "1"
+
 	// Test upgrades from mininum upgradeable Sourcegraph version - updated by release tool
 	const minimumUpgradeableVersion = "5.2.0"
 
@@ -136,11 +142,14 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CreateBundleSizeDiff:      true,
+			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 
-		securityOps := operations.NewNamedSet("Security Scanning")
-		securityOps.Append(sonarcloudScan())
-		ops.Merge(securityOps)
+		if !isAspectWorkflowBuild {
+			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(sonarcloudScan())
+			ops.Merge(securityOps)
+		}
 
 		// Wolfi package and base images
 		packageOps, baseImageOps := addWolfiOps(c)
@@ -153,7 +162,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		if c.Diff.Has(changed.ClientBrowserExtensions) {
 			ops.Merge(operations.NewNamedSet("Browser Extensions",
-				addBrowserExtensionUnitTests,
 				addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
 			))
 		}
@@ -164,35 +172,26 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
 		// builds.
-		ops = operations.NewSet(
-			addBrowserExtensionUnitTests,
+		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch:    buildOptions.Branch == "main",
+				AspectWorkflows: isAspectWorkflowBuild,
+			},
 			addBrowserExtensionIntegrationTests(0), // we pass 0 here as we don't have other pipeline steps to contribute to the resulting Percy build
-			frontendTests,
 			wait,
 			addBrowserExtensionReleaseSteps)
 
-	case runtype.VsceReleaseBranch:
-		// If this is a vs code extension release branch, run the vscode-extension tests and release
-		ops = operations.NewSet(
-			addVsceTests,
-			wait,
-			addVsceReleaseSteps)
-
-	case runtype.BextNightly:
+	case runtype.BextNightly, runtype.BextManualNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
 		// e2e tests.
-		ops = operations.NewSet(
-			addBrowserExtensionUnitTests,
+		ops = BazelOpsSet(buildOptions,
+			CoreTestOperationsOptions{
+				IsMainBranch:    buildOptions.Branch == "main",
+				AspectWorkflows: isAspectWorkflowBuild,
+			},
 			recordBrowserExtensionIntegrationTests,
-			frontendTests,
 			wait,
 			addBrowserExtensionE2ESteps)
-
-	case runtype.VsceNightly:
-		// If this is a VS Code extension nightly build, run the vsce-extension integration tests
-		ops = operations.NewSet(
-			addVsceTests,
-		)
 
 	case runtype.WolfiBaseRebuild:
 		// If this is a Wolfi base image rebuild, rebuild all Wolfi base images
@@ -203,9 +202,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ops.Merge(wolfiGenerateBaseImagePR())
 		}
 
+	// Use CandidateNoTest if you want to build legacy Docker Images
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		imageBuildOps.Append(legacyBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 		ops.Merge(imageBuildOps)
 
 		ops.Append(wait)
@@ -226,16 +226,18 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if err != nil {
 			panic(fmt.Sprintf("ExtractBranchArgument: %s", err))
 		}
-		if !contains(images.SourcegraphDockerImages, patchImage) {
+		if !slices.Contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
 
+		// TODO(burmudar): This should use the bazel target
 		ops = operations.NewSet(
-			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
+			legacyBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
 		// Test images
 		ops.Merge(CoreTestOperations(buildOptions, changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
+			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 		// Publish images after everything is done
 		ops.Append(
@@ -248,17 +250,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		if err != nil {
 			panic(fmt.Sprintf("ExtractBranchArgument: %s", err))
 		}
-		if !contains(images.SourcegraphDockerImages, patchImage) {
+		if !slices.Contains(images.SourcegraphDockerImages, patchImage) {
 			panic(fmt.Sprintf("no image %q found", patchImage))
 		}
+		// TODO(burmudar): This should use the bazel target
 		ops = operations.NewSet(
-			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
+			legacyBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
 			wait,
 			publishFinalDockerImage(c, patchImage))
 	case runtype.ExecutorPatchNoTest:
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
-			bazelBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
+			// TODO(burmudar): This should use the bazel target
+			legacyBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
 			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
@@ -275,7 +279,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		skipHashCompare := c.MessageFlags.SkipHashCompare || c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorVMImage)
 		// Slow image builds
 		imageBuildOps := operations.NewNamedSet("Image builds")
-		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 
 		if c.RunType.Is(runtype.MainDryRun, runtype.MainBranch, runtype.ReleaseBranch, runtype.TaggedRelease) {
 			imageBuildOps.Append(buildExecutorVM(c, skipHashCompare))
@@ -293,16 +296,19 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
 			IsMainBranch:              true,
+			AspectWorkflows:           isAspectWorkflowBuild,
 		}))
 
 		// Security scanning - sonarcloud
-		securityOps := operations.NewNamedSet("Security Scanning")
-		securityOps.Append(sonarcloudScan())
-		ops.Merge(securityOps)
+		if isAspectWorkflowBuild {
+			securityOps := operations.NewNamedSet("Security Scanning")
+			securityOps.Append(sonarcloudScan())
+			ops.Merge(securityOps)
+		}
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
-		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
+		publishOpsDev.Append(bazelPushImagesCandidates(c.Version, isAspectWorkflowBuild))
 		ops.Merge(publishOpsDev)
 
 		// End-to-end tests
@@ -325,10 +331,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
-		// Add final artifacts
-		for _, dockerImage := range legacyDockerImages {
-			publishOps.Append(publishFinalDockerImage(c, dockerImage))
-		}
 		// Executor VM image
 		if c.RunType.Is(runtype.MainBranch, runtype.TaggedRelease) {
 			publishOps.Append(publishExecutorVM(c, skipHashCompare))
@@ -338,7 +340,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		}
 		// Final Bazel images
-		publishOps.Append(bazelPushImagesFinal(c.Version))
+		publishOps.Append(bazelPushImagesFinal(c.Version, isAspectWorkflowBuild))
 		ops.Merge(publishOps)
 	}
 
@@ -418,4 +420,12 @@ func withAgentLostRetries(s *bk.Step) {
 		Limit:      1,
 		ExitStatus: -1,
 	})
+}
+
+func BazelOpsSet(buildOptions bk.BuildOptions, opts CoreTestOperationsOptions, extra ...operations.Operation) *operations.Set {
+	ops := operations.NewSet(
+		BazelOperations(buildOptions, opts)...,
+	)
+	ops.Append(extra...)
+	return ops
 }

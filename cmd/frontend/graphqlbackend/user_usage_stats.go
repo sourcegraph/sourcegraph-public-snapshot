@@ -165,7 +165,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 
 			ide := getIdeFromEvent(&args)
 
-			if ide == "vscode" {
+			if strings.ToLower(ide) == "vscode" {
 				if ffs := featureflag.FromContext(ctx); ffs != nil {
 					emailsEnabled = ffs.GetBoolOr("vscodeCodyEmailsEnabled", false)
 				}
@@ -175,10 +175,14 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 				DatabaseID: userID,
 			})
 
-			hubspotutil.SyncUserWithEventParams(userPrimaryEmail, hubspotutil.NewCodyClientInstalledEventID, &hubspot.ContactProperties{
-				DatabaseID:                   userID,
-				VSCodyInstalledEmailsEnabled: emailsEnabled,
-			}, map[string]string{"ide": ide, "emailsEnabled": strconv.FormatBool(emailsEnabled)})
+			hubspotutil.SyncUserWithV3Event(userPrimaryEmail, hubspotutil.CodyClientInstalledV3EventID,
+				&hubspot.ContactProperties{
+					DatabaseID: userID,
+				},
+				&hubspot.CodyInstallV3EventProperties{
+					Ide:           ide,
+					EmailsEnabled: strconv.FormatBool(emailsEnabled),
+				})
 		}
 
 		// On Sourcegraph.com only, log a HubSpot event indicating when the user clicks button to downloads Cody App.

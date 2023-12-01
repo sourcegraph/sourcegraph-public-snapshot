@@ -83,6 +83,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.delete_user_repo_permissions_on_user_soft_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    IF NEW.deleted_at IS NOT NULL AND OLD.deleted_at IS NULL THEN\n    \tDELETE FROM user_repo_permissions WHERE user_id = OLD.id;\n    END IF;\n    RETURN NULL;\n  END\n$function$\n"
     },
     {
+      "Name": "extract_topics_from_metadata",
+      "Definition": "CREATE OR REPLACE FUNCTION public.extract_topics_from_metadata(external_service_type text, metadata jsonb)\n RETURNS text[]\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\nBEGIN\n    RETURN CASE external_service_type\n    WHEN 'github' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(jsonb_path_query_array(metadata, '$.RepositoryTopics.Nodes[*].Topic.Name')))\n    WHEN 'gitlab' THEN\n        ARRAY(SELECT * FROM jsonb_array_elements_text(metadata-\u003e'topics'))\n    ELSE\n        '{}'::text[]\n    END;\nEXCEPTION WHEN others THEN\n    -- Catch exceptions in the case that metadata is not shaped like we expect\n    RETURN '{}'::text[];\nEND;\n$function$\n"
+    },
+    {
       "Name": "func_configuration_policies_delete",
       "Definition": "CREATE OR REPLACE FUNCTION public.func_configuration_policies_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE configuration_policies_audit_logs\n        SET record_deleted_at = NOW()\n        WHERE policy_id IN (\n            SELECT id FROM OLD\n        );\n\n        RETURN NULL;\n    END;\n$function$\n"
     },
@@ -144,15 +148,15 @@
     },
     {
       "Name": "recalc_gitserver_repos_statistics_on_delete",
-      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      UPDATE gitserver_repos_statistics grs\n      SET\n        total        = grs.total      - (SELECT COUNT(*)                                           FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        not_cloned   = grs.not_cloned - (SELECT COUNT(*) FILTER(WHERE clone_status = 'not_cloned') FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        cloning      = grs.cloning    - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloning')    FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        cloned       = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE clone_status = 'cloned')     FROM oldtab WHERE oldtab.shard_id = grs.shard_id),\n        failed_fetch = grs.cloned     - (SELECT COUNT(*) FILTER(WHERE last_error IS NOT NULL)      FROM oldtab WHERE oldtab.shard_id = grs.shard_id)\n      ;\n\n      RETURN NULL;\n  END\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_delete()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT\n        oldtab.shard_id,\n        (-COUNT(*)),\n        (-COUNT(*) FILTER(WHERE clone_status = 'not_cloned')),\n        (-COUNT(*) FILTER(WHERE clone_status = 'cloning')),\n        (-COUNT(*) FILTER(WHERE clone_status = 'cloned')),\n        (-COUNT(*) FILTER(WHERE last_error IS NOT NULL)),\n        (-COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL))\n      FROM oldtab\n      GROUP BY oldtab.shard_id;\n\n      RETURN NULL;\n  END\n$function$\n"
     },
     {
       "Name": "recalc_gitserver_repos_statistics_on_insert",
-      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch)\n      SELECT\n        shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch\n      FROM\n        newtab\n      GROUP BY shard_id\n      ON CONFLICT(shard_id)\n      DO UPDATE\n      SET\n        total        = grs.total        + excluded.total,\n        not_cloned   = grs.not_cloned   + excluded.not_cloned,\n        cloning      = grs.cloning      + excluded.cloning,\n        cloned       = grs.cloned       + excluded.cloned,\n        failed_fetch = grs.failed_fetch + excluded.failed_fetch\n      ;\n\n      RETURN NULL;\n  END\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_insert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      -------------------------------------------------\n      -- THIS IS CHANGED TO APPEND\n      -------------------------------------------------\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT\n        shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,\n        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted\n      FROM\n        newtab\n      GROUP BY shard_id\n      ;\n\n      RETURN NULL;\n  END\n$function$\n"
     },
     {
       "Name": "recalc_gitserver_repos_statistics_on_update",
-      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT\n        newtab.shard_id AS shard_id,\n        COUNT(*) AS total,\n        COUNT(*) FILTER(WHERE clone_status = 'not_cloned')  AS not_cloned,\n        COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,\n        COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,\n        COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,\n        COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted\n      FROM\n        newtab\n      GROUP BY newtab.shard_id\n      ON CONFLICT(shard_id) DO\n      UPDATE\n      SET\n        total        = grs.total        + (excluded.total        - (SELECT COUNT(*)                                              FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        not_cloned   = grs.not_cloned   + (excluded.not_cloned   - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'not_cloned') FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        cloning      = grs.cloning      + (excluded.cloning      - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloning')    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        cloned       = grs.cloned       + (excluded.cloned       - (SELECT COUNT(*) FILTER(WHERE ot.clone_status = 'cloned')     FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        failed_fetch = grs.failed_fetch + (excluded.failed_fetch - (SELECT COUNT(*) FILTER(WHERE ot.last_error IS NOT NULL)      FROM oldtab ot WHERE ot.shard_id = excluded.shard_id)),\n        corrupted    = grs.corrupted    + (excluded.corrupted    - (SELECT COUNT(*) FILTER(WHERE ot.corrupted_at IS NOT NULL)    FROM oldtab ot WHERE ot.shard_id = excluded.shard_id))\n      ;\n\n      -------------------------------------------------\n      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`\n      -------------------------------------------------\n      WITH moved AS (\n        SELECT\n          oldtab.shard_id AS shard_id,\n          COUNT(*) AS total,\n          COUNT(*) FILTER(WHERE oldtab.clone_status = 'not_cloned')  AS not_cloned,\n          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloning') AS cloning,\n          COUNT(*) FILTER(WHERE oldtab.clone_status = 'cloned') AS cloned,\n          COUNT(*) FILTER(WHERE oldtab.last_error IS NOT NULL) AS failed_fetch,\n          COUNT(*) FILTER(WHERE oldtab.corrupted_at IS NOT NULL) AS corrupted\n        FROM\n          oldtab\n        JOIN newtab ON newtab.repo_id = oldtab.repo_id\n        WHERE\n          oldtab.shard_id != newtab.shard_id\n        GROUP BY oldtab.shard_id\n      )\n      UPDATE gitserver_repos_statistics grs\n      SET\n        total        = grs.total        - moved.total,\n        not_cloned   = grs.not_cloned   - moved.not_cloned,\n        cloning      = grs.cloning      - moved.cloning,\n        cloned       = grs.cloned       - moved.cloned,\n        failed_fetch = grs.failed_fetch - moved.failed_fetch,\n        corrupted    = grs.corrupted    - moved.corrupted\n      FROM moved\n      WHERE moved.shard_id = grs.shard_id;\n\n      -------------------------------------------------\n      -- IMPORTANT: THIS IS CHANGED TO INCLUDE `corrupted`\n      -------------------------------------------------\n      WITH diff(not_cloned, cloning, cloned, failed_fetch, corrupted) AS (\n        VALUES (\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.corrupted_at IS NOT NULL)\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.corrupted_at IS NOT NULL)\n          )\n\n        )\n      )\n      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT not_cloned, cloning, cloned, failed_fetch, corrupted\n      FROM diff\n      WHERE\n           not_cloned != 0\n        OR cloning != 0\n        OR cloned != 0\n        OR failed_fetch != 0\n        OR corrupted != 0\n      ;\n\n      RETURN NULL;\n  END\n$function$\n"
+      "Definition": "CREATE OR REPLACE FUNCTION public.recalc_gitserver_repos_statistics_on_update()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n\n      -------------------------------------------------\n      -- THIS IS CHANGED TO APPEND\n      -------------------------------------------------\n      WITH diff(shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted) AS (\n        SELECT\n            COALESCE(newtab.shard_id, oldtab.shard_id) AS shard_id,\n            COUNT(newtab.repo_id) - COUNT(oldtab.repo_id) AS total,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.clone_status = 'not_cloned') - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.clone_status = 'not_cloned') AS not_cloned,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.clone_status = 'cloning')    - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.clone_status = 'cloning') AS cloning,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.clone_status = 'cloned')     - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.clone_status = 'cloned') AS cloned,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.last_error IS NOT NULL)      - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.last_error IS NOT NULL) AS failed_fetch,\n            COUNT(newtab.repo_id) FILTER (WHERE newtab.corrupted_at IS NOT NULL)    - COUNT(oldtab.repo_id) FILTER (WHERE oldtab.corrupted_at IS NOT NULL) AS corrupted\n        FROM\n            newtab\n        FULL OUTER JOIN\n            oldtab ON newtab.repo_id = oldtab.repo_id AND newtab.shard_id = oldtab.shard_id\n        GROUP BY\n            COALESCE(newtab.shard_id, oldtab.shard_id)\n      )\n      INSERT INTO gitserver_repos_statistics AS grs (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted\n      FROM diff\n      WHERE\n            total != 0\n        OR not_cloned != 0\n        OR cloning != 0\n        OR cloned != 0\n        OR failed_fetch != 0\n        OR corrupted != 0\n      ;\n\n      -------------------------------------------------\n      -- UNCHANGED\n      -------------------------------------------------\n      WITH diff(not_cloned, cloning, cloned, failed_fetch, corrupted) AS (\n        VALUES (\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'not_cloned')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'not_cloned')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloning')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloning')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.clone_status = 'cloned')\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.clone_status = 'cloned')\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.last_error IS NOT NULL)\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.last_error IS NOT NULL)\n          ),\n          (\n            (SELECT COUNT(*) FROM newtab JOIN repo r ON newtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND newtab.corrupted_at IS NOT NULL)\n            -\n            (SELECT COUNT(*) FROM oldtab JOIN repo r ON oldtab.repo_id = r.id WHERE r.deleted_at is NULL AND r.blocked IS NULL AND oldtab.corrupted_at IS NOT NULL)\n          )\n\n        )\n      )\n      INSERT INTO repo_statistics (not_cloned, cloning, cloned, failed_fetch, corrupted)\n      SELECT not_cloned, cloning, cloned, failed_fetch, corrupted\n      FROM diff\n      WHERE\n           not_cloned != 0\n        OR cloning != 0\n        OR cloned != 0\n        OR failed_fetch != 0\n        OR corrupted != 0\n      ;\n\n      RETURN NULL;\n  END\n$function$\n"
     },
     {
       "Name": "recalc_repo_statistics_on_repo_delete",
@@ -13386,6 +13390,20 @@
           "ConstraintDefinition": "FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED"
         },
         {
+          "Name": "external_services_creator_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
+        },
+        {
+          "Name": "external_services_last_updater_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (last_updater_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE"
+        },
+        {
           "Name": "external_services_max_1_namespace",
           "ConstraintType": "c",
           "RefTableName": "",
@@ -14731,7 +14749,7 @@
           "Name": "shard_id",
           "Index": 1,
           "TypeName": "text",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -14756,14 +14774,14 @@
       ],
       "Indexes": [
         {
-          "Name": "gitserver_repos_statistics_pkey",
-          "IsPrimaryKey": true,
-          "IsUnique": true,
+          "Name": "gitserver_repos_statistics_shard_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX gitserver_repos_statistics_pkey ON gitserver_repos_statistics USING btree (shard_id)",
-          "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (shard_id)"
+          "IndexDefinition": "CREATE INDEX gitserver_repos_statistics_shard_id ON gitserver_repos_statistics USING btree (shard_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,
@@ -16936,6 +16954,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "lsif_indexes_repository_id_indexer",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_indexes_repository_id_indexer ON lsif_indexes USING btree (repository_id, indexer)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "lsif_indexes_state",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -18070,6 +18098,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX lsif_uploads_repository_id_commit ON lsif_uploads USING btree (repository_id, commit)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "lsif_uploads_repository_id_indexer",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX lsif_uploads_repository_id_indexer ON lsif_uploads USING btree (repository_id, indexer)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -23634,8 +23672,8 @@
           "Name": "fork",
           "Index": 4,
           "TypeName": "boolean",
-          "IsNullable": true,
-          "Default": "",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -23709,6 +23747,19 @@
           "Comment": ""
         },
         {
+          "Name": "topics",
+          "Index": 17,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "ALWAYS",
+          "GenerationExpression": "extract_topics_from_metadata(external_service_type, metadata)",
+          "Comment": ""
+        },
+        {
           "Name": "updated_at",
           "Index": 6,
           "TypeName": "timestamp with time zone",
@@ -23767,22 +23818,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "idx_repo_github_topics",
+          "Name": "idx_repo_topics",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX idx_repo_github_topics ON repo USING gin (((metadata -\u003e 'RepositoryTopics'::text) -\u003e 'Nodes'::text)) WHERE external_service_type = 'github'::text",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "idx_repo_gitlab_topics",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX idx_repo_gitlab_topics ON repo USING gin ((metadata -\u003e 'topics'::text)) WHERE external_service_type = 'gitlab'::text",
+          "IndexDefinition": "CREATE INDEX idx_repo_topics ON repo USING gin (topics)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -24527,6 +24568,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX repo_embedding_jobs_pkey ON repo_embedding_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "repo_embedding_jobs_repo",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX repo_embedding_jobs_repo ON repo_embedding_jobs USING btree (repo_id, revision)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,
@@ -28020,6 +28071,19 @@
           "Name": "code_completions_quota",
           "Index": 21,
           "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "cody_pro_enabled_at",
+          "Index": 23,
+          "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,

@@ -147,10 +147,9 @@ function findElementRegexpStrings(
 }
 
 function findElementMatchingRegexps(tag: string, regexps: string[]): HTMLElement | null {
-    // This method is invoked via puppeteer.Page.eval* and runs in the browser context.
-    // This method must not use anything outside its own scope such as variables or functions,
-    // including babel helpers from transpilation. Therefore this method must be written in
-    // legacy-compatible JavaScript.
+    // This method is invoked via puppeteer.Page.eval* and runs in the browser context. This method
+    // must not use anything outside its own scope such as variables or functions. Therefore this
+    // method must be written in legacy-compatible JavaScript.
     const elements = document.querySelectorAll<HTMLElement>(tag)
 
     // eslint-disable-next-line @typescript-eslint/prefer-for-of

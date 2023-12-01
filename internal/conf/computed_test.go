@@ -317,7 +317,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
-		ChatModel:                "anthropic/claude-2",
+		ChatModel:                "anthropic/claude-2.0",
 		ChatModelMaxTokens:       12000,
 		FastChatModel:            "anthropic/claude-instant-1",
 		FastChatModelMaxTokens:   9000,
@@ -406,7 +406,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "claude-2",
+				ChatModel:                "claude-2.0",
 				ChatModelMaxTokens:       12000,
 				FastChatModel:            "claude-instant-1",
 				FastChatModelMaxTokens:   9000,
@@ -468,11 +468,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 				ChatModelMaxTokens:       8000,
 				FastChatModel:            "gpt-3.5-turbo",
 				FastChatModelMaxTokens:   4000,
-				CompletionModel:          "gpt-3.5-turbo",
+				CompletionModel:          "gpt-3.5-turbo-instruct",
 				CompletionModelMaxTokens: 4000,
 				AccessToken:              "asdf",
 				Provider:                 "openai",
-				Endpoint:                 "https://api.openai.com/v1/chat/completions",
+				Endpoint:                 "https://api.openai.com",
 			},
 		},
 		{
@@ -616,7 +616,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				AccessToken:              "sgd_d796dd3efc6c5257694b80cba0537131457b1742b42d081a27aeaef091107bc4",
-				ChatModel:                "anthropic/claude-2",
+				ChatModel:                "anthropic/claude-2.0",
 				ChatModelMaxTokens:       12000,
 				FastChatModel:            "anthropic/claude-instant-1",
 				FastChatModelMaxTokens:   9000,
@@ -827,6 +827,39 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes:         200,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: true,
+				Qdrant:              defaultQdrantConfig,
+			},
+		},
+		{
+			name: "File filters w/o MaxFileSizeBytes",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         embeddingsMaxFileSizeBytes,
 					IncludedFilePathPatterns: []string{"*.go"},
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},

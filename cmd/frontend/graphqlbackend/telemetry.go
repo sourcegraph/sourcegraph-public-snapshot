@@ -36,11 +36,12 @@ type TelemetryEventParametersInput struct {
 	Metadata        *[]TelemetryEventMetadataInput      `json:"metadata,omitempty"`
 	PrivateMetadata *JSONValue                          `json:"privateMetadata,omitempty"`
 	BillingMetadata *TelemetryEventBillingMetadataInput `json:"billingMetadata,omitempty"`
+	InteractionID   *string                             `json:"interactionID,omitempty"`
 }
 
 type TelemetryEventMetadataInput struct {
-	Key   string `json:"key"`
-	Value int32  `json:"value"`
+	Key   string    `json:"key"`
+	Value JSONValue `json:"value"`
 }
 
 type TelemetryEventBillingMetadataInput struct {

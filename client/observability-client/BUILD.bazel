@@ -1,6 +1,6 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
-load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:defs.bzl", "npm_package", "ts_project", "vitest_test")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
@@ -58,7 +58,9 @@ ts_project(
         ":node_modules/@sourcegraph/common",
         "//:node_modules/@opentelemetry/api",
         "//:node_modules/@opentelemetry/core",
+        "//:node_modules/@opentelemetry/exporter-trace-otlp-http",
         "//:node_modules/@opentelemetry/instrumentation",
+        "//:node_modules/@opentelemetry/resources",
         "//:node_modules/@opentelemetry/sdk-trace-base",
         "//:node_modules/@opentelemetry/sdk-trace-web",
         "//:node_modules/@opentelemetry/semantic-conventions",
@@ -85,11 +87,11 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":observability-client_lib",
-        "//:node_modules/@jest/globals",
+        "//:node_modules/vitest",
     ],
 )
 
-jest_test(
+vitest_test(
     name = "test",
     data = [
         ":observability-client_tests",

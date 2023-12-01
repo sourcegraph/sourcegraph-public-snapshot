@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -174,7 +174,7 @@ func RemoveBadRefs(ctx context.Context, dir common.GitDir) (errs error) {
 
 // older versions of git do not remove tags case insensitively, so we generate
 // every possible case of HEAD (2^4 = 16)
-var badRefs = syncx.OnceValue(func() []string {
+var badRefs = sync.OnceValue(func() []string {
 	refs := make([]string, 0, 1<<4)
 	for bits := uint8(0); bits < (1 << 4); bits++ {
 		s := []byte("HEAD")
@@ -264,6 +264,17 @@ func ComputeRefHash(dir common.GitDir) ([]byte, error) {
 func CheckSpecArgSafety(spec string) error {
 	if strings.HasPrefix(spec, "-") {
 		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
+	}
+	return nil
+}
+
+// MakeBareRepo initializes a new bare repo at the given dir.
+func MakeBareRepo(ctx context.Context, dir string) error {
+	cmd := exec.CommandContext(ctx, "git", "init", "--bare", ".")
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrapf(err, "failed to create bare repo: %s", string(out))
 	}
 	return nil
 }

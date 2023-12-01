@@ -14,28 +14,6 @@ import { registerComlinkTransferHandlers } from '../util'
 import type { ClientAPI } from './api/api'
 import { type ExposedToClient, initMainThreadAPI } from './mainthread-api'
 
-export interface ExtensionHostClientConnection {
-    /**
-     * Closes the connection to and terminates the extension host.
-     */
-    unsubscribe(): void
-}
-
-/**
- * An activated extension.
- */
-export interface ActivatedExtension {
-    /**
-     * The extension's extension ID (which uniquely identifies it among all activated extensions).
-     */
-    id: string
-
-    /**
-     * Deactivate the extension (by calling its "deactivate" function, if any).
-     */
-    deactivate(): void | Promise<void>
-}
-
 /**
  * @param endpoints The Worker object to communicate with
  */

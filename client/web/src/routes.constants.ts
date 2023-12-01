@@ -24,9 +24,6 @@ export enum PageRoutes {
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
     GetCody = '/get-cody',
-}
-
-export enum EnterprisePageRoutes {
     BatchChanges = '/batch-changes/*',
     CodeMonitoring = '/code-monitoring/*',
     Insights = '/insights/*',
@@ -40,7 +37,9 @@ export enum EnterprisePageRoutes {
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
     CodySearch = '/search/cody',
-    Cody = '/cody',
+    Cody = '/cody/chat',
+    CodyManagement = '/cody/manage',
+    CodySubscription = '/cody/subscription',
     Own = '/own',
     AppAuthCallback = '/app/auth/callback',
     AppSetup = '/app-setup',

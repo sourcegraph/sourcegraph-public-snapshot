@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { mdiMicrosoftVisualStudioCode, mdiChevronRight, mdiApple, mdiLinux, mdiMicrosoftWindows } from '@mdi/js'
 import classNames from 'classnames'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { Badge, H2, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
@@ -10,6 +11,7 @@ import { ExternalsAuth } from '../auth/components/ExternalsAuth'
 import { CodyLetsWorkIcon } from '../cody/chat/CodyPageIcon'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import type { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
@@ -42,10 +44,27 @@ const onClickCTAButton = (type: string): void =>
 const logEvent = (eventName: string, type?: string, source?: string): void =>
     eventLogger.log(eventName, { type, source })
 
+const logPageView = (pageTitle: string): void => eventLogger.logPageView(pageTitle)
+
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
+    const navigate = useNavigate()
+    const location = useLocation()
+    const [search] = useState(location.search)
+    const [isCodyProEnabled, ffStatus] = useFeatureFlag('cody-pro', false)
+
     useEffect(() => {
-        logEvent(EventName.VIEW_GET_CODY)
+        if (authenticatedUser && isCodyProEnabled) {
+            navigate(`/cody/manage${search || ''}`)
+        }
+    }, [authenticatedUser, navigate, search, isCodyProEnabled])
+
+    useEffect(() => {
+        logPageView(EventName.VIEW_GET_CODY)
     }, [])
+
+    if (authenticatedUser && (ffStatus !== 'loaded' || isCodyProEnabled)) {
+        return null
+    }
 
     return (
         <div className={styles.pageWrapper}>
@@ -65,7 +84,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                     <div>
                         <Text className={styles.getStartedWithCodyTitle}>Get started with Cody</Text>
                         <Text className={styles.getStartedWithCodyDescription}>
-                            Try Cody free on your local machine with the Cody app and IDE extensions.
+                            Try Cody free in your favorite IDE.
                         </Text>
                     </div>
                     <CodyLetsWorkIcon className={styles.codyLetsWorkImage} />
@@ -119,9 +138,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
 
                     {/* Install cody extension section */}
                     <div className={classNames(styles.card, 'get-cody-step')}>
-                        <H2 className={styles.cardTitle}>
-                            Install the Cody extension for your IDE(s) and start using Cody
-                        </H2>
+                        <H2 className={styles.cardTitle}>Install the Cody editor extension and start using Cody</H2>
                         <div className={classNames(styles.downloadBtnWrapper)}>
                             <div>
                                 <Link
@@ -194,8 +211,8 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             Optional: Install the Cody desktop app for higher quality responses
                         </H2>
                         <Text className={styles.cardDescription}>
-                            The Cody app, when combined with a Cody IDE extension, enables context fetching for all of
-                            your local repositories. Without the app, Cody only fetches context on the repository
+                            The Cody app can be used with the IDE extensions to enable context fetching for all of your
+                            local repositories. Without the app, the IDE extensions will fetch context on the repository
                             currently open in your IDE.
                         </Text>
                         <div className={styles.downloadButtonWrapper}>

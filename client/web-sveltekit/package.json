@@ -4,7 +4,6 @@
   "scripts": {
     "dev": "vite dev",
     "dev:dotcom": "vite dev --mode=dotcom",
-    "dev:oss": "vite dev --mode=oss",
     "build": "vite build",
     "preview": "vite preview",
     "test": "playwright test",

@@ -1,11 +1,11 @@
 import React from 'react'
 
-import { beforeEach, describe, expect, it, jest } from '@jest/globals'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { BrowserRouter } from 'react-router-dom'
 import { EMPTY, NEVER, of } from 'rxjs'
 import { spy, assert } from 'sinon'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { GitRefType, SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { SearchMode, SearchQueryStateStoreProvider } from '@sourcegraph/shared/src/search'
@@ -42,7 +42,11 @@ describe('StreamingSearchResults', () => {
             subjects: null,
             final: null,
         },
-        platformContext: { settings: NEVER, requestGraphQL: () => EMPTY, sourcegraphURL: 'https://sourcegraph.com' },
+        platformContext: {
+            settings: NEVER,
+            requestGraphQL: () => EMPTY,
+            sourcegraphURL: 'https://sourcegraph.com',
+        } as any,
 
         streamSearch: () => of(MULTIPLE_SEARCH_RESULT),
 
@@ -52,6 +56,7 @@ describe('StreamingSearchResults', () => {
         searchAggregationEnabled: false,
         codeMonitoringEnabled: true,
         ownEnabled: true,
+        extensionsController: {} as any,
     }
 
     const revisionsMockResponses = generateMockedResponses(GitRefType.GIT_BRANCH, 5, 'github.com/golang/oauth2')
@@ -104,6 +109,7 @@ describe('StreamingSearchResults', () => {
             trace: undefined,
             chunkMatches: true,
             featureOverrides: [],
+            zoektSearchOptions: '',
         })
     })
 
@@ -195,7 +201,6 @@ describe('StreamingSearchResults', () => {
         assert.calledWith(logSpy, 'search.ranking.result-clicked', {
             index: 0,
             type: 'fileMatch',
-            ranked: false,
             resultsLength: 3,
         })
 
@@ -204,7 +209,6 @@ describe('StreamingSearchResults', () => {
         assert.calledWith(logSpy, 'search.ranking.result-clicked', {
             index: 2,
             type: 'fileMatch',
-            ranked: false,
             resultsLength: 3,
         })
     })
@@ -230,7 +234,7 @@ describe('StreamingSearchResults', () => {
     })
 
     it('should start a new search with added params when onSearchAgain event is triggered', async () => {
-        const submitSearchMock = jest.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
+        const submitSearchMock = vi.spyOn(helpers, 'submitSearch').mockImplementation(() => {})
         const tests = [
             {
                 parsedSearchQuery: 'r:golang/oauth2 test f:travis',
