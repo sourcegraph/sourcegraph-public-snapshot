@@ -11,12 +11,11 @@ sh_binary(
         "install.sh",
         "//dev/tools:gcloud",
         "//dev/tools:packer",
-        "//dev/tools:src-cli",
     ],
-    # env = {
-    #     "IMAGE_FAMILY": "",
-    #     "EXECUTOR_IS_TAGGED_RELEASE": "false",
-    # },
+    env = {
+        "IMAGE_FAMILY": "testrfc795",
+        "EXECUTOR_IS_TAGGED_RELEASE": "false",
+    },
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
 

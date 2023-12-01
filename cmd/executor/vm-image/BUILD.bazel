@@ -24,7 +24,6 @@ sh_binary(
         "IMAGE_FAMILY": "testrfc795",
         "EXECUTOR_IS_TAGGED_RELEASE": "false",
         "SRC_CLI_VERSION": SRC_CLI_VERSION,
-        "VERSION": "0.0.0+dev",
     },
     deps = ["@bazel_tools//tools/bash/runfiles"],
 )
