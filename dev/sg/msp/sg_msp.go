@@ -18,11 +18,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/terraformcloud"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/dev/sg/msp/example"
 	msprepo "github.com/sourcegraph/sourcegraph/dev/sg/msp/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/msp/schema"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // This file is only built when '-tags=msp' is passed to go build while 'sg msp'
@@ -51,6 +51,9 @@ func init() {
 			Name:      "init",
 			ArgsUsage: "<service ID>",
 			Usage:     "Initialize a template Managed Services Platform service spec",
+			UsageText: `
+sg msp init -owner core-services -name "MSP Example Service" msp-example
+`,
 			Flags: []cli.Flag{
 				&cli.StringFlag{
 					Name:  "kind",
@@ -58,10 +61,17 @@ func init() {
 					Value: "service",
 				},
 				&cli.StringFlag{
-					Name:    "output",
-					Aliases: []string{"o"},
-					Usage:   "Output directory for generated spec file",
-					Value:   "services",
+					Name:     "owner",
+					Usage:    "Name of team owning this new service",
+					Required: true,
+				},
+				&cli.StringFlag{
+					Name:  "name",
+					Usage: "Specify a human-readable name for this service",
+				},
+				&cli.BoolFlag{
+					Name:  "dev",
+					Usage: "Generate a dev environment as the initial environment",
 				},
 			},
 			Before: msprepo.UseManagedServicesRepo,
@@ -70,110 +80,32 @@ func init() {
 					return errors.New("exactly 1 argument required: service ID")
 				}
 
-				var svc spec.Spec
+				template := example.Template{
+					ID:    c.Args().First(),
+					Name:  c.String("name"),
+					Owner: c.String("owner"),
+					Dev:   c.Bool("dev"),
+				}
+
+				var exampleSpec []byte
 				switch c.String("kind") {
 				case "service":
-					svc = spec.Spec{
-						Service: spec.ServiceSpec{
-							ID: c.Args().First(),
-						},
-						Build: spec.BuildSpec{
-							Image: "index.docker.io/sourcegraph/" + c.Args().First(),
-						},
-						Environments: []spec.EnvironmentSpec{
-							{
-								ID: "dev",
-								// For dev deployment, specify category 'test'.
-								Category: pointers.Ptr(spec.EnvironmentCategoryTest),
-
-								Deploy: spec.EnvironmentDeploySpec{
-									Type: "manual",
-									Manual: &spec.EnvironmentDeployManualSpec{
-										Tag: "insiders",
-									},
-								},
-								EnvironmentServiceSpec: &spec.EnvironmentServiceSpec{
-									Domain: &spec.EnvironmentServiceDomainSpec{
-										Type: "cloudflare",
-										Cloudflare: &spec.EnvironmentDomainCloudflareSpec{
-											Subdomain: c.Args().First(),
-											Zone:      "sgdev.org",
-											Required:  false,
-										},
-									},
-									StatupProbe: &spec.EnvironmentServiceStartupProbeSpec{
-										// Disable startup probes by default, as it is
-										// prone to causing the entire initial Terraform
-										// apply to fail.
-										Disabled: pointers.Ptr(true),
-									},
-								},
-								Instances: spec.EnvironmentInstancesSpec{
-									Resources: spec.EnvironmentInstancesResourcesSpec{
-										CPU:    1,
-										Memory: "512Mi",
-									},
-									Scaling: &spec.EnvironmentInstancesScalingSpec{
-										MaxCount: pointers.Ptr(1),
-									},
-								},
-								Env: map[string]string{
-									"SRC_LOG_LEVEL":  "info",
-									"SRC_LOG_FORMAT": "json_gcp",
-								},
-							},
-						},
+					var err error
+					exampleSpec, err = example.NewService(template)
+					if err != nil {
+						return errors.Wrap(err, "example.NewService")
 					}
 				case "job":
-					svc = spec.Spec{
-						Service: spec.ServiceSpec{
-							ID:   c.Args().First(),
-							Kind: pointers.Ptr(spec.ServiceKindJob),
-						},
-						Build: spec.BuildSpec{
-							Image: "index.docker.io/sourcegraph/" + c.Args().First(),
-						},
-						Environments: []spec.EnvironmentSpec{
-							{
-								ID: "dev",
-								// For dev deployment, specify category 'test'.
-								Category: pointers.Ptr(spec.EnvironmentCategoryTest),
-
-								Deploy: spec.EnvironmentDeploySpec{
-									Type: "manual",
-									Manual: &spec.EnvironmentDeployManualSpec{
-										Tag: "insiders",
-									},
-								},
-								EnvironmentJobSpec: &spec.EnvironmentJobSpec{
-									Schedule: &spec.EnvironmentJobScheduleSpec{
-										Cron: "0 * * * *",
-									},
-								},
-								Instances: spec.EnvironmentInstancesSpec{
-									Resources: spec.EnvironmentInstancesResourcesSpec{
-										CPU:    1,
-										Memory: "512Mi",
-									},
-								},
-								Env: map[string]string{
-									"SRC_LOG_LEVEL":  "info",
-									"SRC_LOG_FORMAT": "json_gcp",
-								},
-							},
-						},
+					var err error
+					exampleSpec, err = example.NewJob(template)
+					if err != nil {
+						return errors.Wrap(err, "example.NewJob")
 					}
 				default:
 					return errors.Newf("unsupported service kind: %q", c.String("kind"))
 				}
 
-				exampleSpec, err := svc.MarshalYAML()
-				if err != nil {
-					return err
-				}
-
-				outputPath := filepath.Join(
-					c.String("output"), c.Args().First(), "service.yaml")
+				outputPath := msprepo.ServiceYAMLPath(c.Args().First())
 
 				_ = os.MkdirAll(filepath.Dir(outputPath), 0755)
 				if err := os.WriteFile(outputPath, exampleSpec, 0644); err != nil {
