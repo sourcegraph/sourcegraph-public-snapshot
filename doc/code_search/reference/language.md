@@ -159,7 +159,7 @@ A pattern to search. By default, the pattern is searched literally. The kind of 
 
 **Example:** [`foo.*bar.*baz` ↗](https://sourcegraph.com/search?q=foo.*bar.*baz&patternType=regexp) [`"foo bar"` ↗](https://sourcegraph.com/search?q=%22foo+bar%22&patternType=regexp)
 
-<span class="toggle-container"><img class="toggle" src="../img/brackets.png"></span> Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural search. 
+<span class="toggle-container"><img class="toggle" src="../img/brackets.png"></span> Perform a structural search. See our [dedicated documentation](queries.md#structural-search) to learn more about structural search.
 
 **Example:** [`fmt.Sprintf(":[format]", :[args])` ↗](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+fmt.Sprintf%28%22:%5Bformat%5D%22%2C+:%5Bargs%5D%29&patternType=structural)
 
@@ -545,8 +545,7 @@ Set whether the pattern should run a literal search, regular expression search, 
 <script>
 ComplexDiagram(
     Choice(0,
-        Terminal("has(...)", {href: "#repo-has"}),
-        Terminal("has.key(...)", {href: "#repo-has-key"}),
+        Terminal("has.meta(...)", {href: "#repo-has-meta"}),
         Terminal("has.file(...)", {href: "#repo-has-file-and-content"}),
         Terminal("has.content(...)", {href: "#repo-has-content"}),
         Terminal("has.path(...)", {href: "#repo-has-path"}),
@@ -555,7 +554,7 @@ ComplexDiagram(
         Terminal("has.description(...)", {href: "#repo-has-description"}))).addTo();
 </script>
 
-### Repo has
+### Repo has meta
 
 <aside class="experimental">
 <span class="badge badge-experimental">Experimental</span> Tagging repositories with key-value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. To enable this feature, enable the `repository-metadata` feature flag for your org. If you have any feedback, please let us know!
@@ -563,36 +562,18 @@ ComplexDiagram(
 
 <script>
 ComplexDiagram(
-    Terminal("has"),
+    Terminal("has.meta"),
     Terminal("("),
-    Sequence(
-      Terminal("string", {href: "#string"}),
-      Terminal(":"),
-      Terminal("string", {href: "#string"})),
+    Choice(0,
+      Sequence(Terminal("string", {href: "#string"}), Terminal(":"), Terminal("string", {href: "#string"})),
+      Sequence(Terminal("string", {href: "#string"})),
+    ),
     Terminal(")")).addTo();
 </script>
 
-Search only inside repositories that are associated with the provided key-value pair.
+Search only inside repositories that are associated with the provided key-value pair, key, or tag.
 
-**Example:** `repo:has(owning-team:security)`
-
-### Repo has key
-
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> Tagging repositories with key-value pairs is an experimental feature in Sourcegraph 4.0. It's a <b>preview</b> of functionality we're currently exploring to make searching large numbers of repositories easier. To enable this feature, enable the `repository-metadata` feature flag for your org. If you have any feedback, please let us know!
-</aside>
-
-<script>
-ComplexDiagram(
-    Terminal("has.key"),
-    Terminal("("),
-    Terminal("string", {href: "#string"}),
-    Terminal(")")).addTo();
-</script>
-
-Search only inside repositories that are associated with at least one key-value with the provided key.
-
-**Example:** `repo:has.key(owning-team)`
+**Example:** [`repo:has.meta(team:sourcegraph)` ↗](https://sourcegraph.com/search?q=context:global+repo:has.meta%28team:sourcegraph%29&patternType=regexp&sm=1&groupBy=repo) or [`repo:has.meta(language)` ↗](https://sourcegraph.com/search?q=context%3Aglobal+repo%3Ahas.meta%28language%29&patternType=regexp&sm=1&groupBy=repo)
 
 ### Repo has file and content
 
@@ -732,8 +713,8 @@ ComplexDiagram(
 Search only inside files that have an owner associated matching given string.
 
 _Note:_ When no parameter is supplied, the predicate only includes files with _any_ owner assigned to them:
-*   `file:has.owner()` will include files with any owner assigned.  
-*   `-file:has.owner()` will only include files without an owner.  
+*   `file:has.owner()` will include files with any owner assigned.
+*   `-file:has.owner()` will only include files without an owner.
 
 ### File has contributor
 

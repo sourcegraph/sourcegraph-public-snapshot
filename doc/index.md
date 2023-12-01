@@ -32,8 +32,8 @@ Sourcegraph makes it easy to read, write, and fix code—even in big, complex co
 
 ## Community
 
-* [Blog](https://about.sourcegraph.com/blog/)
+* [Blog](https://sourcegraph.com/blog/)
 * [Discord](https://discord.gg/s2qDtYGnAE)
 * [Twitter](https://twitter.com/sourcegraph)
 * [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
-* [Contact us](https://about.sourcegraph.com/contact)
+* [Contact us](https://sourcegraph.com/contact)

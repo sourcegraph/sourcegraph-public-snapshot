@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { useApolloClient, gql as apolloGql } from '@apollo/client'
+import { useApolloClient, gql as apolloGql, ApolloError } from '@apollo/client'
 import {
     mdiFileDocumentOutline,
     mdiSourceRepository,
@@ -12,7 +12,7 @@ import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
 import { dirname } from '@sourcegraph/common'
-import { gql, useQuery } from '@sourcegraph/http-client'
+import { gql } from '@sourcegraph/http-client'
 import type { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Alert,
@@ -98,6 +98,8 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         props.initialFilePathIsDirectory ? props.initialFilePath : getParentPath(props.initialFilePath)
     )
     const [treeData, setTreeData] = useState<TreeData | null>(null)
+    const [loading, setLoading] = useState<boolean>(false)
+    const [error, setError] = useState<ApolloError | undefined>(undefined)
 
     // We need a mutable reference to the tree data since we don't want some
     // hooks to run when the tree data changes.
@@ -131,14 +133,6 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         first: MAX_TREE_ENTRIES,
     })
 
-    const { data, error, loading } = useQuery<FileTreeEntriesResult, FileTreeEntriesVariables>(QUERY, {
-        variables: {
-            ...defaultVariables,
-            filePath: initialFilePath,
-            ancestors: false,
-        },
-    })
-
     const updateTreeData = useCallback((currentTreeData: TreeData, data: FileTreeEntriesResult) => {
         const rootTreeUrl = data?.repository?.commit?.tree?.url
         const entries = data?.repository?.commit?.tree?.entries
@@ -156,15 +150,27 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
     }, [])
 
     // Initialize the treeData from the initial query
-    useEffect(() => {
-        if (data === undefined || treeData !== null) {
-            return
-        }
-
-        updateTreeData(createTreeData(initialFilePath), data)
-    }, [data, initialFilePath, treeData, updateTreeData])
-
     const client = useApolloClient()
+    const [initialVariables] = useState({
+        filePath: props.filePathIsDirectory ? props.filePath : getParentPath(props.filePath),
+        // Only fetch ancestors if the file tree is rooted higher than the target file.
+        ancestors: props.initialFilePath !== props.filePath,
+    })
+    useEffect(() => {
+        const result = client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
+            query: APOLLO_QUERY,
+            variables: { ...defaultVariables, ...initialVariables },
+        })
+
+        setLoading(true)
+
+        result.then(res => {
+            setLoading(res.loading)
+            setError(res.error)
+            updateTreeData(createTreeData(initialFilePath), res.data)
+        })
+    }, [initialFilePath, updateTreeData, client, defaultVariables, initialVariables])
+
     const fetchEntries = useCallback(
         async (variables: FileTreeEntriesVariables) => {
             const result = await client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
@@ -391,7 +397,7 @@ function renderNode({
     const { entry, error, dotdot, name } = element
     const submodule = entry?.submodule
     const url = entry?.url
-    const fileInfo = getFileInfo(name)
+    const fileInfo = getFileInfo(name, isBranch)
     const fileIcon = FILE_ICONS.get(fileInfo.extension)
 
     if (error) {
@@ -474,23 +480,29 @@ function renderNode({
                 }
             }}
         >
-            <div className={styles.iconContainer}>
-                {fileInfo.extension !== FileExtension.DEFAULT ? (
-                    <Icon
-                        as={fileIcon?.icon}
-                        className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
-                        aria-hidden={true}
-                    />
-                ) : (
-                    <Icon
-                        svgPath={
-                            isBranch ? (isExpanded ? mdiFolderOpenOutline : mdiFolderOutline) : mdiFileDocumentOutline
-                        }
-                        className={classNames('mr-1', styles.icon)}
-                        aria-hidden={true}
-                    />
-                )}
-                {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
+            <div className={styles.fileContainer}>
+                <div className={styles.iconContainer}>
+                    {fileInfo.extension !== FileExtension.DEFAULT ? (
+                        <Icon
+                            as={fileIcon?.icon}
+                            className={classNames('mr-1', styles.icon, fileIcon?.iconClass)}
+                            aria-hidden={true}
+                        />
+                    ) : (
+                        <Icon
+                            svgPath={
+                                isBranch
+                                    ? isExpanded
+                                        ? mdiFolderOpenOutline
+                                        : mdiFolderOutline
+                                    : mdiFileDocumentOutline
+                            }
+                            className={classNames('mr-1', styles.icon)}
+                            aria-hidden={true}
+                        />
+                    )}
+                    {fileInfo.isTest && <div className={classNames(styles.testIndicator)} />}
+                </div>
                 {name}
             </div>
         </Link>

@@ -15,7 +15,7 @@ import (
 // UseManagedServicesRepo is a cli.BeforeFunc that enforces that we are in the
 // sourcegraph/managed-services repository by setting the current working
 // directory.
-func UseManagedServicesRepo(c *cli.Context) error {
+func UseManagedServicesRepo(*cli.Context) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
