@@ -77,6 +77,7 @@ func LoadConfig(registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) 
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
 		"record-encrypter":                      encryption.NewRecordEncrypterJob(),
 		"repo-statistics-compactor":             repostatistics.NewCompactor(),
+		"repo-statistics-resetter":              repostatistics.NewResetter(),
 		"zoekt-repos-updater":                   zoektrepos.NewUpdater(),
 		"outbound-webhook-sender":               outboundwebhooks.NewSender(),
 		"license-check":                         licensecheck.NewJob(),
