@@ -6,7 +6,6 @@
 
 - [All Sourcegraph search documentation](../index.md)
   - [Sourcegraph query syntax](../reference/queries.md)
-- [Search product feature comparisons](https://sourcegraph.com/workflow)
 - [OpenGrok to Sourcegraph admin migration guide](../../../admin/migration/opengrok.md)
 
 ## Switching to Sourcegraph's query syntax
