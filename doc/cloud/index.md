@@ -122,6 +122,17 @@ Private code hosts refer to code hosts that are not publicly accessible, such as
 - Code hosts on Azure is not supported yet, please reach out to your account manager if you are interested in this feature.
 - Code hosts on custom data center is not supported yet, please reach out to your account manager if you are interested in this feature.
 
+### Private artifact registries support
+
+Cloud supports private artifact registries for [precise code navigation powered by auto-indexing](../code_navigation/explanations/auto_indexing.md) and [server-side Batch Changes](../batch_changes/explanations/server_side.md). Private registries are customer dependencies repositories like Nexus, NPM, Artifactory and many others that are not publicly accessible.
+
+Learn more about private artifact registries support below:
+- [Private artfact registry in AWS](./private_registry_connectivity_aws.md)
+- [Private artifact registry in GCP](./private_registry_connectivity_gcp.md)
+- [Private artifact registry exposed via public load balancer](./private_registry_connectivity_public_lb.md)
+- Private Artifact registry in Azure is not supported yet, please reach out to your account manager if you are interested in this feature.
+- Private Artifact registry on custom data center is not supported yet, please reach out to your account manager if you are interested in this feature.
+
 ### Health monitoring, support, and SLAs
 
 - Instance performance and health [monitored](../admin/observability/index.md) by our team's on-call engineers.
