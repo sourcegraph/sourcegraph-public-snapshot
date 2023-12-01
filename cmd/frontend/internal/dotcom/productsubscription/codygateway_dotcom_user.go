@@ -177,10 +177,9 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 		return nil, nil
 	}
 
-	rateLimit := licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002"},
-		Limit:           int64(20 * tokensPerDollar),
-		IntervalSeconds: math.MaxInt32,
+	rateLimit, err := getEmbeddingsRateLimit(ctx, r.db)
+	if err != nil {
+		return nil, err
 	}
 
 	return &codyGatewayRateLimitResolver{
@@ -188,6 +187,39 @@ func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) 
 		actorSource: codygateway.ActorSourceDotcomUser,
 		source:      graphqlbackend.CodyGatewayRateLimitSourcePlan,
 		v:           rateLimit,
+	}, nil
+}
+
+func getEmbeddingsRateLimit(ctx context.Context, db database.DB) (licensing.CodyGatewayRateLimit, error) {
+	// Hard-coded defaults: 200M tokens for life
+	limit := int64(20 * tokensPerDollar)
+	intervalSeconds := int32(math.MaxInt32)
+
+	// Apply self-serve limits if available
+	cfg := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
+	if cfg != nil && featureflag.FromContext(ctx).GetBoolOr("cody-pro", false) {
+		actor := sgactor.FromContext(ctx)
+		user, err := actor.User(ctx, db.Users())
+		if err != nil {
+			return licensing.CodyGatewayRateLimit{}, err
+		}
+		intervalSeconds = oneMonthInSeconds
+		isProUser := user.CodyProEnabledAt != nil
+		if isProUser {
+			if cfg.PerProUserEmbeddingsMonthlyLimit > 0 {
+				limit = int64(cfg.PerProUserEmbeddingsMonthlyLimit)
+			}
+		} else {
+			if cfg.PerCommunityUserEmbeddingsMonthlyLimit > 0 {
+				limit = int64(cfg.PerCommunityUserEmbeddingsMonthlyLimit)
+			}
+		}
+	}
+
+	return licensing.CodyGatewayRateLimit{
+		AllowedModels:   []string{"openai/text-embedding-ada-002"},
+		Limit:           limit,
+		IntervalSeconds: intervalSeconds,
 	}, nil
 }
 
@@ -256,22 +288,22 @@ func getSelfServeUsageLimits(scope types.CompletionsFeature, isProUser bool, cfg
 	switch scope {
 	case types.CompletionsFeatureChat:
 		if isProUser {
-			if cfg.PerProUserChatDailyLimit > 0 {
-				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserChatDailyLimit), nil
+			if cfg.PerProUserChatDailyLLMRequestLimit > 0 {
+				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserChatDailyLLMRequestLimit), nil
 			}
 		} else {
-			if cfg.PerCommunityUserChatMonthlyLimit > 0 {
-				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserChatMonthlyLimit), nil
+			if cfg.PerCommunityUserChatMonthlyLLMRequestLimit > 0 {
+				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserChatMonthlyLLMRequestLimit), nil
 			}
 		}
 	case types.CompletionsFeatureCode:
 		if isProUser {
-			if cfg.PerProUserCodeCompletionsDailyLimit > 0 {
-				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserCodeCompletionsDailyLimit), nil
+			if cfg.PerProUserCodeCompletionsDailyLLMRequestLimit > 0 {
+				return oneDayInSeconds, pointers.Ptr(cfg.PerProUserCodeCompletionsDailyLLMRequestLimit), nil
 			}
 		} else {
-			if cfg.PerCommunityUserCodeCompletionsMonthlyLimit > 0 {
-				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserCodeCompletionsMonthlyLimit), nil
+			if cfg.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit > 0 {
+				return oneMonthInSeconds, pointers.Ptr(cfg.PerCommunityUserCodeCompletionsMonthlyLLMRequestLimit), nil
 			}
 		}
 	}
@@ -283,7 +315,7 @@ func allowedModels(scope types.CompletionsFeature) []string {
 	case types.CompletionsFeatureChat:
 		return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-2.0", "anthropic/claude-2.1", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	case types.CompletionsFeatureCode:
-		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
+		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1", "fireworks/accounts/fireworks/models/starcoder-7b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-7b", "fireworks/accounts/fireworks/models/starcoder-16b-w8a16", "fireworks/accounts/sourcegraph/models/starcoder-16b"}
 	default:
 		return []string{}
 	}

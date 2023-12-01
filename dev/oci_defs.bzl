@@ -3,4 +3,3 @@ REGISTRY_REPOSITORY_PREFIX = "europe-west1-docker.pkg.dev/sourcegraph-security-l
 
 def image_repository(image):
     return REGISTRY_REPOSITORY_PREFIX.format(image)
-

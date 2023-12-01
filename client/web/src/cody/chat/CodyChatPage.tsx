@@ -146,6 +146,8 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
         setShowMobileHistory(false)
     }, [transcript])
 
+    const [isCodyProEnabled] = useFeatureFlag('cody-pro', false)
+
     if (!loaded) {
         return null
     }
@@ -221,6 +223,13 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 <Badge variant="info" className="ml-2">
                                     Beta
                                 </Badge>
+                            )}
+                            {!isCodyApp && isCodyProEnabled && (
+                                <Link to="/cody/manage">
+                                    <Text className="mb-0 ml-2" size="small">
+                                        Manage
+                                    </Text>
+                                </Link>
                             )}
                         </div>
                     </PageHeader.Breadcrumb>

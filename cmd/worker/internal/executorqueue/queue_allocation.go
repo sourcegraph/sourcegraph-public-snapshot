@@ -1,6 +1,8 @@
 package executorqueue
 
 import (
+	"slices"
+
 	"github.com/inconshreveable/log15"
 
 	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
@@ -16,7 +18,7 @@ var validCloudProviderNames = []string{"aws", "gcp"}
 
 func normalizeAllocations(m map[string]map[string]float64, awsConfigured, gcpConfigured bool) (map[string]QueueAllocation, error) {
 	for queueName := range m {
-		if !contains(executortypes.ValidQueueNames, queueName) {
+		if !slices.Contains(executortypes.ValidQueueNames, queueName) {
 			return nil, errors.Errorf("invalid queue '%s'", queueName)
 		}
 	}
@@ -51,7 +53,7 @@ func normalizeQueueAllocation(queueName string, queueAllocation map[string]float
 	}
 
 	for cloudProvider, allocation := range queueAllocation {
-		if !contains(validCloudProviderNames, cloudProvider) {
+		if !slices.Contains(validCloudProviderNames, cloudProvider) {
 			return QueueAllocation{}, errors.Errorf("invalid cloud provider '%s', expected 'aws' or 'gcp'", cloudProvider)
 		}
 
@@ -77,14 +79,4 @@ func normalizeQueueAllocation(queueName string, queueAllocation map[string]float
 		PercentageAWS: queueAllocation["aws"],
 		PercentageGCP: queueAllocation["gcp"],
 	}, nil
-}
-
-func contains(slice []string, value string) bool {
-	for _, v := range slice {
-		if value == v {
-			return true
-		}
-	}
-
-	return false
 }
