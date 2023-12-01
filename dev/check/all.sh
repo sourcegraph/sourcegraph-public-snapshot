@@ -37,7 +37,7 @@ fi
 
 parallel_run "${MAYBE_TIME_PREFIX}" {} ::: "${CHECKS[@]}"
 
-# TODO(sqs): Reenable this check when about.sourcegraph.com is reliable. Most failures come from its
+# TODO(sqs): Reenable this check when sourcegraph.com is reliable. Most failures come from its
 # downtime, not from broken URLs.
 #
 # ./broken-urls.bash

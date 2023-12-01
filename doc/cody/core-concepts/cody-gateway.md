@@ -8,7 +8,7 @@
 
 Sourcegraph Cody Gateway powers the default `"provider": "sourcegraph"`, Cody completions and embeddings for Sourcegraph Enterprise users. It supports a variety of upstream LLM providers, such as [Anthropic](https://www.anthropic.com/) and [OpenAI](https://openai.com/), with rate limits, quotas, and model availability tied to your Sourcegraph Enterprise subscription.
 
-Code snippets are sent to these third-party LLM providers when you use the Cody extension or enable embeddings. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice).
+Code snippets are sent to these third-party LLM providers when you use the Cody extension or enable embeddings. Make sure you review the [Cody usage and privacy notice](https://sourcegraph.com/terms/cody-notice).
 
 ## Using Cody Gateway in Sourcegraph Enterprise
 
@@ -72,4 +72,4 @@ Sourcegraph Cody Gateway does not retain sensitive data (prompt test and source 
 
 The code that powers Cody Gateway is also [source-available](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph$+f:cmd/cody-gateway+lang:go&patternType=lucky&sm=1&groupBy=path) for audit.
 
-For more details about Cody Gateway security practices, please reach out to your account manager. You can also refer to the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice) for more privacy details about Cody in general.
+For more details about Cody Gateway security practices, please reach out to your account manager. You can also refer to the [Cody usage and privacy notice](https://sourcegraph.com/terms/cody-notice) for more privacy details about Cody in general.
