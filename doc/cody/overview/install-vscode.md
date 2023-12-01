@@ -81,7 +81,7 @@
 <p>
 <span style="margin-right:0.25rem;" class="badge badge-beta">Beta</span> Cody support for VS Code is in the Beta stage.
 <br />
-For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">create a post on X</a>.
+For any feedback, you can <a href="https://sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">create a post on X</a>.
 </p>
 </aside>
 

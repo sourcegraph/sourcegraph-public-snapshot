@@ -8,7 +8,7 @@ And, practically, Sourcegraph was built with the assumption that certain tasks, 
 
 In both the short-term and the long-term, it is far easier for users to [connect Sourcegraph to a code host](https://docs.sourcegraph.com/admin/external_service) than to try to load code from a local disk, and we strongly encourage users, where possible, to connect to their code host of choice instead of trying to follow the instructions below. 
 
-When Sourcegraph is connected to a code host, none of that code is ever sent off of your local Sourcegraph deployment, and nobody that you haven't given access to (whether at Sourcegraph or anywhere else) has access to your code. Sourcegraph only maintains a local clone, and does all code analysis and indexing operations locally. Read more specifics about our policies and what we do collect in [our security overview](https://about.sourcegraph.com/security/#Sourcegraph-on-premise).
+When Sourcegraph is connected to a code host, none of that code is ever sent off of your local Sourcegraph deployment, and nobody that you haven't given access to (whether at Sourcegraph or anywhere else) has access to your code. Sourcegraph only maintains a local clone, and does all code analysis and indexing operations locally. Read more specifics about our policies and what we do collect in [our security overview](https://sourcegraph.com/security/#Sourcegraph-on-premise).
 
 ## Using the Sourcegraph CLI to serve local repositories
 

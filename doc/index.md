@@ -15,7 +15,7 @@ Sourcegraph makes it easy to read, write, and fix code—even in big, complex co
 
 <br>
 
-<img src="https://about.sourcegraph.com/home/banner.png" class="screenshot" style="max-width:100%" />
+<img src="https://sourcegraph.com/home/banner.png" class="screenshot" style="max-width:100%" />
 
 <br><br>
 

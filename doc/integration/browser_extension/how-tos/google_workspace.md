@@ -1,6 +1,6 @@
 # Google Workspace and Chrome Enterprise integration
 
-> NOTE: Company-wide deployment via Google Workspace is a [paid upgrade](https://about.sourcegraph.com/pricing)
+> NOTE: Company-wide deployment via Google Workspace is a [paid upgrade](https://sourcegraph.com/pricing)
 
 You can install and preconfigure the Sourcegraph Chrome extension for all members of a Google Workspace organization or organizational unit, so that they can get code navigation on files and diffs.
 

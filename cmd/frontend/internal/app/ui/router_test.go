@@ -122,7 +122,7 @@ func TestRouter(t *testing.T) {
 			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
 		},
 
-		// about.sourcegraph.com redirects
+		// sourcegraph.com redirects
 		{
 			path:      "/about",
 			wantRoute: routeAboutSubdomain,
@@ -263,7 +263,7 @@ func TestRouter_RootPath(t *testing.T) {
 				if rec.Code != http.StatusTemporaryRedirect {
 					t.Fatalf("got code %v want %v", rec.Code, http.StatusTemporaryRedirect)
 				}
-				wantLoc := "https://about.sourcegraph.com/" + string(tst.repo)
+				wantLoc := "https://sourcegraph.com/" + string(tst.repo)
 				if got := rec.Header().Get("Location"); got != wantLoc {
 					t.Fatalf("got location %q want location %q", got, wantLoc)
 				}
