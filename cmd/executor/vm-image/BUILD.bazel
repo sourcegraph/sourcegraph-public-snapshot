@@ -1,0 +1,30 @@
+load("//dev:tool_deps.bzl", "SRC_CLI_VERSION")
+
+sh_binary(
+    name = "ami",
+    srcs = [
+        "build-bazel.sh",
+    ],
+    args = [],
+    data = [
+        # Files to populate the AMI with
+        "aws_regions.json",
+        "build.sh",
+        "executor.pkr.hcl",
+        "install.sh",
+        # Deps
+        "//cmd/executor",
+        "//docker-images/executor-vm:image_tarball",
+        "@src-cli-linux-amd64",
+        # Tools
+        "//dev/tools:gcloud",
+        "//dev/tools:packer",
+    ],
+    env = {
+        "IMAGE_FAMILY": "testrfc795",
+        "EXECUTOR_IS_TAGGED_RELEASE": "false",
+        "SRC_CLI_VERSION": SRC_CLI_VERSION,
+        "VERSION": "0.0.0+dev",
+    },
+    deps = ["@bazel_tools//tools/bash/runfiles"],
+)

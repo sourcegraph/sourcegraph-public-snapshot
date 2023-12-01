@@ -11,6 +11,7 @@ sh_binary(
         "install.sh",
         "//dev/tools:gcloud",
         "//dev/tools:packer",
+        "//dev/tools:src-cli",
     ],
     # env = {
     #     "IMAGE_FAMILY": "",
