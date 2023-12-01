@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"io"
 	"net/http"
 
@@ -37,7 +38,7 @@ const (
 func isFlaggedAnthropicRequest(tk *tokenizer.Tokenizer, ar anthropicRequest, promptRegexps []*regexp.Regexp) (*flaggingResult, error) {
 	// Only usage of chat models us currently flagged, so if the request
 	// is using another model, we skip other checks.
-	if ar.Model != "claude-2" && ar.Model != "claude-v1" {
+	if ar.Model != "claude-2" && ar.Model != "claude-2.0" && ar.Model != "claude-2.1" && ar.Model != "claude-v1" {
 		return nil, nil
 	}
 	reasons := []string{}
@@ -157,7 +158,7 @@ func NewAnthropicHandler(
 					UserID: identifier,
 				}
 			},
-			getRequestMetadata: func(body anthropicRequest) (model string, additionalMetadata map[string]any) {
+			getRequestMetadata: func(_ context.Context, _ log.Logger, _ *actor.Actor, body anthropicRequest) (model string, additionalMetadata map[string]any) {
 				return body.Model, map[string]any{
 					"stream":               body.Stream,
 					"max_tokens_to_sample": body.MaxTokensToSample,

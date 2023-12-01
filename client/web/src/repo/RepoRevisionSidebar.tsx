@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import type { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
-import type { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { type SettingsCascadeProps, useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import type { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import type { RepoFile } from '@sourcegraph/shared/src/util/url'
 import {
@@ -63,7 +63,8 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
     const isWideScreen = useMatchMedia('(min-width: 768px)', false)
     const [isVisible, setIsVisible] = useState(persistedIsVisible && isWideScreen)
 
-    const [initialFilePath, setInitialFilePath] = useState<string>(props.filePath)
+    const showFullTreeContextEnabled = useExperimentalFeatures(features => features.showFullTreeContext)
+    const [initialFilePath, setInitialFilePath] = useState<string>(showFullTreeContextEnabled ? '' : props.filePath)
     const [initialFilePathIsDir, setInitialFilePathIsDir] = useState<boolean>(props.isDir)
     const onExpandParent = useCallback((parent: string) => {
         setInitialFilePath(parent)

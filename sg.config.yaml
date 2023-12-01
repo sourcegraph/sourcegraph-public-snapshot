@@ -252,7 +252,6 @@ commands:
       - lib
       - internal
       - cmd/symbols
-      - cmd/symbols
       - internal/rockskip
 
   embeddings:
@@ -368,6 +367,23 @@ commands:
       - lib
       - internal
       - cmd/pings
+
+  msp-example:
+    cmd: .bin/msp-example
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='all=-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/msp-example github.com/sourcegraph/sourcegraph/cmd/msp-example
+    checkBinary: .bin/msp-example
+    env:
+      PORT: '9080'
+      DIAGNOSTICS_SECRET: sekret
+      SRC_LOG_LEVEL: debug
+      STATELESS_MODE: 'true'
+    watch:
+      - cmd/msp-example
+      - lib/managedservicesplatform
 
   searcher:
     cmd: .bin/searcher

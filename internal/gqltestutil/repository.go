@@ -14,7 +14,7 @@ import (
 //
 // This method requires the authenticated user to be a site admin.
 func (c *Client) WaitForReposToBeCloned(repos ...string) error {
-	timeout := 120 * time.Second
+	timeout := 130 * time.Second
 	return c.WaitForReposToBeClonedWithin(timeout, repos...)
 }
 

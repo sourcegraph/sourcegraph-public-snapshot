@@ -1,0 +1,75 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.responsive-container {
+    gap: 0.5rem;
+
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+    }
+}
+
+.plan-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.counter {
+    font-size: 1.25rem;
+}
+
+.ide-name {
+    font-size: 1rem;
+}
+
+.pro-container {
+    box-shadow: 0 0 5px 0 #b200f8, 0 0 5px 0 #ff5543, 0 0 5px 0 #00cbec;
+}
+
+.amazing {
+    background-color: #00cbec;
+
+    background-image: linear-gradient(45deg, #b200f8, #ff5543, #00cbec);
+
+    background-size: 100%;
+    background-repeat: repeat;
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    -moz-background-clip: text;
+    -moz-text-fill-color: transparent;
+}
+
+.pro-title {
+    font-size: 2.25rem;
+    color: #005bbb;
+}
+
+.pro-description {
+    color: #0677ef;
+}
+
+.pro-pricing {
+    text-decoration: line-through;
+}
+
+.enterprise-color {
+    color: #dd5d35;
+}
+
+.enterprise-color-light {
+    color: #f74f56;
+}
+
+.upgrade-modal {
+    width: 50rem;
+}
+
+.cancel-modal {
+    width: 30rem;
+}
+
+.subscription-summary-container {
+    @media (--sm-breakpoint-down) {
+        flex-direction: column;
+    }
+}

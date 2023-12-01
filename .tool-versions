@@ -1,4 +1,4 @@
-golang 1.20.10
+golang 1.21.4
 nodejs 20.8.1
 fd 8.6.0
 shfmt 3.5.0
@@ -6,7 +6,7 @@ shellcheck 0.7.1
 kubectl 1.21.7
 github-cli 2.27.0
 packer 1.8.3
-trivy 0.30.3
+trivy 0.47.0
 kustomize 4.5.7
 awscli 2.4.7
 python 3.11.3 system

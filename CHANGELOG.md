@@ -59,7 +59,12 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Added the ability to use Workload Identity, Managed Identity and Environmental credentials when using the Azure OpenAI completions and embeddings providers [#58289](https://github.com/sourcegraph/sourcegraph/pull/58289)
+- Added support for cloning via SSH from Azure DevOps. [#58655](https://github.com/sourcegraph/sourcegraph/pull/58655)
+
 ### Fixed
+
+- Fixed two issues in Zoekt that could cause out of memory errors during search indexing. [sourcegraph/zoekt#686](https://github.com/sourcegraph/zoekt/pull/686), [sourcegraph/zoekt#689](https://github.com/sourcegraph/zoekt/pull/689)
 
 ### Changed
 
@@ -70,6 +75,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Added configurable GraphQL query cost limitations to prevent unintended resource exhaustion. Default values are now provided and enforced, replacing the previously unlimited behaviour. For more information, please refer to: [GraphQL Cost Limits Documentation](https://docs.sourcegraph.com/api/graphql#cost-limits). See details at [#58346](https://github.com/sourcegraph/sourcegraph/pull/58346).
+- Sourcegraph now supports connecting to Bitbucket Cloud using Workspace Access Tokens. [#58465](https://github.com/sourcegraph/sourcegraph/pull/58465).
 
 ### Fixed
 

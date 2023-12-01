@@ -39,19 +39,10 @@ type gitCommitConnectionResolver struct {
 	err     error
 }
 
-func toValue[T any](v *T) any {
-	var result T
-	if v != nil {
-		return *v
-	}
-
-	return result
-}
-
 // afterCursorAsInt will parse the afterCursor field and return it as an int. If no value is set, it
 // will return 0. It returns a non-nil error if there are any errors in parsing the input string.
 func (r *gitCommitConnectionResolver) afterCursorAsInt() (int, error) {
-	v := toValue(r.afterCursor).(string)
+	v := pointers.DerefZero(r.afterCursor)
 	if v == "" {
 		return 0, nil
 	}
@@ -88,12 +79,12 @@ func (r *gitCommitConnectionResolver) compute(ctx context.Context) ([]*gitdomain
 		return r.gitserverClient.Commits(ctx, r.repo.RepoName(), gitserver.CommitsOptions{
 			Range:        r.revisionRange,
 			N:            uint(n),
-			MessageQuery: toValue(r.query).(string),
-			Author:       toValue(r.author).(string),
-			After:        toValue(r.after).(string),
+			MessageQuery: pointers.DerefZero(r.query),
+			Author:       pointers.DerefZero(r.author),
+			After:        pointers.DerefZero(r.after),
 			Skip:         uint(afterCursor),
-			Before:       toValue(r.before).(string),
-			Path:         toValue(r.path).(string),
+			Before:       pointers.DerefZero(r.before),
+			Path:         pointers.DerefZero(r.path),
 			Follow:       r.follow,
 		})
 	}

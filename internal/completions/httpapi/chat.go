@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/sourcegraph/log"
@@ -24,7 +25,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		types.CompletionsFeatureChat,
 		rl,
 		"chat",
-		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+		func(_ context.Context, requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
 			if isAllowedCustomChatModel(requestParams.Model) {
 				return requestParams.Model, nil
 			}
@@ -46,6 +47,8 @@ func isAllowedCustomChatModel(model string) bool {
 
 	switch model {
 	case "anthropic/claude-2",
+		"anthropic/claude-2.0",
+		"anthropic/claude-2.1",
 		"anthropic/claude-instant-1.2-cyan",
 		"openai/gpt-3.5-turbo",
 		"openai/gpt-4-1106-preview":

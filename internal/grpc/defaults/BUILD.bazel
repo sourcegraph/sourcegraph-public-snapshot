@@ -17,6 +17,7 @@ go_library(
         "//internal/grpc/messagesize",
         "//internal/grpc/propagator",
         "//internal/requestclient",
+        "//internal/requestinteraction",
         "//internal/trace/policy",
         "//internal/ttlcache",
         "//lib/errors",

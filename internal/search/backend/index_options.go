@@ -58,6 +58,8 @@ type ZoektIndexOptions struct {
 	Error string `json:",omitempty"`
 
 	LanguageMap map[string]ctags_config.ParserType
+
+	ShardConcurrency int32 `json:",omitempty"`
 }
 
 func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
@@ -87,6 +89,7 @@ func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
 		languageMap[entry.Language] = uint8(entry.Ctags.Number())
 	}
 	o.LanguageMap = languageMap
+	o.ShardConcurrency = p.GetShardConcurrency()
 }
 
 func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
@@ -116,6 +119,7 @@ func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
 		DocumentRanksVersion: o.DocumentRanksVersion,
 		Error:                o.Error,
 		LanguageMap:          languageMap,
+		ShardConcurrency:     o.ShardConcurrency,
 	}
 }
 
@@ -212,6 +216,7 @@ func getIndexOptions(
 
 		DocumentRanksVersion: opts.DocumentRanksVersion,
 		LanguageMap:          ctags_config.CreateEngineMap(*c),
+		ShardConcurrency:     int32(c.SearchIndexShardConcurrency),
 	}
 
 	// Set of branch names. Always index HEAD

@@ -127,7 +127,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
@@ -306,6 +306,10 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
@@ -318,11 +322,12 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		Kind:          extsvc.KindGitHub,
+		DisplayName:   "GITHUB #1",
+		Config:        extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		LastUpdaterID: &user.ID,
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err = db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -634,6 +639,10 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
@@ -649,7 +658,7 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		DisplayName: "GITHUB #1",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
-	err := externalServices.Create(ctx, confGet, es)
+	err = externalServices.Create(ctx, confGet, es)
 	require.NoError(t, err)
 
 	got, err := externalServices.GetByID(ctx, es.ID)
@@ -681,7 +690,8 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		conf.Get().AuthProviders,
 		es.ID,
 		&ExternalServiceUpdate{
-			Config: &cfg,
+			Config:        &cfg,
+			LastUpdaterID: &user.ID,
 		},
 	)
 	require.NoError(t, err)
@@ -2577,4 +2587,138 @@ func Test_validateOtherExternalServiceConnection(t *testing.T) {
 
 	err = validateOtherExternalServiceConnection(conn)
 	require.NoError(t, err)
+}
+
+func TestExternalServices_CleanupSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := timeutil.Now()
+	q := `
+		INSERT INTO external_service_sync_jobs
+			(external_service_id, state, queued_at, finished_at)
+		VALUES
+			($2, 'completed', $1::timestamp - interval '40 day', $1::timestamp - interval '40 day'),  -- completed and older than 30d, delete
+			($2, 'failed', $1::timestamp - interval '40 day', $1::timestamp - interval '40 day'),     -- failed and older than 30d, delete
+			($2, 'processing', $1::timestamp - interval '40 day', $1::timestamp - interval '40 day'), -- processing but older than 30d, still keep
+			($2, 'processing', $1::timestamp - interval '20 day', $1::timestamp - interval '20 day'), -- processing and newer than 30d, keep
+			($2, 'failed', $1::timestamp - interval '20 day', $1::timestamp - interval '20 day'),     -- failed but newer than 30d, keep
+			($2, 'canceled', $1::timestamp - interval '10 day', $1::timestamp - interval '10 day'),   -- canceled but newer than 30d, keep
+			($2, 'completed', $1::timestamp - interval '10 day', $1::timestamp - interval '10 day')   -- completed but newer than 30d, keep
+		`
+	_, err = db.ExecContext(ctx, q, now, es.ID)
+	require.NoError(t, err)
+
+	require.NoError(
+		t,
+		db.ExternalServices().CleanupSyncJobs(ctx, ExternalServicesCleanupSyncJobsOptions{
+			MaxPerExternalService: 1000,
+			OlderThan:             30 * 24 * time.Hour,
+		}),
+	)
+
+	// With large MaxPerExternalService, expect that only the jobs that are older than 30d
+	// are deleted.
+	syncJobs, err := db.ExternalServices().GetSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
+	require.NoError(t, err)
+	require.Equal(t, []*types.ExternalServiceSyncJob{
+		{
+			ID:                3,
+			ExternalServiceID: es.ID,
+			State:             "processing",
+			QueuedAt:          now.Add(-40 * 24 * time.Hour),
+			FinishedAt:        now.Add(-40 * 24 * time.Hour),
+		},
+		{
+			ID:                4,
+			ExternalServiceID: es.ID,
+			State:             "processing",
+			QueuedAt:          now.Add(-20 * 24 * time.Hour),
+			FinishedAt:        now.Add(-20 * 24 * time.Hour),
+		},
+		{
+			ID:                5,
+			ExternalServiceID: es.ID,
+			State:             "failed",
+			QueuedAt:          now.Add(-20 * 24 * time.Hour),
+			FinishedAt:        now.Add(-20 * 24 * time.Hour),
+		},
+		{
+			ID:                6,
+			ExternalServiceID: es.ID,
+			State:             "canceled",
+			QueuedAt:          now.Add(-10 * 24 * time.Hour),
+			FinishedAt:        now.Add(-10 * 24 * time.Hour),
+		},
+		{
+			ID:                7,
+			ExternalServiceID: es.ID,
+			State:             "completed",
+			QueuedAt:          now.Add(-10 * 24 * time.Hour),
+			FinishedAt:        now.Add(-10 * 24 * time.Hour),
+		},
+	}, syncJobs)
+
+	// Now only keep the last 2 records:
+	require.NoError(
+		t,
+		db.ExternalServices().CleanupSyncJobs(ctx, ExternalServicesCleanupSyncJobsOptions{
+			MaxPerExternalService: 2,
+			OlderThan:             30 * 24 * time.Hour,
+		}),
+	)
+
+	syncJobs, err = db.ExternalServices().GetSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
+	require.NoError(t, err)
+	require.Equal(t, []*types.ExternalServiceSyncJob{
+		// Processing are skipped in deletion.
+		{
+			ID:                3,
+			ExternalServiceID: es.ID,
+			State:             "processing",
+			QueuedAt:          now.Add(-40 * 24 * time.Hour),
+			FinishedAt:        now.Add(-40 * 24 * time.Hour),
+		},
+		// Processing are skipped in deletion.
+		{
+			ID:                4,
+			ExternalServiceID: es.ID,
+			State:             "processing",
+			QueuedAt:          now.Add(-20 * 24 * time.Hour),
+			FinishedAt:        now.Add(-20 * 24 * time.Hour),
+		},
+		{
+			ID:                6,
+			ExternalServiceID: es.ID,
+			State:             "canceled",
+			QueuedAt:          now.Add(-10 * 24 * time.Hour),
+			FinishedAt:        now.Add(-10 * 24 * time.Hour),
+		},
+		{
+			ID:                7,
+			ExternalServiceID: es.ID,
+			State:             "completed",
+			QueuedAt:          now.Add(-10 * 24 * time.Hour),
+			FinishedAt:        now.Add(-10 * 24 * time.Hour),
+		},
+	}, syncJobs)
 }
