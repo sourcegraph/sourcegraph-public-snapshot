@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgconn"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // resetter is a worker responsible for deleting all rows in
@@ -75,10 +77,28 @@ func (h *resetterHandler) Handle(ctx context.Context) error {
 	// It's Sunday and between 2:00 and 2:30 AM UTC
 	h.logger.Info("Deleting and recreating repo statistics")
 
-	// We use a 5 minute timeout here to prevent the table lock from taking
-	// down the instance.
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer cancel()
+	retries := 10
+	for {
+		// We use a 5 minute timeout here to prevent the table lock from taking
+		// down the instance.
+		ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+		defer cancel()
 
-	return h.store.DeleteAndRecreateStatistics(ctx)
+		err := h.store.DeleteAndRecreateStatistics(ctx)
+		if err == nil {
+			// Success!
+			return nil
+		}
+
+		// If we ran into a deadlock, we try again in 5 seconds
+		var pgerr *pgconn.PgError
+		if errors.As(err, &pgerr) && pgerr.Code == "40P01" && retries > 0 {
+			h.logger.Warn("ran into deadlock. Retrying in 5 seconds...")
+			retries -= 1
+			time.Sleep(5 * time.Second)
+			continue
+		}
+
+		return err
+	}
 }

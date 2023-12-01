@@ -577,6 +577,10 @@ func TestReposStatisticsStore_DeleteAndRecreateStatistics(t *testing.T) {
 	ctx := context.Background()
 	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
 
+	// Safety check: make sure it works with empty table
+	err := s.DeleteAndRecreateStatistics(ctx)
+	require.NoError(t, err)
+
 	shards := []string{
 		"shard-1",
 		"shard-2",
@@ -618,7 +622,7 @@ func TestReposStatisticsStore_DeleteAndRecreateStatistics(t *testing.T) {
 	assertRepoStatistics(t, ctx, s, wantRepoStatistics, wantGitserverReposStatistics)
 
 	// Now delete and recreate
-	err := s.DeleteAndRecreateStatistics(ctx)
+	err = s.DeleteAndRecreateStatistics(ctx)
 	require.NoError(t, err)
 
 	// Should be the same, except the empty shard is gone
