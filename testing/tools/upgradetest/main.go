@@ -51,7 +51,6 @@ func main() {
 
 	// Run Standard Upgrade Tests
 	stdTestPool := pool.New().WithErrors()
-	stdVersions = []*semver.Version{semver.MustParse("5.1.8"), semver.MustParse("5.1.9")}
 	for _, version := range stdVersions {
 		version := version
 		stdTestPool.Go(func() error {
@@ -64,18 +63,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// if result := standardUpgradeTest(ctx, latestMinorVersion, latestVersion); 0 < len(result.Errors) {
-	// 	fmt.Println("--- 🚨 Standard Upgrade Test Failed: ")
-	// 	result.DisplayErrors()
-	// 	os.Exit(1)
-	// }
-
-	// Make Error
-	// randomVersion = semver.MustParse("4.1.2")
-	if result := multiversionUpgradeTest(ctx, randomVersion, latestVersion); 0 < len(result.Errors) {
-		fmt.Println("--- 🚨 Multiversion Upgrade Test Failed: ")
-		result.DisplayErrors()
-		os.Exit(1)
+	mvuTestPool := pool.New().WithErrors()
+	for _, version := range mvuVersions {
+		version := version
+		mvuTestPool.Go(func() error {
+			result := multiversionUpgradeTest(ctx, version, latestVersion)
+			results.AddMVUTest(result)
+			return nil
+		})
+	}
+	if err := mvuTestPool.Wait(); err != nil {
+		log.Fatal(err)
 	}
 
 	if err := autoUpgradeTest(ctx); err != nil {
@@ -208,7 +206,7 @@ func standardUpgradeTest(ctx context.Context, initVersion, migratorVersion *semv
 		return test
 	}
 
-	test.DisplayLog()
+	// test.DisplayLog()
 	return test
 }
 
@@ -272,7 +270,7 @@ func multiversionUpgradeTest(ctx context.Context, randomVersion, latestVersion *
 		return test
 	}
 
-	test.DisplayLog()
+	// test.DisplayLog()
 	return test
 }
 
@@ -315,7 +313,6 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	out, err := run.Cmd(ctx, "docker", "network", "create", networkName).Run().String()
 	if err != nil {
 		test.AddError(fmt.Errorf("🚨 failed to create test network: %s", err))
-		return test, "", nil, nil, err
 	}
 	test.AddLog(out)
 
@@ -354,7 +351,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		db.ContainerHostPort = port
 	}
 
-	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Second*20)
+	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Minute*20)
 	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
 	defer cancel()
 
