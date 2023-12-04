@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 
@@ -87,27 +87,33 @@ export function CodyOnboarding(): JSX.Element | null {
 
     const onNext = (): void => setOnboardingStep(currentsStep => (currentsStep || 0) + 1)
 
+    const parameters = useSearchParameters()
+    const enrollPro = parameters.get('pro') === 'true'
+
     if (completed || step === -1 || step > 2) {
         return null
     }
 
     return (
         <Modal isOpen={true} aria-label="Cody Onboarding" className={styles.modal} position="center">
-            {step === 0 && <WelcomeStep onNext={onNext} />}
-            {step === 1 && <PurposeStep onNext={onNext} />}
-            {step === 2 && <EditorStep onNext={onNext} onCompleted={() => setOnboardingCompleted(true)} />}
+            {step === 0 && <WelcomeStep onNext={onNext} pro={enrollPro} />}
+            {step === 1 && <PurposeStep onNext={onNext} pro={enrollPro} />}
+            {step === 2 && (
+                <EditorStep onNext={onNext} onCompleted={() => setOnboardingCompleted(true)} pro={enrollPro} />
+            )}
         </Modal>
     )
 }
 
-function WelcomeStep({ onNext }: { onNext: () => void }): JSX.Element {
-    const parameters = useSearchParameters()
-    const enrollPro = parameters.get('pro') === 'true'
+function WelcomeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX.Element {
+    useEffect(() => {
+        eventLogger.log(EventName.CODY_ONBOARDING_WELCOME_VIEWED, { tier: pro ? 'pro' : 'free' })
+    }, [pro])
 
     return (
         <div className="d-flex flex-column align-items-center">
             <CodyColorIcon width={60} height={60} className="mb-4" />
-            <H1>Welcome {enrollPro ? 'to Cody Pro Trial' : ''}</H1>
+            <H1>Welcome {pro ? 'to Cody Pro Trial' : 'to Cody by Sourcegraph!'}</H1>
             <Text className="mb-4 pb-4">Let's walk through a few quick steps to get you started with Cody.</Text>
             <Button onClick={onNext} variant="primary" size="sm">
                 Let's Start!
@@ -116,7 +122,11 @@ function WelcomeStep({ onNext }: { onNext: () => void }): JSX.Element {
     )
 }
 
-function PurposeStep({ onNext }: { onNext: () => void }): JSX.Element {
+function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX.Element {
+    useEffect(() => {
+        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_VIEWED, { tier: pro ? 'pro' : 'free' })
+    }, [pro])
+
     return (
         <>
             <div className="border-bottom pb-3 mb-3">
@@ -130,12 +140,12 @@ function PurposeStep({ onNext }: { onNext: () => void }): JSX.Element {
                     role="button"
                     tabIndex={0}
                     onKeyDown={() => {
-                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_WORK)
+                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase: 'work' })
                         onNext()
                     }}
                     className="border-right flex-1 d-flex flex-column justify-content-center cursor-pointer align-items-center py-3 px-2"
                     onClick={() => {
-                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_WORK)
+                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_SELECTED, { useCase: 'work' })
                         onNext()
                     }}
                 >
@@ -147,16 +157,16 @@ function PurposeStep({ onNext }: { onNext: () => void }): JSX.Element {
                     tabIndex={0}
                     className="flex-1 d-flex flex-column justify-content-center cursor-pointer align-items-center py-3 px-2"
                     onKeyDown={() => {
-                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_PERSONAL)
+                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_PERSONAL, { useCase: 'personal' })
                         onNext()
                     }}
                     onClick={() => {
-                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_PERSONAL)
+                        eventLogger.log(EventName.CODY_ONBOARDING_PURPOSE_PERSONAL, { useCase: 'personal' })
                         onNext()
                     }}
                 >
                     <PersonalIcon />
-                    <H3 className="mb-0 mt-2">Personal</H3>
+                    <H3 className="mb-0 mt-2">Personal Projects</H3>
                 </div>
             </div>
             <Text size="small" className="text-muted text-center mb-0">
@@ -166,7 +176,19 @@ function PurposeStep({ onNext }: { onNext: () => void }): JSX.Element {
     )
 }
 
-function EditorStep({ onNext, onCompleted }: { onNext: () => void; onCompleted: () => void }): JSX.Element {
+function EditorStep({
+    onNext,
+    onCompleted,
+    pro,
+}: {
+    onNext: () => void
+    onCompleted: () => void
+    pro: boolean
+}): JSX.Element {
+    useEffect(() => {
+        eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_VIEWED, { tier: pro ? 'pro' : 'free' })
+    }, [pro])
+
     const [editor, setEditor] = useState<null | IEditor>(null)
 
     const onBack = (): void => setEditor(null)
@@ -201,8 +223,21 @@ function EditorStep({ onNext, onCompleted }: { onNext: () => void; onCompleted: 
                                 })}
                                 role="button"
                                 tabIndex={0}
-                                onKeyDown={() => setEditor(editor)}
-                                onClick={() => setEditor(editor)}
+                                onKeyDown={() => {
+                                    setEditor(editor)
+
+                                    eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED, {
+                                        tier: pro ? 'pro' : 'free',
+                                        editor,
+                                    })
+                                }}
+                                onClick={() => {
+                                    eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SELECTED, {
+                                        tier: pro ? 'pro' : 'free',
+                                        editor,
+                                    })
+                                    setEditor(editor)
+                                }}
                             >
                                 <div className="d-flex">
                                     <div>
@@ -231,7 +266,14 @@ function EditorStep({ onNext, onCompleted }: { onNext: () => void; onCompleted: 
                 ))}
             </div>
             <div className="d-flex justify-content-between align-items-center">
-                <Text className="mb-0 text-muted cursor-pointer" size="small" onClick={onCompleted}>
+                <Text
+                    className="mb-0 text-muted cursor-pointer"
+                    size="small"
+                    onClick={() => {
+                        onCompleted()
+                        eventLogger.log(EventName.CODY_ONBOARDING_CHOOSE_EDITOR_SKIPPED, { tier: pro ? 'pro' : 'free' })
+                    }}
+                >
                     Skip
                 </Text>
                 <Text className="mb-0 text-muted" size="small">
