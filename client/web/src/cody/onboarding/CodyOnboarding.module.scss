@@ -1,7 +1,22 @@
 .modal {
     width: 50rem;
-
+    border-width: 1px;
+    border-image: conic-gradient(rgba(112, 72, 232, 0.7), rgba(74, 193, 232, 0.7), rgba(77, 11, 121, 0.7), rgba(255, 85, 67, 0.7), rgba(112, 72, 232, 0.7)) 1;
 }
+
+
+@media (prefers-color-scheme: dark) {
+    [data-reach-dialog-overlay] {
+        background: linear-gradient(180deg, rgba(17, 20, 27, 0.9) 0%, rgba(13, 16, 25, 0.9) 100%);
+}
+
+@media (prefers-color-scheme: light) {
+    [data-reach-dialog-overlay] {
+        background: linear-gradient(180deg, #FDFCFF 0%, #EFEDF7 100%);
+        opacity:0.9;
+    }
+}
+
 
 
 .release-stage{
@@ -15,6 +30,10 @@
     color: #ffffff;
     padding: 0.25rem 0.675rem;
     border-radius: 50%;
+}
+
+.highlight-step {
+    background: radial-gradient(50% 100% at 50% 100%, var(--gray-08) 0%, transparent 100%)
 }
 
 .instructions-container{
@@ -38,3 +57,4 @@
 .ide-name {
     font-size: 1rem;
 }
+

@@ -21,12 +21,12 @@ export function VSCodeInstructions({
         <>
             {step === 0 && (
                 <>
-                    <div className="mb-3 pb-3 border-bottom">
+                    <div className="pb-3 border-bottom">
                         <H2>Setup instructions for VS Code</H2>
                     </div>
 
-                    <div className={styles.instructionsContainer}>
-                        <div className="px-3 border-bottom">
+                    <div className={classNames('pt-3 px-3',styles.instructionsContainer)}>
+                        <div className={classNames('border-bottom', styles.highlightStep)}>
                             <div className="d-flex align-items-center">
                                 <div className="mr-1">
                                     <div className={classNames('mr-2', styles.step)}>1</div>
@@ -51,12 +51,12 @@ export function VSCodeInstructions({
                                 <img
                                     alt="VS Code Marketplace"
                                     className="mt-4"
-                                    width="80%"
+                                    width="70%"
                                     src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/__step1.png"
                                 />
                             </div>
                         </div>
-                        <div className="px-3 mt-3 border-bottom">
+                        <div className="mt-3 border-bottom">
                             <div className="d-flex align-items-center">
                                 <div className="mr-1">
                                     <div className={classNames('mr-2', styles.step)}>2</div>
@@ -74,12 +74,12 @@ export function VSCodeInstructions({
                                 <img
                                     alt="VS Code Marketplace"
                                     className="mt-2"
-                                    width="80%"
+                                    width="70%"
                                     src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/__step2.png"
                                 />
                             </div>
                         </div>
-                        <div className="px-3 mt-3 border-bottom">
+                        <div className="mt-3 border-bottom">
                             <div className="d-flex align-items-center">
                                 <div className="mr-1">
                                     <div className={classNames('mr-2', styles.step)}>3</div>
@@ -97,7 +97,7 @@ export function VSCodeInstructions({
                                 <img
                                     alt="VS Code Marketplace"
                                     className="mt-2"
-                                    width="80%"
+                                    width="70%"
                                     src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/__step3.png"
                                 />
                             </div>
