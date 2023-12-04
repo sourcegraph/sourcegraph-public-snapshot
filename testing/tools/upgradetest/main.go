@@ -15,12 +15,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Masterminds/semver"
 	_ "github.com/lib/pq"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/run"
-
-	"github.com/Masterminds/semver"
 )
 
 func main() {
@@ -50,12 +49,14 @@ func main() {
 	var results TestResults
 
 	// Run Standard Upgrade Tests
-	stdTestPool := pool.New().WithErrors()
+	stdTestPool := pool.New().WithMaxGoroutines(5).WithErrors()
 	for _, version := range stdVersions {
 		version := version
 		stdTestPool.Go(func() error {
+			start := time.Now()
 			result := standardUpgradeTest(ctx, version, latestVersion)
 			results.AddStdTest(result)
+			fmt.Println(time.Since(start))
 			return nil
 		})
 	}
@@ -64,12 +65,14 @@ func main() {
 	}
 
 	// Run MVU Upgrade Tests
-	mvuTestPool := pool.New().WithErrors()
+	mvuTestPool := pool.New().WithMaxGoroutines(5).WithErrors()
 	for _, version := range mvuVersions {
 		version := version
 		mvuTestPool.Go(func() error {
+			start := time.Now()
 			result := multiversionUpgradeTest(ctx, version, latestVersion)
 			results.AddMVUTest(result)
+			fmt.Println(time.Since(start))
 			return nil
 		})
 	}
@@ -386,7 +389,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		db.ContainerHostPort = port
 	}
 
-	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Minute*20)
+	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Minute*5)
 	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
 	defer cancel()
 
