@@ -20,7 +20,7 @@ After installing the extension, the side activity bar will display an icon for *
 
 Cody also supports **Commands** with VS Code. These are quick, ready-to-use prompt actions that you can apply to any code or text-based snippet you've highlighted. You can run a command in 3 ways:
 
-1. Type `/` in the chat bar, and Cody will suggest a list of commands
+1. Click **New Chat** button, type `/` in the chat bar, and Cody will suggest a list of commands
 2. Right click > Cody > Select a command
 3. Press the command hotkey (`⌥` + `c` / `alt` + `c`)
 
