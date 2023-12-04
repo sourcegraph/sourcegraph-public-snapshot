@@ -229,7 +229,7 @@ function EditorStep({
                         {group.map((editor, index) => (
                             <div
                                 key={index}
-                                className={classNames('d-flex flex-column flex-1 p-3 cursor-pointer', {
+                                className={classNames('d-flex flex-column flex-1 p-3 cursor-pointer', styles.ideGrid, {
                                     'border-left': index !== 0,
                                 })}
                                 role="button"
@@ -250,13 +250,13 @@ function EditorStep({
                                     setEditor(editor)
                                 }}
                             >
-                                <div className="d-flex">
+                                <div className="d-flex align-items-center">
                                     <div>
                                         <img
                                             alt={editor.name}
                                             src={`https://storage.googleapis.com/sourcegraph-assets/cody-ide-icons/${editor.icon}.png`}
                                             width={34}
-                                            className="mr-2"
+                                            className="mr-3"
                                         />
                                     </div>
                                     <div>

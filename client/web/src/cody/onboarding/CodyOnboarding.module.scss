@@ -1,5 +1,5 @@
 .modal {
-    width: 50rem;
+    width: 54rem;
     border-width: 1px;
     border-image: conic-gradient(rgba(112, 72, 232, 0.2), rgba(74, 193, 232, 0.2), rgba(77, 11, 121, 0.2), rgba(255, 85, 67, 0.2), rgba(112, 72, 232, 0.2)) 1;
 
@@ -51,6 +51,10 @@
     border-radius: 50%;
 }
 
+.ide-grid:hover {
+    background: var(--color-bg-2);
+    transition: all 0.25s ease;
+}
 
 
 .instructions-container{
