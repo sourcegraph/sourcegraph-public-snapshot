@@ -34,9 +34,9 @@ export const editorGroups: IEditor[][] = [
             publisher: 'JetBrains',
         },
         {
-            icon: 'Neovim',
-            name: 'Neovim',
-            publisher: 'Neovim Team',
+            icon: 'PyCharm',
+            name: 'PyCharm',
+            publisher: 'Jetbrains',
         },
         {
             icon: 'AndroidStudio',
@@ -51,11 +51,6 @@ export const editorGroups: IEditor[][] = [
             publisher: 'JetBrains',
         },
         {
-            icon: 'PyCharm',
-            name: 'PyCharm',
-            publisher: 'Jetbrains',
-        },
-        {
             icon: 'WebStorm',
             name: 'WebStorm',
             publisher: 'JetBrains',
@@ -65,12 +60,17 @@ export const editorGroups: IEditor[][] = [
             name: 'RubyMine',
             publisher: 'JetBrains',
         },
-    ],
-    [
         {
             icon: 'GoLand',
             name: 'GoLand',
             publisher: 'JetBrains',
+        },
+    ],
+    [
+        {
+            icon: 'Neovim',
+            name: 'Neovim',
+            publisher: 'Neovim Team',
         },
         {
             icon: 'Emacs',
@@ -104,7 +104,7 @@ function WelcomeStep({ onNext }: { onNext: () => void }): JSX.Element {
     return (
         <div className="d-flex flex-column align-items-center">
             <CodyColorIcon width={60} height={60} className="mb-4" />
-            <H1>Hi</H1>
+            <H1>Welcome to Cody by Sourcegraph!</H1>
             <Text className="mb-4 pb-4">Let's walk through a few quick steps to get you started with Cody.</Text>
             <Button onClick={onNext} variant="primary" size="sm">
                 Let's Start!
