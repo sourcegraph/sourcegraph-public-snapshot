@@ -46,11 +46,19 @@ type EventLogStore interface {
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
 
-	// BulkInsert inserts a set of events.
+	// BulkInsert should only be used in internal/telemetry/teestore.
+	// BulkInsert does NOT respect context cancellation, as it is assumed that
+	// we never drop events once we attempt to store it.
 	//
-	// It does NOT respect context cancellation, as it is assumed that we never
-	// drop events once we attempt to queue it for export.
+	// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+	// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
 	BulkInsert(ctx context.Context, events []*Event) error
+
+	// Insert is a legacy mechanism for inserting a single event.
+	//
+	// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+	// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
+	Insert(ctx context.Context, e *Event) error
 
 	// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.
 	CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error)
@@ -119,9 +127,6 @@ type EventLogStore interface {
 
 	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
 	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
-
-	// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
-	Insert(ctx context.Context, e *Event) error
 
 	// LatestPing returns the most recently recorded ping event.
 	LatestPing(ctx context.Context) (*Event, error)

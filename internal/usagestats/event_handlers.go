@@ -107,14 +107,16 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 
 // LogEvent logs an event.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
 func LogEvent(ctx context.Context, db database.DB, args Event) error {
 	return LogEvents(ctx, db, []Event{args})
 }
 
 // LogEvents logs a batch of events.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
 func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 	if !conf.EventLoggingEnabled() {
 		return nil
