@@ -111,27 +111,19 @@ If you have specific requirements for the region, please reach out to your Sourc
 
 More details about the locations and data storage can be found in [our handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/multi-region/)
 
-### Private Code Host support
+### Private Code Host and Artifact Registry support
 
-Public code hosts are supported by Sourcegraph Cloud out-of-the-box. They are either publically accessible or protected by IP-based firewall rules, Sourcegraph Cloud can provide static IP addresses for customers to add to their firewall allowlist. Please let your account team know.
+Public code hosts and artifact registries are supported by Sourcegraph Cloud out-of-the-box. They are either publically accessible or protected by IP-based firewall rules, Sourcegraph Cloud can provide static IP addresses for customers to add to their firewall allowlist. Please let your account team know.
 
-Private code hosts refer to code hosts that are not publicly accessible, such as self-hosted GitHub Enterprise servers or self-hosted GitLab instances deployed in a private network that are only accessible through VPN. Learn more about private code hosts support below:
+Private code hosts or artifact registries refer to dependecies that are not publicly accessible, such as self-hosted GitHub Enterprise servers, self-hosted GitLab instances or self-hosted Nexus instance deployed in a private network that are only accessible through VPN. Learn more about private connectvity support below:
 
-- [Code hosts on AWS without public access](./private_connectivity_aws.md)
-- [Code hosts on GCP without public access](./private_connectivity_gcp.md)
-- Code hosts on Azure is not supported yet, please reach out to your account manager if you are interested in this feature.
-- Code hosts on custom data center is not supported yet, please reach out to your account manager if you are interested in this feature.
+- [Code hosts and artifact registries on AWS without public access](./private_connectivity_aws.md)
+- [Code hosts and artifact registries on GCP without public access](./private_connectivity_gcp.md)
+- Code hosts and artifact registries on Azure are not supported yet, please reach out to your account manager if you are interested in this feature.
+- Code hosts and artifact registries on custom data center are not supported yet, please reach out to your account manager if you are interested in this feature.
 
-### Private artifact registries support
-
-Cloud supports private artifact registries for [precise code navigation powered by auto-indexing](../code_navigation/explanations/auto_indexing.md) and [server-side Batch Changes](../batch_changes/explanations/server_side.md). Private registries are customer dependencies repositories like Nexus, NPM, Artifactory and many others that are not publicly accessible.
-
-Learn more about private artifact registries support below:
-- [Private artfact registry in AWS](./private_registry_connectivity_aws.md)
-- [Private artifact registry in GCP](./private_registry_connectivity_gcp.md)
-- [Private artifact registry exposed via public load balancer](./private_registry_connectivity_public_lb.md)
-- Private Artifact registry in Azure is not supported yet, please reach out to your account manager if you are interested in this feature.
-- Private Artifact registry on custom data center is not supported yet, please reach out to your account manager if you are interested in this feature.
+For not supported private connectivity methods, Sourcegraph offers connectivity via customer exposed load balancer:
+- [Code hosts and artifact registries exposed via public load balancer](./private_connectivity_public_lb.md)
 
 ### Health monitoring, support, and SLAs
 
