@@ -162,8 +162,7 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 			db := database.NewDB(logger, dbtest.NewDB(t))
 			ctx := context.Background()
 
-			//lint:ignore SA1019 existing usage of deprecated functionality.
-			// Use EventRecorder from internal/telemetryrecorder instead.
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, &database.Event{
 				UserID: 1,
 				Name:   eventName,
@@ -174,8 +173,7 @@ func TestGetOwnershipUsageStatsAggregatedStats(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			//lint:ignore SA1019 existing usage of deprecated functionality.
-			// Use EventRecorder from internal/telemetryrecorder instead.
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, &database.Event{
 				UserID: 2,
 				Name:   eventName,

@@ -274,9 +274,9 @@ func logLocalEvents(ctx context.Context, db database.DB, events []Event) error {
 		return err
 	}
 
-	//lint:ignore SA1019 existing usage of deprecated functionality.
 	// Use EventRecorder from internal/telemetryrecorder instead - logLocalEvents
 	// should eventually be removed entirely.
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return db.EventLogs().BulkInsert(ctx, databaseEvents)
 }
 

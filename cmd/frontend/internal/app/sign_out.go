@@ -116,7 +116,6 @@ func recordSecurityEvent(r *http.Request, db database.DB, name database.Security
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
-	//lint:ignore SA1019 existing usage of deprecated functionality.
-	// Use EventRecorder from internal/telemetryrecorder instead.
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
 }

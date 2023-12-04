@@ -158,8 +158,7 @@ func TestCheckAnomalies(t *testing.T) {
 				Timestamp:       ts,
 			}
 		}
-		//lint:ignore SA1019 existing usage of deprecated functionality.
-		// Use EventRecorder from internal/telemetryrecorder instead.
+		//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 		err = db.EventLogs().BulkInsert(ctx, events)
 		require.NoError(t, err)
 	}

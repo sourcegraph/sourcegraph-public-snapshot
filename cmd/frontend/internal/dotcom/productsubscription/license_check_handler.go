@@ -54,8 +54,7 @@ func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
 		Timestamp:       time.Now(),
 	}
 
-	//lint:ignore SA1019 existing usage of deprecated functionality.
-	// Use EventRecorder from internal/telemetryrecorder instead.
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, e)
 }
 

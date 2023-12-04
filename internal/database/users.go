@@ -502,8 +502,7 @@ func logAccountCreatedEvent(ctx context.Context, db DB, u *types.User, serviceTy
 		Source:          "BACKEND",
 		Timestamp:       time.Now(),
 	}
-	//lint:ignore SA1019 existing usage of deprecated functionality.
-	// Use EventRecorder from internal/telemetryrecorder instead.
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 
@@ -845,8 +844,7 @@ func logUserDeletionEvents(ctx context.Context, db DB, ids []int32, name Securit
 		}
 	}
 
-	//lint:ignore SA1019 existing usage of deprecated functionality.
-	// Use EventRecorder from internal/telemetryrecorder instead.
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().BulkInsert(ctx, logEvents)
 }
 
@@ -968,8 +966,7 @@ func (u *userStore) SetIsSiteAdmin(ctx context.Context, id int32, isSiteAdmin bo
 				Source:          "BACKEND",
 				Timestamp:       time.Now(),
 			}
-			//lint:ignore SA1019 existing usage of deprecated functionality.
-			// Use EventRecorder from internal/telemetryrecorder instead.
+			//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 			_ = db.EventLogs().Insert(ctx, logEvent)
 			return err
 		}
@@ -1693,8 +1690,7 @@ func LogPasswordEvent(ctx context.Context, db DB, r *http.Request, name Security
 		Timestamp:       time.Now(),
 	}
 
-	//lint:ignore SA1019 existing usage of deprecated functionality.
-	// Use EventRecorder from internal/telemetryrecorder instead.
+	//lint:ignore SA1019 existing usage of deprecated functionality. Use EventRecorder from internal/telemetryrecorder instead.
 	_ = db.EventLogs().Insert(ctx, logEvent)
 }
 
