@@ -63,6 +63,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Run MVU Upgrade Tests
 	mvuTestPool := pool.New().WithErrors()
 	for _, version := range mvuVersions {
 		version := version
@@ -82,6 +83,7 @@ func main() {
 	}
 
 	results.DisplayErrors()
+	results.SimpleResults()
 }
 
 type Test struct {
@@ -135,6 +137,36 @@ func (r *TestResults) AddAutoTest(test Test) {
 	r.Mutex.Lock()
 	defer r.Mutex.Unlock()
 	r.AutoupgradeTests = append(r.AutoupgradeTests, test)
+}
+
+func (r *TestResults) SimpleResults() {
+	stdRes := []string{}
+	for _, test := range r.StandardUpgradeTests {
+		if 0 < len(test.Errors) {
+			stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed", test.Version))
+		} else {
+			stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed", test.Version))
+		}
+	}
+	mvuRes := []string{}
+	for _, test := range r.MVUUpgradeTests {
+		if 0 < len(test.Errors) {
+			mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed", test.Version))
+		} else {
+			mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed", test.Version))
+		}
+	}
+	autoRes := []string{}
+	for _, test := range r.AutoupgradeTests {
+		if 0 < len(test.Errors) {
+			autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed", test.Version))
+		} else {
+			autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed", test.Version))
+		}
+	}
+	fmt.Println("--- Standard Upgrade Tests: \n", strings.Join(stdRes, "\n"))
+	fmt.Println("--- Multiversion Upgrade Tests: \n", strings.Join(mvuRes, "\n"))
+	fmt.Println("--- Auto Upgrade Tests: \n", strings.Join(autoRes, "\n"))
 }
 
 func (r *TestResults) DisplayErrors() {
