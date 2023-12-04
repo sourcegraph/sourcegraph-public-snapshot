@@ -17,6 +17,7 @@ import { FocusableTree, type FocusableTreeProps } from './RepoRevisionSidebarFoc
 import type { SymbolPlaceholder, SymbolWithChildren } from './RepoRevisionSidebarSymbols'
 
 import styles from './RepoRevisionSidebarSymbols.module.scss'
+import { ParsedRepoRevision, ParsedRepoURI, UIPositionSpec } from '@sourcegraph/shared/src/util/url'
 
 interface Props extends FocusableTreeProps {
     symbols: SymbolWithChildren[]
@@ -85,33 +86,65 @@ export const RepoRevisionSidebarSymbolTree: React.FC<Props> = ({
     useEffect(() => {
         treeDataRef.current = treeData
     }, [treeData])
+
     useEffect(() => {
-        const currentLocation = parseBrowserRepoURL(H.createPath(location))
-        // Ignore effect updates that are caused by changes that we have made
-        if (selectedSymbolUrl && isEqual(currentLocation, parseBrowserRepoURL(selectedSymbolUrl))) {
+        const currentParsedURL = parseBrowserRepoURL(H.createPath(location))
+        // Ignore effect updates that are caused by changes that we have made.
+        if (
+            (selectedSymbolUrl && isEqual(currentParsedURL, parseBrowserRepoURL(selectedSymbolUrl))) ||
+            !currentParsedURL.position
+        ) {
             return
         }
 
-        function isSymbolActive(symbolUrl: string): boolean {
-            const symbolLocation = parseBrowserRepoURL(symbolUrl)
-            return (
-                currentLocation.repoName === symbolLocation.repoName &&
-                currentLocation.revision === symbolLocation.revision &&
-                currentLocation.filePath === symbolLocation.filePath &&
-                isEqual(currentLocation.position, symbolLocation.position)
-            )
+        type Location = ParsedRepoURI & UIPositionSpec & Pick<ParsedRepoRevision, 'rawRevision'>
+        const currentLocation: Location = { ...currentParsedURL, position: currentParsedURL.position }
+
+        function isSameFile(l1: Location, l2: Location): boolean {
+            return l1.repoName === l2.repoName && l1.filePath === l2.filePath && l1.revision === l2.revision
+        }
+
+        function isSymbolActive(symbolLocation: Location): boolean {
+            return currentLocation.position.line === symbolLocation.position.line
+        }
+
+        // Sometimes current location will not match the exact position of a known symbol,
+        // but will be inside some higher-level container instead (function body, struct, etc.),
+        // in which case we can highlight the nearest symbol above.
+        const nearest: { line: number; url?: string; location?: Location } = { line: -1 }
+        function updateNearestSymbol(symbolLocation: Location, url: string): undefined {
+            const { line } = symbolLocation.position
+            const { line: anchor } = currentLocation.position!
+            if (line < anchor && line > nearest.line) {
+                nearest.line = line
+                nearest.url = url
+                nearest.location = symbolLocation
+            }
         }
 
         for (const node of treeDataRef.current) {
             if (node.__typename === 'SymbolPlaceholder') {
                 continue
             }
-            if (isSymbolActive(node.url)) {
+            const parsedURL = parseBrowserRepoURL(node.url)
+            if (!parsedURL.position) {
+                continue
+            }
+            const symbolLocation = { ...parsedURL, position: parsedURL.position }
+            if (!isSameFile(currentLocation, symbolLocation)) {
+                continue
+            }
+            if (isSymbolActive(symbolLocation)) {
                 if (selectedSymbolUrl !== node.url) {
                     setSelectedSymbolUrl(node.url)
                 }
-                break
+                return
             }
+            updateNearestSymbol(symbolLocation, node.url)
+        }
+
+        if (nearest.line >= 0 && nearest.url) {
+            setSelectedSymbolUrl(nearest.url)
         }
     }, [location, selectedSymbolUrl, setSelectedSymbolUrl])
 
