@@ -66,10 +66,10 @@ func (h *resetterHandler) Handle(ctx context.Context) error {
 	// We only run this handler once a week, Sunday morning between 2:00 and
 	// 2:30 UTC, because it might run for 2-3 minutes.
 	//
-	// TODO: we temporarily run this on Monday, 10 UTC, to see how it behaves
+	// TODO: We're trying to run this on Monday, for testing purposes
 	now := time.Now().UTC()
 	isSunday := now.Weekday() == time.Monday
-	isBetween2And230 := now.Hour() == 10 && now.Minute() < 30
+	isBetween2And230 := now.Hour() == 13 && now.Minute() < 30
 
 	if !isSunday || !isBetween2And230 {
 		h.logger.Debug("Skipping deleting and recreating statistics; not Sunday between 2-2:30 UTC")
@@ -77,10 +77,10 @@ func (h *resetterHandler) Handle(ctx context.Context) error {
 	}
 
 	// It's Sunday and between 2:00 and 2:30 AM UTC
-	h.logger.Info("Deleting and recreating repo statistics")
-
 	retries := 10
 	for {
+		h.logger.Info("Deleting and recreating repo statistics", log.Int("retries", retries))
+
 		// We use a 5 minute timeout here to prevent the table lock from taking
 		// down the instance.
 		ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
@@ -88,19 +88,24 @@ func (h *resetterHandler) Handle(ctx context.Context) error {
 
 		err := h.store.DeleteAndRecreateStatistics(ctx)
 		if err == nil {
+			h.logger.Info("Success")
 			// Success!
 			return nil
 		}
 
-		// If we ran into a deadlock, we try again in 5 seconds
+		// If we ran into a deadlock or took too long, we try again in 5 seconds
 		var pgerr *pgconn.PgError
-		if errors.As(err, &pgerr) && pgerr.Code == "40P01" && retries > 0 {
-			h.logger.Warn("ran into deadlock. Retrying in 5 seconds...")
+		isDeadlock := errors.As(err, &pgerr) && pgerr.Code == "40P01"
+		isDeadlineExceeded := errors.IsDeadlineExceeded(err)
+
+		if (isDeadlock || isDeadlineExceeded) && retries > 0 {
+			h.logger.Warn("ran into error. Retrying in 5 seconds...", log.Bool("deadlock", isDeadlock), log.Bool("deadline Exceeded", isDeadlineExceeded))
 			retries -= 1
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
+		h.logger.Info("Failed", log.Error(err))
 		return err
 	}
 }
