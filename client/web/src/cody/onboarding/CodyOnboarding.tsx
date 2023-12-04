@@ -142,7 +142,7 @@ function PurposeStep({ onNext, pro }: { onNext: () => void; pro: boolean }): JSX
         <>
             <div className="border-bottom pb-3 mb-3">
                 <H2 className="mb-1">What are you using Cody for?</H2>
-                <Text className="mb-0" size="small">
+                <Text className="mb-0 text-muted" size="small" >
                     This will allow us to understand our audience better and guide your journey
                 </Text>
             </div>
@@ -214,7 +214,7 @@ function EditorStep({
         <>
             <div className="border-bottom pb-3 mb-3">
                 <H2 className="mb-1">Choose your editor</H2>
-                <Text className="mb-0" size="small">
+                <Text className="mb-0 text-muted" size="small" >
                     Most of Cody experience happens in the IDE. Let's get that set up.
                 </Text>
             </div>
