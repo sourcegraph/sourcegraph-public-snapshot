@@ -139,7 +139,7 @@ PNPM,@babel/runtime,7.23.1,MIT,"",Approved
 PNPM,@babel/runtime-corejs3,7.10.3,MIT,"",Approved
 PNPM,@babel/template,7.22.15,MIT,"",Approved
 PNPM,@babel/traverse,7.10.5,MIT,"",Approved
-PNPM,@babel/types,7.23.0,MIT,"",Approved
+PNPM,@babel/types,7.10.5,MIT,"",Approved
 PNPM,@base2/pretty-print-object,1.0.1,Simplified BSD,"",Approved
 PNPM,@bcoe/v8-coverage,0.2.3,MIT,"",Approved
 PNPM,@codemirror/autocomplete,6.1.0,MIT,"",Approved
@@ -797,7 +797,7 @@ PNPM,babel-plugin-syntax-trailing-function-commas,7.0.0-beta.0,MIT,"",Approved
 PNPM,babel-plugin-transform-flow-enums,0.0.2,MIT,"",Approved
 PNPM,babel-preset-fbjs,3.4.0,MIT,"",Approved
 PNPM,backbone,1.1.2,MIT,"",Approved
-PNPM,balanced-match,0.4.2,MIT,"",Approved
+PNPM,balanced-match,1.0.0,MIT,"",Approved
 PNPM,base64-js,1.5.1,MIT,"",Approved
 PNPM,basic-auth,2.0.1,MIT,"",Approved
 PNPM,before-after-hook,2.2.2,Apache 2.0,"",Approved
@@ -886,18 +886,18 @@ PNPM,clone,1.0.4,MIT,"",Approved
 PNPM,clone-deep,4.0.1,MIT,"",Approved
 PNPM,clone-regexp,2.2.0,MIT,"",Approved
 PNPM,clone-response,1.0.2,MIT,"",Approved
-Go,cloud.google.com/go,v0.110.9,"Apache 2.0,New BSD",cloud.google.com/go,Approved
-Go,cloud.google.com/go/bigquery,v1.56.0,Apache 2.0,cloud.google.com/go/bigquery,Approved
+Go,cloud.google.com/go,v0.110.10,"Apache 2.0,New BSD",cloud.google.com/go,Approved
+Go,cloud.google.com/go/bigquery,v1.57.1,Apache 2.0,cloud.google.com/go/bigquery,Approved
 Go,cloud.google.com/go/cloudsqlconn,v1.5.1,Apache 2.0,cloud.google.com/go/cloudsqlconn,Approved
 Go,cloud.google.com/go/compute/metadata,v0.2.4-0.20230617002413-005d2dfb6b68,Apache 2.0,cloud.google.com/go/compute,Approved
-Go,cloud.google.com/go/iam,v1.1.4,Apache 2.0,cloud.google.com/go/iam,Approved
-Go,cloud.google.com/go/kms,v1.15.4,Apache 2.0,cloud.google.com/go/kms,Approved
-Go,cloud.google.com/go/monitoring,v1.16.2,Apache 2.0,cloud.google.com/go/monitoring,Approved
+Go,cloud.google.com/go/iam,v1.1.5,Apache 2.0,cloud.google.com/go/iam,Approved
+Go,cloud.google.com/go/kms,v1.15.5,Apache 2.0,cloud.google.com/go/kms,Approved
+Go,cloud.google.com/go/monitoring,v1.16.3,Apache 2.0,cloud.google.com/go/monitoring,Approved
 Go,cloud.google.com/go/profiler,v0.3.1,Apache 2.0,cloud.google.com/go/profiler,Approved
 Go,cloud.google.com/go/pubsub,v1.33.0,Apache 2.0,cloud.google.com/go/pubsub,Approved
-Go,cloud.google.com/go/secretmanager,v1.11.3,Apache 2.0,cloud.google.com/go/secretmanager,Approved
+Go,cloud.google.com/go/secretmanager,v1.11.4,Apache 2.0,cloud.google.com/go/secretmanager,Approved
 Go,cloud.google.com/go/storage,v1.30.1,Apache 2.0,cloud.google.com/go/storage,Approved
-Go,cloud.google.com/go/trace,v1.10.3,Apache 2.0,cloud.google.com/go/trace,Approved
+Go,cloud.google.com/go/trace,v1.10.4,Apache 2.0,cloud.google.com/go/trace,Approved
 PNPM,clsx,1.2.1,MIT,"",Approved
 PNPM,code-point-at,1.1.0,MIT,"",Approved
 PNPM,code-red,1.0.4,MIT,"",Approved
@@ -983,7 +983,7 @@ PNPM,dayjs,1.11.10,MIT,"",Approved
 PNPM,debounce,1.2.1,MIT,"",Approved
 PNPM,debug,4.3.1,MIT,"",Approved
 PNPM,debuglog,1.0.1,MIT,"",Approved
-PNPM,decamelize,4.0.0,MIT,"",Approved
+PNPM,decamelize,1.2.0,MIT,"",Approved
 PNPM,decamelize-keys,1.1.0,MIT,"",Approved
 PNPM,decimal.js,10.4.3,MIT,"",Approved
 PNPM,decimal.js-light,2.5.0,MIT,"",Approved
@@ -1053,7 +1053,7 @@ PNPM,encodeurl,1.0.2,MIT,"",Approved
 PNPM,end-of-stream,1.4.4,MIT,"",Approved
 PNPM,enhanced-resolve,5.15.0,MIT,"",Approved
 PNPM,enquirer,2.3.6,MIT,"",Approved
-PNPM,entities,2.2.0,Simplified BSD,"",Approved
+PNPM,entities,2.1.0,Simplified BSD,"",Approved
 PNPM,envalid,7.3.1,MIT,"",Approved
 PNPM,envinfo,7.10.0,MIT,"",Approved
 PNPM,error-ex,1.3.2,MIT,"",Approved
@@ -1078,7 +1078,7 @@ PNPM,esbuild-plugin-alias,0.2.1,MIT,"",Approved
 PNPM,esbuild-register,3.4.2,MIT,"",Approved
 PNPM,escalade,3.1.1,MIT,"",Approved
 PNPM,escape-html,1.0.3,MIT,"",Approved
-PNPM,escape-string-regexp,2.0.0,MIT,"",Approved
+PNPM,escape-string-regexp,1.0.5,MIT,"",Approved
 PNPM,escodegen,1.14.3,Simplified BSD,"",Approved
 PNPM,eslint,8.4.1,MIT,"",Approved
 PNPM,eslint-config-prettier,9.0.0,MIT,"",Approved
@@ -1286,7 +1286,7 @@ Go,github.com/containerd/typeurl,v1.0.2,Apache 2.0,github.com/containerd/typeurl
 Go,github.com/coreos/go-iptables,v0.6.0,Apache 2.0,github.com/coreos/go-iptables,Approved
 Go,github.com/coreos/go-oidc,v2.2.1,Apache 2.0,github.com/coreos/go-oidc,Approved
 Go,github.com/coreos/go-semver,v0.3.0,Apache 2.0,github.com/coreos/go-semver,Approved
-Go,github.com/cpuguy83/go-md2man/v2,v2.0.2,MIT,github.com/cpuguy83/go-md2man,Approved
+Go,github.com/cpuguy83/go-md2man/v2,v2.0.3,MIT,github.com/cpuguy83/go-md2man,Approved
 Go,github.com/davecgh/go-spew,v1.1.1,ISC,github.com/davecgh/go-spew,Approved
 Go,github.com/daviddengcn/go-colortext,v1.0.0,MIT,github.com/daviddengcn/go-colortext,Approved
 Go,github.com/dennwc/varint,v1.0.0,MIT,github.com/dennwc/varint,Approved
@@ -1308,7 +1308,6 @@ Go,github.com/docker/docker-credential-helpers,v0.7.0,MIT,github.com/docker/dock
 Go,github.com/docker/go-connections,v0.4.0,Apache 2.0,github.com/docker/go-connections,Approved
 Go,github.com/docker/go-units,v0.5.0,Apache 2.0,github.com/docker/go-units,Approved
 Go,github.com/dustin/go-humanize,v1.0.1,MIT,github.com/dustin/go-humanize,Approved
-Go,github.com/edsrzf/mmap-go,v1.1.0,New BSD,github.com/edsrzf/mmap-go,Approved
 Go,github.com/elimity-com/scim,v0.0.0-20220121082953-15165b1a61c8,MIT,github.com/elimity-com/scim,Approved
 Go,github.com/emicklei/go-restful/v3,v3.8.0,MIT,github.com/emicklei/go-restful,Approved
 Go,github.com/emirpasic/gods,v1.18.1,Simplified BSD,github.com/emirpasic/gods,Approved
@@ -1389,7 +1388,7 @@ Go,github.com/graphql-go/graphql,v0.8.1,MIT,github.com/graphql-go/graphql,Approv
 Go,github.com/gregjones/httpcache,v0.0.0-20190611155906-901d90724c79,MIT,github.com/gregjones/httpcache,Approved
 Go,github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus,v1.0.0-rc.0,Apache 2.0,github.com/grpc-ecosystem/go-grpc-middleware,Approved
 Go,github.com/grpc-ecosystem/go-grpc-middleware/v2,v2.0.0,Apache 2.0,github.com/grpc-ecosystem/go-grpc-middleware,Approved
-Go,github.com/grpc-ecosystem/grpc-gateway/v2,v2.16.0,New BSD,github.com/grpc-ecosystem/grpc-gateway,Approved
+Go,github.com/grpc-ecosystem/grpc-gateway/v2,v2.16.1,New BSD,github.com/grpc-ecosystem/grpc-gateway,Approved
 Go,github.com/hashicorp/cronexpr,v1.1.1,Apache 2.0,github.com/hashicorp/cronexpr,Approved
 Go,github.com/hashicorp/errwrap,v1.1.0,Mozilla Public License 2.0,github.com/hashicorp/errwrap,Approved
 Go,github.com/hashicorp/go-cleanhttp,v0.5.2,Mozilla Public License 2.0,github.com/hashicorp/go-cleanhttp,Approved
@@ -1547,7 +1546,7 @@ Go,github.com/sourcegraph/run,v0.12.0,Apache 2.0,github.com/sourcegraph/run,Appr
 Go,github.com/sourcegraph/scip,v0.3.1-0.20230627154934-45df7f6d33fc,Apache 2.0,github.com/sourcegraph/scip,Approved
 Go,github.com/sourcegraph/tiktoken-go,v0.0.0-20230905173153-caab340cf008,MIT,github.com/sourcegraph/tiktoken-go,Approved
 Go,github.com/sourcegraph/yaml,v1.0.1-0.20200714132230-56936252f152,MIT,github.com/sourcegraph/yaml,Approved
-Go,github.com/sourcegraph/zoekt,v0.0.0-20231121165958-0959170c1623,Apache 2.0,github.com/sourcegraph/zoekt,Approved
+Go,github.com/sourcegraph/zoekt,v0.0.0-20231129132138-0d03621d45a3,Apache 2.0,github.com/sourcegraph/zoekt,Approved
 Go,github.com/spf13/pflag,v1.0.5,New BSD,github.com/spf13/pflag,Approved
 Go,github.com/stretchr/testify,v1.8.4,MIT,github.com/stretchr/testify,Approved
 Go,github.com/throttled/throttled/v2,v2.12.0,New BSD,github.com/throttled/throttled,Approved
@@ -1640,7 +1639,7 @@ Go,go.uber.org/ratelimit,v0.2.0,MIT,go.uber.org/ratelimit,Approved
 Go,go.uber.org/zap,v1.26.0,MIT,go.uber.org/zap,Approved
 Go,golang.org/x/crypto,v0.15.0,New BSD,golang.org/x/crypto,Approved
 Go,golang.org/x/exp,v0.0.0-20230713183714-613f0c0eb8a1,New BSD,golang.org/x/exp,Approved
-Go,golang.org/x/mod,v0.12.0,New BSD,golang.org/x/mod,Approved
+Go,golang.org/x/mod,v0.14.0,New BSD,golang.org/x/mod,Approved
 Go,golang.org/x/net,v0.18.0,New BSD,golang.org/x/net,Approved
 Go,golang.org/x/oauth2,v0.14.0,New BSD,golang.org/x/oauth2,Approved
 Go,golang.org/x/sync,v0.5.0,New BSD,golang.org/x/sync,Approved
@@ -1653,9 +1652,9 @@ Go,gonum.org/v1/gonum,v0.13.0,"MIT,New BSD",gonum.org/v1/gonum,Approved
 PNPM,google-auth-library,5.7.0,Apache 2.0,"",Approved
 PNPM,google-p12-pem,2.0.2,MIT,"",Approved
 Go,google.golang.org/api,v0.150.0,New BSD,google.golang.org/api,Approved
-Go,google.golang.org/genproto,v0.0.0-20231030173426-d783a09b4405,Apache 2.0,google.golang.org/genproto,Approved
-Go,google.golang.org/genproto/googleapis/api,v0.0.0-20231016165738-49dd2c1f3d0b,Apache 2.0,google.golang.org/genproto/googleapis,Approved
-Go,google.golang.org/genproto/googleapis/rpc,v0.0.0-20231106174013-bbf56f31fb17,Apache 2.0,google.golang.org/genproto/googleapis,Approved
+Go,google.golang.org/genproto,v0.0.0-20231127180814-3a041ad873d4,Apache 2.0,google.golang.org/genproto,Approved
+Go,google.golang.org/genproto/googleapis/api,v0.0.0-20231127180814-3a041ad873d4,Apache 2.0,google.golang.org/genproto/googleapis,Approved
+Go,google.golang.org/genproto/googleapis/rpc,v0.0.0-20231127180814-3a041ad873d4,Apache 2.0,google.golang.org/genproto/googleapis,Approved
 Go,google.golang.org/grpc,v1.59.0,Apache 2.0,google.golang.org/grpc,Approved
 Go,google.golang.org/protobuf,v1.31.0,New BSD,google.golang.org/protobuf,Approved
 PNPM,googleapis,47.0.0,Apache 2.0,"",Approved
@@ -1873,7 +1872,7 @@ PNPM,json-stable-stringify,1.0.1,MIT,"",Approved
 PNPM,json-stable-stringify-without-jsonify,1.0.1,MIT,"",Approved
 PNPM,json-stringify-safe,5.0.1,ISC,"",Approved
 PNPM,json-to-pretty-yaml,1.2.2,Apache 2.0,"",Approved
-PNPM,json5,2.2.3,MIT,"",Approved
+PNPM,json5,1.0.1,MIT,"",Approved
 PNPM,jsonc-parser,3.2.0,MIT,"",Approved
 PNPM,jsonfile,4.0.0,MIT,"",Approved
 PNPM,jsonify,0.0.0,Public Domain,"",Approved
@@ -2233,6 +2232,7 @@ PNPM,react-element-to-jsx-string,15.0.0,MIT,"",Approved
 PNPM,react-error-boundary,3.1.4,MIT,"",Approved
 PNPM,react-focus-lock,2.7.1,MIT,"",Approved
 PNPM,react-grid-layout,1.3.4,MIT,"",Approved
+PNPM,react-icons,4.12.0,MIT,"",Approved
 PNPM,react-inspector,6.0.2,MIT,"",Approved
 PNPM,react-is,16.13.1,MIT,"",Approved
 PNPM,react-konva,16.8.6,MIT,"",Approved
@@ -2622,7 +2622,7 @@ PNPM,webcrypto-core,1.7.5,MIT,"",Approved
 PNPM,webext-additional-permissions,1.0.0,MIT,"",Approved
 PNPM,webext-domain-permission-toggle,1.0.1,MIT,"",Approved
 PNPM,webextension-polyfill,0.6.0,Mozilla Public License 2.0,"",Approved
-PNPM,webidl-conversions,7.0.0,Simplified BSD,"",Approved
+PNPM,webidl-conversions,3.0.1,Simplified BSD,"",Approved
 PNPM,webpack,5.88.2,MIT,"",Approved
 PNPM,webpack-sources,3.2.3,MIT,"",Approved
 PNPM,webpack-virtual-modules,0.5.0,MIT,"",Approved
