@@ -118,6 +118,8 @@ func TestEventLogs_ValidInfo(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			//lint:ignore SA1019 existing usage of deprecated functionality.
+			// Use EventRecorder from internal/telemetryrecorder instead.
 			err := db.EventLogs().Insert(ctx, tc.event)
 
 			if have, want := fmt.Sprint(errors.Unwrap(err)), tc.err; have != want {
@@ -257,6 +259,10 @@ func TestEventLogs_SiteUsageMultiplePeriods(t *testing.T) {
 		makeTestEvent(&Event{UserID: uint32(user3.ID), Timestamp: thirdDay}),
 		makeTestEvent(&Event{UserID: uint32(user4.ID), Timestamp: thirdDay}),
 	}
+
+	//lint:ignore SA1019 existing usage of deprecated functionality.
+	// We should generate this ping from V2 events recorded using EventRecorder
+	// from internal/telemetryrecorder instead.
 	err = db.EventLogs().BulkInsert(ctx, events)
 	require.NoError(t, err)
 
@@ -306,6 +312,8 @@ func TestEventLogs_UsersUsageCounts(t *testing.T) {
 						Timestamp: day.Add(time.Minute * time.Duration(rand.Intn(60*12))),
 					}
 
+					//lint:ignore SA1019 existing usage of deprecated functionality.
+					// Use EventRecorder from internal/telemetryrecorder instead.
 					if err := db.EventLogs().Insert(ctx, e); err != nil {
 						t.Fatal(err)
 					}
@@ -408,6 +416,8 @@ func TestEventLogs_SiteUsage(t *testing.T) {
 							e.AnonymousUserID = "deadbeef"
 						}
 
+						//lint:ignore SA1019 existing usage of deprecated functionality.
+						// Use EventRecorder from internal/telemetryrecorder instead.
 						if err := db.EventLogs().Insert(ctx, e); err != nil {
 							t.Fatal(err)
 						}
@@ -535,6 +545,8 @@ func TestEventLogs_SiteUsage_ExcludeSourcegraphAdmins(t *testing.T) {
 							e.PublicArgument = json.RawMessage(fmt.Sprintf(`{"%s": true}`, EventLogsSourcegraphOperatorKey))
 						}
 
+						//lint:ignore SA1019 existing usage of deprecated functionality.
+						// Use EventRecorder from internal/telemetryrecorder instead.
 						err := db.EventLogs().Insert(ctx, e)
 						require.NoError(t, err)
 					}
@@ -619,6 +631,8 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 				Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 			}
 
+			//lint:ignore SA1019 existing usage of deprecated functionality.
+			// Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, e); err != nil {
 				t.Fatal(err)
 			}
@@ -633,6 +647,8 @@ func TestEventLogs_codeIntelligenceWeeklyUsersCount(t *testing.T) {
 				Timestamp: now.Add(-time.Hour * 24 * 12).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 			}
 
+			//lint:ignore SA1019 existing usage of deprecated functionality.
+			// Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, e); err != nil {
 				t.Fatal(err)
 			}
@@ -846,6 +862,8 @@ func TestEventLogs_CodeIntelligenceSettingsPageViewCounts(t *testing.T) {
 				}
 
 				g.Go(func() error {
+					//lint:ignore SA1019 existing usage of deprecated functionality.
+					// Use EventRecorder from internal/telemetryrecorder instead.
 					return db.EventLogs().Insert(gctx, e)
 				})
 			}
@@ -910,6 +928,8 @@ func TestEventLogs_AggregatedCodeIntelEvents(t *testing.T) {
 					}
 
 					g.Go(func() error {
+						//lint:ignore SA1019 existing usage of deprecated functionality.
+						// Use EventRecorder from internal/telemetryrecorder instead.
 						return db.EventLogs().Insert(gctx, e)
 					})
 				}
@@ -971,6 +991,8 @@ func TestEventLogs_AggregatedSparseCodeIntelEvents(t *testing.T) {
 			Timestamp: now.Add(-time.Hour * 24 * 3), // This week
 		}
 
+		//lint:ignore SA1019 existing usage of deprecated functionality.
+		// Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
 			t.Fatal(err)
 		}
@@ -1047,6 +1069,8 @@ func TestEventLogs_AggregatedCodeIntelInvestigationEvents(t *testing.T) {
 					}
 
 					g.Go(func() error {
+						//lint:ignore SA1019 existing usage of deprecated functionality.
+						// Use EventRecorder from internal/telemetryrecorder instead.
 						return db.EventLogs().Insert(gctx, e)
 					})
 				}
@@ -1105,6 +1129,8 @@ func TestEventLogs_AggregatedSparseSearchEvents(t *testing.T) {
 			Timestamp: now.Add(-time.Hour * 24 * 6), // This month
 		}
 
+		//lint:ignore SA1019 existing usage of deprecated functionality.
+		// Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
 			t.Fatal(err)
 		}
@@ -1190,6 +1216,8 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 						}
 
 						g.Go(func() error {
+							//lint:ignore SA1019 existing usage of deprecated functionality.
+							// Use EventRecorder from internal/telemetryrecorder instead.
 							return db.EventLogs().Insert(gctx, e)
 						})
 					}
@@ -1221,6 +1249,8 @@ func TestEventLogs_AggregatedSearchEvents(t *testing.T) {
 		Timestamp: now.Add(-time.Hour * 24 * 3).Add(time.Minute * time.Duration(rand.Intn(60)-30)),
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality.
+	// Use EventRecorder from internal/telemetryrecorder instead.
 	if err := db.EventLogs().Insert(gctx, e); err != nil {
 		t.Fatal(err)
 	}
@@ -1348,6 +1378,8 @@ func TestEventLogs_AggregatedCodyEvents(t *testing.T) {
 					}
 
 					g.Go(func() error {
+						//lint:ignore SA1019 existing usage of deprecated functionality.
+						// Use EventRecorder from internal/telemetryrecorder instead.
 						return db.EventLogs().Insert(gctx, e)
 					})
 				}
@@ -1454,6 +1486,8 @@ func TestEventLogs_ListAll(t *testing.T) {
 	tr, ctx = trace.New(ctx, t.Name())
 
 	for _, event := range events {
+		//lint:ignore SA1019 existing usage of deprecated functionality.
+		// Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
 			t.Fatal(err)
 		}
@@ -1551,6 +1585,8 @@ func TestEventLogs_LatestPing(t *testing.T) {
 			},
 		}
 		for _, event := range events {
+			//lint:ignore SA1019 existing usage of deprecated functionality.
+			// Use EventRecorder from internal/telemetryrecorder instead.
 			if err := db.EventLogs().Insert(ctx, event); err != nil {
 				t.Fatal(err)
 			}
@@ -1892,6 +1928,8 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 			db := NewDB(logger, dbtest.NewDB(t))
 			ctx := context.Background()
 			for _, e := range testCase.events {
+				//lint:ignore SA1019 existing usage of deprecated functionality.
+				// Use EventRecorder from internal/telemetryrecorder instead.
 				if err := db.EventLogs().Insert(ctx, e); err != nil {
 					t.Fatalf("failed inserting test data: %s", err)
 				}
@@ -1956,6 +1994,8 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
 	for _, e := range events {
+		//lint:ignore SA1019 existing usage of deprecated functionality.
+		// Use EventRecorder from internal/telemetryrecorder instead.
 		if err := db.EventLogs().Insert(ctx, e); err != nil {
 			t.Fatalf("failed inserting test data: %s", err)
 		}

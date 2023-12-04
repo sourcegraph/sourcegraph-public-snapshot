@@ -226,6 +226,8 @@ type Event struct {
 }
 
 func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
+	//lint:ignore SA1019 existing usage of deprecated functionality.
+	// We should eventually remove this Insert helper entirely.
 	return l.BulkInsert(ctx, []*Event{e})
 }
 

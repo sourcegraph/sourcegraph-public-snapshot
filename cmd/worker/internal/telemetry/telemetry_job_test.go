@@ -149,6 +149,8 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			InsertID: pointers.Ptr("insert-2"),
 		},
 	}
+	//lint:ignore SA1019 existing usage of deprecated functionality.
+	// TODO: This telemetry worker will be removed entirely when all events are migrated to V2.
 	err := db.EventLogs().BulkInsert(ctx, want)
 	if err != nil {
 		t.Fatal(err)
@@ -263,6 +265,9 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 			InsertID: pointers.Ptr("insert"),
 		},
 	}
+
+	//lint:ignore SA1019 existing usage of deprecated functionality.
+	// TODO: This telemetry worker will be removed entirely when all events are migrated to V2.
 	err := db.EventLogs().BulkInsert(ctx, testData)
 	if err != nil {
 		t.Fatal(err)
@@ -380,6 +385,9 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 			InsertID: pointers.Ptr("insert"),
 		},
 	}
+
+	//lint:ignore SA1019 existing usage of deprecated functionality.
+	// TODO: This telemetry worker will be removed entirely when all events are migrated to V2.
 	err := db.EventLogs().BulkInsert(ctx, testData)
 	if err != nil {
 		t.Fatal(err)
@@ -635,6 +643,9 @@ func TestGetBookmark(t *testing.T) {
 			Source: "test",
 		},
 	}
+
+	//lint:ignore SA1019 existing usage of deprecated functionality.
+	// TODO: This telemetry worker will be removed entirely when all events are migrated to V2.
 	err := eventLogStore.BulkInsert(ctx, insert)
 	if err != nil {
 		t.Fatal(err)
