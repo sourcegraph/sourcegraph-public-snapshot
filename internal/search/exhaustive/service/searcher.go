@@ -33,7 +33,7 @@ func FromSearchClient(client client.SearchClient) NewSearcher {
 
 		// TODO this hack is an ugly workaround to limit searches to type:file only.
 		// This is OK for the EAP but we should remove the limitation soon.
-		if strings.Index(q, "type:file") == -1 {
+		if !strings.Contains(q, "type:file") {
 			q = "type:file " + q
 		}
 
