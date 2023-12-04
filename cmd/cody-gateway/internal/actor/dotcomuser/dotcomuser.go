@@ -41,7 +41,7 @@ type Source struct {
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
 
-var _ actor.Source = &Source{}
+var _ actor.SourceSingleSyncer = &Source{}
 
 func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
@@ -55,36 +55,12 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 func (s *Source) Name() string { return string(codygateway.ActorSourceDotcomUser) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
-	// "sgd_" is dotcomUserGatewayAccessTokenPrefix
-	if token == "" || !strings.HasPrefix(token, "sgd_") {
-		return nil, actor.ErrNotFromSource{}
-	}
+	return s.get(ctx, token, false)
+}
 
-	if len(token) != tokenLength {
-		return nil, errors.New("invalid token format")
-	}
-
-	data, hit := s.cache.Get(token)
-	if !hit {
-		return s.fetchAndCache(ctx, token)
-	}
-
-	var act *actor.Actor
-	if err := json.Unmarshal(data, &act); err != nil || act == nil {
-		trace.Logger(ctx, s.log).Error("failed to unmarshal actor", log.Error(err))
-
-		// Delete the corrupted record.
-		s.cache.Delete(token)
-
-		return s.fetchAndCache(ctx, token)
-	}
-
-	if act.LastUpdated == nil || time.Since(*act.LastUpdated) > defaultUpdateInterval {
-		return s.fetchAndCache(ctx, token)
-	}
-
-	act.Source = s
-	return act, nil
+func (s *Source) SyncOne(ctx context.Context, token string) error {
+	_, err := s.get(ctx, token, true)
+	return err
 }
 
 // fetchAndCache fetches the dotcom user data for the given user token and caches it
@@ -133,6 +109,42 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 		}
 	}
 	return nil, err
+}
+
+func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*actor.Actor, error) {
+	// "sgd_" is dotcomUserGatewayAccessTokenPrefix
+	if token == "" || !strings.HasPrefix(token, "sgd_") {
+		return nil, actor.ErrNotFromSource{}
+	}
+
+	if len(token) != tokenLength {
+		return nil, errors.New("invalid token format")
+	}
+	// force fetch of rate-limit data from upstream
+	if bypassCache {
+		return s.fetchAndCache(ctx, token)
+	}
+	data, hit := s.cache.Get(token)
+	if !hit {
+		return s.fetchAndCache(ctx, token)
+	}
+
+	var act *actor.Actor
+	if err := json.Unmarshal(data, &act); err != nil || act == nil {
+		trace.Logger(ctx, s.log).Error("failed to unmarshal actor", log.Error(err))
+
+		// Delete the corrupted record.
+		s.cache.Delete(token)
+
+		return s.fetchAndCache(ctx, token)
+	}
+
+	if act.LastUpdated == nil || time.Since(*act.LastUpdated) > defaultUpdateInterval {
+		return s.fetchAndCache(ctx, token)
+	}
+
+	act.Source = s
+	return act, nil
 }
 
 // newActor creates an actor from Sourcegraph.com user.

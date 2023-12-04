@@ -628,6 +628,8 @@ type ExternalService struct {
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
 	CodeHostID     *int32
+	CreatorID      *int32
+	LastUpdaterID  *int32
 }
 
 type ExternalServiceRepo struct {

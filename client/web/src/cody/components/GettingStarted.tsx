@@ -260,7 +260,7 @@ export const GettingStarted: React.FC<
 
                 <Text alignment="center" size="small">
                     By using Cody, you agree to its{' '}
-                    <Link to="https://about.sourcegraph.com/terms/cody-notice">license and privacy statement</Link>.
+                    <Link to="https://sourcegraph.com/terms/cody-notice">license and privacy statement</Link>.
                 </Text>
             </div>
         </div>
