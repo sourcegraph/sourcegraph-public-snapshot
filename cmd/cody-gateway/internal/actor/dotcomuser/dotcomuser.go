@@ -41,7 +41,7 @@ type Source struct {
 	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
 }
 
-var _ actor.Source = &Source{}
+var _ actor.SourceSingleSyncer = &Source{}
 
 func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
@@ -55,6 +55,10 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 func (s *Source) Name() string { return string(codygateway.ActorSourceDotcomUser) }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
+	return s.get(ctx, token, false)
+}
+
+func (s *Source) get(ctx context.Context, token string, bypassCache bool) (*actor.Actor, error) {
 	// "sgd_" is dotcomUserGatewayAccessTokenPrefix
 	if token == "" || !strings.HasPrefix(token, "sgd_") {
 		return nil, actor.ErrNotFromSource{}
@@ -63,7 +67,10 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	if len(token) != tokenLength {
 		return nil, errors.New("invalid token format")
 	}
-
+	// force fetch of rate-limit data from upstream
+	if bypassCache {
+		return s.fetchAndCache(ctx, token)
+	}
 	data, hit := s.cache.Get(token)
 	if !hit {
 		return s.fetchAndCache(ctx, token)
@@ -85,6 +92,11 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 
 	act.Source = s
 	return act, nil
+}
+
+func (s *Source) SyncOne(ctx context.Context, token string) error {
+	_, err := s.get(ctx, token, true)
+	return err
 }
 
 // fetchAndCache fetches the dotcom user data for the given user token and caches it
