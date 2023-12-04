@@ -71,7 +71,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
             <Page className={styles.page}>
                 <PageTitle title="Get Started with Cody" />
                 <PageHeader className={styles.pageHeader}>
-                    <Link to="https://about.sourcegraph.com/">
+                    <Link to="https://sourcegraph.com/">
                         <img
                             className={styles.pageHeaderImage}
                             src="https://sourcegraph.com/.assets/img/sourcegraph-logo-dark.svg"
@@ -116,7 +116,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             <Text className={styles.terms}>
                                 By registering, you agree to our{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com/terms"
+                                    to="https://sourcegraph.com/terms"
                                     className={styles.termsLink}
                                     target="_blank"
                                     rel="noopener"
@@ -125,7 +125,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 </Link>{' '}
                                 and{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com/terms/privacy"
+                                    to="https://sourcegraph.com/terms/privacy"
                                     className={styles.termsLink}
                                     target="_blank"
                                     rel="noopener"
@@ -251,7 +251,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             <Text className={styles.terms}>
                                 By using Sourcegraph, you agree to the{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com/terms/privacy"
+                                    to="https://sourcegraph.com/terms/privacy"
                                     className={styles.termsLink}
                                     target="_blank"
                                     rel="noopener"
@@ -260,7 +260,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 </Link>{' '}
                                 and{' '}
                                 <Link
-                                    to="https://about.sourcegraph.com/terms"
+                                    to="https://sourcegraph.com/terms"
                                     className={styles.termsLink}
                                     target="_blank"
                                     rel="noopener"
@@ -307,13 +307,13 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         </Text>
                         <div className={styles.ctaButtonWrapper}>
                             <Link
-                                to="https://about.sourcegraph.com/cody/pricing"
+                                to="https://sourcegraph.com/cody/pricing"
                                 className={classNames('text-decoration-none', styles.getCodyEnterpriseButton)}
                             >
                                 Get Cody for Enterprise
                             </Link>
                             <Link
-                                to="https://about.sourcegraph.com/demo"
+                                to="https://sourcegraph.com/demo"
                                 className={classNames('text-decoration-none', styles.talkToEngineerButton)}
                             >
                                 Talk to an engineer
@@ -326,7 +326,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                 <div className={styles.footer}>
                     <Text>© 2023 Sourcegraph, Inc. </Text>
                     <Link
-                        to="https://about.sourcegraph.com/terms"
+                        to="https://sourcegraph.com/terms"
                         className={styles.footerLink}
                         target="_blank"
                         rel="noopener"
@@ -334,7 +334,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         Terms
                     </Link>
                     <Link
-                        to="https://about.sourcegraph.com/security"
+                        to="https://sourcegraph.com/security"
                         className={styles.footerLink}
                         target="_blank"
                         rel="noopener"
@@ -342,7 +342,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         Security
                     </Link>
                     <Link
-                        to="https://about.sourcegraph.com/terms/privacy"
+                        to="https://sourcegraph.com/terms/privacy"
                         className={styles.footerLink}
                         target="_blank"
                         rel="noopener"

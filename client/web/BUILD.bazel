@@ -249,6 +249,7 @@ ts_project(
         "src/cody/sidebar/Provider.tsx",
         "src/cody/sidebar/index.tsx",
         "src/cody/sidebar/useSidebarSize.tsx",
+        "src/cody/subscription/CancelProModal.tsx",
         "src/cody/subscription/CodySubscriptionPage.tsx",
         "src/cody/subscription/UpgradeToProModal.tsx",
         "src/cody/subscription/queries.tsx",

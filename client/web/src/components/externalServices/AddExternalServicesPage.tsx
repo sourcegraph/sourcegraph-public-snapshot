@@ -129,8 +129,8 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                     <>
                         <Text>
                             <Icon aria-label="Information icon" svgPath={mdiInformation} /> Upgrade to{' '}
-                            <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add
-                            repositories from other code hosts.
+                            <Link to="https://sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add repositories
+                            from other code hosts.
                         </Text>
                     </>
                 )}
