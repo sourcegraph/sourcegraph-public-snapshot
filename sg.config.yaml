@@ -1116,7 +1116,7 @@ commandsets:
       - syntax-highlighter
     commands:
       - web
-      - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
+      - docsite
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1140,7 +1140,7 @@ commandsets:
       - searcher
       - caddy
       - symbols
-      - docsite # we're hitting port issues with this, see https://github.com/sourcegraph/devx-support/issues/245
+      - docsite
       - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
