@@ -117,7 +117,7 @@ func newOIDCIDServer(t *testing.T, code string, providerConfig *cloud.SchemaAuth
 	return httptest.NewServer(s), &email
 }
 
-type doRequestFunc func(method, urlStr, body string, cookies []*http.Cookie, authed bool, state string) *http.Response
+type doRequestFunc func(method, urlStr, body string, authed bool, state string) *http.Response
 
 type mockDetails struct {
 	usersStore            *dbmocks.MockUserStore
@@ -150,11 +150,8 @@ func newMockDBAndRequester() mockDetails {
 	authedHandler.Handle("/.api/", Middleware(db).API(h))
 	authedHandler.Handle("/", Middleware(db).App(h))
 
-	doRequest := func(method, urlStr, body string, cookies []*http.Cookie, authed bool, state string) *http.Response {
+	doRequest := func(method, urlStr, body string, authed bool, state string) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
-		for _, cookie := range cookies {
-			req.AddCookie(cookie)
-		}
 		if authed {
 			req = req.WithContext(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
 		}
@@ -199,7 +196,7 @@ func TestMiddleware(t *testing.T) {
 	t.Run("unauthenticated API request should pass through", func(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
-		resp := mocks.doRequest(http.MethodGet, "http://example.com/.api/foo", "", nil, false, "")
+		resp := mocks.doRequest(http.MethodGet, "http://example.com/.api/foo", "", false, "")
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 	})
 
@@ -207,7 +204,7 @@ func TestMiddleware(t *testing.T) {
 		mocks := newMockDBAndRequester()
 
 		urlStr := fmt.Sprintf("http://example.com%s/login?pc=%s", authPrefix, mockProvider.ConfigID().ID)
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false, "")
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", false, "")
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 
 		location := resp.Header.Get("Location")
@@ -231,7 +228,7 @@ func TestMiddleware(t *testing.T) {
 			ProviderID: mockProvider.ConfigID().ID,
 		}
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, badState.Encode())
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", nil, false, badState.Encode())
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", false, badState.Encode())
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	})
 
@@ -266,13 +263,7 @@ func TestMiddleware(t *testing.T) {
 		})
 
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
-		cookies := []*http.Cookie{
-			{
-				Name:  stateCookieName,
-				Value: state.Encode(),
-			},
-		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", false, state.Encode())
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		wantRedirect := fmt.Sprintf(`%s?signin=OpenIDConnect`, state.Redirect)
 		assert.Equal(t, wantRedirect, resp.Header.Get("Location"))
@@ -303,13 +294,7 @@ func TestMiddleware(t *testing.T) {
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
-		cookies := []*http.Cookie{
-			{
-				Name:  stateCookieName,
-				Value: state.Encode(),
-			},
-		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", false, state.Encode())
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 	})
 
@@ -340,13 +325,7 @@ func TestMiddleware(t *testing.T) {
 		})
 
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
-		cookies := []*http.Cookie{
-			{
-				Name:  stateCookieName,
-				Value: state.Encode(),
-			},
-		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", false, state.Encode())
 		assert.Equal(t, http.StatusFound, resp.StatusCode)
 		assert.Equal(t, "/", resp.Header.Get("Location"))
 		mockrequire.CalledOnce(t, mocks.usersStore.SetIsSiteAdminFunc)
@@ -383,13 +362,7 @@ func TestMiddleware(t *testing.T) {
 		defer func() { openidconnect.MockVerifyIDToken = nil }()
 
 		urlStr := fmt.Sprintf("http://example.com/.auth/sourcegraph-operator/callback?code=%s&state=%s", testCode, state.Encode())
-		cookies := []*http.Cookie{
-			{
-				Name:  stateCookieName,
-				Value: state.Encode(),
-			},
-		}
-		resp := mocks.doRequest(http.MethodGet, urlStr, "", cookies, false, state.Encode())
+		resp := mocks.doRequest(http.MethodGet, urlStr, "", false, state.Encode())
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 
 		body, err := io.ReadAll(resp.Body)
