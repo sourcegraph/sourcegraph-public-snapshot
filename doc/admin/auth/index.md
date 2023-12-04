@@ -90,7 +90,7 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
     "auth.providers": [{ "type": "builtin", "allowSignup": true }]
   }
 ```
-> NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://about.sourcegraph.com/pricing).
+> NOTE: If Sourcegraph is running on a free license all users will be created as site admins. Learn more about license settings on our [pricing page](https://sourcegraph.com/pricing).
 
 
 

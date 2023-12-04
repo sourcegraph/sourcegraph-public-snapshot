@@ -119,7 +119,12 @@ export const routes: RouteObject[] = [
     },
     {
         path: PageRoutes.CodeMonitoring,
-        element: <LegacyRoute render={props => <GlobalCodeMonitoringArea {...props} />} />,
+        element: (
+            <LegacyRoute
+                render={props => <GlobalCodeMonitoringArea {...props} />}
+                condition={({ isSourcegraphDotCom }) => !isSourcegraphDotCom}
+            />
+        ),
     },
     {
         path: PageRoutes.Insights,

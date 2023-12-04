@@ -17,7 +17,7 @@ This guide will take you through how to install Sourcegraph with Docker Compose 
     - Minimum Docker [v20.10.0](https://docs.docker.com/engine/release-notes/#20100) and Docker Compose [v1.29.0](https://docs.docker.com/compose/release-notes/#1290)
     - Docker Swarm mode is **not** supported
   - Check the [resource estimator](../resource_estimator.md) for resource requirements
-  - Obtain a [Sourcegraph license](https://about.sourcegraph.com/pricing/)
+  - Obtain a [Sourcegraph license](https://sourcegraph.com/pricing/)
     - License is required for instances with **more than 10 users**
   - <span class="badge badge-beta">optional</span> Configure ingress firewall rules to enable secure access to the server
 
@@ -118,7 +118,7 @@ Continue with the following steps *after* you have created a public or private c
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v5.2.3"
+  export SOURCEGRAPH_VERSION="v5.2.4"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```

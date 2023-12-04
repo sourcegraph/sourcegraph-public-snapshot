@@ -117,7 +117,7 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
                                 </>
                             ) : (
                                 <AnchorLink
-                                    to="http://about.sourcegraph.com/contact/sales"
+                                    to="http://sourcegraph.com/contact/sales"
                                     target="_blank"
                                     rel="noopener"
                                     className="ml-1"

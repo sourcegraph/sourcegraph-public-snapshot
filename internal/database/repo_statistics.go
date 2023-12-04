@@ -43,6 +43,7 @@ type RepoStatisticsStore interface {
 	CompactRepoStatistics(ctx context.Context) error
 	GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistic, error)
 	CompactGitserverReposStatistics(ctx context.Context) error
+	DeleteAndRecreateStatistics(ctx context.Context) error
 }
 
 // repoStatisticsStore is responsible for data stored in the repo_statistics
@@ -107,13 +108,13 @@ WITH deleted AS (
 )
 INSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted)
 SELECT
-	SUM(total),
-	SUM(soft_deleted),
-	SUM(not_cloned),
-	SUM(cloning),
-	SUM(cloned),
-	SUM(failed_fetch),
-	SUM(corrupted)
+	COALESCE(SUM(total), 0),
+	COALESCE(SUM(soft_deleted), 0),
+	COALESCE(SUM(not_cloned), 0),
+	COALESCE(SUM(cloning), 0),
+	COALESCE(SUM(cloned), 0),
+	COALESCE(SUM(failed_fetch), 0),
+	COALESCE(SUM(corrupted), 0)
 FROM deleted;
 `
 
@@ -161,6 +162,76 @@ SELECT
 	SUM(failed_fetch) AS failed_fetch,
 	SUM(corrupted) AS corrupted
 FROM gitserver_repos_statistics
+GROUP BY shard_id
+`
+
+func (s *repoStatisticsStore) DeleteAndRecreateStatistics(ctx context.Context) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	// First lock repo, since we have triggers that write repo and cause updates on
+	// gitserver_repos but not the other way around.
+	if err := tx.Exec(ctx, sqlf.Sprintf(`LOCK repo IN EXCLUSIVE MODE`)); err != nil {
+		return err
+	}
+	// Then lock gitserver_repos
+	if err := tx.Exec(ctx, sqlf.Sprintf(`LOCK gitserver_repos IN EXCLUSIVE MODE`)); err != nil {
+		return err
+	}
+
+	// Delete old state in repo_statistics/gitserver_repo_statistics (we can't
+	// update the state, since this is an append-only table).
+	if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM repo_statistics`)); err != nil {
+		return err
+	}
+	if err := tx.Exec(ctx, sqlf.Sprintf(`DELETE FROM gitserver_repos_statistics`)); err != nil {
+		return err
+	}
+
+	// Insert new total counts in repo_statistics
+	if err := tx.Exec(ctx, sqlf.Sprintf(recreateRepoStatisticsStateQuery)); err != nil {
+		return err
+	}
+	// Insert new total counts in gitserver_repos_statistics
+	if err := tx.Exec(ctx, sqlf.Sprintf(recreateGitserverReposStatisticsQuery)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const recreateRepoStatisticsStateQuery = `
+INSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted)
+SELECT
+  COUNT(*) AS total,
+  (SELECT COUNT(*) FROM repo WHERE deleted_at is NOT NULL AND blocked IS NULL) AS soft_deleted,
+  COUNT(*) FILTER(WHERE gitserver_repos.clone_status = 'not_cloned') AS not_cloned,
+  COUNT(*) FILTER(WHERE gitserver_repos.clone_status = 'cloning') AS cloning,
+  COUNT(*) FILTER(WHERE gitserver_repos.clone_status = 'cloned') AS cloned,
+  COUNT(*) FILTER(WHERE gitserver_repos.last_error IS NOT NULL) AS failed_fetch,
+  COUNT(*) FILTER(WHERE gitserver_repos.corrupted_at IS NOT NULL) AS corrupted
+FROM repo
+JOIN gitserver_repos ON gitserver_repos.repo_id = repo.id
+WHERE
+  repo.deleted_at is NULL AND repo.blocked IS NULL
+`
+
+const recreateGitserverReposStatisticsQuery = `
+INSERT INTO
+  gitserver_repos_statistics (shard_id, total, not_cloned, cloning, cloned, failed_fetch, corrupted)
+SELECT
+  shard_id,
+  COUNT(*) AS total,
+  COUNT(*) FILTER(WHERE clone_status = 'not_cloned') AS not_cloned,
+  COUNT(*) FILTER(WHERE clone_status = 'cloning') AS cloning,
+  COUNT(*) FILTER(WHERE clone_status = 'cloned') AS cloned,
+  COUNT(*) FILTER(WHERE last_error IS NOT NULL) AS failed_fetch,
+  COUNT(*) FILTER(WHERE corrupted_at IS NOT NULL) AS corrupted
+FROM
+  gitserver_repos
 GROUP BY shard_id
 `
 

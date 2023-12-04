@@ -21,6 +21,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureCode)
 	return newCompletionsHandler(
 		logger,
+		db.Users(),
 		telemetryrecorder.New(db),
 		types.CompletionsFeatureCode,
 		rl,

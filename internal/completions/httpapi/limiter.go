@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -90,7 +91,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	// If the usage exceeds the maximum, we return an error. Consumers can check if
 	// the error is of type RateLimitExceededError and extract additional information
 	// like the limit and the time by when they should retry.
-	if currentUsage >= limit {
+	if currentUsage >= limit || featureflag.FromContext(ctx).GetBoolOr("rate-limits-exceeded-for-testing", false) {
 		// Read TTL to compute the RetryAfter time.
 		ttl, err := rstore.TTL(key)
 		if err != nil {

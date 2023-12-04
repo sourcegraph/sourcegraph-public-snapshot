@@ -44,7 +44,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                         isSourcegraphDotCom ? (
                             <Button
                                 as={Link}
-                                to="https://about.sourcegraph.com"
+                                to="https://sourcegraph.com"
                                 variant="primary"
                                 onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'TryInsights' })}
                             >
@@ -84,7 +84,7 @@ export const CodeInsightsDotComGetStarted: React.FunctionComponent<
                     <CallToActionBanner variant="filled">
                         To track Insights across your team's private repositories,{' '}
                         <Link
-                            to="https://about.sourcegraph.com"
+                            to="https://sourcegraph.com"
                             onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Insights' })}
                         >
                             get Sourcegraph Enterprise

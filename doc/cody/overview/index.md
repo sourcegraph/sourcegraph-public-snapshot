@@ -172,7 +172,7 @@ You can start using Cody with one of the following clients:
       </a>
   </li>
   <li>
-    <a class="card text-left" target="_blank" href="https://about.sourcegraph.com/cody/pricing">
+    <a class="card text-left" target="_blank" href="https://sourcegraph.com/cody/pricing">
       <h3><img alt="Cody Enterprise" src="https://sourcegraph.com/.assets/img/sourcegraph-mark.svg" />Cody Enterprise</h3>
       <p>Get in touch with our team to try Cody for Sourcegraph Enterprise.</p>
     </a>
@@ -198,7 +198,7 @@ Cody collects and uses data in the following ways:
 - **Prompts and responses**:  When you use Cody, Sourcegraph collects your prompts and responses to provide the service. For individuals using Cody via Sourcegraph.com, Sourcegraph may use your prompts and responses to enhance the user experience, but Sourcegraph does not use any of your data to train models.
 - **Usage data and feedback**:  Sourcegraph also collects usage data and feedback to improve the user experience.
 
-<a target="_blank" href="https://about.sourcegraph.com/terms/cody-notice">Read more about Cody Usage and Privacy policy here →</a>
+<a target="_blank" href="https://sourcegraph.com/terms/cody-notice">Read more about Cody Usage and Privacy policy here →</a>
 
 ## Compatible with Sourcegraph products
 
