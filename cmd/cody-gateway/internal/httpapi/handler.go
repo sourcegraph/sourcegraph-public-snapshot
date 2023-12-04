@@ -201,18 +201,7 @@ func NewHandler(
 			),
 		)
 	}
-	// Register a route where actors can refresh their rate limit state.
-	v1router.Path("/limits/refresh").Methods(http.MethodPost).Handler(
-		instrumentation.HTTPMiddleware("v1.limits",
-			authr.Middleware(
-				requestlogger.Middleware(
-					logger,
-					featurelimiter.RefreshLimitsHandler(logger, eventLogger, rs, sources),
-				),
-			),
-			otelhttp.WithPublicEndpoint(),
-		),
-	)
+
 	// Register a route where actors can retrieve their current rate limit state.
 	v1router.Path("/limits").Methods(http.MethodGet).Handler(
 		instrumentation.HTTPMiddleware("v1.limits",
@@ -225,7 +214,18 @@ func NewHandler(
 			otelhttp.WithPublicEndpoint(),
 		),
 	)
-
+	// Register a route where actors can refresh their rate limit state.
+	v1router.Path("/limits/refresh").Methods(http.MethodPost).Handler(
+		instrumentation.HTTPMiddleware("v1.limits",
+			authr.Middleware(
+				requestlogger.Middleware(
+					logger,
+					featurelimiter.RefreshLimitsHandler(logger, sources),
+				),
+			),
+			otelhttp.WithPublicEndpoint(),
+		),
+	)
 	return r, nil
 }
 

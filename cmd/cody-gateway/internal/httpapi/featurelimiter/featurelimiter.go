@@ -210,7 +210,7 @@ func ListLimitsHandler(baseLogger log.Logger, redisStore limiter.RedisStore) htt
 	})
 }
 
-func RefreshLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisStore limiter.RedisStore, sources *actor.Sources) http.Handler {
+func RefreshLimitsHandler(baseLogger log.Logger, sources *actor.Sources) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
