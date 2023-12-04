@@ -4,7 +4,7 @@ import type { ReactElement } from 'react'
 import { mdiHelpCircleOutline, mdiTrendingUp, mdiDownload, mdiInformation } from '@mdi/js'
 import classNames from 'classnames'
 
-import { useQuery } from '@sourcegraph/http-client'
+import { useQuery, useMutation } from '@sourcegraph/http-client'
 import {
     Icon,
     PageHeader,
@@ -26,6 +26,8 @@ import type {
     UserCodyPlanVariables,
     UserCodyUsageResult,
     UserCodyUsageVariables,
+    ChangeCodyPlanResult,
+    ChangeCodyPlanVariables,
 } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
@@ -33,7 +35,7 @@ import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 import { CodyOnboarding, editorGroups, type IEditor } from '../onboarding/CodyOnboarding'
 import { ProTierIcon } from '../subscription/CodySubscriptionPage'
-import { USER_CODY_PLAN, USER_CODY_USAGE } from '../subscription/queries'
+import { USER_CODY_PLAN, USER_CODY_USAGE, CHANGE_CODY_PLAN } from '../subscription/queries'
 
 import styles from './CodyManagementPage.module.scss'
 
@@ -54,10 +56,20 @@ export const CodyManagementPage: React.FunctionComponent<CodyManagementPageProps
 
     const { data: usageData } = useQuery<UserCodyUsageResult, UserCodyUsageVariables>(USER_CODY_USAGE, {})
 
+    const [changeCodyPlan] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
+
     const [isEnabled] = useFeatureFlag('cody-pro', false)
 
     const [selectedEditor, setSelectedEditor] = React.useState<IEditor | null>(null)
     const [selectedEditorStep, setSelectedEditorStep] = React.useState<number | null>(null)
+
+    const enrollPro = parameters.get('pro') === 'true'
+
+    useEffect(() => {
+        if (enrollPro && data?.currentUser && !data?.currentUser?.codyProEnabled) {
+            changeCodyPlan({ variables: { pro: true, id: data?.currentUser?.id } })
+        }
+    }, [data?.currentUser, changeCodyPlan, enrollPro])
 
     if (!isCodyEnabled() || !isSourcegraphDotCom || !isEnabled || !data?.currentUser) {
         return null
