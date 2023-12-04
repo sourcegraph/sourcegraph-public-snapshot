@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
-        "//internal/actor",
         "//internal/conf",
         "//internal/database",
         "//internal/gqlutil",

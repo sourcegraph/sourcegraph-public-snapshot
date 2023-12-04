@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
@@ -29,12 +28,7 @@ type Resolver struct {
 }
 
 func (r *Resolver) ValidateSearchJob(ctx context.Context, args *graphqlbackend.CreateSearchJobArgs) (*graphqlbackend.EmptyResponse, error) {
-	actor := actor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("search jobs can only be validated by an authenticated user")
-	}
-
-	return nil, r.svc.ValidateSearchJob(ctx, actor.UID, args.Query)
+	return nil, r.svc.ValidateSearchJob(ctx, args.Query)
 }
 
 // New returns a new Resolver whose store uses the given database
