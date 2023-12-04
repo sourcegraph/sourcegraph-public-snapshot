@@ -74,6 +74,9 @@ export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/
 export type { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 export { SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 export { shortcutDisplayName } from '@sourcegraph/shared/src/keyboardShortcuts'
+export { createCodeIntelAPI, type CodeIntelAPI } from '@sourcegraph/shared/src/codeintel/api'
+export { getModeFromPath } from '@sourcegraph/shared/src/languages'
+export type { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 
 // Copies of non-reusable code
 
@@ -95,5 +98,5 @@ export function displayRepoName(repoName: string): string {
  */
 export function splitPath(path: string): [string, string] {
     const components = path.split('/')
-    return [components.slice(0, -1).join('/'), components.at(-1)]
+    return [components.slice(0, -1).join('/'), components.at(-1) ?? '']
 }
