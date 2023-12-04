@@ -17,6 +17,7 @@ export interface IEditor {
     icon: string
     name: string
     publisher: string
+    releaseStage: string
     instructions?: React.FC<{ onBack?: () => void; onClose: () => void; showStep?: number }>
 }
 
@@ -26,22 +27,26 @@ export const editorGroups: IEditor[][] = [
             icon: 'VSCode',
             name: 'VS Code',
             publisher: 'Microsoft',
+            releaseStage: 'Stable',
             instructions: VSCodeInstructions,
         },
         {
             icon: 'IntelliJ',
             name: 'IntelliJ IDEA',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
         },
         {
             icon: 'Neovim',
             name: 'Neovim',
             publisher: 'Neovim Team',
+            releaseStage: 'Experimental',
         },
         {
             icon: 'AndroidStudio',
             name: 'Android Studio',
             publisher: 'Google',
+            releaseStage: 'Beta',
         },
     ],
     [
@@ -49,21 +54,25 @@ export const editorGroups: IEditor[][] = [
             icon: 'PhpStorm',
             name: 'PhpStorm ',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
         },
         {
             icon: 'PyCharm',
             name: 'PyCharm',
             publisher: 'Jetbrains',
+            releaseStage: 'Beta',
         },
         {
             icon: 'WebStorm',
             name: 'WebStorm',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
         },
         {
             icon: 'RubyMine',
             name: 'RubyMine',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
         },
     ],
     [
@@ -71,11 +80,13 @@ export const editorGroups: IEditor[][] = [
             icon: 'GoLand',
             name: 'GoLand',
             publisher: 'JetBrains',
+            releaseStage: 'Beta',
         },
         {
             icon: 'Emacs',
             name: 'Emacs',
             publisher: 'Free Software Foundation',
+            releaseStage: 'Beta',
         },
     ],
 ]
@@ -253,6 +264,7 @@ function EditorStep({
                                             {editor.publisher}
                                         </Text>
                                         <Text className={classNames('mb-0', styles.ideName)}>{editor.name}</Text>
+                                        <h5 className={styles.releaseStage}>{editor.releaseStage}</h5>
                                     </div>
                                 </div>
                             </div>

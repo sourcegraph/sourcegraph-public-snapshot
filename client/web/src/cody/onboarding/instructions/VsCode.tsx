@@ -24,67 +24,86 @@ export function VSCodeInstructions({
                     <div className="mb-3 pb-3 border-bottom">
                         <H2>Setup instructions for VS Code</H2>
                     </div>
-                    <div className="p-3">
-                        <div className="d-flex">
-                            <div>
-                                <div className={classNames('mr-2', styles.step)}>1</div>
+
+                    <div className={styles.instructionsContainer}>
+                        <div className="px-3 border-bottom">
+                            <div className="d-flex align-items-center">
+                                <div className="mr-1">
+                                    <div className={classNames('mr-2', styles.step)}>1</div>
+                                </div>
+                                <div>
+                                    <Text className="mb-1" weight="bold">
+                                        Install Cody
+                                    </Text>
+                                    <Text className="text-muted mb-0" size="small">
+                                        Alternatively, you can reach this page by clicking{' '}
+                                        <strong>View {'>'} Extensions</strong> and searching for <strong>Cody AI</strong>
+                                    </Text>
+                                </div>
                             </div>
-                            <div>
-                                <Text className="mb-1" weight="bold">
-                                    Install Cody
-                                </Text>
-                                <Text className="text-muted mb-0" size="small">
-                                    Alternatively, you can reach this page by clicking{' '}
-                                    <strong>View {'>'} Extensions</strong> and searching for <strong>Cody AI</strong>
-                                </Text>
+                            <div className="d-flex flex-column justify-content-center align-items-center mt-4">
+                                <ButtonLink
+                                    variant="primary"
+                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
+                                >
+                                    Open Marketplace
+                                </ButtonLink>
+                                <img
+                                    alt="VS Code Marketplace"
+                                    className="mt-4"
+                                    width="80%"
+                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/__step1.png"
+                                />
                             </div>
                         </div>
-                        <div className="d-flex flex-column justify-content-center align-items-center mt-4">
-                            <ButtonLink
-                                variant="primary"
-                                to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"
-                            >
-                                Open Marketplace
-                            </ButtonLink>
-                            <img
-                                alt="VS Code Marketplace"
-                                className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/step1.png"
-                            />
+                        <div className="px-3 mt-3 border-bottom">
+                            <div className="d-flex align-items-center">
+                                <div className="mr-1">
+                                    <div className={classNames('mr-2', styles.step)}>2</div>
+                                </div>
+                                <div>
+                                    <Text className="mb-1" weight="bold">
+                                        Open Cody from the Sidebar on the Left
+                                    </Text>
+                                    <Text className="text-muted mb-0" size="small">
+                                        Typically Cody will be the last item in the sidebar
+                                    </Text>
+                                </div>
+                            </div>
+                            <div className="d-flex flex-column justify-content-center align-items-center mt-4">
+                                <img
+                                    alt="VS Code Marketplace"
+                                    className="mt-2"
+                                    width="80%"
+                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/__step2.png"
+                                />
+                            </div>
+                        </div>
+                        <div className="px-3 mt-3 border-bottom">
+                            <div className="d-flex align-items-center">
+                                <div className="mr-1">
+                                    <div className={classNames('mr-2', styles.step)}>3</div>
+                                </div>
+                                <div>
+                                    <Text className="mb-1" weight="bold">
+                                        Login
+                                    </Text>
+                                    <Text className="text-muted mb-0" size="small">
+                                        Choose the same login method you used when you created your account
+                                    </Text>
+                                </div>
+                            </div>
+                            <div className="d-flex flex-column justify-content-center align-items-center mt-4">
+                                <img
+                                    alt="VS Code Marketplace"
+                                    className="mt-2"
+                                    width="80%"
+                                    src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/__step3.png"
+                                />
+                            </div>
                         </div>
                     </div>
-                    <div className="p-3">
-                        <div className="d-flex">
-                            <div>
-                                <div className={classNames('mr-2', styles.step)}>2</div>
-                            </div>
-                            <div>
-                                <Text className="mb-1" weight="bold">
-                                    Open Cody from the Sidebar on the Left
-                                </Text>
-                            </div>
-                        </div>
-                        <div className="d-flex flex-column justify-content-center align-items-center mt-4">
-                            <img
-                                alt="VS Code Marketplace"
-                                className="mt-4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/step2.png"
-                            />
-                        </div>
-                    </div>
-                    <div className="d-flex p-3 border-bottom">
-                        <div>
-                            <div className={classNames('mr-2', styles.step)}>3</div>
-                        </div>
-                        <div className="mb-4 pb-4">
-                            <Text className="mb-1" weight="bold">
-                                Login
-                            </Text>
-                            <Text className="text-muted mb-0" size="small">
-                                Choose the same login method you used when you created your account
-                            </Text>
-                        </div>
-                    </div>
+
                     {showStep === undefined ? (
                         <div className="mt-3 d-flex justify-content-between">
                             <Button variant="secondary" onClick={onBack} outline={true} size="sm">

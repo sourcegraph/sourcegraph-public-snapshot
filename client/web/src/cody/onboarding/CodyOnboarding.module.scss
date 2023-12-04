@@ -1,12 +1,26 @@
 .modal {
     width: 50rem;
+
 }
 
+
+.release-stage{
+    color: var(--gray-07);
+}
+
+
+/*Step section on instructions*/
 .step {
     background: #343a4d;
     color: #ffffff;
     padding: 0.25rem 0.675rem;
     border-radius: 50%;
+}
+
+.instructions-container{
+    /*adds vertical scroll to long instructions and prevents "next" and "back buttons" to be under the fold*/
+    max-height: 80vh;
+    overflow-y: auto;
 }
 
 .responsive-container {
