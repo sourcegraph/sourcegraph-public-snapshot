@@ -12,6 +12,7 @@ import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { VSCodeInstructions } from './instructions/VsCode'
 
 import styles from './CodyOnboarding.module.scss'
+import {JetBrainsInstructions} from './instructions/JetBrains';
 
 export interface IEditor {
     icon: string
@@ -24,7 +25,7 @@ export interface IEditor {
 export const editorGroups: IEditor[][] = [
     [
         {
-            icon: 'VSCode',
+            icon: 'VsCode',
             name: 'VS Code',
             publisher: 'Microsoft',
             releaseStage: 'Stable',
@@ -35,9 +36,10 @@ export const editorGroups: IEditor[][] = [
             name: 'IntelliJ IDEA',
             publisher: 'JetBrains',
             releaseStage: 'Beta',
+            instructions: JetBrainsInstructions,
         },
         {
-            icon: 'Neovim',
+            icon: 'NeoVim',
             name: 'Neovim',
             publisher: 'Neovim Team',
             releaseStage: 'Experimental',
@@ -86,7 +88,7 @@ export const editorGroups: IEditor[][] = [
             icon: 'Emacs',
             name: 'Emacs',
             publisher: 'Free Software Foundation',
-            releaseStage: 'Beta',
+            releaseStage: 'Coming Soon',
         },
     ],
 ]
@@ -254,7 +256,7 @@ function EditorStep({
                                     <div>
                                         <img
                                             alt={editor.name}
-                                            src={`https://storage.googleapis.com/sourcegraph-assets/cody-ide-icons/${editor.icon}.png`}
+                                            src={`https://storage.googleapis.com/sourcegraph-assets/ideIcons/ideIcon${editor.icon}.svg`}
                                             width={34}
                                             className="mr-3"
                                         />

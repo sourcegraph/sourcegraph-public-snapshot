@@ -5,9 +5,8 @@ import classNames from 'classnames'
 import { H2, Text, Button, ButtonLink } from '@sourcegraph/wildcard'
 
 import styles from '../CodyOnboarding.module.scss'
-import {Link} from 'react-router-dom';
 
-export function VSCodeInstructions({
+export function JetBrainsInstructions({
     onBack,
     onClose,
     showStep,
@@ -23,7 +22,7 @@ export function VSCodeInstructions({
             {step === 0 && (
                 <>
                     <div className="pb-3 border-bottom">
-                        <H2>Setup instructions for VS Code</H2>
+                        <H2>Setup instructions for JetBrains</H2>
                     </div>
 
                     <div className={classNames('pt-3 px-3',styles.instructionsContainer)}>
@@ -129,73 +128,39 @@ export function VSCodeInstructions({
                         <H2>Using Cody on VS Code</H2>
                     </div>
                     <div className="d-flex">
-                        <div className="flex-1 p-3 border-right d-flex flex-column justify-content-center align-items-center">
-                            <Text className="mb-1 w-100" weight="bold">
+                        <div className="flex-1 p-3 border-right">
+                            <Text className="mb-1" weight="bold">
                                 Autocomplete
                             </Text>
-                            <Text className="mb-0 w-100 text-muted" size="small">
+                            <Text className="mb-0 text-muted" size="small">
                                 Cody will autocomplete your code as you type
                             </Text>
-                            <img
-                                alt="Cody Autocomplete"
-                                width="90%"
-                                className={classNames('mt-4', styles.guideIllustration)}
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/autoCompleteIllustration.svg"
-                            />
                         </div>
-                        <div className="flex-1 p-3 d-flex flex-column justify-content-center align-items-center">
-                            <Text className="mb-1  w-100" weight="bold">
+                        <div className="flex-1 p-3">
+                            <Text className="mb-1" weight="bold">
                                 Chat
                             </Text>
-                            <Text className="mb-0 text-muted  w-100" size="small">
+                            <Text className="mb-0 text-muted" size="small">
                                 Cody will autocomplete your code as you type
                             </Text>
-                            <img
-                                alt="Cody Chat"
-                                width="80%"
-                                className={classNames('mt-4')}
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/chatIllustration.svg"
-                            />
                         </div>
                     </div>
                     <div className="d-flex my-3 py-3 border-top border-bottom">
-                        <div className="flex-1 p-3 border-right d-flex flex-column justify-content-center align-items-center">
-                            <Text className="mb-1  w-100" weight="bold">
-                                Commands
+                        <div className="flex-1 p-3 border-right">
+                            <Text className="mb-1" weight="bold">
+                                Settings
                             </Text>
-                            <Text className="mb-0 text-muted  w-100" size="small">
+                            <Text className="mb-0 text-muted" size="small">
                                 Cody will autocomplete your code as you type
                             </Text>
-                            <img
-                                alt="Cody Commands"
-                                width="80%"
-                                className={classNames('mt-4')}
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/commandsIllustration.svg"
-                            />
                         </div>
-                        <div className="flex-1 p-3 d-flex flex-column justify-content-center align-items-center">
-                            <Text className="mb-1  w-100" weight="bold">
+                        <div className="flex-1 p-3">
+                            <Text className="mb-1" weight="bold">
                                 Feedback
                             </Text>
-                            <Text className="mb-0 text-muted w-100" size="small">
+                            <Text className="mb-0 text-muted" size="small">
                                 Cody will autocomplete your code as you type
                             </Text>
-                            <Link to="https://discord.gg/rDPqBejz93" className="d-flex w-100 justify-content-center">
-                            <img
-                                alt="Discord Feedback"
-                                width="50%"
-                                className={classNames('mt-5')}
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/discordCTA.svg"
-                            />
-                            </Link>
-                            <Link to="https://github.com/sourcegraph/cody/discussions/new?category=product-feedback" className="d-flex w-100 justify-content-center">
-                                <img
-                                alt="GitHub Feedback"
-                                width="50%"
-                                className={classNames('mt-4')}
-                                src="https://storage.googleapis.com/sourcegraph-assets/VSCodeInstructions/feedbackCTA.svg"
-                                />
-                            </Link>
                         </div>
                     </div>
                     {showStep === undefined ? (
