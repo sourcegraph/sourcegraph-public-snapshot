@@ -33,9 +33,6 @@ go_binary(
 genrule(
     name = "tar_schema_descriptions",
     srcs = ["@schemas_archive//file"],
-        "schema-descriptions/v5.2.4-internal_database_schema.codeinsights.json",
-        "schema-descriptions/v5.2.4-internal_database_schema.codeintel.json",
-        "schema-descriptions/v5.2.4-internal_database_schema.json",
     outs = ["schema_descriptions.tar"],
     cmd = """\
     mkdir -p schema-descriptions/
