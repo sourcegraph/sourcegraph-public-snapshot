@@ -1411,6 +1411,9 @@ importers:
       '@sourcegraph/branded':
         specifier: workspace:*
         version: link:../branded
+      '@sourcegraph/client-api':
+        specifier: workspace:*
+        version: link:../client-api
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common

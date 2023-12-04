@@ -210,8 +210,11 @@ export class API {
         const query = gql`
             query LegacyFileContent($repo: String!, $rev: String!, $path: String!) {
                 repository(name: $repo) {
+                    id
                     commit(rev: $rev) {
+                        id
                         file(path: $path) {
+                            canonicalURL
                             content
                         }
                     }
@@ -262,15 +265,18 @@ function buildSearchQuery(fileLocal: boolean): string {
                     ... on FileMatch {
                         __typename
                         file {
+                            canonicalURL
                             path
                             commit {
                                 oid
                             }
                         }
                         repository {
+                            id
                             name
                         }
                         symbols {
+                            canonicalURL
                             name
                             kind
                             location {
@@ -384,7 +390,9 @@ const localCodeIntelQuery = gql`
         repository(name: $repository) {
             id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     localCodeIntel
                 }
             }
@@ -430,8 +438,11 @@ const symbolInfoFlexibleToCanonical = (flexible: SymbolInfoFlexible): SymbolInfo
 const symbolInfoDefinitionQuery = gql`
     query LegacySymbolInfo2($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!) {
         repository(name: $repository) {
+            id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     symbolInfo(line: $line, character: $character) {
                         definition {
                             repo

@@ -1,3 +1,5 @@
+<svelte:options immutable />
+
 <script lang="ts">
     import { mdiCodeBracesBox, mdiFileCodeOutline } from '@mdi/js'
 
@@ -7,30 +9,46 @@
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
     import Permalink from '$lib/repo/Permalink.svelte'
-    import { createPromiseStore } from '$lib/utils'
 
     import FileDiff from '../../../../-/commit/[...revspec]/FileDiff.svelte'
 
     import type { PageData } from './$types'
     import FormatAction from './FormatAction.svelte'
     import WrapLinesAction, { lineWrap } from './WrapLinesAction.svelte'
-    import { parseQueryAndHash } from '$lib/shared'
+    import { createCodeIntelAPI, parseQueryAndHash } from '$lib/shared'
     import { goto } from '$app/navigation'
-    import { updateSearchParamsWithLineInformation } from '$lib/repo/blob'
-
-    type Deferred = PageData['deferred']
+    import { updateSearchParamsWithLineInformation, createBlobDataHandler } from '$lib/repo/blob'
+    import { isErrorLike, type LineOrPositionOrRange } from '$lib/common'
+    import { from } from 'rxjs'
+    import { gql } from '$lib/graphql'
 
     export let data: PageData
 
+    const {
+        revision,
+        resolvedRevision: { commitID, repo },
+        filePath,
+        settings,
+        graphqlClient,
+    } = data
     // We use the latest value here because we want to keep showing the old document while loading
     // the new one.
-    const { pending: loading, latestValue: blobData, set: setBlob } = createPromiseStore<Deferred['blob']>()
-    const { value: highlights, set: setHighlights } = createPromiseStore<Deferred['highlights']>()
-    $: setBlob(data.deferred.blob)
-    $: setHighlights(data.deferred.highlights)
-    $: formatted = !!$blobData?.richHTML
+    const { loading, combinedBlobData, set: setBlobData } = createBlobDataHandler()
+    let selectedPosition: LineOrPositionOrRange | null = null
+
+    $: setBlobData(data.deferred.blob, data.deferred.highlights)
+    $: blobData = $combinedBlobData.blob
+    $: formatted = !!blobData?.richHTML
     $: showRaw = $page.url.searchParams.get('view') === 'raw'
-    $: selectedPosition = parseQueryAndHash($page.url.search, $page.url.hash)
+    $: codeIntelAPI = createCodeIntelAPI({
+        settings: setting => (isErrorLike(settings.final) ? undefined : settings.final?.[setting]),
+        requestGraphQL(options) {
+            return from(graphqlClient.query({ query: gql(options.request), variables: options.variables }))
+        },
+    })
+    $: if (!$loading) {
+        selectedPosition = parseQueryAndHash($page.url.search, $page.url.hash)
+    }
 </script>
 
 <FileHeader>
@@ -61,21 +79,27 @@
                 Unable to load iff
             {/if}
         {/await}
-    {:else if $blobData}
-        {#if $blobData.richHTML && !showRaw}
+    {:else if blobData}
+        {#if blobData.richHTML && !showRaw}
             <div class="rich">
-                {@html $blobData.richHTML}
+                {@html blobData.richHTML}
             </div>
         {:else}
-            <!-- TODO: ensure that only the highlights for the currently loaded blob data are used -->
             <CodeMirrorBlob
-                blob={$blobData}
-                highlights={$highlights || ''}
+                blobInfo={{
+                    ...blobData,
+                    revision: revision ?? '',
+                    commitID,
+                    repoName: repo.name,
+                    filePath,
+                }}
+                highlights={$combinedBlobData.highlights || ''}
                 wrapLines={$lineWrap}
-                selectedLines={selectedPosition.line ? selectedPosition : null}
+                selectedLines={selectedPosition?.line ? selectedPosition : null}
                 on:selectline={event => {
                     goto('?' + updateSearchParamsWithLineInformation($page.url.searchParams, event.detail))
                 }}
+                {codeIntelAPI}
             />
         {/if}
     {/if}

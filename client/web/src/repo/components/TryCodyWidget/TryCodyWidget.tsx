@@ -94,7 +94,7 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                 <Text className="mb-2 mt-2">
                     By registering, you agree to our{' '}
                     <Link
-                        to="https://about.sourcegraph.com/terms"
+                        to="https://sourcegraph.com/terms"
                         className={styles.termsLink}
                         target="_blank"
                         rel="noopener"
@@ -103,7 +103,7 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                     </Link>{' '}
                     and{' '}
                     <Link
-                        to="https://about.sourcegraph.com/terms/privacy"
+                        to="https://sourcegraph.com/terms/privacy"
                         className={styles.termsLink}
                         target="_blank"
                         rel="noopener"

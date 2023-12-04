@@ -120,7 +120,7 @@ Native GCP features are used for essentially monitoring and alerting to Slack fo
 
 ## Related readings
 
-* [Sourcegraph Blog - Broken database migrations: How we finally fixed an embarrassing problem](https://about.sourcegraph.com/blog/introducing-migrator-service)
+* [Sourcegraph Blog - Broken database migrations: How we finally fixed an embarrassing problem](https://sourcegraph.com/blog/introducing-migrator-service)
 * [RFC 469: Decouple migrations from code deployments](https://docs.google.com/document/d/1_wqvNbEGhMzu45CHZNrLQYys7gl0AtVpLluGp4cbQKk/edit?usp=sharing)
 * [RFC 697: Multiple version upgrades](https://docs.google.com/document/d/1eNiwzWZmfpvzFhs9IDcM7Sbchv_Hm8Uj-6bI-3TDlvg/edit?usp=sharing)
 * [Database Schema Migrations: A Few Lessons Learned](https://danwatt.org/2021/03/database-schema-migrations-a-few-lessons-learned/)
