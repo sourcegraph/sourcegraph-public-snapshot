@@ -112,6 +112,7 @@ type EventBatch struct {
 	Events *[]Event
 }
 
+// LogEvent is the deprecated mutation, superceded by { telemetry { recordEvents } }
 func (r *schemaResolver) LogEvent(ctx context.Context, args *Event) (*EmptyResponse, error) {
 	if args == nil {
 		return nil, nil
@@ -120,6 +121,7 @@ func (r *schemaResolver) LogEvent(ctx context.Context, args *Event) (*EmptyRespo
 	return r.LogEvents(ctx, &EventBatch{Events: &[]Event{*args}})
 }
 
+// LogEvents is the deprecated mutation, superceded by { telemetry { recordEvents } }
 func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*EmptyResponse, error) {
 	if !conf.EventLoggingEnabled() || args.Events == nil {
 		return nil, nil
@@ -234,6 +236,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		})
 	}
 
+	//lint:ignore SA1019 existing usage of deprecated functionality to back deprecated GraphQL mutation
 	if err := usagestats.LogEvents(ctx, r.db, events); err != nil {
 		return nil, err
 	}

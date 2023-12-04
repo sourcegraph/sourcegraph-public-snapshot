@@ -112,6 +112,7 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 // Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
 // Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
 func LogEvent(ctx context.Context, db database.DB, args Event) error {
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return LogEvents(ctx, db, []Event{args})
 }
 
