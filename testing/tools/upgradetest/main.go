@@ -339,6 +339,9 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 	test.AddLog("-- 🏗️  setting up test environment")
 
 	// Create a docker network for testing
+	//
+	// TODO: currently this test run against its full range of versions runs out of unique IPv4 addresses
+	// see https://straz.to/2021-09-08-docker-address-pools/ need to investigate bazel friendly strategy or set up semaphore.
 	networkName = fmt.Sprintf("wg_test_%s", initVersion)
 	test.AddLog(fmt.Sprintf("🐋 creating network %s", networkName))
 
