@@ -49,14 +49,15 @@ func main() {
 	var results TestResults
 
 	// Run Standard Upgrade Tests
-	stdTestPool := pool.New().WithMaxGoroutines(5).WithErrors()
+	stdTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
 	for _, version := range stdVersions {
 		version := version
 		stdTestPool.Go(func() error {
+			fmt.Println("std: ", version)
 			start := time.Now()
 			result := standardUpgradeTest(ctx, version, latestVersion)
+			result.Runtime = time.Since(start)
 			results.AddStdTest(result)
-			fmt.Println(time.Since(start))
 			return nil
 		})
 	}
@@ -65,14 +66,15 @@ func main() {
 	}
 
 	// Run MVU Upgrade Tests
-	mvuTestPool := pool.New().WithMaxGoroutines(5).WithErrors()
+	mvuTestPool := pool.New().WithMaxGoroutines(10).WithErrors()
 	for _, version := range mvuVersions {
 		version := version
 		mvuTestPool.Go(func() error {
+			fmt.Println("mvu: ", version)
 			start := time.Now()
 			result := multiversionUpgradeTest(ctx, version, latestVersion)
+			result.Runtime = time.Since(start)
 			results.AddMVUTest(result)
-			fmt.Println(time.Since(start))
 			return nil
 		})
 	}
@@ -92,6 +94,7 @@ func main() {
 type Test struct {
 	Version  string
 	Type     string
+	Runtime  time.Duration
 	LogLines []string
 	Errors   []error
 }
@@ -146,25 +149,25 @@ func (r *TestResults) SimpleResults() {
 	stdRes := []string{}
 	for _, test := range r.StandardUpgradeTests {
 		if 0 < len(test.Errors) {
-			stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed", test.Version))
+			stdRes = append(stdRes, fmt.Sprintf("🚨 %s Failed -- %s", test.Version, test.Runtime))
 		} else {
-			stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed", test.Version))
+			stdRes = append(stdRes, fmt.Sprintf("✅ %s Passed -- %s ", test.Version, test.Runtime))
 		}
 	}
 	mvuRes := []string{}
 	for _, test := range r.MVUUpgradeTests {
 		if 0 < len(test.Errors) {
-			mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed", test.Version))
+			mvuRes = append(mvuRes, fmt.Sprintf("🚨 %s Failed -- %s", test.Version, test.Runtime))
 		} else {
-			mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed", test.Version))
+			mvuRes = append(mvuRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version, test.Runtime))
 		}
 	}
 	autoRes := []string{}
 	for _, test := range r.AutoupgradeTests {
 		if 0 < len(test.Errors) {
-			autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed", test.Version))
+			autoRes = append(autoRes, fmt.Sprintf("🚨 %s Failed -- %s", test.Version, test.Runtime))
 		} else {
-			autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed", test.Version))
+			autoRes = append(autoRes, fmt.Sprintf("✅ %s Passed -- %s", test.Version, test.Runtime))
 		}
 	}
 	fmt.Println("--- Standard Upgrade Tests: \n", strings.Join(stdRes, "\n"))
@@ -178,18 +181,21 @@ func (r *TestResults) DisplayErrors() {
 	for _, test := range r.StandardUpgradeTests {
 		if 0 < len(test.Errors) {
 			fmt.Printf("--- 🚨 Standard Upgrade Test %s Failed:\n", test.Version)
+			test.DisplayLog()
 			test.DisplayErrors()
 		}
 	}
 	for _, test := range r.MVUUpgradeTests {
 		if 0 < len(test.Errors) {
 			fmt.Printf("--- 🚨 Multiversion Upgrade Test %s Failed:\n", test.Version)
+			test.DisplayLog()
 			test.DisplayErrors()
 		}
 	}
 	for _, test := range r.AutoupgradeTests {
 		if 0 < len(test.Errors) {
 			fmt.Printf("--- 🚨 Auto Upgrade Test %s Failed:\n", test.Version)
+			test.DisplayLog()
 			test.DisplayErrors()
 		}
 	}
@@ -389,7 +395,7 @@ func setupTestEnv(ctx context.Context, testType string, initVersion *semver.Vers
 		db.ContainerHostPort = port
 	}
 
-	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Minute*5)
+	dbPingTimeout, cancel := context.WithTimeout(ctx, time.Minute*10)
 	wgDbPing := pool.New().WithErrors().WithContext(dbPingTimeout)
 	defer cancel()
 
