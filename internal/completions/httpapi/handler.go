@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"net/http"
 	"strconv"
@@ -30,6 +32,7 @@ const maxRequestDuration = time.Minute
 
 func newCompletionsHandler(
 	logger log.Logger,
+	userStore database.UserStore,
 	events *telemetry.EventRecorder,
 	feature types.CompletionsFeature,
 	rl RateLimiter,
@@ -104,6 +107,7 @@ func newCompletionsHandler(
 			completionsConfig.Provider,
 			accessToken,
 		)
+		l := trace.Logger(ctx, logger)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -113,10 +117,19 @@ func newCompletionsHandler(
 		err = rl.TryAcquire(ctx)
 		if err != nil {
 			if unwrap, ok := err.(RateLimitExceededError); ok {
-				respondRateLimited(w, unwrap)
+				actor := sgactor.FromContext(ctx)
+				user, err := actor.User(ctx, userStore)
+				if err != nil {
+					l.Error("Error while fetching user", log.Error(err))
+					http.Error(w, "Internal server error", http.StatusInternalServerError)
+					return
+				}
+				isProUser := user.CodyProEnabledAt != nil
+				respondRateLimited(w, unwrap, isDotcom, isCodyProEnabled, isProUser)
 				return
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			l.Warn("Rate limit error", log.Error(err))
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
@@ -124,11 +137,18 @@ func newCompletionsHandler(
 	})
 }
 
-func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError) {
+func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError, isDotcom, isCodyProEnabled, isProUser bool) {
 	// Rate limit exceeded, write well known headers and return correct status code.
 	w.Header().Set("x-ratelimit-limit", strconv.Itoa(err.Limit))
 	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(err.Limit-err.Used, 0)))
 	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC1123))
+	if isDotcom && isCodyProEnabled {
+		if isProUser {
+			w.Header().Set("x-is-cody-pro-user", "true")
+		} else {
+			w.Header().Set("x-is-cody-pro-user", "false")
+		}
+	}
 	http.Error(w, err.Error(), http.StatusTooManyRequests)
 }
 

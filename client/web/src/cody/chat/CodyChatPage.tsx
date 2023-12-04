@@ -221,7 +221,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                             Cody Chat
                             {!isCodyApp && (
                                 <Badge variant="info" className="ml-2">
-                                    Beta
+                                    Experimental
                                 </Badge>
                             )}
                             {!isCodyApp && isCodyProEnabled && (
@@ -420,7 +420,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     <CodyLogo />
                                     {showMobileHistory ? 'Chats' : 'Ask Cody'}
                                     <div className="ml-2">
-                                        <Badge variant="info">Beta</Badge>
+                                        <Badge variant="info">Experimental</Badge>
                                     </div>
                                 </div>
                             </div>

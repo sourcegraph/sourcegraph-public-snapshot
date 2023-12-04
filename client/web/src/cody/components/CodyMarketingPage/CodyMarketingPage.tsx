@@ -2,7 +2,7 @@ import { mdiChevronRight, mdiCodeBracesBox, mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Theme, useTheme } from '@sourcegraph/shared/src/theme'
-import { H1, H2, H3, H4, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
+import { Badge, H1, H2, H3, H4, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../../auth'
 import { ExternalsAuth } from '../../../auth/components/ExternalsAuth'
@@ -19,7 +19,7 @@ import styles from './CodyMarketingPage.module.scss'
 
 interface CodyPlatformCardProps {
     icon: string | JSX.Element
-    title: string
+    title: string | JSX.Element
     description: string | JSX.Element
     illustration: string
 }
@@ -41,7 +41,7 @@ const IDEIcon: React.FunctionComponent<{}> = () => (
 const codyPlatformCardItems = (
     isSourcegraphDotCom: boolean
 ): {
-    title: string
+    title: string | JSX.Element
     description: string | JSX.Element
     icon: string | JSX.Element
     illustration: { dark: string; light: string }
@@ -57,7 +57,7 @@ const codyPlatformCardItems = (
         },
     },
     {
-        title: 'More powerful in your editor',
+        title: 'Cody in your editor',
         description: (
             <>
                 The extensions combine an LLM with the context of your code to help you generate and fix code more
@@ -73,7 +73,14 @@ const codyPlatformCardItems = (
     ...(isSourcegraphDotCom
         ? [
               {
-                  title: 'Try it on sourcegraph.com',
+                  title: (
+                      <>
+                          Try it on sourcegraph.com{' '}
+                          <Badge variant="info" className="d-inline">
+                              Experimental
+                          </Badge>
+                      </>
+                  ),
                   description:
                       'Cody explains, generates, convert code, and more within the context of public repositories.',
                   icon: mdiGit,
@@ -137,12 +144,14 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                 <div>
                     {isSourcegraphDotCom && <H1>Meet Cody, your AI assistant</H1>}
                     <div className="ml-3">
-                        <Text className={styles.codyConversation}>Auto-generate unit tests</Text>
-                        <Text className={styles.codyConversation}>Explain code</Text>
-                        <Text className={styles.codyConversation}>Find code smells</Text>
-                        <Text className={styles.codyConversation}>Generate code</Text>
+                        <Text className={styles.codyConversation}>AI-powered chat for you code</Text>
+                        <Text className={styles.codyConversation}>Autocomplete</Text>
+                        <Text className={styles.codyConversation}>Find, fix and explain code</Text>
+                        <Text className={styles.codyConversation}>Create documentation</Text>
+                        <Text className={styles.codyConversation}>Generate unit tests</Text>
+                        <Text className={styles.codyConversation}>Build custom commands</Text>
                     </div>
-                    <CodyHelpIcon className={styles.codyHelpIcon} />
+                    <CodyHelpIcon />
                 </div>
 
                 {isSourcegraphDotCom ? (
@@ -152,8 +161,8 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                     >
                         <H2>Sign up to get free access</H2>
                         <Text className="mt-3">
-                            Cody combines an LLM with the context of Sourcegraph's code graph on public code or your
-                            code at work. Sign up with:
+                            Cody answers technical questions and writes code directly in your IDE, using your code graph
+                            for context and accuracy. Sign up with:
                         </Text>
                         <div className={styles.buttonWrapper}>
                             <ExternalsAuth
@@ -226,9 +235,9 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                         styles.startingPointWrapper
                     )}
                 >
-                    {codyPlatformCardItems(isSourcegraphDotCom).map(item => (
+                    {codyPlatformCardItems(isSourcegraphDotCom).map((item, index) => (
                         <CodyPlatformCard
-                            key={item.title}
+                            key={index}
                             title={item.title}
                             description={item.description}
                             illustration={isDarkTheme ? item.illustration.dark : item.illustration.light}
@@ -264,7 +273,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                     <div className={styles.learnMoreItems}>
                         <H4 className={styles.learnMoreItemsTitle}>Documentation</H4>
                         <Text className="mb-0">
-                            Learn about Cody’s use cases, recipes, and FAQs on the{' '}
+                            Learn about Cody’s use cases, commands, and FAQs on the{' '}
                             <Link to="/help/cody" target="_blank" rel="noopener">
                                 documentation page
                             </Link>
@@ -317,6 +326,6 @@ const CodyPlatformCard: React.FunctionComponent<CodyPlatformCardProps> = ({
             <H3 className="ml-2 mb-0">{title}</H3>
         </div>
         <Text className={classNames('mt-2', styles.codyPlatformCardDescription)}>{description}</Text>
-        <img src={illustration} alt={title} className={styles.codyPlatformCardImage} />
+        <img src={illustration} alt="Cody platform card" className={styles.codyPlatformCardImage} />
     </div>
 )
