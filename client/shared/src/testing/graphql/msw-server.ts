@@ -1,8 +1,8 @@
 import type { IMockStore } from '@graphql-tools/mock'
+import type { RequestHandler } from 'msw'
 import { setupServer } from 'msw/node'
 
 import { defaultMocks } from './defaultMocks'
-import type { RequestHandler } from 'msw'
 import { type GraphQLMockOptions, createGraphQLMock, createGraphQLMockRequestHandler } from './handler'
 
 type Mocks = Record<string, () => unknown>
@@ -59,6 +59,9 @@ export interface MockServer<T extends Mocks> {
     mockGraphql(options: GraphQLMockOptions<T>): RequestHandler
 }
 
+/**
+ * Sets up MSW for mocking GraphQL requests in tests.
+ */
 export function setupMockServer<T extends Mocks>(
     options: MockServerOptions,
     ...handlers: RequestHandler[]
@@ -90,7 +93,6 @@ export function setupMockServer<T extends Mocks>(
         store: mock.store,
         mockGraphql(options) {
             return createGraphQLMockRequestHandler(mock, options)
-        }
+        },
     }
 }
-

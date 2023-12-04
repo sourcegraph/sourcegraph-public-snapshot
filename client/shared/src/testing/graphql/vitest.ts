@@ -15,6 +15,9 @@ interface VitestMockServerOptions {
     inspect?: boolean
 }
 
+/**
+ * Sets up GraphQL mocking for vitest.
+ */
 export function setupMockServer(
     options?: VitestMockServerOptions,
     ...handlers: RequestHandler[]

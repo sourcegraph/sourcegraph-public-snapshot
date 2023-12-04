@@ -31,9 +31,8 @@ const config = {
     'typedoc.js',
     'client/web/dev/**/*',
     'graphql-schema-linter.config.js',
-    'bundlesize.config.js',
     'mockServiceWorker.js',
-r ],
+  ],
   extends: ['@sourcegraph/eslint-config', 'plugin:storybook/recommended'],
   env: {
     browser: true,

@@ -1,36 +1,37 @@
 import { fakerEN as faker } from '@faker-js/faker'
 import { addMocksToSchema, createMockStore } from '@graphql-tools/mock'
-import {
-    type DocumentNode,
-    type GraphQLError,
-    buildSchema,
-    graphqlSync,
-    isObjectType,
-} from 'graphql'
+import { type DocumentNode, type GraphQLError, buildSchema, graphqlSync, isObjectType } from 'graphql'
 import { merge } from 'lodash'
+import { graphql as mswgraphql, HttpResponse, type RequestHandler } from 'msw'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
 
 import { getDefaultResolvers } from './resolvers'
-
-import { graphql as mswgraphql, HttpResponse, type RequestHandler } from 'msw'
-import { getDocumentNode } from '@sourcegraph/http-client'
 
 type Mocks = Record<string, () => unknown>
 
 export interface GraphQLMockOptions<T extends Mocks> {
     /**
-     * The graphql query to mock. If this is not specified, the name option must be specified.
+     * The graphql query to mock. Altnernatively, you can specify the query name.
+     * If neither `query` nor `name` is specified, the handler will use this
+     * configuration for all queries.
      */
     query?: DocumentNode | string
+
     /**
-     * The name of the graphql operation to mock. If this is not specified, the query option must be specified.
+     * The name of the graphql operation to mock. Alternatively, you can specify the query.
+     * If neither `name` nor `query` is specified, the handler will use this
+     * configuration for all queries.
      */
     name?: string
+
     /**
-     * The handler tries to determine the typename of the node to mock from the query.
-     * This only works if the node query contains an inline fragment. If it doesn't you can
-     * specify the typename here.
+     * When doing a `node` query the handler tries to determine the typename of
+     * the node to mock from the query. This only works if the node query contains an inline fragment.
+     * If it doesn't you can specify the typename here.
      */
     nodeTypename?: string
+
     /**
      * Additional mock generators to use.
      */
@@ -54,6 +55,7 @@ export interface MockSetupOptions<T extends Mocks> {
      * The GraphQL schema to mock.
      */
     typeDefs: string
+
     /**
      * Default mocks to use for all queries.
      */
@@ -73,13 +75,13 @@ export interface GraphQLMock<T extends Mocks> {
      */
     store: ReturnType<typeof createMockStore>
     /**
-     * Creates a request handler that mocks a specific graphql operation/query.
+     * Mocks a GraphQL request.
      */
-    mockRequest(request: RequestMock<T>): {data: unknown, errors: readonly GraphQLError[] | undefined}
+    mockRequest(request: RequestMock<T>): { data: unknown; errors: readonly GraphQLError[] | undefined }
 }
 
 /**
- * setupGraphQLHandlers sets up mocking for GraphQL queries with MSW.
+ * createGraphQLMock returns an object that can be used to mock GraphQL requests.
  */
 export function createGraphQLMock<T extends Mocks>(options: MockSetupOptions<T>): GraphQLMock<T> {
     const schema = buildSchema(options.typeDefs)
@@ -89,9 +91,9 @@ export function createGraphQLMock<T extends Mocks>(options: MockSetupOptions<T>)
         .map(type => type.name)
     const defaultMocks = options.defaultMocks
     let requestMocks: T | undefined
-    const mocks: T = { ...defaultMocks }
+    const mocks: T = { ...defaultMocks } as T
     for (const typeName of typeNames) {
-        mocks[typeName] = () => {
+        ;(mocks as Mocks)[typeName] = () => {
             if (requestMocks?.[typeName]) {
                 return requestMocks[typeName]()
             }
@@ -120,7 +122,7 @@ export function createGraphQLMock<T extends Mocks>(options: MockSetupOptions<T>)
     return {
         store,
         mockRequest(request) {
-            const {query, variables, operationName, options} = request
+            const { query, variables, operationName, options } = request
 
             let data: unknown
             let errors: readonly GraphQLError[] | undefined
@@ -133,7 +135,7 @@ export function createGraphQLMock<T extends Mocks>(options: MockSetupOptions<T>)
             try {
                 requestMocks = options.mocks
                 // Only use the seed if it is explicitly set. Otherwise, we want to use the default seed.
-                const seed = faker.seed('seed' in options ? options.seed : 1)
+                faker.seed('seed' in options ? options.seed : 1)
                 ;({ data, errors } = graphqlSync(mockedSchema, query, undefined, context, variables))
             } catch (error) {
                 errors = [error]
@@ -144,34 +146,40 @@ export function createGraphQLMock<T extends Mocks>(options: MockSetupOptions<T>)
                 // eslint-disable-next-line no-console
                 console.error(
                     `Operation '${operationName}' with ${JSON.stringify(variables)} errored:\n${errors
-.map(error => error.message)
-.join('\n')}`
+                        .map(error => error.message)
+                        .join('\n')}`
                 )
             }
             if (options.inspect) {
                 // eslint-disable-next-line no-console
                 console.log(
                     `Mocked operation '${operationName}' with ${JSON.stringify(variables)}: ${JSON.stringify(
-{ data, errors },
-null,
-2
-)}`
+                        { data, errors },
+                        null,
+                        2
+                    )}`
                 )
             }
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return { data, errors: (errors as any) ?? undefined }
-            }
+        },
     }
 }
 
-export function createGraphQLMockRequestHandler<T extends Mocks>(mock: GraphQLMock<T>, options: GraphQLMockOptions<T>): RequestHandler {
+/**
+ * Helper function for creating a MSW request handler that mocks a specific operation/query.
+ */
+export function createGraphQLMockRequestHandler<T extends Mocks>(
+    mock: GraphQLMock<T>,
+    options: GraphQLMockOptions<T>
+): RequestHandler {
     const name: string | undefined = getOperationName(options)
     return mswgraphql.operation(({ query, variables, operationName }) => {
         if (!name || operationName === name) {
             let data: unknown
             let errors: readonly GraphQLError[] | undefined
             try {
-                ({data, errors} = mock.mockRequest({query, variables, operationName, options}))
+                ;({ data, errors } = mock.mockRequest({ query, variables, operationName, options }))
             } catch (error) {
                 errors = [error]
             }
@@ -182,6 +190,9 @@ export function createGraphQLMockRequestHandler<T extends Mocks>(mock: GraphQLMo
     })
 }
 
+/**
+ * Returns the operation name specified in the options or tries to determine it from the query.
+ */
 export function getOperationName(options: GraphQLMockOptions<Mocks>): string | undefined {
     if (options.name) {
         return options.name

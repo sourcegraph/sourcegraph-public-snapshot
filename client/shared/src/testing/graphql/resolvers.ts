@@ -8,6 +8,9 @@ interface GenericGraphQLContext {
     operationName?: string
 }
 
+/**
+ * Default resolvers for GraphQL mocking.
+ */
 export function getDefaultResolvers(store: IMockStore): Record<string, any> {
     return {
         Query: {
@@ -17,6 +20,8 @@ export function getDefaultResolvers(store: IMockStore): Record<string, any> {
                 context: GenericGraphQLContext | undefined,
                 info: GraphQLResolveInfo
             ) => {
+                // Node is an interface. We need to resolve it to requested type otherwise @graphql-tools/mock will
+                // return a random type.
                 let typename = context?.nodeTypename
                 if (!typename && (!context?.operationName || info.operation.name?.value === context.operationName)) {
                     // Try to determine type name from inline fragment
