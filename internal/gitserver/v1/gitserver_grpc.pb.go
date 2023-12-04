@@ -41,6 +41,7 @@ const (
 	GitserverService_PerforceGroupMembers_FullMethodName        = "/gitserver.v1.GitserverService/PerforceGroupMembers"
 	GitserverService_IsPerforceSuperUser_FullMethodName         = "/gitserver.v1.GitserverService/IsPerforceSuperUser"
 	GitserverService_PerforceGetChangelist_FullMethodName       = "/gitserver.v1.GitserverService/PerforceGetChangelist"
+	GitserverService_MergeBase_FullMethodName                   = "/gitserver.v1.GitserverService/MergeBase"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -70,6 +71,7 @@ type GitserverServiceClient interface {
 	PerforceGroupMembers(ctx context.Context, in *PerforceGroupMembersRequest, opts ...grpc.CallOption) (*PerforceGroupMembersResponse, error)
 	IsPerforceSuperUser(ctx context.Context, in *IsPerforceSuperUserRequest, opts ...grpc.CallOption) (*IsPerforceSuperUserResponse, error)
 	PerforceGetChangelist(ctx context.Context, in *PerforceGetChangelistRequest, opts ...grpc.CallOption) (*PerforceGetChangelistResponse, error)
+	MergeBase(ctx context.Context, in *MergeBaseRequest, opts ...grpc.CallOption) (*MergeBaseResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -396,6 +398,15 @@ func (c *gitserverServiceClient) PerforceGetChangelist(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *gitserverServiceClient) MergeBase(ctx context.Context, in *MergeBaseRequest, opts ...grpc.CallOption) (*MergeBaseResponse, error) {
+	out := new(MergeBaseResponse)
+	err := c.cc.Invoke(ctx, GitserverService_MergeBase_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -423,6 +434,7 @@ type GitserverServiceServer interface {
 	PerforceGroupMembers(context.Context, *PerforceGroupMembersRequest) (*PerforceGroupMembersResponse, error)
 	IsPerforceSuperUser(context.Context, *IsPerforceSuperUserRequest) (*IsPerforceSuperUserResponse, error)
 	PerforceGetChangelist(context.Context, *PerforceGetChangelistRequest) (*PerforceGetChangelistResponse, error)
+	MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -495,6 +507,9 @@ func (UnimplementedGitserverServiceServer) IsPerforceSuperUser(context.Context, 
 }
 func (UnimplementedGitserverServiceServer) PerforceGetChangelist(context.Context, *PerforceGetChangelistRequest) (*PerforceGetChangelistResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PerforceGetChangelist not implemented")
+}
+func (UnimplementedGitserverServiceServer) MergeBase(context.Context, *MergeBaseRequest) (*MergeBaseResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MergeBase not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -925,6 +940,24 @@ func _GitserverService_PerforceGetChangelist_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_MergeBase_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MergeBaseRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).MergeBase(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_MergeBase_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).MergeBase(ctx, req.(*MergeBaseRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -999,6 +1032,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PerforceGetChangelist",
 			Handler:    _GitserverService_PerforceGetChangelist_Handler,
+		},
+		{
+			MethodName: "MergeBase",
+			Handler:    _GitserverService_MergeBase_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

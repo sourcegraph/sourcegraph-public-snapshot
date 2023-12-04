@@ -32,7 +32,6 @@ var (
 		"ls-files":     {"--with-tree", "-z"},
 		"for-each-ref": {"--format", "--points-at"},
 		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
-		"merge-base":   {"--"},
 		"show-ref":     {"--heads"},
 		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
 		"cat-file":     {"-p"},

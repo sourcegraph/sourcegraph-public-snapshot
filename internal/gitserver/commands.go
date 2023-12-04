@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -1377,23 +1378,31 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 	return refName, commit, nil
 }
 
-// MergeBase returns the merge base commit for the specified commits.
-func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (_ api.CommitID, err error) {
+func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, base, head string) (_ api.CommitID, err error) {
 	ctx, _, endObservation := c.operations.mergeBase.With(ctx, &err, observation.Args{
 		MetricLabelValues: []string{c.scope},
 		Attrs: []attribute.KeyValue{
-			attribute.String("a", string(a)),
-			attribute.String("b", string(b)),
+			attribute.String("base", base),
+			attribute.String("head", head),
 		},
 	})
 	defer endObservation(1, observation.Args{})
 
-	cmd := c.gitCommand(repo, "merge-base", "--", string(a), string(b))
-	out, err := cmd.CombinedOutput(ctx)
+	client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
 	if err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+		return "", err
 	}
-	return api.CommitID(bytes.TrimSpace(out)), nil
+
+	res, err := client.MergeBase(ctx, &proto.MergeBaseRequest{
+		Repo: string(repo),
+		Base: base,
+		Head: head,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return api.CommitID(res.GetMergeBaseCommitSha()), nil
 }
 
 // RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.

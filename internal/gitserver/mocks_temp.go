@@ -920,7 +920,6 @@ func NewMockClientFrom(i Client) *MockClient {
 			defaultHook: i.LsFiles,
 		},
 		MergeBaseFunc: &ClientMergeBaseFunc{
-			defaultHook: i.MergeBase,
 		},
 		NewFileReaderFunc: &ClientNewFileReaderFunc{
 			defaultHook: i.NewFileReader,

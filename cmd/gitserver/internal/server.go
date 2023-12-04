@@ -1255,7 +1255,7 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 }
 
 func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, stderr string) {
-	if checkMaybeCorruptRepo(s.Logger, s.RecordingCommandFactory, repo, s.ReposDir, dir, stderr) {
+	if checkMaybeCorruptRepo(ctx, s.Logger, repo, stderr) {
 		reason := stderr
 		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason, s.Hostname); err != nil {
 			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
@@ -1279,7 +1279,7 @@ var (
 	commitGraphCorruptionRegex = lazyregexp.NewPOSIX(`^fatal: commit-graph requires overflow generation data but has none`)
 )
 
-func checkMaybeCorruptRepo(logger log.Logger, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, reposDir string, dir common.GitDir, stderr string) bool {
+func checkMaybeCorruptRepo(ctx context.Context, logger log.Logger, git git.GitBackend, repo api.RepoName, stderr string) bool {
 	if !stdErrIndicatesCorruption(stderr) {
 		return false
 	}
@@ -1290,7 +1290,7 @@ func checkMaybeCorruptRepo(logger log.Logger, rcf *wrexec.RecordingCommandFactor
 
 	// We set a flag in the config for the cleanup janitor job to fix. The janitor
 	// runs every minute.
-	err := git.ConfigSet(rcf, reposDir, dir, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
+	err := git.Config().Set(ctx, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
 	if err != nil {
 		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}

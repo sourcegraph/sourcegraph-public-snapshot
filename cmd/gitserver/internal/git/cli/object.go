@@ -1,4 +1,4 @@
-package git
+package cli
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -20,20 +20,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func GetObject(ctx context.Context, rcf *wrexec.RecordingCommandFactory, reposDir string, repo api.RepoName, objectName string) (_ *gitdomain.GitObject, err error) {
-	return getObject(ctx, rcf, reposDir, getObjectType, revParse, repo, objectName)
+func (g *gitCLIBackend) GetObject(ctx context.Context, objectName string) (*gitdomain.GitObject, error) {
+	return getObject(ctx, g.rcf, g.dir, getObjectType, revParse, g.repoName, objectName)
 }
 
-func getObject(ctx context.Context, rcf *wrexec.RecordingCommandFactory, reposDir string, getObjectType getObjectTypeFunc, revParse revParseFunc, repo api.RepoName, objectName string) (_ *gitdomain.GitObject, err error) {
+func getObject(ctx context.Context, rcf *wrexec.RecordingCommandFactory, dir common.GitDir, getObjectType getObjectTypeFunc, revParse revParseFunc, repo api.RepoName, objectName string) (_ *gitdomain.GitObject, err error) {
 	tr, ctx := trace.New(ctx, "GetObject",
 		attribute.String("objectName", objectName))
 	defer tr.EndWithErr(&err)
 
-	if err := CheckSpecArgSafety(objectName); err != nil {
+	if err := git.CheckSpecArgSafety(objectName); err != nil {
 		return nil, err
 	}
-
-	dir := gitserverfs.RepoDirFromName(reposDir, repo)
 
 	sha, err := revParse(ctx, rcf, repo, dir, objectName)
 	if err != nil {

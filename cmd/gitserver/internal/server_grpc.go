@@ -12,6 +12,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/cli"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/git/gogit"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/gitserverfs"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -621,4 +623,67 @@ func byteSlicesToStrings(in [][]byte) []string {
 		res[i] = string(b)
 	}
 	return res
+}
+
+func (gs *GRPCServer) MergeBase(ctx context.Context, req *proto.MergeBaseRequest) (*proto.MergeBaseResponse, error) {
+	accesslog.Record(
+		ctx,
+		req.GetRepo(),
+		log.String("base", req.GetBase()),
+		log.String("head", req.GetHead()),
+	)
+
+	if req.GetRepo() == "" {
+		return nil, status.New(codes.InvalidArgument, "repo must be specified").Err()
+	}
+
+	if req.GetBase() == "" {
+		return nil, status.New(codes.InvalidArgument, "base must be specified").Err()
+	}
+
+	if req.GetHead() == "" {
+		return nil, status.New(codes.InvalidArgument, "head must be specified").Err()
+	}
+
+	repoDir := gitserverfs.RepoDirFromName(gs.Server.ReposDir, api.RepoName(req.GetRepo()))
+
+	if !repoCloned(repoDir) {
+		cloneProgress, cloneInProgress := gs.Server.Locker.Status(repoDir)
+		// TODO: Status?
+		return nil, &protocol.NotFoundPayload{
+			CloneInProgress: cloneInProgress,
+			CloneProgress:   cloneProgress,
+		}
+	}
+
+	backend, err := gs.backendForRepo(api.RepoName(req.GetRepo()))
+	if err != nil {
+		// TODO: Status?
+		return nil, err
+	}
+
+	sha, err := backend.MergeBase(ctx, req.GetBase(), req.GetHead())
+	if err != nil {
+		// TODO: Better error checking.
+		return nil, status.New(codes.Internal, err.Error()).Err()
+	}
+
+	return &proto.MergeBaseResponse{
+		MergeBaseCommitSha: string(sha),
+	}, nil
+}
+
+func (gs *GRPCServer) backendForRepo(repoName api.RepoName) (git.GitBackend, error) {
+	repoDir := gitserverfs.RepoDirFromName(gs.Server.ReposDir, repoName)
+	backend := cli.NewBackend(gs.Server.Logger, gs.Server.RecordingCommandFactory, repoDir, repoName)
+	// TODO: Switch for backend.
+	if true {
+		var err error
+		backend, err = gogit.NewBackend(gs.Server.Logger, repoDir, repoName)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return backend, nil
 }

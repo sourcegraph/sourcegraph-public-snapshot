@@ -94,7 +94,7 @@ func NewRepositoryComparison(ctx context.Context, db database.DB, client gitserv
 
 	// Find the common merge-base for the diff. That's the revision the diff applies to,
 	// not the baseRevspec.
-	mergeBaseCommit, err := client.MergeBase(ctx, r.RepoName(), api.CommitID(baseRevspec), api.CommitID(headRevspec))
+	mergeBaseCommit, err := client.MergeBase(ctx, r.RepoName(), baseRevspec, headRevspec)
 
 	// If possible, use the merge-base as the base commit, as the diff will only be guaranteed to be
 	// applicable to the file from that revision.

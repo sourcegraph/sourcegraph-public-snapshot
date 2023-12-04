@@ -32,6 +32,7 @@ service GitserverService {
   rpc PerforceGroupMembers(PerforceGroupMembersRequest) returns (PerforceGroupMembersResponse) {}
   rpc IsPerforceSuperUser(IsPerforceSuperUserRequest) returns (IsPerforceSuperUserResponse) {}
   rpc PerforceGetChangelist(PerforceGetChangelistRequest) returns (PerforceGetChangelistResponse) {}
+  rpc MergeBase(MergeBaseRequest) returns (MergeBaseResponse) {}
 }
 
 // DiskInfoRequest is a empty request for the DiskInfo RPC.
@@ -645,4 +646,16 @@ message PerforceUsersResponse {
 message PerforceUser {
   string username = 1;
   string email = 2;
+}
+
+// MergeBaseRequest is a request to find the merge base of two revspecs.
+message MergeBaseRequest {
+  string repo = 1;
+  string base = 2;
+  string head = 3;
+}
+
+// MergeBaseResponse is the response from finding the merge base of two revspecs.
+message MergeBaseResponse {
+  string merge_base_commit_sha = 1;
 }

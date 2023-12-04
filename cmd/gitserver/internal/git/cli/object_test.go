@@ -1,4 +1,4 @@
-package git
+package cli
 
 import (
 	"context"
@@ -112,7 +112,7 @@ func TestGetObject(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			obj, err := getObject(ctx, wrexec.NewNoOpRecordingCommandFactory(), t.TempDir(), tc.getObjectType, tc.revParse, tc.repo, tc.objectName)
+			obj, err := getObject(ctx, wrexec.NewNoOpRecordingCommandFactory(), common.GitDir(t.TempDir()), tc.getObjectType, tc.revParse, tc.repo, tc.objectName)
 			if diff := cmp.Diff(tc.wantObject, obj); diff != "" {
 				t.Errorf("Object does not match: %v", diff)
 			}

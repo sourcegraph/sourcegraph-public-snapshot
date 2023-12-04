@@ -53,6 +53,9 @@ type MockGitserverServiceClient struct {
 	// ListGitoliteFunc is an instance of a mock function object controlling
 	// the behavior of the method ListGitolite.
 	ListGitoliteFunc *GitserverServiceClientListGitoliteFunc
+	// MergeBaseFunc is an instance of a mock function object controlling
+	// the behavior of the method MergeBase.
+	MergeBaseFunc *GitserverServiceClientMergeBaseFunc
 	// P4ExecFunc is an instance of a mock function object controlling the
 	// behavior of the method P4Exec.
 	P4ExecFunc *GitserverServiceClientP4ExecFunc
@@ -145,6 +148,11 @@ func NewMockGitserverServiceClient() *MockGitserverServiceClient {
 		},
 		ListGitoliteFunc: &GitserverServiceClientListGitoliteFunc{
 			defaultHook: func(context.Context, *v1.ListGitoliteRequest, ...grpc.CallOption) (r0 *v1.ListGitoliteResponse, r1 error) {
+				return
+			},
+		},
+		MergeBaseFunc: &GitserverServiceClientMergeBaseFunc{
+			defaultHook: func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (r0 *v1.MergeBaseResponse, r1 error) {
 				return
 			},
 		},
@@ -266,6 +274,11 @@ func NewStrictMockGitserverServiceClient() *MockGitserverServiceClient {
 				panic("unexpected invocation of MockGitserverServiceClient.ListGitolite")
 			},
 		},
+		MergeBaseFunc: &GitserverServiceClientMergeBaseFunc{
+			defaultHook: func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (*v1.MergeBaseResponse, error) {
+				panic("unexpected invocation of MockGitserverServiceClient.MergeBase")
+			},
+		},
 		P4ExecFunc: &GitserverServiceClientP4ExecFunc{
 			defaultHook: func(context.Context, *v1.P4ExecRequest, ...grpc.CallOption) (v1.GitserverService_P4ExecClient, error) {
 				panic("unexpected invocation of MockGitserverServiceClient.P4Exec")
@@ -361,6 +374,9 @@ func NewMockGitserverServiceClientFrom(i v1.GitserverServiceClient) *MockGitserv
 		},
 		ListGitoliteFunc: &GitserverServiceClientListGitoliteFunc{
 			defaultHook: i.ListGitolite,
+		},
+		MergeBaseFunc: &GitserverServiceClientMergeBaseFunc{
+			defaultHook: i.MergeBase,
 		},
 		P4ExecFunc: &GitserverServiceClientP4ExecFunc{
 			defaultHook: i.P4Exec,
@@ -1722,6 +1738,127 @@ func (c GitserverServiceClientListGitoliteFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverServiceClientListGitoliteFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverServiceClientMergeBaseFunc describes the behavior when the
+// MergeBase method of the parent MockGitserverServiceClient instance is
+// invoked.
+type GitserverServiceClientMergeBaseFunc struct {
+	defaultHook func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (*v1.MergeBaseResponse, error)
+	hooks       []func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (*v1.MergeBaseResponse, error)
+	history     []GitserverServiceClientMergeBaseFuncCall
+	mutex       sync.Mutex
+}
+
+// MergeBase delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitserverServiceClient) MergeBase(v0 context.Context, v1 *v1.MergeBaseRequest, v2 ...grpc.CallOption) (*v1.MergeBaseResponse, error) {
+	r0, r1 := m.MergeBaseFunc.nextHook()(v0, v1, v2...)
+	m.MergeBaseFunc.appendCall(GitserverServiceClientMergeBaseFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MergeBase method of
+// the parent MockGitserverServiceClient instance is invoked and the hook
+// queue is empty.
+func (f *GitserverServiceClientMergeBaseFunc) SetDefaultHook(hook func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (*v1.MergeBaseResponse, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MergeBase method of the parent MockGitserverServiceClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverServiceClientMergeBaseFunc) PushHook(hook func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (*v1.MergeBaseResponse, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverServiceClientMergeBaseFunc) SetDefaultReturn(r0 *v1.MergeBaseResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (*v1.MergeBaseResponse, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverServiceClientMergeBaseFunc) PushReturn(r0 *v1.MergeBaseResponse, r1 error) {
+	f.PushHook(func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (*v1.MergeBaseResponse, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverServiceClientMergeBaseFunc) nextHook() func(context.Context, *v1.MergeBaseRequest, ...grpc.CallOption) (*v1.MergeBaseResponse, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverServiceClientMergeBaseFunc) appendCall(r0 GitserverServiceClientMergeBaseFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverServiceClientMergeBaseFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverServiceClientMergeBaseFunc) History() []GitserverServiceClientMergeBaseFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverServiceClientMergeBaseFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverServiceClientMergeBaseFuncCall is an object that describes an
+// invocation of method MergeBase on an instance of
+// MockGitserverServiceClient.
+type GitserverServiceClientMergeBaseFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *v1.MergeBaseRequest
+	// Arg2 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg2 []grpc.CallOption
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *v1.MergeBaseResponse
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c GitserverServiceClientMergeBaseFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg2 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0, c.Arg1}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverServiceClientMergeBaseFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
