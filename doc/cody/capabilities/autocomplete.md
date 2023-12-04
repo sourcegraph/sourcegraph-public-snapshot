@@ -4,7 +4,7 @@
 
 Cody provides intelligent **autocomplete** suggestions as you type using context from your code, such as your open files and file history. Cody autocompletes single lines or whole functions in any programming language, configuration file, or documentation. It’s powered by the latest instant LLM models for accuracy and performance.
 
-Autocomplete supports any programming language because it uses LLMs trained on broad data. It supports all programming languages but works exceptionally well for Python, Go, JavaScript, and TypeScript.
+Autocomplete supports any programming language because it uses LLMs trained on broad data. It works exceptionally well for Python, Go, JavaScript, and TypeScript.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-in-action.mp4" type="video/mp4">
@@ -41,7 +41,7 @@ By default, a fully configured Sourcegraph instance picks a default LLM to gener
 
 Before configuring the autocomplete feature, it's recommended to read more about [Enabling Cody on Sourcegraph Enterprise](overview/enable-cody-enterprise.md) guide.
 
-Cody Autocomplete goes beyond basic suggestions. It understands your code context, offering tailored recommendations based on your current project, language, and coding patterns. Let's view a quick demo.
+Cody Autocomplete goes beyond basic suggestions. It understands your code context, offering tailored recommendations based on your current project, language, and coding patterns. Let's view a quick demo using the VS Code extension.
 
 <video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
   <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/contexual-autocpmplete.mp4" type="video/mp4">

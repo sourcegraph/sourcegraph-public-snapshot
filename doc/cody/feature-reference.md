@@ -66,14 +66,6 @@ Here's a feature parity matrix that compares the capabilities of Cody Clients ac
 | Embeddings     |    ✓    |     ✓     |   ✓    |
 | Context UI     |    ✓    |     ✓     |   x    |
 
-## Inline Chat
-
-| **Feature**               | **VS Code** | **JetBrains** | **Neovim** |
-|-------------------------|---------|-----------|--------|
-| Questions     |    ✓    |     x     |   ✓    |
-| Fix-ups     |    ✓    |     x     |   ✓    |
-| Touch     |    ✓    |     x     |   x    |
-
 ## Commands
 
 | **Feature**               | **VS Code** | **JetBrains** | **Neovim** |

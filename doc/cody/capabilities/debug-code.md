@@ -23,7 +23,9 @@ sum(3 , 4);
 
 When you try to `console.log` the `result`, it does not print the correct summed value. Cody can help you both identify the error and provide a solution to fix it. Let's debug the code snippet. Paste the code snippet inside the Cody chat window and ask Cody to fix it.
 
-#### *Video of debugging and fixing code*
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/fix-code.mp4" type="video/mp4">
+</video>
 
 In addition, Cody helps you reduce the chances of getting syntax and typo errors. The Cody IDE extensions provide context-aware suggestions based on your codebase, helping you avoid common mistakes and reduce your debugging time.
 
@@ -34,3 +36,9 @@ Cody can detect early code smells to ensure coding best practices and quality an
 VS Code users can detect code smells by the `/smell` command, and JetBrains users can achieve the same by clicking the **Smell Code** button from the **Commands** tab.
 
 Let's identify code smells on the same function from the previous example.
+
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/code-smells.mp4" type="video/mp4">
+</video>
+
+As you can see, Cody not only detects code smells but also provides suggestions to improve your code.

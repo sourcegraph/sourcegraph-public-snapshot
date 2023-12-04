@@ -6,13 +6,15 @@ Cody offers quick, ready-to-use **commands** for common actions to write, descri
 
 Commands are available in all Cody-supported IDE extensions (VS Code, JetBrains, and Neovim) and the Sourcegraph web app. Commands can handle tasks like:
 
-- Explaining code `/explain`
-- Code smell `/smell`
-- Generate unit tests `/test`
-- Generate code documentation `/doc`
-- Improve variable names
+- Editing and fixing code (`edit`)
+- Explaining code (`explain`)
+- Generating unit tests (`test`)
+- Writing documentation (`doc`)
+- Improving code quality (`smell`)
 
 The support for one command may vary by IDE extension. Read the [feature parity reference to learn what commands are available in your IDE](./../feature-reference.md#commands).
+
+> NOTE: Cody's responses to commands might be better than responses to chats since they've been pre-packaged and prompt-engineered.
 
 ## Running commands
 
@@ -24,15 +26,15 @@ The process of running a command varies from one IDE to another. For example, in
 
 Commands are also available in the JetBrains extension. To access it, navigate to the `Commands` panel (next to the `Chat` panel), and you can find each available command as a button within the UI.
 
-#### *UPDATE VIDEO WITH NEW UI*
-
-![Example of the Cody 'Explain Code' command. The user highlights a section of code, then uses the hotkey to open the commands menu, then selects the command.](https://storage.googleapis.com/sourcegraph-assets/cody/Docs/Sept2023/Explain_Code_SM.gif)
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/commands-working.mp4" type="video/mp4">
+</video>
 
 ## Custom commands
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span style="margin-right:0.25rem;" class="badge badge-experimental">Experimental</span> Custom Commands are in the experimental stage.
+<span style="margin-right:0.25rem;" class="badge badge-beta">Beta</span> Custom Commands are in the Beta stage.
 <br />
 For any feedback, you can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an <a href="https://github.com/sourcegraph/cody/issues">issue</a>, join our <a href="https://discord.com/servers/sourcegraph-969688426372825169">Discord</a>, or <a href="https://twitter.com/sourcegraphcody">create a post on X</a>.
 </p>
@@ -46,10 +48,6 @@ For any feedback, you can <a href="https://about.sourcegraph.com/contact">contac
 - Explain code quality output like linter warnings
 
 > NOTE: Cody supports Custom Commands only for VS Code version 0.8 and above.
-
-#### *UPDATE IMAGE*
-
-![Cody Custom Commands in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/create-custom-commands.png)
 
 ### Creating a Custom Command
 
@@ -66,13 +64,11 @@ You can create a custom command by editing the configuration JSON file or using 
 
 ### Running Custom Commands
 
-You can invoke custom commands with the same hotkey as predefined commands. Let's type `/my-custom-command` in the chat window, and it will appear. Now, you can run this new command on your code and get answers to your questions accordingly.
+You can invoke custom commands with the same hotkey as predefined commands. Once created, your custom commands would appear with the rest of the predefined commands in the list. Let's type `/my-custom-command` in the chat window, and it will appear. Now, you can run this new command on your code and get answers to your questions accordingly.
+
+![create-new-custom-command](https://storage.googleapis.com/sourcegraph-assets/Docs/custom-command.png)
 
 Alternatively, you can right-click the selected code and select **Cody > Custom Commands**.
-
-#### *UPDATE VIDEO*
-
-![Example of a user creating a custom "/Variables" command. The user creates a command that automatically makes the variable names in selected code more helpful.](https://storage.googleapis.com/sourcegraph-assets/cody/Docs/Sept2023/Custom_Command_SM.gif)
 
 ### Configuring file paths
 

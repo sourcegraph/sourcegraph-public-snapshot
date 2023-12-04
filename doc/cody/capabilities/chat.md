@@ -4,13 +4,9 @@
 
 Cody **chat** allows you to ask coding-related questions about your entire codebase or a specific code snippet. You can do it from the **Chat** panel of the supported editor extensions (VS Code, JetBrains, and Neovim) or via the **Ask Cody** button in the web app.
 
-The feature allows you to have an engaging conversation experience with Cody across VS Code, JetBrains, and Neovim. Key functionalities include managing chat history, stopping chat generation, editing sent messages, slash (/) commands, chat predictions, and more.
+The feature allows you to have an engaging conversation experience with Cody across VS Code, JetBrains, and Neovim. Key functionalities in the VS Code extension include support for multiple simultaneous chats, enhanced chat context configurability through `@` and `#` commands, detailed visibility into the code that Cody read before providing a response, and more.
 
 You can learn more about the IDE support for these functionalities in the [feature parity reference](./../feature-reference.md#chat).
-
-#### *ADD VIDEO*
-
-Demo video coming soon!
 
 ## Prerequisites
 
@@ -19,9 +15,9 @@ To use Cody's chat, you'll need to have the following:
 - An active Sourcegraph instance (free or paid)
 - A supported editor extension (VS Code, JetBrains, and Neovim) installed
 
-## How does chat works?
+## How does chat work?
 
-Cody uses several search methods (including keyword and semantic search) to find files in your codebase that are relevant to your chat questions. It then uses context from those files to provide an informed response based on your codebase. Cody also tells you which code files it reads to generate its responses.
+Cody uses several methods (including keyword search and graph context) to find files in your codebase that are relevant to your chat questions. It then uses context from those files to provide an informed response based on your codebase. Cody also tells you which code files it reads to generate its responses.
 
 Cody can assist you with various use cases by answering questions such as:
 
@@ -33,13 +29,17 @@ Cody can assist you with various use cases by answering questions such as:
 
 Let's use Cody VS Code extension's chat interface to answer your first question.
 
-- Click the Cody icon in the sidebar to view the **Chats** panel
-- Next, click the icon for **Start a New Chat Panel** to open a new chat window
+- Click the Cody icon in the sidebar to view the detailed panel
+- Next, click the icon for **New Chat** to open a new chat window
 - Here, you can directly write your question or type slash `/` to select one of the commands and then press **Enter**
 
 For example, ask Cody to "What does this file do?"
 
 Cody will take a few seconds to process your question, providing contextual information about the files it reads and generating the answer.
+
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/ask-cody-question.mp4" type="video/mp4">
+</video>
 
 ## Ask Cody to write code
 
@@ -53,6 +53,12 @@ You are provided with code suggestions in the chat window along with the followi
 
 During the chat, if Cody needs additional context, it can ask you to provide more information with a follow-up question. If your question is beyond the scope of the context, Cody will ask you to provide an alternate question aligned with the context of your codebase.
 
-#### *This video will update*
+<video width="1920" height="1080" loop playsinline controls style="width: 100%; height: auto; max-width: 50rem">
+  <source src="https://storage.googleapis.com/sourcegraph-assets/Docs/Media/cody-write-code.mp4" type="video/mp4">
+</video>
 
-![Example of Cody chat. You see the user ask Cody to describe what a file does, and Cody returns an answers that explains how the file is working in the context of the project.](https://storage.googleapis.com/sourcegraph-assets/cody/Docs/Sept2023/Context_Chat_SM.gif)
+### Chat vs Commands
+
+There could be scenarios when Cody's chat might not be able to answer your question. Or the answer lacks the context that you need. In these cases, it's recommended to use Cody **commands**. Cody's responses to commands might be better at times than responses to chats since they've been pre-packaged and prompt-engineered.
+
+> NOTE: Commands are only supported in the VS Code and JetBrains extension.
