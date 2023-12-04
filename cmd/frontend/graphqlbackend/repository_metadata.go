@@ -156,9 +156,11 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 	return &EmptyResponse{}, err
 }
 
+// TODO: Use EventRecorder from internal/telemetryrecorder instead.
 func (r *schemaResolver) logBackendEvent(ctx context.Context, eventName string) {
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() && !a.IsMockUser() {
+		//lint:ignore SA1019 existing usage of deprecated functionality.
 		if err := usagestats.LogBackendEvent(
 			r.db,
 			a.UID,

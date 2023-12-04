@@ -68,7 +68,8 @@ type Event struct {
 
 // LogBackendEvent is a convenience function for logging backend events.
 //
-// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+// Deprecated: Use EventRecorder from internal/telemetryrecorder instead.
+// Learn more: https://docs.sourcegraph.com/dev/background-information/telemetry
 func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, argument, publicArgument json.RawMessage, evaluatedFlagSet featureflag.EvaluatedFlagSet, cohortID *string) error {
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
@@ -85,6 +86,7 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 	hashedLicenseKey := conf.HashedCurrentLicenseKeyForAnalytics()
 	connectedSiteID := siteid.Get(db)
 
+	//lint:ignore SA1019 existing usage of deprecated functionality.
 	return LogEvent(context.Background(), db, Event{
 		EventName:        eventName,
 		UserID:           userID,
