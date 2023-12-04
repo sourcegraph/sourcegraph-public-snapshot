@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/session"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -159,10 +160,8 @@ func buildUserFetchAttempts(emails []*bitbucketcloud.UserEmail, allowSignup bool
 	return attempts, nil
 }
 
-func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
-	stateConfig := getStateConfig()
-	stateConfig.MaxAge = -1
-	http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter, r *http.Request) {
+	session.SetData(w, r, "oauthState", "")
 }
 
 func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {
