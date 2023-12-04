@@ -21,6 +21,7 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 
 	return newCompletionsHandler(
 		logger,
+		db.Users(),
 		telemetryrecorder.New(db),
 		types.CompletionsFeatureChat,
 		rl,

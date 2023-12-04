@@ -95,6 +95,15 @@ const (
 
 	// FeatureAllowAirGapped is whether or not air gapped mode is allowed on this instance.
 	FeatureAllowAirGapped BasicFeature = "allow-air-gapped"
+
+	// FeatureCodeMonitors is whether code monitors is allowed on this Sourcegraph instance.
+	FeatureCodeMonitors BasicFeature = "code-monitors"
+
+	// FeatureNotebooks is whether the notebooks feature is allowed on this Sourcegraph instance.
+	FeatureNotebooks BasicFeature = "notebooks"
+
+	// FeatureCodeSearch is whether the code search feature suite is allowed on this Sourcegraph instance.
+	FeatureCodeSearch BasicFeature = "code-search"
 )
 
 var AllFeatures = []Feature{
@@ -111,6 +120,9 @@ var AllFeatures = []Feature{
 	&FeatureBatchChanges{},
 	FeatureSCIM,
 	FeatureAllowAirGapped,
+	FeatureCodeMonitors,
+	FeatureNotebooks,
+	FeatureCodeSearch,
 }
 
 type PlanDetails struct {
@@ -123,6 +135,9 @@ var planDetails = map[Plan]PlanDetails{
 		Features: []Feature{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanOldEnterprise: {
@@ -141,6 +156,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCodeInsights,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanTeam0: {
@@ -150,6 +168,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanEnterprise0: {
@@ -161,6 +182,9 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 
@@ -174,6 +198,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanEnterprise1: {
@@ -187,6 +214,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanEnterpriseExtension: {
@@ -200,6 +230,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanFree0: {
@@ -208,6 +241,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanFree1: {
@@ -215,6 +251,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 	PlanAirGappedEnterprise: {
@@ -229,6 +268,9 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSCIM,
 			FeatureCody,
 			FeatureAllowAirGapped,
+			FeatureCodeMonitors,
+			FeatureNotebooks,
+			FeatureCodeSearch,
 		},
 	},
 }

@@ -75,7 +75,7 @@ require (
 	github.com/PuerkitoBio/rehttp v1.1.0
 	github.com/RoaringBitmap/roaring v1.3.0
 	github.com/XSAM/otelsql v0.23.0
-	github.com/agext/levenshtein v1.2.3
+	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/amit7itz/goset v1.0.1
 	github.com/aws/aws-sdk-go-v2 v1.17.4
 	github.com/aws/aws-sdk-go-v2/config v1.18.12
@@ -569,7 +569,7 @@ require (
 	github.com/sourcegraph/managed-services-platform-cdktf/gen/postgresql v0.0.0-20231121191755-214be625af21
 	github.com/sourcegraph/mountinfo v0.0.0-20231018142932-e00da332dac5
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20231122214222-d982320abe7b
+	github.com/sourcegraph/zoekt v0.0.0-20231129132138-0d03621d45a3
 	github.com/spf13/cobra v1.7.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect

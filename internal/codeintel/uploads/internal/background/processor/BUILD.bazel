@@ -33,6 +33,7 @@ go_library(
         "//lib/codeintel/pathexistence",
         "//lib/codeintel/precise",
         "//lib/errors",
+        "//lib/pointers",
         "@com_github_jackc_pgconn//:pgconn",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_prometheus_client_golang//prometheus",

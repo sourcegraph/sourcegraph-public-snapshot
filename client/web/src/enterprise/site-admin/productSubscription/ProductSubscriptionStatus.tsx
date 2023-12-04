@@ -124,7 +124,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
                                     {numberWithCommas(actualUserCount)} maximum ever used)
                                 </div>
                                 <ButtonLink
-                                    to="https://about.sourcegraph.com/pricing"
+                                    to="https://sourcegraph.com/pricing"
                                     target="_blank"
                                     rel="noopener"
                                     variant="primary"
@@ -144,7 +144,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
                                 <div className="text-nowrap flex-wrap-reverse">
                                     <Tooltip content="Buy a Sourcegraph Enterprise subscription to get a license key">
                                         <ButtonLink
-                                            to="http://about.sourcegraph.com/contact/sales"
+                                            to="http://sourcegraph.com/contact/sales"
                                             target="_blank"
                                             rel="noopener"
                                             variant="primary"
@@ -172,7 +172,7 @@ export const ProductSubscriptionStatus: React.FunctionComponent<React.PropsWithC
                         <Alert variant="warning">
                             You have exceeded your licensed users.{' '}
                             <Link to="/site-admin/license">View your license details</Link> or{' '}
-                            <Link to="https://about.sourcegraph.com/pricing" target="_blank" rel="noopener">
+                            <Link to="https://sourcegraph.com/pricing" target="_blank" rel="noopener">
                                 upgrade your license
                             </Link>{' '}
                             to true up and prevent a retroactive charge.

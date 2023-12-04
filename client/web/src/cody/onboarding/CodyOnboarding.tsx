@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Modal, H1, H2, H3, Text, Button } from '@sourcegraph/wildcard'
+import { Modal, H1, H2, H3, Text, Button, useSearchParameters } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
@@ -101,10 +101,13 @@ export function CodyOnboarding(): JSX.Element | null {
 }
 
 function WelcomeStep({ onNext }: { onNext: () => void }): JSX.Element {
+    const parameters = useSearchParameters()
+    const enrollPro = parameters.get('pro') === 'true'
+
     return (
         <div className="d-flex flex-column align-items-center">
             <CodyColorIcon width={60} height={60} className="mb-4" />
-            <H1>Hi</H1>
+            <H1>Welcome {enrollPro ? 'to Cody Pro Trial' : ''}</H1>
             <Text className="mb-4 pb-4">Let's walk through a few quick steps to get you started with Cody.</Text>
             <Button onClick={onNext} variant="primary" size="sm">
                 Let's Start!

@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"strconv"
 	"strings"
+	"sync"
 
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
@@ -31,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/googleprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack/options/randomprovider"
 	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -159,7 +159,7 @@ func NewStack(stacks *stack.Set, vars Variables) (crossStackOutput *CrossStackOu
 	var privateNetworkEnabled bool
 	// privateNetwork is only instantiated if used, and is only instantiated
 	// once. If called, it always returns a non-nil value.
-	privateNetwork := syncx.OnceValue(func() *privatenetwork.Output {
+	privateNetwork := sync.OnceValue(func() *privatenetwork.Output {
 		privateNetworkEnabled = true
 		return privatenetwork.New(stack, privatenetwork.Config{
 			ProjectID: vars.ProjectID,

@@ -179,7 +179,7 @@ It's worth noting that these dependencies remain consistent when utilizing the [
 
 ### What is the retention policy for Anthropic and OpenAI?
 
-Please refer to this [terms and conditions](https://about.sourcegraph.com/terms/cody-notice) for details regarding the retention policy for data managed by Anthropic and OpenAI.
+Please refer to this [terms and conditions](https://sourcegraph.com/terms/cody-notice) for details regarding the retention policy for data managed by Anthropic and OpenAI.
 
 ### Can I use my own API keys?
 

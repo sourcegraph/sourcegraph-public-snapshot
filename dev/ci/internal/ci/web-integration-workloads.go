@@ -9,15 +9,6 @@ import (
 
 // Code in this file is used to split web integration tests workloads.
 
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
 func getWebIntegrationFileNames() []string {
 	var fileNames []string
 
@@ -52,14 +43,6 @@ func chunkItems(items []string, size int) [][]string {
 	}
 
 	return chunks
-}
-
-func min(x int, y int) int {
-	if x < y {
-		return x
-	}
-
-	return y
 }
 
 // getChunkedWebIntegrationFileNames gets web integration test filenames and splits them in chunks for parallelizing client integration tests.

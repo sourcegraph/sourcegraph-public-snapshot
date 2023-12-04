@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -20,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/internal/common"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -174,7 +174,7 @@ func RemoveBadRefs(ctx context.Context, dir common.GitDir) (errs error) {
 
 // older versions of git do not remove tags case insensitively, so we generate
 // every possible case of HEAD (2^4 = 16)
-var badRefs = syncx.OnceValue(func() []string {
+var badRefs = sync.OnceValue(func() []string {
 	refs := make([]string, 0, 1<<4)
 	for bits := uint8(0); bits < (1 << 4); bits++ {
 		s := []byte("HEAD")
