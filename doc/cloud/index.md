@@ -7,7 +7,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
 ## Start a Sourcegraph Cloud trial
 
 <div>
-  <a class="cloud-cta" href="https://about.sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
+  <a class="cloud-cta" href="https://sourcegraph.com/get-started?t=enterprise" target="_blank" rel="noopener noreferrer">
     <div class="cloud-cta-copy">
       <h2>Get Sourcegraph on your code.</h2>
       <h3>A single-tenant instance managed by Sourcegraph.</h3>
@@ -19,7 +19,7 @@ Sourcegraph provisions each instance in an isolated and secure cloud environment
   </a>
 </div>
 
-Use the button above to sign up for a free 15-day trial of Sourcegraph Cloud. Please [contact us](https://about.sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
+Use the button above to sign up for a free 15-day trial of Sourcegraph Cloud. Please [contact us](https://sourcegraph.com/contact/sales) if you have specific VPN requirements or you require a large deployment with >500 users, >1,000 repos, or monorepos >5 GB.
 
 ### Trial limitations
 
@@ -155,14 +155,14 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
 - Monitoring and aggregating user feedback
 - Understanding usage statistics of your deployment
 - Internal rollout programs including:
-  - Holding company-wide or team-by-team training sessions ([contact us](https://about.sourcegraph.com/contact/sales) for details)
+  - Holding company-wide or team-by-team training sessions ([contact us](https://sourcegraph.com/contact/sales) for details)
   - Helping the maintainers of your internal engineer onboarding add a session on Sourcegraph
   - Holding ongoing brown bag lunches to introduce new feature releases
   - Advice and templates on how to introduce Sourcegraph to your engineering organization
 
 ### Managed SMTP
 
-All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP server through a [third-party provider](https://about.sourcegraph.com/terms/subprocessors) for transactional email delivery. Email capabilities power features like:
+All Sourcegraph Cloud instances are provisioned with a Sourcegraph-managed SMTP server through a [third-party provider](https://sourcegraph.com/terms/subprocessors) for transactional email delivery. Email capabilities power features like:
 
 - [Code Monitoring](../code_monitoring/index.md) notifications
 - Inviting other users to a Sourcegraph instance, or to an organization/team on a Sourcegraph instance
@@ -222,7 +222,7 @@ A few things you can ask Cody:
 
 - A dedicated project manager who serves as the point of contact for the rollout process.
 - A mutual non-disclosure agreement and any additional approvals or special status required to allow Sourcegraph to manage infrastructure access tokens (listed below).
-- Acceptance of our [Terms of Service for private instances](https://about.sourcegraph.com/terms-private) or an enterprise contract.
+- Acceptance of our [Terms of Service for private instances](https://sourcegraph.com/terms-private) or an enterprise contract.
 
 ### Technical
 
@@ -247,7 +247,7 @@ For all managed instances, we will provide security capabilities from Cloudflare
 
 Your instance will be hosted in isolated Google Cloud infrastructure. See our [employee handbook](https://handbook.sourcegraph.com/departments/cloud/technical-docs/) to learn more about the cloud architecture we use. Both your team and limited Sourcegraph personnel will have application-level administrator access to the instance.
 
-Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [security policies for Sourcegraph Cloud](https://about.sourcegraph.com/security) or [contact us](https://about.sourcegraph.com/contact/sales) with any questions or concerns. You may also request a copy of our SOC 2 Report on our [security portal](https://security.sourcegraph.com).
+Only essential Sourcegraph personnel will have access to the instance, server, code, and any other sensitive materials, such as tokens or keys. The employees or contractors with access are bound by the same terms as Sourcegraph itself. Learn more in our [security policies for Sourcegraph Cloud](https://sourcegraph.com/security) or [contact us](https://sourcegraph.com/contact/sales) with any questions or concerns. You may also request a copy of our SOC 2 Report on our [security portal](https://security.sourcegraph.com).
 
 ### Sourcegraph management access
 
@@ -257,8 +257,8 @@ All Sourcegraph Cloud instances have Sourcegraph management access enabled by de
 
 ### Audit Logs
 
-Our Cloud instances provide [audit logs](../admin/audit_log.md#cloud) to help you monitor and investigate actions taken by users and the system. These logs are available to download by request  and are also sent to a [centralized logging service](https://about.sourcegraph.com/security#logging) for 30 day retention (configurable for greater periods by request).
+Our Cloud instances provide [audit logs](../admin/audit_log.md#cloud) to help you monitor and investigate actions taken by users and the system. These logs are available to download by request  and are also sent to a [centralized logging service](https://sourcegraph.com/security#logging) for 30 day retention (configurable for greater periods by request).
 
 ## Accommodating special requirements
 
-We may be able to support special requests (network access policies, infrastructure requirements, custom version control systems, etc.) with additional time, support, and fees. [Contact us](https://about.sourcegraph.com/contact/sales) to discuss any special requirements you may have.
+We may be able to support special requests (network access policies, infrastructure requirements, custom version control systems, etc.) with additional time, support, and fees. [Contact us](https://sourcegraph.com/contact/sales) to discuss any special requirements you may have.

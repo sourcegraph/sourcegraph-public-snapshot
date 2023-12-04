@@ -59657,6 +59657,10 @@ type MockRepoStatisticsStore struct {
 	// CompactRepoStatisticsFunc is an instance of a mock function object
 	// controlling the behavior of the method CompactRepoStatistics.
 	CompactRepoStatisticsFunc *RepoStatisticsStoreCompactRepoStatisticsFunc
+	// DeleteAndRecreateStatisticsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteAndRecreateStatistics.
+	DeleteAndRecreateStatisticsFunc *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc
 	// GetGitserverReposStatisticsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetGitserverReposStatistics.
@@ -59686,6 +59690,11 @@ func NewMockRepoStatisticsStore() *MockRepoStatisticsStore {
 			},
 		},
 		CompactRepoStatisticsFunc: &RepoStatisticsStoreCompactRepoStatisticsFunc{
+			defaultHook: func(context.Context) (r0 error) {
+				return
+			},
+		},
+		DeleteAndRecreateStatisticsFunc: &RepoStatisticsStoreDeleteAndRecreateStatisticsFunc{
 			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
@@ -59733,6 +59742,11 @@ func NewStrictMockRepoStatisticsStore() *MockRepoStatisticsStore {
 				panic("unexpected invocation of MockRepoStatisticsStore.CompactRepoStatistics")
 			},
 		},
+		DeleteAndRecreateStatisticsFunc: &RepoStatisticsStoreDeleteAndRecreateStatisticsFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockRepoStatisticsStore.DeleteAndRecreateStatistics")
+			},
+		},
 		GetGitserverReposStatisticsFunc: &RepoStatisticsStoreGetGitserverReposStatisticsFunc{
 			defaultHook: func(context.Context) ([]database.GitserverReposStatistic, error) {
 				panic("unexpected invocation of MockRepoStatisticsStore.GetGitserverReposStatistics")
@@ -59771,6 +59785,9 @@ func NewMockRepoStatisticsStoreFrom(i database.RepoStatisticsStore) *MockRepoSta
 		},
 		CompactRepoStatisticsFunc: &RepoStatisticsStoreCompactRepoStatisticsFunc{
 			defaultHook: i.CompactRepoStatistics,
+		},
+		DeleteAndRecreateStatisticsFunc: &RepoStatisticsStoreDeleteAndRecreateStatisticsFunc{
+			defaultHook: i.DeleteAndRecreateStatistics,
 		},
 		GetGitserverReposStatisticsFunc: &RepoStatisticsStoreGetGitserverReposStatisticsFunc{
 			defaultHook: i.GetGitserverReposStatistics,
@@ -59999,6 +60016,112 @@ func (c RepoStatisticsStoreCompactRepoStatisticsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStatisticsStoreCompactRepoStatisticsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// RepoStatisticsStoreDeleteAndRecreateStatisticsFunc describes the behavior
+// when the DeleteAndRecreateStatistics method of the parent
+// MockRepoStatisticsStore instance is invoked.
+type RepoStatisticsStoreDeleteAndRecreateStatisticsFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteAndRecreateStatistics delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockRepoStatisticsStore) DeleteAndRecreateStatistics(v0 context.Context) error {
+	r0 := m.DeleteAndRecreateStatisticsFunc.nextHook()(v0)
+	m.DeleteAndRecreateStatisticsFunc.appendCall(RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteAndRecreateStatistics method of the parent MockRepoStatisticsStore
+// instance is invoked and the hook queue is empty.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteAndRecreateStatistics method of the parent MockRepoStatisticsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) appendCall(r0 RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall objects describing
+// the invocations of this function.
+func (f *RepoStatisticsStoreDeleteAndRecreateStatisticsFunc) History() []RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall is an object that
+// describes an invocation of method DeleteAndRecreateStatistics on an
+// instance of MockRepoStatisticsStore.
+type RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStatisticsStoreDeleteAndRecreateStatisticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

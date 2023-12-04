@@ -65,5 +65,5 @@ h1 {
 <meta name="robots" content="noindex">
 <body>
 <div class=bg></div>
-<div class=msg><h1>`+html.EscapeString(title)+`</h1><p>`+html.EscapeString(message)+`</p><p>See <a href="https://about.sourcegraph.com/pricing">about.sourcegraph.com</a> for more information.</p></div>`)
+<div class=msg><h1>`+html.EscapeString(title)+`</h1><p>`+html.EscapeString(message)+`</p><p>See <a href="https://sourcegraph.com/pricing">sourcegraph.com</a> for more information.</p></div>`)
 }

@@ -137,7 +137,7 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                     <Text className="d-flex align-items-center justify-content-between mt-2">
                         <span>
                             By submitting your feedback, you agree to the{' '}
-                            <Link to="https://about.sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
+                            <Link to="https://sourcegraph.com/terms/privacy">Sourcegraph Privacy Policy</Link>.
                         </span>
                     </Text>
                     <Button

@@ -1,9 +1,9 @@
 # Code hosts on AWS without public access
 
-<p>Please contact Sourcegraph directly via <a href="https://about.sourcegraph.com/contact">prefered contact method</a> for more informations</p>
+<p>Please contact Sourcegraph directly via <a href="https://sourcegraph.com/contact">prefered contact method</a> for more informations</p>
 </aside>
 
-As part of the [Enterprise tier](https://about.sourcegraph.com/pricing), Sourcegraph Cloud supports connecting customer code hosts on AWS using [AWS Private Link] and managed [site-to-site VPN] solution between GCP and AWS, so that access to a private code host is secure and without the need to expose code hosts to the public internet.
+As part of the [Enterprise tier](https://sourcegraph.com/pricing), Sourcegraph Cloud supports connecting customer code hosts on AWS using [AWS Private Link] and managed [site-to-site VPN] solution between GCP and AWS, so that access to a private code host is secure and without the need to expose code hosts to the public internet.
 
 ## How it works
 
