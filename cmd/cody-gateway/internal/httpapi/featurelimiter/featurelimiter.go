@@ -214,10 +214,12 @@ func RefreshLimitsHandler(baseLogger log.Logger, sources *actor.Sources) http.Ha
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
+
 		token, err := authbearer.ExtractBearer(r.Header)
 		if err != nil {
 			response.JSONError(logger, w, http.StatusBadRequest, err)
 		}
+
 		err = sources.SyncOne(r.Context(), token)
 		if err != nil {
 			response.JSONError(logger, w, http.StatusBadRequest, err)
