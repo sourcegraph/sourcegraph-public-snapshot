@@ -3,27 +3,22 @@ import type { ReactElement } from 'react'
 
 import { mdiTrendingUp } from '@mdi/js'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
 
-import { useQuery, useMutation } from '@sourcegraph/http-client'
-import { Icon, PageHeader, Button, H1, H2, H3, Text, ButtonLink, useSearchParameters } from '@sourcegraph/wildcard'
+import { useQuery } from '@sourcegraph/http-client'
+import { Icon, PageHeader, Button, H1, H2, H3, Text, ButtonLink, useSearchParameters, H4 } from '@sourcegraph/wildcard'
 
 import type { AuthenticatedUser } from '../../auth'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import type {
-    UserCodyPlanResult,
-    UserCodyPlanVariables,
-    ChangeCodyPlanResult,
-    ChangeCodyPlanVariables,
-} from '../../graphql-operations'
+import type { UserCodyPlanResult, UserCodyPlanVariables } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodyColorIcon } from '../chat/CodyPageIcon'
 import { isCodyEnabled } from '../isCodyEnabled'
 
-import { USER_CODY_PLAN, CHANGE_CODY_PLAN } from './queries'
+import { CancelProModal } from './CancelProModal'
+import { USER_CODY_PLAN } from './queries'
 import { UpgradeToProModal } from './UpgradeToProModal'
 
 import styles from './CodySubscriptionPage.module.scss'
@@ -37,7 +32,6 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     isSourcegraphDotCom,
     authenticatedUser,
 }) => {
-    const navigate = useNavigate()
     const parameters = useSearchParameters()
 
     const utm_source = parameters.get('utm_source')
@@ -47,10 +41,10 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
     }, [utm_source])
 
     const { data } = useQuery<UserCodyPlanResult, UserCodyPlanVariables>(USER_CODY_PLAN, {})
-    const [changeCodyPlan] = useMutation<ChangeCodyPlanResult, ChangeCodyPlanVariables>(CHANGE_CODY_PLAN)
 
     const [isEnabled] = useFeatureFlag('cody-pro', false)
     const [showUpgradeToPro, setShowUpgradeToPro] = useState<boolean>(false)
+    const [showCancelPro, setShowCancelPro] = useState<boolean>(false)
 
     if (!isCodyEnabled() || !isSourcegraphDotCom || !isEnabled || !data?.currentUser || !authenticatedUser) {
         return null
@@ -78,126 +72,134 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                 </PageHeader>
 
                 <div className={classNames('d-flex mt-4', styles.responsiveContainer)}>
-                    <div className="border d-flex flex-column flex-1 bg-1 border p-3">
-                        <div className="border-bottom pb-3">
-                            <H2 className="mb-1 mt-2 text-muted">Community</H2>
-                            <Text className="mb-0 text-muted" size="small">
-                                Best for hobbyists
-                            </Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <H1 className="mb-1 text-muted">Free</H1>
-                            <Text className="mb-4 pb-3 text-muted" size="small">
-                                {!codyProEnabled && 'Your plan'}
-                            </Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <Text weight="bold" className="d-inline">
-                                500
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">Autocompletions per month</Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <Text weight="bold" className="d-inline">
-                                20
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">Messages and Commands per month</Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <div className="mb-1">
-                                <Text weight="bold" className="d-inline mb-0">
-                                    Limited
-                                </Text>{' '}
-                                <Text className="d-inline text-muted mb-0">Private Code Embeddings</Text>
+                    <div className="border d-flex flex-column flex-1 bg-1">
+                        {!codyProEnabled && (
+                            <div className="bg-1 border-bottom d-flex justify-content-center align-items-center bg-2">
+                                <H4 className="mb-2 mt-2">Your Plan</H4>
                             </div>
-                            <Text className="mb-1 text-muted">Current project with keyword search</Text>
-                            <Text className="mb-1 text-muted">Embeddings on some public repo</Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <Text weight="bold" className="mb-1">
-                                Code editor support
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">All supported Code Editors</Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <Text weight="bold" className="mb-1">
-                                Support
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">Community support only</Text>
+                        )}
+                        <div className="p-3">
+                            <div className="border-bottom pb-3">
+                                <H2 className="mb-1 text-muted">Community</H2>
+                                <Text className="mb-0 text-muted" size="small">
+                                    Best for hobbyists
+                                </Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <H1 className="mb-1 text-muted">Free</H1>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="d-inline">
+                                    500
+                                </Text>{' '}
+                                <Text className="d-inline text-muted">Autocompletions per month</Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="d-inline">
+                                    20
+                                </Text>{' '}
+                                <Text className="d-inline text-muted">Messages and Commands per month</Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <div className="mb-1">
+                                    <Text weight="bold" className="d-inline mb-0">
+                                        Limited
+                                    </Text>{' '}
+                                    <Text className="d-inline text-muted mb-0">Private Code Embeddings</Text>
+                                </div>
+                                <Text className="mb-1 text-muted">Current project with keyword search</Text>
+                                <Text className="mb-1 text-muted">Embeddings on some public repo</Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="mb-1">
+                                    Code editor support
+                                </Text>{' '}
+                                <Text className="d-inline text-muted">All supported Code Editors</Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="mb-1">
+                                    Support
+                                </Text>{' '}
+                                <Text className="d-inline text-muted">Community support only</Text>
+                            </div>
                         </div>
                     </div>
-                    <div
-                        className={classNames('border d-flex flex-column flex-1 bg-1 border p-4', styles.proContainer)}
-                    >
-                        <div className="border-bottom pb-2">
-                            <H1 className={classNames('mb-1', styles.proTitle)}>Pro</H1>
-                            <Text className={classNames('mb-1 text-primary', styles.proDescription)} size="small">
-                                Best for professional developers
-                            </Text>
-                        </div>
-                        <div className="d-flex flex-column border-bottom py-4">
-                            <div className="mb-1">
-                                <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>22$</H2>
-                                <Text className="mb-0 text-muted d-inline">/ month</Text>
+                    <div className={classNames('border d-flex flex-column flex-1 bg-1', styles.proContainer)}>
+                        {codyProEnabled && (
+                            <div className="bg-1 border-bottom d-flex justify-content-center align-items-center bg-2">
+                                <H4 className="mb-2 mt-2">Your Plan</H4>
                             </div>
-                            <Text className="mb-3 text-muted" size="small">
-                                Free until Feb 2024, <strong>no credit card needed</strong>
-                            </Text>
-                            {codyProEnabled ? (
-                                <div>
-                                    <Text className="mb-0 text-primary d-inline" size="small">
-                                        Your plan
-                                    </Text>{' '}
-                                    <Text
-                                        className="mb-0 text-muted d-inline cursor-pointer"
-                                        size="small"
-                                        onClick={() =>
-                                            changeCodyPlan({ variables: { pro: false, id: authenticatedUser.id } })
-                                        }
-                                    >
-                                        | Cancel
-                                    </Text>
+                        )}
+                        <div className="p-3">
+                            <div className="border-bottom pb-2">
+                                <H1 className={classNames('mb-1', styles.proTitle)}>Pro</H1>
+                                <Text className={classNames('mb-1 text-primary', styles.proDescription)} size="base">
+                                    Best for professional developers
+                                </Text>
+                            </div>
+                            <div className="d-flex flex-column border-bottom py-4">
+                                <div className="mb-1">
+                                    <H2 className={classNames('text-muted d-inline mb-0', styles.proPricing)}>22$</H2>
+                                    <Text className="mb-0 text-muted d-inline">/ month</Text>
                                 </div>
-                            ) : (
-                                <Button className="flex-1" variant="primary" onClick={() => setShowUpgradeToPro(true)}>
-                                    <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
-                                    Get Pro Trial
-                                </Button>
-                            )}
-                        </div>
-                        <div className="border-bottom py-4">
-                            <Text weight="bold" className="d-inline">
-                                Unlimited
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">Autocompletions per month</Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <Text weight="bold" className="d-inline">
-                                Unlimited
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">Messages and Commands per month</Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <div className="mb-1">
-                                <Text weight="bold" className="d-inline mb-0">
+                                <Text className="mb-3 text-muted" size="small">
+                                    Free until Feb 2024, <strong>no credit card needed</strong>
+                                </Text>
+                                {codyProEnabled ? (
+                                    <div>
+                                        <Text
+                                            className="mb-0 text-muted d-inline cursor-pointer"
+                                            size="small"
+                                            onClick={() => setShowCancelPro(true)}
+                                        >
+                                            Cancel
+                                        </Text>
+                                    </div>
+                                ) : (
+                                    <Button
+                                        className="flex-1"
+                                        variant="primary"
+                                        onClick={() => setShowUpgradeToPro(true)}
+                                    >
+                                        <Icon svgPath={mdiTrendingUp} className="mr-1" aria-hidden={true} />
+                                        Get Pro Trial
+                                    </Button>
+                                )}
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className={classNames('d-inline', styles.amazing)}>
                                     Unlimited
                                 </Text>{' '}
-                                <Text className="d-inline text-muted mb-0">Private Code Embeddings</Text>
+                                <Text className="d-inline text-muted">Autocompletions per month</Text>
                             </div>
-                            <Text className="mb-1 text-muted">Current project with keyword search</Text>
-                            <Text className="mb-0 text-muted">Embeddings on some public repo</Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <Text weight="bold" className="mb-1">
-                                Code editor support
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">All supported Code Editors</Text>
-                        </div>
-                        <div className="border-bottom py-4">
-                            <Text weight="bold" className="mb-1">
-                                Support
-                            </Text>{' '}
-                            <Text className="d-inline text-muted">Community support only</Text>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className={classNames('d-inline', styles.amazing)}>
+                                    Unlimited
+                                </Text>{' '}
+                                <Text className="d-inline text-muted">Messages and Commands per month</Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <div className="mb-1">
+                                    <Text weight="bold" className={classNames('d-inline mb-0', styles.amazing)}>
+                                        Unlimited
+                                    </Text>{' '}
+                                    <Text className="d-inline text-muted mb-0">Private Code Embeddings</Text>
+                                </div>
+                                <Text className="mb-1 text-muted">Current project with keyword search</Text>
+                                <Text className="mb-0 text-muted">Embeddings on some public repo</Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="mb-1">
+                                    Code editor support
+                                </Text>{' '}
+                                <Text className="d-inline text-muted">All supported Code Editors</Text>
+                            </div>
+                            <div className="border-bottom py-4">
+                                <Text weight="bold" className="mb-1">
+                                    Support
+                                </Text>{' '}
+                                <Text className="d-inline text-muted">Community support only</Text>
+                            </div>
                         </div>
                     </div>
                     <div className="border d-flex flex-column flex-1 bg-1 border p-3">
@@ -216,20 +218,20 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                             </ButtonLink>
                         </div>
                         <div className="border-bottom py-4">
-                            <Text weight="bold" className="d-inline">
+                            <Text weight="bold" className={classNames('d-inline', styles.amazing)}>
                                 Unlimited
                             </Text>{' '}
                             <Text className="d-inline text-muted">Autocompletions per month</Text>
                         </div>
                         <div className="border-bottom py-4">
-                            <Text weight="bold" className="d-inline">
+                            <Text weight="bold" className={classNames('d-inline', styles.amazing)}>
                                 Unlimited
                             </Text>{' '}
                             <Text className="d-inline text-muted">Messages and Commands per month</Text>
                         </div>
                         <div className="border-bottom py-4">
                             <div className="mb-1">
-                                <Text weight="bold" className="d-inline mb-0">
+                                <Text weight="bold" className={classNames('d-inline mb-0', styles.amazing)}>
                                     Unlimited
                                 </Text>{' '}
                                 <Text className="d-inline text-muted mb-0">Private Code Embeddings</Text>
@@ -265,7 +267,14 @@ export const CodySubscriptionPage: React.FunctionComponent<CodySubscriptionPageP
                 <UpgradeToProModal
                     onClose={() => {
                         setShowUpgradeToPro(false)
-                        navigate('/cody/manage?utm_source=upgrade_modal')
+                    }}
+                    authenticatedUser={authenticatedUser}
+                />
+            )}
+            {showCancelPro && (
+                <CancelProModal
+                    onClose={() => {
+                        setShowCancelPro(false)
                     }}
                     authenticatedUser={authenticatedUser}
                 />

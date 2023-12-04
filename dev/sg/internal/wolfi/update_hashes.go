@@ -101,7 +101,7 @@ func getImageManifest(image string, tag string) (string, error) {
 	return digest, nil
 }
 
-func UpdateHashes(ctx *cli.Context, updateImageName string) error {
+func UpdateHashes(_ *cli.Context, updateImageName string) error {
 	if updateImageName != "" {
 		updateImageName = strings.ReplaceAll(updateImageName, "-", "_")
 		updateImageName = fmt.Sprintf("wolfi_%s_base", updateImageName)
@@ -166,9 +166,7 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 
 					if err != nil {
 						std.Out.WriteWarningf("%v", err)
-					}
-
-					if currentImage.Digest != newDigest {
+					} else if currentImage.Digest != newDigest {
 						updated = true
 						// replace old digest with new digest in the previous line
 						lines[i-1] = DigestPattern.ReplaceAllString(lines[i-1], fmt.Sprintf(`digest = "%s"`, newDigest))
@@ -192,7 +190,11 @@ func UpdateHashes(ctx *cli.Context, updateImageName string) error {
 		for _, line := range lines {
 			fmt.Fprintln(writer, line)
 		}
-		writer.Flush()
+
+		err = writer.Flush()
+		if err != nil {
+			return err
+		}
 		std.Out.WriteSuccessf("Succesfully updated digests in %s", bzl_deps_file)
 
 	} else {

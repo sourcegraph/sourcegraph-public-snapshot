@@ -127,7 +127,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
-	ctx := context.Background()
+	ctx := actor.WithInternalActor(context.Background())
 
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
@@ -306,6 +306,10 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
@@ -318,11 +322,12 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		return &conf.Unified{}
 	}
 	es := &types.ExternalService{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		Kind:          extsvc.KindGitHub,
+		DisplayName:   "GITHUB #1",
+		Config:        extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		LastUpdaterID: &user.ID,
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err = db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -634,6 +639,10 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(t))
 	ctx := context.Background()
+	user, err := db.Users().Create(ctx, NewUser{Username: "foo"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
@@ -649,7 +658,7 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		DisplayName: "GITHUB #1",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
-	err := externalServices.Create(ctx, confGet, es)
+	err = externalServices.Create(ctx, confGet, es)
 	require.NoError(t, err)
 
 	got, err := externalServices.GetByID(ctx, es.ID)
@@ -681,7 +690,8 @@ func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.
 		conf.Get().AuthProviders,
 		es.ID,
 		&ExternalServiceUpdate{
-			Config: &cfg,
+			Config:        &cfg,
+			LastUpdaterID: &user.ID,
 		},
 	)
 	require.NoError(t, err)

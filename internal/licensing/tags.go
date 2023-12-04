@@ -25,7 +25,7 @@ const (
 
 	// TelemetryEventsExportDisabledTag disables telemery events export EXCEPT
 	// for Cody-related events, which we are always allowed to export as part of
-	// Cody usage terms: https://about.sourcegraph.com/terms/cody-notice
+	// Cody usage terms: https://sourcegraph.com/terms/cody-notice
 	//
 	// To completely disable telemetry events export, use PlanAirGappedEnterprise
 	TelemetryEventsExportDisabledTag = "disable-telemetry-events-export"

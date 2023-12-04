@@ -84,12 +84,12 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
                     <>
                         Search your private code with{' '}
                         <Link
-                            to="https://about.sourcegraph.com"
+                            to="https://sourcegraph.com"
                             onClick={() => eventLogger.log('ClickedOnEnterpriseCTA', { location: 'Subscriptions' })}
                         >
                             Sourcegraph Enterprise
                         </Link>
-                        . See <Link to="https://about.sourcegraph.com/pricing">pricing</Link> for more information.
+                        . See <Link to="https://sourcegraph.com/pricing">pricing</Link> for more information.
                     </>
                 }
                 className="mb-3"

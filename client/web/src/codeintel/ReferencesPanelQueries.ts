@@ -297,7 +297,9 @@ export const LOCAL_CODE_INTEL_QUERY = gql`
         repository(name: $repository) {
             id
             commit(rev: $commit) {
+                id
                 blob(path: $path) {
+                    canonicalURL
                     localCodeIntel
                 }
             }
