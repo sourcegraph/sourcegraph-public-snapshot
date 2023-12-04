@@ -53,10 +53,7 @@ func Middleware(db database.DB) *auth.Middleware {
 // Sourcegraph Operator authentication provider.
 const SessionKey = "soap@0"
 
-const (
-	stateCookieName = "sg-soap-state"
-	usernamePrefix  = "sourcegraph-operator-"
-)
+const usernamePrefix = "sourcegraph-operator-"
 
 func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 	logger := log.Scoped(internalauth.SourcegraphOperatorProviderType + ".authHandler")
